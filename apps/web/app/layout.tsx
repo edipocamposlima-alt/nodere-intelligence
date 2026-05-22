@@ -14,7 +14,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="pt-BR">
       <body>
-        <div className="flex min-h-screen nodere-grid">
+        <div className="flex min-h-screen leadradar-grid">
           <Sidebar />
           <main className="min-w-0 flex-1 pb-20 lg:pb-0">
             <Header />
