@@ -142,23 +142,23 @@
           <div class="metric-grid">
             <article class="metric-card accent-blue">
               <span>Total de empresas</span>
-              <strong data-count="12847">0</strong>
-              <small>+18% nesta semana</small>
+              <strong id="metricTotalCompanies" data-count="12847">0</strong>
+              <small id="metricTotalCompaniesHint">Dados atualizados pela base ativa</small>
             </article>
             <article class="metric-card accent-green">
               <span>Leads qualificados</span>
-              <strong data-count="3421">0</strong>
-              <small>812 com alta prioridade</small>
+              <strong id="metricQualifiedLeads" data-count="3421">0</strong>
+              <small id="metricQualifiedLeadsHint">Score acima de 80</small>
             </article>
             <article class="metric-card accent-red">
               <span>Empresas com falhas</span>
-              <strong data-count="9034">0</strong>
-              <small>Sem site, tags ou Ads</small>
+              <strong id="metricRiskLeads" data-count="9034">0</strong>
+              <small id="metricRiskLeadsHint">Falhas digitais detectadas</small>
             </article>
             <article class="metric-card accent-slate">
               <span>Score medio</span>
-              <strong data-count="74">0</strong>
-              <small>Potencial comercial</small>
+              <strong id="metricAverageScore" data-count="74">0</strong>
+              <small id="metricAverageScoreHint">Calculado em tempo real local/API</small>
             </article>
           </div>
 
@@ -178,8 +178,8 @@
                 <span class="pin p4 hot"></span>
                 <span class="pin p5"></span>
                 <div class="map-overlay">
-                  <strong>Regiao Sudeste</strong>
-                  <span>2.184 empresas sem conversao configurada</span>
+                  <strong id="mapRegionLabel">Todas as regiões</strong>
+                  <span id="mapRegionInsight">Oportunidades consolidadas pela busca atual</span>
                 </div>
               </div>
             </article>
@@ -201,7 +201,7 @@
                   <h2>Conversoes</h2>
                 </div>
               </div>
-              <div class="funnel">
+              <div class="funnel" id="dashboardFunnel">
                 <div style="--w: 96%"><span>Leads novos</span><strong>1.284</strong></div>
                 <div style="--w: 76%"><span>Diagnosticos</span><strong>842</strong></div>
                 <div style="--w: 52%"><span>Reunioes</span><strong>316</strong></div>
@@ -235,7 +235,8 @@
                 <label>Cidade<input id="searchCity" value="Sao Paulo" /></label>
                 <label>Segmento<input id="searchSegment" value="Clinicas odontologicas" /></label>
                 <label>Palavra-chave<input id="searchKeyword" value="implante dentario" /></label>
-                <label>Regiao<select><option>Sudeste</option><option>Sul</option><option>Nordeste</option></select></label>
+                <label>Regiao<select id="searchRegion"><option>Todas as regioes</option><option>Sudeste</option><option>Sul</option><option>Nordeste</option><option>Centro-Oeste</option><option>Norte</option></select></label>
+                <label>Estado<select id="searchState"><option>Todo o Brasil</option><option>SP</option><option>RJ</option><option>MG</option><option>ES</option><option>PR</option><option>SC</option><option>RS</option><option>BA</option><option>PE</option><option>CE</option><option>GO</option><option>DF</option><option>MT</option><option>MS</option><option>AM</option><option>PA</option></select></label>
                 <label>Presenca digital<select><option>Baixa maturidade</option><option>Sem site</option><option>Sem WhatsApp</option><option>Sem Ads</option></select></label>
                 <div class="toggle-grid">
                   <label><input type="checkbox" checked /> Sem site</label>
@@ -399,6 +400,9 @@
               <div class="crm-status-panel">
                 <label>Etapa CRM
                   <select id="companyCrmStatus">
+                    <option value="cold">Frio</option>
+                    <option value="warm">Morno</option>
+                    <option value="hot">Quente</option>
                     <option value="lead_new">Lead novo</option>
                     <option value="contact_started">Contato iniciado</option>
                     <option value="diagnosis_sent">Diagnostico enviado</option>
@@ -406,6 +410,16 @@
                     <option value="proposal_sent">Proposta enviada</option>
                     <option value="won">Fechado</option>
                     <option value="lost">Perdido</option>
+                  </select>
+                </label>
+                <label>Origem do contato
+                  <input id="companyLeadSource" placeholder="Google Places, indicação, Instagram..." />
+                </label>
+                <label>Temperatura
+                  <select id="companyTemperature">
+                    <option value="cold">Frio</option>
+                    <option value="warm">Morno</option>
+                    <option value="hot">Quente</option>
                   </select>
                 </label>
                 <button class="ghost-button" id="saveCrmStatusApi">Atualizar CRM</button>
@@ -416,6 +430,10 @@
                 <span><strong>WhatsApp</strong> <span id="companyWhatsapp">inexistente</span></span>
                 <span><strong>Site</strong> <span id="companySite">lento e sem tags</span></span>
                 <span><strong>Google</strong> <span id="companyGoogle">3,8 estrelas | 12 avaliacoes</span></span>
+                <span><strong>Atendimento</strong> <span id="companyHours">A enriquecer</span></span>
+                <span><strong>Serviço atual</strong> <span id="companyCurrentService">A identificar</span></span>
+                <span><strong>Oferta ideal</strong> <span id="companyOffer">Google Ads + tracking</span></span>
+                <span><strong>Redes sociais</strong> <span id="companySocials">A enriquecer</span></span>
               </div>
               <div class="site-preview">
                 <div class="browser-dots"><span></span><span></span><span></span></div>
@@ -454,6 +472,16 @@
                 </div>
               </div>
               <div class="audit-grid" id="auditGrid"></div>
+            </article>
+
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Pessoas e decisores</span>
+                  <h2>Contatos da empresa</h2>
+                </div>
+              </div>
+              <div class="contact-grid" id="decisionMakers"></div>
             </article>
 
             <article class="surface">
@@ -525,6 +553,24 @@
                 <div><strong>Sem conversao configurada</strong><span>Enviar diagnostico de rastreamento</span></div>
                 <div><strong>Proposta sem resposta</strong><span>Follow-up em 48 horas</span></div>
               </div>
+            </article>
+
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Envio em massa</span>
+                  <h2>Seleção inteligente</h2>
+                </div>
+              </div>
+              <div class="bulk-toolbar">
+                <button class="ghost-button" id="selectAllLeads">Marcar todos</button>
+                <button class="ghost-button" id="clearLeadSelection">Limpar</button>
+                <select id="bulkSegmentFilter"><option value="all">Todos os segmentos</option></select>
+                <select id="bulkScoreFilter"><option value="all">Todos os scores</option><option value="hot">Quentes +80</option><option value="risk">Com falhas críticas</option></select>
+                <button class="primary-action" id="prepareBulkMessage">Preparar mensagem</button>
+              </div>
+              <div class="lead-selection-list" id="bulkLeadList"></div>
+              <small id="bulkAutomationStatus">Selecione leads individualmente, por segmento ou por análise para preparar abordagem.</small>
             </article>
 
             <article class="surface wide">
@@ -756,6 +802,26 @@
                   <span>Nichos de maior potencial</span>
                   <strong>Saude, beleza e servicos</strong>
                 </div>
+              </div>
+              <div class="report-builder">
+                <label>Tipo de relatório
+                  <select id="reportType">
+                    <option value="opportunities">Ranking de oportunidades</option>
+                    <option value="city">Oportunidades por cidade/estado</option>
+                    <option value="segment">Oportunidades por segmento</option>
+                    <option value="crm">Pipeline CRM</option>
+                    <option value="technical">Falhas técnicas e tracking</option>
+                  </select>
+                </label>
+                <label>Formato
+                  <select id="reportFormat">
+                    <option value="csv">CSV</option>
+                    <option value="json">JSON</option>
+                    <option value="pdf">PDF via impressão</option>
+                  </select>
+                </label>
+                <button class="primary-action" id="buildCustomReport">Montar relatório</button>
+                <small id="reportBuilderStatus">Monte relatórios por objetivo e exporte no formato desejado.</small>
               </div>
             </article>
             <article class="surface">

@@ -48,6 +48,24 @@ textarea {
   font: inherit;
 }
 
+input,
+select,
+textarea {
+  color: var(--text);
+  background: rgba(15, 23, 42, 0.62);
+  border: 1px solid var(--line);
+}
+
+select option {
+  color: var(--text);
+  background: var(--surface-strong);
+}
+
+::selection {
+  color: #fff;
+  background: rgba(47, 128, 255, 0.42);
+}
+
 button {
   cursor: pointer;
 }
@@ -849,7 +867,7 @@ h2 {
 
 .crm-status-panel {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) auto;
+  grid-template-columns: repeat(3, minmax(160px, 1fr)) auto;
   gap: 0.75rem;
   align-items: end;
   margin-top: 0.9rem;
@@ -862,6 +880,7 @@ h2 {
 .company-facts,
 .audit-grid,
 .integration-grid,
+.contact-grid,
 .report-preview {
   display: grid;
   gap: 0.75rem;
@@ -1719,6 +1738,57 @@ h2 {
   resize: vertical;
 }
 
+.contact-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.contact-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.contact-card span,
+.contact-card a,
+.bulk-toolbar,
+.lead-selection-list label,
+.report-builder small {
+  color: var(--muted);
+}
+
+.bulk-toolbar,
+.report-builder {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.lead-selection-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.9rem;
+}
+
+.lead-selection-list label {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.lead-selection-list strong {
+  display: block;
+  color: var(--text);
+}
+
 .playbook-item,
 .timeline-item,
 .team-row,
@@ -2142,6 +2212,7 @@ h2 {
   .company-facts,
   .audit-grid,
   .integration-grid,
+  .contact-grid,
   .report-preview {
     grid-template-columns: 1fr;
   }
@@ -2167,6 +2238,12 @@ h2 {
   }
 
   .crm-status-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .bulk-toolbar,
+  .lead-selection-list,
+  .report-builder {
     grid-template-columns: 1fr;
   }
 

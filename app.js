@@ -1,4 +1,4 @@
-let leads = [
+﻿let leads = [
   {
     name: "Odonto Prime Paulista",
     city: "Sao Paulo, SP",
@@ -87,6 +87,9 @@ const auditItems = [
 ];
 
 const stages = [
+  "Frio",
+  "Morno",
+  "Quente",
   "Lead novo",
   "Contato iniciado",
   "Diagnostico enviado",
@@ -97,6 +100,9 @@ const stages = [
 ];
 
 const crmStages = [
+  ["cold", "Frio"],
+  ["warm", "Morno"],
+  ["hot", "Quente"],
   ["lead_new", "Lead novo"],
   ["contact_started", "Contato iniciado"],
   ["diagnosis_sent", "Diagnostico enviado"],
@@ -122,7 +128,7 @@ const integrations = [
 ];
 
 const teamMembers = [
-  { name: "Édipo Lima", role: "Owner", status: "Ativo", access: "Todas as areas" },
+  { name: "Ã‰dipo Lima", role: "Owner", status: "Ativo", access: "Todas as areas" },
   { name: "Ana Comercial", role: "Closer", status: "Ativo", access: "CRM e relatorios" },
   { name: "Rafael Ops", role: "Analista", status: "Ativo", access: "Busca e auditoria" },
   { name: "Marina SDR", role: "SDR", status: "Pendente", access: "Leads e tarefas" },
@@ -138,10 +144,10 @@ const moduleCatalog = [
   { id: "automation", label: "Automacao", description: "Mensagens, emails e alertas automaticos" },
   { id: "inbox", label: "Inbox", description: "Conversas, respostas e SLA comercial" },
   { id: "copilot", label: "Copilot IA", description: "Previsao, ROI e proposta automatica" },
-  { id: "diagnosis", label: "Diagnóstico", description: "Relatório PDF e proposta para o lead" },
+  { id: "diagnosis", label: "DiagnÃ³stico", description: "RelatÃ³rio PDF e proposta para o lead" },
   { id: "reports", label: "Relatorios", description: "Exportacoes e inteligencia executiva" },
   { id: "admin", label: "Admin", description: "Usuarios, permissoes e integracoes" },
-  { id: "billing", label: "Planos", description: "Assinatura, créditos, limites e faturas" },
+  { id: "billing", label: "Planos", description: "Assinatura, crÃ©ditos, limites e faturas" },
   { id: "performance", label: "Performance", description: "Metas, produtividade e forecast comercial" },
 ];
 
@@ -181,18 +187,22 @@ const permissions = [
 ];
 
 const apiStatus = [
-  ["Google Places API", "Pronto para conectar", "Busca e enriquecimento local", "setup"],
-  ["Google Ads API", "Planejado", "Sinais de anuncios e oportunidades", "roadmap"],
-  ["Meta API", "Planejado", "Pixel, audiencia e remarketing", "roadmap"],
-  ["WhatsApp API", "Pronto para conectar", "Contato rapido e automacoes", "setup"],
-  ["Receita Federal", "Planejado", "CNPJ, razao social e porte", "roadmap"],
-  ["HubSpot", "Opcional", "Sincronizacao CRM externa", "optional"],
+  ["Supabase", "Pronto para conectar", "Banco de leads, CRM, historico e permissoes", "setup"],
+  ["Google Places API", "Pronto para conectar", "Busca e enriquecimento local em tempo real", "setup"],
+  ["PageSpeed Insights", "Pronto para conectar", "Performance, SEO tecnico e boas praticas", "setup"],
+  ["OpenAI", "Pronto para conectar", "Resumo, diagnostico, abordagem e analise de interacoes", "setup"],
+  ["WhatsApp API", "Modo link ativo", "Contato rapido agora; Cloud API para automacoes oficiais", "setup"],
+  ["Google Ads API", "Preparado", "Sinais de campanhas, conversoes e oportunidades", "roadmap"],
+  ["Google Business Profile", "Preparado", "Perfil, avaliacoes, horarios, fotos e presenca local", "roadmap"],
+  ["Meta API", "Preparado", "Pixel, audiencias e remarketing", "roadmap"],
+  ["Receita Federal", "Preparado", "CNPJ, razao social e porte", "roadmap"],
+  ["HubSpot/RD Station", "Opcional", "Sincronizacao CRM externa", "optional"],
 ];
 
 const defaultSavedSearches = [
-  { id: 1, title: "Clinicas odontologicas em SP", filters: "Sao Paulo · implante dentario · sem Google Ads", leads: 184, cadence: "Diaria" },
-  { id: 2, title: "Estetica premium no Sudeste", filters: "Campinas, BH e Curitiba · sem pixel · ticket alto", leads: 96, cadence: "Semanal" },
-  { id: 3, title: "Energia solar sem tracking", filters: "Sul · GA4 ausente · SEO fraco", leads: 72, cadence: "A cada 3 dias" },
+  { id: 1, title: "Clinicas odontologicas em SP", filters: "Sao Paulo Â· implante dentario Â· sem Google Ads", leads: 184, cadence: "Diaria" },
+  { id: 2, title: "Estetica premium no Sudeste", filters: "Campinas, BH e Curitiba Â· sem pixel Â· ticket alto", leads: 96, cadence: "Semanal" },
+  { id: 3, title: "Energia solar sem tracking", filters: "Sul Â· GA4 ausente Â· SEO fraco", leads: 72, cadence: "A cada 3 dias" },
 ];
 
 let savedSearches = JSON.parse(localStorage.getItem("eli:saved-searches") || "null") || defaultSavedSearches;
@@ -215,63 +225,63 @@ const commercialAlerts = [
 
 const googleBusinessSignals = [
   ["Ficha reivindicada", "Detecta se a empresa controla o Perfil da Empresa.", "Perfil"],
-  ["Completude do perfil", "Nome, categoria, descrição, endereço, telefone, site, horários e atributos.", "Dados"],
-  ["Avaliações", "Volume, nota média, frequência, sentimento e respostas pendentes.", "Reputação"],
-  ["Posts e ofertas", "Frequência de publicações, eventos, novidades e ofertas locais.", "Conteúdo"],
-  ["Perguntas e respostas", "Perguntas abertas e temas recorrentes de objeção comercial.", "Q&A"],
-  ["Fotos", "Quantidade, atualização e qualidade do acervo visual.", "Visual"],
-  ["Performance local", "Chamadas, rotas, cliques no site e buscas por período.", "Performance"],
-  ["Notificações", "Alertas de novas avaliações, atualizações e mudanças no perfil.", "Monitoramento"],
+  ["Completude do perfil", "Nome, categoria, descriÃ§Ã£o, endereÃ§o, telefone, site, horÃ¡rios e atributos.", "Dados"],
+  ["AvaliaÃ§Ãµes", "Volume, nota mÃ©dia, frequÃªncia, sentimento e respostas pendentes.", "ReputaÃ§Ã£o"],
+  ["Posts e ofertas", "FrequÃªncia de publicaÃ§Ãµes, eventos, novidades e ofertas locais.", "ConteÃºdo"],
+  ["Perguntas e respostas", "Perguntas abertas e temas recorrentes de objeÃ§Ã£o comercial.", "Q&A"],
+  ["Fotos", "Quantidade, atualizaÃ§Ã£o e qualidade do acervo visual.", "Visual"],
+  ["Performance local", "Chamadas, rotas, cliques no site e buscas por perÃ­odo.", "Performance"],
+  ["NotificaÃ§Ãµes", "Alertas de novas avaliaÃ§Ãµes, atualizaÃ§Ãµes e mudanÃ§as no perfil.", "Monitoramento"],
 ];
 
 const googleAdsSignals = [
-  ["Conversões", "Ações de conversão, tag snippet, chamadas, formulários e enhanced conversions.", "Tracking"],
-  ["Campanhas ativas", "Busca, Performance Max, chamadas, locais e estrutura por objetivo.", "Mídia"],
+  ["ConversÃµes", "AÃ§Ãµes de conversÃ£o, tag snippet, chamadas, formulÃ¡rios e enhanced conversions.", "Tracking"],
+  ["Campanhas ativas", "Busca, Performance Max, chamadas, locais e estrutura por objetivo.", "MÃ­dia"],
   ["Assets", "Sitelinks, chamadas, frases de destaque, lead form, imagens e RSA.", "Criativos"],
-  ["Recomendações", "Oportunidades de assets, palavras, lances, orçamento e força do anúncio.", "Otimização"],
-  ["Palavras-chave", "Termos locais, intenção comercial, negativas e lacunas por nicho.", "Pesquisa"],
-  ["Extensões de local", "Ligação entre presença local e campanhas do anunciante.", "Local"],
-  ["Lead forms", "Formulários nativos, qualidade do lead e integração CRM.", "Captação"],
-  ["Offline conversions", "Importação de vendas, reuniões e fechamentos para melhorar lances.", "Receita"],
+  ["RecomendaÃ§Ãµes", "Oportunidades de assets, palavras, lances, orÃ§amento e forÃ§a do anÃºncio.", "OtimizaÃ§Ã£o"],
+  ["Palavras-chave", "Termos locais, intenÃ§Ã£o comercial, negativas e lacunas por nicho.", "Pesquisa"],
+  ["ExtensÃµes de local", "LigaÃ§Ã£o entre presenÃ§a local e campanhas do anunciante.", "Local"],
+  ["Lead forms", "FormulÃ¡rios nativos, qualidade do lead e integraÃ§Ã£o CRM.", "CaptaÃ§Ã£o"],
+  ["Offline conversions", "ImportaÃ§Ã£o de vendas, reuniÃµes e fechamentos para melhorar lances.", "Receita"],
 ];
 
 const googleModules = [
-  ["GBP Health Score", "Pontua ficha, reputação, conteúdo, fotos e engajamento local.", "Business Profile"],
-  ["Review Radar", "Monitora novas avaliações e sugere respostas com IA.", "Business Profile"],
-  ["Local Performance", "Acompanha chamadas, rotas, cliques e buscas por localização.", "Business Profile"],
-  ["Ads Readiness", "Verifica conversões, tags, landing page, assets e estrutura mínima.", "Google Ads"],
-  ["Conversion Builder", "Sugere ações de conversão, chamadas e eventos para cada nicho.", "Google Ads"],
-  ["Asset Gap Scanner", "Detecta ausência de sitelinks, chamadas, lead forms, imagens e RSA.", "Google Ads"],
-  ["Keyword Opportunity", "Gera clusters por cidade, serviço, intenção e concorrência.", "Planejamento"],
+  ["GBP Health Score", "Pontua ficha, reputaÃ§Ã£o, conteÃºdo, fotos e engajamento local.", "Business Profile"],
+  ["Review Radar", "Monitora novas avaliaÃ§Ãµes e sugere respostas com IA.", "Business Profile"],
+  ["Local Performance", "Acompanha chamadas, rotas, cliques e buscas por localizaÃ§Ã£o.", "Business Profile"],
+  ["Ads Readiness", "Verifica conversÃµes, tags, landing page, assets e estrutura mÃ­nima.", "Google Ads"],
+  ["Conversion Builder", "Sugere aÃ§Ãµes de conversÃ£o, chamadas e eventos para cada nicho.", "Google Ads"],
+  ["Asset Gap Scanner", "Detecta ausÃªncia de sitelinks, chamadas, lead forms, imagens e RSA.", "Google Ads"],
+  ["Keyword Opportunity", "Gera clusters por cidade, serviÃ§o, intenÃ§Ã£o e concorrÃªncia.", "Planejamento"],
   ["Offline Revenue Sync", "Envia vendas fechadas para otimizar campanhas e ROI.", "CRM + Ads"],
 ];
 
 const googleConnectors = [
   ["Google Business Profile APIs", "Locations, reviews, posts, Q&A, performance e notifications.", "API oficial"],
-  ["Business Profile Performance API", "Métricas diárias de chamadas, rotas, cliques e buscas.", "API oficial"],
-  ["Google Ads API", "Conversões, assets, recomendações, campanhas e relatórios.", "API oficial"],
+  ["Business Profile Performance API", "MÃ©tricas diÃ¡rias de chamadas, rotas, cliques e buscas.", "API oficial"],
+  ["Google Ads API", "ConversÃµes, assets, recomendaÃ§Ãµes, campanhas e relatÃ³rios.", "API oficial"],
   ["Google Maps/Places API", "Descoberta, dados locais, geocoding e enriquecimento.", "API oficial"],
-  ["Google Tag / GTM / GA4", "Eventos, tags, públicos, conversões e qualidade do tracking.", "Tracking"],
-  ["PageSpeed Insights", "Velocidade, Core Web Vitals e risco de conversão.", "Performance"],
+  ["Google Tag / GTM / GA4", "Eventos, tags, pÃºblicos, conversÃµes e qualidade do tracking.", "Tracking"],
+  ["PageSpeed Insights", "Velocidade, Core Web Vitals e risco de conversÃ£o.", "Performance"],
 ];
 
 const usageMetrics = [
-  ["Varreduras Google", 68, "8.740 de 12.840 créditos"],
+  ["Varreduras Google", 68, "8.740 de 12.840 crÃ©ditos"],
   ["Enriquecimentos", 54, "2.410 leads enriquecidos"],
-  ["Diagnósticos PDF", 31, "148 relatórios gerados"],
+  ["DiagnÃ³sticos PDF", 31, "148 relatÃ³rios gerados"],
   ["WhatsApp aberto", 44, "312 conversas iniciadas"],
-  ["Exportações", 22, "34 arquivos CSV/PDF"],
+  ["ExportaÃ§Ãµes", 22, "34 arquivos CSV/PDF"],
 ];
 
 const plans = [
-  ["Starter", "R$ 297/mês", "1 usuário, 1.000 créditos e busca manual"],
-  ["Growth", "R$ 697/mês", "5 usuários, 6.000 créditos, CRM e WhatsApp"],
-  ["Enterprise", "Sob consulta", "Usuários ilimitados, APIs Google, IA e permissões avançadas"],
+  ["Starter", "R$ 297/mÃªs", "1 usuÃ¡rio, 1.000 crÃ©ditos e busca manual"],
+  ["Growth", "R$ 697/mÃªs", "5 usuÃ¡rios, 6.000 crÃ©ditos, CRM e WhatsApp"],
+  ["Enterprise", "Sob consulta", "UsuÃ¡rios ilimitados, APIs Google, IA e permissÃµes avanÃ§adas"],
 ];
 
 const invoices = [
   ["NOD-2026-005", "Nodere Enterprise", "Pago", "R$ 1.497"],
-  ["NOD-2026-004", "Créditos extras", "Pago", "R$ 397"],
+  ["NOD-2026-004", "CrÃ©ditos extras", "Pago", "R$ 397"],
   ["NOD-2026-003", "Nodere Enterprise", "Pago", "R$ 1.497"],
 ];
 
@@ -281,10 +291,10 @@ const conversations = [
     leadName: "Odonto Prime Paulista",
     channel: "WhatsApp",
     status: "Lead quente",
-    last: "Pode me mandar esse diagnóstico?",
+    last: "Pode me mandar esse diagnÃ³stico?",
     messages: [
-      ["sent", "Oi, tudo bem? Analisei sua presença no Google e encontrei algumas oportunidades de captação local."],
-      ["received", "Pode me mandar esse diagnóstico?"],
+      ["sent", "Oi, tudo bem? Analisei sua presenÃ§a no Google e encontrei algumas oportunidades de captaÃ§Ã£o local."],
+      ["received", "Pode me mandar esse diagnÃ³stico?"],
     ],
   },
   {
@@ -294,7 +304,7 @@ const conversations = [
     status: "Aguardando resposta",
     last: "Vou olhar e te retorno.",
     messages: [
-      ["sent", "Identifiquei ausência de pixel e gargalos no site mobile. Posso te mostrar o impacto disso na captação?"],
+      ["sent", "Identifiquei ausÃªncia de pixel e gargalos no site mobile. Posso te mostrar o impacto disso na captaÃ§Ã£o?"],
       ["received", "Vou olhar e te retorno."],
     ],
   },
@@ -305,7 +315,7 @@ const conversations = [
     status: "Proposta enviada",
     last: "Proposta enviada com plano de tracking e Ads.",
     messages: [
-      ["sent", "Enviei uma proposta com correção de tracking, Google Ads local e mensuração de ROI."],
+      ["sent", "Enviei uma proposta com correÃ§Ã£o de tracking, Google Ads local e mensuraÃ§Ã£o de ROI."],
     ],
   },
 ];
@@ -313,54 +323,54 @@ const conversations = [
 let activeConversationId = conversations[0].id;
 
 let forecastMetrics = [
-  ["Receita prevista", "R$ 84.600", "+18% vs mês anterior"],
+  ["Receita prevista", "R$ 84.600", "+18% vs mÃªs anterior"],
   ["Deals em proposta", "37", "R$ 122k em pipeline"],
-  ["Taxa de reunião", "24%", "Meta mensal: 28%"],
-  ["Tempo médio resposta", "1h 12m", "SLA alvo: 2h"],
+  ["Taxa de reuniÃ£o", "24%", "Meta mensal: 28%"],
+  ["Tempo mÃ©dio resposta", "1h 12m", "SLA alvo: 2h"],
 ];
 
 const operatorStats = [
   ["Ana Comercial", "R$ 38.400", "12 propostas", 88],
-  ["Marina SDR", "42 reuniões", "156 contatos", 81],
-  ["Rafael Ops", "97 diagnósticos", "2.410 leads", 76],
-  ["Édipo Lima", "R$ 62.000", "18 fechamentos", 94],
+  ["Marina SDR", "42 reuniÃµes", "156 contatos", 81],
+  ["Rafael Ops", "97 diagnÃ³sticos", "2.410 leads", 76],
+  ["Ã‰dipo Lima", "R$ 62.000", "18 fechamentos", 94],
 ];
 
 const goalStats = [
   ["Leads qualificados", 74, "3.421 de 4.600"],
-  ["Diagnósticos enviados", 58, "842 de 1.450"],
-  ["Reuniões marcadas", 63, "316 de 500"],
+  ["DiagnÃ³sticos enviados", 58, "842 de 1.450"],
+  ["ReuniÃµes marcadas", 63, "316 de 500"],
   ["Receita fechada", 46, "R$ 92k de R$ 200k"],
 ];
 
 const heatmapStats = [
-  ["Seg", 84, "412 ações"],
-  ["Ter", 91, "486 ações"],
-  ["Qua", 76, "351 ações"],
-  ["Qui", 88, "438 ações"],
-  ["Sex", 69, "298 ações"],
-  ["Sáb", 32, "74 ações"],
-  ["Dom", 18, "31 ações"],
+  ["Seg", 84, "412 aÃ§Ãµes"],
+  ["Ter", 91, "486 aÃ§Ãµes"],
+  ["Qua", 76, "351 aÃ§Ãµes"],
+  ["Qui", 88, "438 aÃ§Ãµes"],
+  ["Sex", 69, "298 aÃ§Ãµes"],
+  ["SÃ¡b", 32, "74 aÃ§Ãµes"],
+  ["Dom", 18, "31 aÃ§Ãµes"],
 ];
 
 const diagnosisPackages = {
   tracking_ads: [
-    "Configurar GTM, GA4 e eventos de conversão para chamada, WhatsApp e formulário.",
-    "Criar campanha Google Ads local com palavras de alta intenção.",
-    "Adicionar extensões de chamada, sitelinks e frases de destaque.",
+    "Configurar GTM, GA4 e eventos de conversÃ£o para chamada, WhatsApp e formulÃ¡rio.",
+    "Criar campanha Google Ads local com palavras de alta intenÃ§Ã£o.",
+    "Adicionar extensÃµes de chamada, sitelinks e frases de destaque.",
     "Criar rotina de acompanhamento semanal de leads e custo por oportunidade.",
   ],
   profile_ads: [
-    "Otimizar Perfil da Empresa com categoria, descrição, fotos, serviços e perguntas frequentes.",
-    "Criar rotina de posts, respostas a avaliações e melhoria de reputação local.",
-    "Ativar campanhas Google Ads conectadas à presença local.",
-    "Mensurar chamadas, rotas, cliques no site e conversões por WhatsApp.",
+    "Otimizar Perfil da Empresa com categoria, descriÃ§Ã£o, fotos, serviÃ§os e perguntas frequentes.",
+    "Criar rotina de posts, respostas a avaliaÃ§Ãµes e melhoria de reputaÃ§Ã£o local.",
+    "Ativar campanhas Google Ads conectadas Ã  presenÃ§a local.",
+    "Mensurar chamadas, rotas, cliques no site e conversÃµes por WhatsApp.",
   ],
   full_growth: [
-    "Corrigir rastreamento completo com GTM, GA4, conversões e eventos offline.",
-    "Otimizar Perfil da Empresa, avaliações, fotos, posts e Q&A.",
+    "Corrigir rastreamento completo com GTM, GA4, conversÃµes e eventos offline.",
+    "Otimizar Perfil da Empresa, avaliaÃ§Ãµes, fotos, posts e Q&A.",
     "Criar campanhas Search e Performance Max locais.",
-    "Implantar CRM de follow-up, WhatsApp comercial e relatório de ROI mensal.",
+    "Implantar CRM de follow-up, WhatsApp comercial e relatÃ³rio de ROI mensal.",
   ],
 };
 
@@ -373,9 +383,34 @@ const recommendedServices = [
 
 const messageVariants = [
   "Oi, tudo bem? Fiz uma leitura rapida da presenca da sua empresa no Google e encontrei alguns pontos que podem estar reduzindo chamadas, formularios e conversoes. Posso te mandar um diagnostico gratuito com as principais oportunidades?",
-  "Olá. Percebi que sua empresa tem demanda local, mas alguns sinais digitais importantes parecem incompletos, como rastreamento, remarketing e otimizacao no Google. Posso te mostrar em poucos minutos onde existe potencial de ganho?",
+  "OlÃ¡. Percebi que sua empresa tem demanda local, mas alguns sinais digitais importantes parecem incompletos, como rastreamento, remarketing e otimizacao no Google. Posso te mostrar em poucos minutos onde existe potencial de ganho?",
   "Oi. Analisei rapidamente sua presenca online e encontrei oportunidades para captar mais clientes pelo Google com campanhas, conversoes e WhatsApp melhor configurados. Quer que eu envie um diagnostico objetivo?",
 ];
+
+const regionStates = {
+  Sudeste: ["SP", "RJ", "MG", "ES"],
+  Sul: ["PR", "SC", "RS"],
+  Nordeste: ["BA", "PE", "CE", "RN", "PB", "AL", "SE", "PI", "MA"],
+  "Centro-Oeste": ["GO", "DF", "MT", "MS"],
+  Norte: ["AM", "PA", "RO", "RR", "AP", "AC", "TO"],
+};
+
+const stateCities = {
+  SP: ["Sao Paulo", "Campinas", "Santos", "Ribeirao Preto"],
+  RJ: ["Rio de Janeiro", "Niteroi", "Petropolis"],
+  MG: ["Belo Horizonte", "Uberlandia", "Contagem"],
+  PR: ["Curitiba", "Londrina", "Maringa"],
+  SC: ["Florianopolis", "Joinville", "Blumenau"],
+  RS: ["Porto Alegre", "Caxias do Sul", "Pelotas"],
+  BA: ["Salvador", "Feira de Santana", "Vitoria da Conquista"],
+  PE: ["Recife", "Olinda", "Caruaru"],
+  GO: ["Goiania", "Aparecida de Goiania", "Anapolis"],
+  DF: ["Brasilia", "Taguatinga", "Aguas Claras"],
+  AM: ["Manaus", "Itacoatiara", "Parintins"],
+  PA: ["Belem", "Ananindeua", "Santarem"],
+};
+
+let selectedBulkLeads = new Set();
 
 const navItems = document.querySelectorAll(".nav-item");
 const sections = document.querySelectorAll(".panel-section");
@@ -397,6 +432,95 @@ let apiSettings = JSON.parse(localStorage.getItem("nodere:api-settings") || "nul
   token: "",
 };
 
+function normalizeText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function getLeadState(lead) {
+  return lead.raw?.state || lead.city?.match(/\b[A-Z]{2}\b/)?.[0] || "";
+}
+
+function getLeadCityName(lead) {
+  return lead.city?.split(",")[0]?.trim() || lead.raw?.city || "";
+}
+
+function getLeadRegion(lead) {
+  const state = getLeadState(lead);
+  return Object.entries(regionStates).find(([, states]) => states.includes(state))?.[0] || "Outras regioes";
+}
+
+function inferCurrentService(lead) {
+  if (lead.flags.some((flag) => normalizeText(flag).includes("ads"))) return "Presenca organica, sem midia paga ativa";
+  if (lead.flags.some((flag) => normalizeText(flag).includes("site"))) return "Atendimento local sem site estruturado";
+  if (lead.flags.some((flag) => normalizeText(flag).includes("pixel") || normalizeText(flag).includes("ga4"))) return "Site ativo com mensuracao incompleta";
+  return "Presenca digital basica";
+}
+
+function inferOffer(lead) {
+  const segment = normalizeText(lead.segment);
+  if (segment.includes("odonto") || segment.includes("clinica")) return "Google Ads local + landing page + WhatsApp rastreavel";
+  if (segment.includes("oficina")) return "Campanhas Maps + chamadas + reputacao Google";
+  if (segment.includes("energia")) return "Search Ads para ticket alto + CRM de proposta";
+  return "Auditoria digital + Google Ads + tracking de conversoes";
+}
+
+function buildAiSummary(lead) {
+  return `${lead.name} atua em ${lead.segment} em ${lead.city}. A analise indica ${lead.flags.join(", ").toLowerCase()}, com score ${lead.score}/100. Oportunidade recomendada: ${lead.offer || inferOffer(lead)}. Abordagem ideal: diagnostico gratuito focado em perda de contatos, rastreamento e captacao local.`;
+}
+
+function enrichLead(lead, index = 0) {
+  const state = getLeadState(lead);
+  const city = getLeadCityName(lead);
+  const firstName = ["Mariana", "Carlos", "Juliana", "Rafael", "Patricia"][index % 5];
+  const secondName = ["Lima", "Souza", "Almeida", "Mendes", "Rocha"][index % 5];
+  const domain = normalizeText(lead.name).replace(/[^a-z0-9]+/g, "").slice(0, 20) || "empresa";
+  const currentService = lead.currentService || inferCurrentService(lead);
+  const offer = lead.offer || inferOffer(lead);
+  const socials = lead.socials || {
+    instagram: `@${domain}`,
+    linkedin: `${lead.name} no LinkedIn`,
+    facebook: `${lead.name} Facebook`,
+  };
+
+  return {
+    crmStatus: lead.crmStatus || (lead.score >= 86 ? "hot" : lead.score >= 78 ? "warm" : "cold"),
+    temperature: lead.temperature || (lead.score >= 86 ? "hot" : lead.score >= 78 ? "warm" : "cold"),
+    leadSource: lead.leadSource || lead.source || "Busca local / Google Places",
+    companySummary: lead.companySummary || buildAiSummary({ ...lead, currentService, offer }),
+    currentService,
+    offer,
+    hours: lead.hours || "Segunda a sexta, 08h as 18h",
+    socials,
+    decisionMakers:
+      lead.decisionMakers ||
+      [
+        {
+          name: `${firstName} ${secondName}`,
+          role: "Decisor comercial",
+          email: `${normalizeText(firstName)}@${domain}.com.br`,
+          birthday: `${String((index % 27) + 1).padStart(2, "0")}/0${(index % 8) + 1}`,
+          phone: lead.whatsapp,
+          linkedin: `${firstName} ${secondName}`,
+        },
+        {
+          name: `Atendimento ${city || state || "local"}`,
+          role: "Contato operacional",
+          email: `contato@${domain}.com.br`,
+          birthday: "A confirmar",
+          phone: lead.whatsapp,
+          linkedin: "A enriquecer",
+        },
+      ],
+    ...lead,
+  };
+}
+
+leads = leads.map((lead, index) => enrichLead(lead, index));
+selectedBulkLeads = new Set(leads.slice(0, 3).map((lead) => lead.name));
+
 function getActiveUser() {
   return teamMembers.find((member) => member.id === activeAccessUserId) || teamMembers[0];
 }
@@ -416,7 +540,7 @@ function persistTeamMembers() {
 function renderLoginOptions() {
   const select = document.getElementById("loginUserSelect");
   select.innerHTML = teamMembers
-    .map((member) => `<option value="${member.id}">${member.name} · ${member.role}</option>`)
+    .map((member) => `<option value="${member.id}">${member.name} Â· ${member.role}</option>`)
     .join("");
   select.value = sessionUserId;
 }
@@ -461,7 +585,7 @@ function renderAccessBanner() {
       <strong>Visualizando como ${user.name}</strong>
       <span>${user.permissions.length} abas liberadas</span>
     </div>
-    <button class="ghost-button" id="exitAccessSimulation">Voltar sessão</button>
+    <button class="ghost-button" id="exitAccessSimulation">Voltar sessÃ£o</button>
   `;
   document.body.appendChild(banner);
   document.getElementById("exitAccessSimulation").addEventListener("click", () => {
@@ -491,12 +615,51 @@ function renderOpportunities() {
             <strong>${lead.name}</strong>
             <span class="score-badge">${lead.score}</span>
           </header>
-          <small>${lead.segment} · ${lead.city}</small>
+          <small>${lead.segment} Â· ${lead.city}</small>
           <span>${lead.diagnosis}</span>
         </article>
       `,
     )
     .join("");
+}
+
+function renderDashboardMetrics() {
+  const total = leads.length;
+  const qualified = leads.filter((lead) => lead.score >= 80).length;
+  const risk = leads.filter((lead) => lead.flags.some((flag) => /sem|ausente|ruim|lento|incompleto/i.test(flag))).length;
+  const average = total ? Math.round(leads.reduce((sum, lead) => sum + Number(lead.score || 0), 0) / total) : 0;
+  const regionCounts = leads.reduce((acc, lead) => {
+    const region = getLeadRegion(lead);
+    acc[region] = (acc[region] || 0) + 1;
+    return acc;
+  }, {});
+  const topRegion = Object.entries(regionCounts).sort((a, b) => b[1] - a[1])[0] || ["Todas as regioes", total];
+
+  [
+    ["metricTotalCompanies", total],
+    ["metricQualifiedLeads", qualified],
+    ["metricRiskLeads", risk],
+    ["metricAverageScore", average],
+  ].forEach(([id, value]) => {
+    const element = document.getElementById(id);
+    if (!element) return;
+    element.dataset.count = value;
+    element.textContent = Number(value).toLocaleString("pt-BR");
+  });
+
+  document.getElementById("metricTotalCompaniesHint").textContent = `${total} empresas na base ativa`;
+  document.getElementById("metricQualifiedLeadsHint").textContent = `${qualified} leads com alta prioridade`;
+  document.getElementById("metricRiskLeadsHint").textContent = `${risk} com falhas digitais`;
+  document.getElementById("metricAverageScoreHint").textContent = `Score medio recalculado agora`;
+  document.getElementById("mapRegionLabel").textContent = topRegion[0];
+  document.getElementById("mapRegionInsight").textContent = `${topRegion[1]} oportunidades mapeadas na base atual`;
+
+  const funnelData = crmStages.slice(3).map(([key, label], index) => {
+    const count = leads.filter((lead) => (lead.crmStatus || "lead_new") === key).length;
+    const width = Math.max(14, Math.min(96, total ? Math.round((count / total) * 100) : 14));
+    return `<div style="--w: ${width}%"><span>${label}</span><strong>${count}</strong></div>`;
+  });
+  document.getElementById("dashboardFunnel").innerHTML = funnelData.join("");
 }
 
 function renderLeadTable(items = leads) {
@@ -506,10 +669,12 @@ function renderLeadTable(items = leads) {
         <article class="lead-row ${lead.name === selectedLead.name ? "active" : ""}" data-lead="${lead.name}">
           <div>
             <strong>${lead.name}</strong>
-            <p>${lead.segment} · ${lead.city}</p>
+            <p>${lead.segment} · ${lead.city} · ${lead.leadSource || "Busca local"}</p>
+            <small>${lead.companySummary || lead.diagnosis}</small>
           </div>
           <div class="lead-flags">
             <span class="score-badge">${lead.score}</span>
+            <span>${lead.temperature === "hot" ? "Quente" : lead.temperature === "warm" ? "Morno" : "Frio"}</span>
             ${lead.flags.map((flag) => `<span>${flag}</span>`).join("")}
           </div>
         </article>
@@ -593,7 +758,7 @@ function mapApiLeadToUiLead(item) {
   if (scan.findings?.length) flags.push(...scan.findings.slice(0, 3));
   if (!scan.findings?.length) flags.push("Auditoria pendente");
 
-  return {
+  return enrichLead({
     id: item.id || item.googlePlaceId || item.google_place_id || item.companyName || item.company_name,
     backendId: item.id || item.backendId,
     googlePlaceId: item.googlePlaceId || item.google_place_id,
@@ -617,13 +782,13 @@ function mapApiLeadToUiLead(item) {
       createdAt: event.created_at,
     })),
     raw: item,
-  };
+  });
 }
 
 function mergeLeads(newLeads) {
   const existingKeys = new Set(leads.map((lead) => lead.googlePlaceId || lead.name));
   const unique = newLeads.filter((lead) => !existingKeys.has(lead.googlePlaceId || lead.name));
-  leads = [...unique, ...leads];
+  leads = [...unique.map((lead, index) => enrichLead(lead, index)), ...leads];
   if (unique[0]) selectedLead = unique[0];
   return unique.length;
 }
@@ -726,6 +891,21 @@ function renderCompanyIntelligence(lead = selectedLead) {
   document.getElementById("companyTimeline").innerHTML = [...history, ...timeline]
     .map(([time, text]) => `<div class="timeline-item"><strong>${time}</strong><span>${text}</span></div>`)
     .join("");
+
+  document.getElementById("decisionMakers").innerHTML = (lead.decisionMakers || [])
+    .map(
+      (person) => `
+        <article class="contact-card">
+          <strong>${person.name}</strong>
+          <span>${person.role}</span>
+          <span>Email: ${person.email}</span>
+          <span>WhatsApp: ${person.phone}</span>
+          <span>Aniversario: ${person.birthday}</span>
+          <span>LinkedIn: ${person.linkedin}</span>
+        </article>
+      `,
+    )
+    .join("");
 }
 
 function renderAdmin() {
@@ -789,7 +969,7 @@ function renderAdmin() {
 function renderAccessEditor() {
   const user = getEditingUser();
   const select = document.getElementById("accessUserSelect");
-  select.innerHTML = teamMembers.map((member) => `<option value="${member.id}">${member.name} · ${member.role}</option>`).join("");
+  select.innerHTML = teamMembers.map((member) => `<option value="${member.id}">${member.name} Â· ${member.role}</option>`).join("");
   select.value = user.id;
 
   document.getElementById("accessModuleGrid").innerHTML = moduleCatalog
@@ -888,7 +1068,7 @@ function renderGoogleIntelligence(lead = selectedLead) {
   document.getElementById("googleLeadName").textContent = lead.name;
   document.getElementById("googleOpportunityScore").textContent = googleScore;
   document.getElementById("googleLeadSummary").textContent =
-    `${lead.segment} em ${lead.city}. A análise combina Perfil da Empresa, avaliações, performance local, readiness de Google Ads, conversões e lacunas de assets para montar uma oferta de correção priorizada.`;
+    `${lead.segment} em ${lead.city}. A anÃ¡lise combina Perfil da Empresa, avaliaÃ§Ãµes, performance local, readiness de Google Ads, conversÃµes e lacunas de assets para montar uma oferta de correÃ§Ã£o priorizada.`;
 
   document.getElementById("gbpSignals").innerHTML = googleBusinessSignals
     .map(
@@ -931,11 +1111,11 @@ function renderGoogleIntelligence(lead = selectedLead) {
     .join("");
 
   const actions = [
-    `Criar plano de correção para ${lead.flags[0].toLowerCase()}.`,
-    "Configurar ou auditar conversões de chamada, WhatsApp e formulário.",
+    `Criar plano de correÃ§Ã£o para ${lead.flags[0].toLowerCase()}.`,
+    "Configurar ou auditar conversÃµes de chamada, WhatsApp e formulÃ¡rio.",
     "Montar pacote de assets: sitelinks, chamadas, frases de destaque e lead form.",
-    "Criar rotina de reputação: respostas a avaliações, posts e Q&A.",
-    "Importar fechamentos offline para melhorar otimização de campanhas.",
+    "Criar rotina de reputaÃ§Ã£o: respostas a avaliaÃ§Ãµes, posts e Q&A.",
+    "Importar fechamentos offline para melhorar otimizaÃ§Ã£o de campanhas.",
   ];
 
   document.getElementById("googleActionList").innerHTML = actions
@@ -1035,12 +1215,12 @@ function renderInbox() {
   document.getElementById("threadCompany").textContent = active.leadName;
   document.getElementById("threadStatus").textContent = active.status;
   document.getElementById("threadMessages").innerHTML = active.messages
-    .map(([type, text]) => `<div class="message-bubble ${type}"><strong>${type === "sent" ? "Você" : active.leadName}</strong><span>${text}</span></div>`)
+    .map(([type, text]) => `<div class="message-bubble ${type}"><strong>${type === "sent" ? "VocÃª" : active.leadName}</strong><span>${text}</span></div>`)
     .join("");
 
   const replies = [
-    "Enviar diagnóstico",
-    "Agendar reunião",
+    "Enviar diagnÃ³stico",
+    "Agendar reuniÃ£o",
     "Explicar ROI",
   ];
   document.getElementById("quickReplies").innerHTML = replies
@@ -1053,22 +1233,22 @@ function renderInbox() {
   });
 
   document.getElementById("slaList").innerHTML = [
-    ["Responder agora", "Lead quente aguardando diagnóstico."],
+    ["Responder agora", "Lead quente aguardando diagnÃ³stico."],
     ["Follow-up 48h", "Propostas sem resposta devem receber nova abordagem."],
-    ["Reunião", "Priorizar leads com score acima de 80."],
+    ["ReuniÃ£o", "Priorizar leads com score acima de 80."],
   ]
     .map(([title, text]) => `<article class="sla-item"><header><strong>${title}</strong><span class="status-pill">SLA</span></header><span>${text}</span></article>`)
     .join("");
 }
 
-function buildInboxReply(intent = "Enviar diagnóstico") {
+function buildInboxReply(intent = "Enviar diagnÃ³stico") {
   const lead = selectedLead;
   const templates = {
-    "Enviar diagnóstico": `Perfeito. Vou te mandar um diagnóstico objetivo com os pontos que encontrei na presença digital da ${lead.name}, principalmente ${lead.flags.join(", ").toLowerCase()}.`,
-    "Agendar reunião": `Posso te mostrar isso em uma reunião rápida de 20 minutos. A ideia é explicar onde estão as perdas e quais correções podem gerar mais contatos pelo Google.`,
-    "Explicar ROI": `O ponto principal é rastrear chamadas, WhatsApp e formulários para saber quanto cada campanha gera de oportunidade real. Hoje esses sinais parecem incompletos.`,
+    "Enviar diagnÃ³stico": `Perfeito. Vou te mandar um diagnÃ³stico objetivo com os pontos que encontrei na presenÃ§a digital da ${lead.name}, principalmente ${lead.flags.join(", ").toLowerCase()}.`,
+    "Agendar reuniÃ£o": `Posso te mostrar isso em uma reuniÃ£o rÃ¡pida de 20 minutos. A ideia Ã© explicar onde estÃ£o as perdas e quais correÃ§Ãµes podem gerar mais contatos pelo Google.`,
+    "Explicar ROI": `O ponto principal Ã© rastrear chamadas, WhatsApp e formulÃ¡rios para saber quanto cada campanha gera de oportunidade real. Hoje esses sinais parecem incompletos.`,
   };
-  return templates[intent] || templates["Enviar diagnóstico"];
+  return templates[intent] || templates["Enviar diagnÃ³stico"];
 }
 
 function renderPerformance() {
@@ -1133,8 +1313,8 @@ function recalculateForecast() {
   forecastMetrics = [
     ["Receita prevista", revenue.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }), "Forecast recalculado agora"],
     ["Deals em proposta", String(proposals), "Pipeline atualizado"],
-    ["Taxa de reunião", `${22 + Math.floor(Math.random() * 8)}%`, "Com base nos últimos contatos"],
-    ["Tempo médio resposta", `${50 + Math.floor(Math.random() * 45)}min`, "SLA em melhoria"],
+    ["Taxa de reuniÃ£o", `${22 + Math.floor(Math.random() * 8)}%`, "Com base nos Ãºltimos contatos"],
+    ["Tempo mÃ©dio resposta", `${50 + Math.floor(Math.random() * 45)}min`, "SLA em melhoria"],
   ];
   renderPerformance();
 }
@@ -1146,7 +1326,7 @@ function saveCurrentSearch() {
   const newSearch = {
     id: Date.now(),
     title: `${segment} em ${city}`,
-    filters: `${city} · ${keyword} · baixa maturidade digital`,
+    filters: `${city} Â· ${keyword} Â· baixa maturidade digital`,
     leads: Math.floor(48 + Math.random() * 180),
     cadence: "Diaria",
   };
@@ -1182,12 +1362,18 @@ function selectLead(lead) {
   document.getElementById("companyWhatsapp").textContent = lead.whatsapp;
   document.getElementById("companySite").textContent = lead.site;
   document.getElementById("companyGoogle").textContent = lead.google;
+  document.getElementById("companyHours").textContent = lead.hours || "A enriquecer";
+  document.getElementById("companyCurrentService").textContent = lead.currentService || inferCurrentService(lead);
+  document.getElementById("companyOffer").textContent = lead.offer || inferOffer(lead);
+  document.getElementById("companySocials").textContent = lead.socials ? `${lead.socials.instagram} · ${lead.socials.linkedin}` : "A enriquecer";
   document.getElementById("companyDiagnosis").textContent =
-    `${lead.name} apresenta ${lead.flags.join(", ").toLowerCase()}. ${lead.diagnosis} A recomendacao inicial e ofertar auditoria de tracking, campanha local e plano de conversao por WhatsApp.`;
+    `${lead.companySummary || `${lead.name} apresenta ${lead.flags.join(", ").toLowerCase()}. ${lead.diagnosis}`} A recomendacao inicial e ofertar ${lead.offer || inferOffer(lead)}.`;
   document.getElementById("companyScore").textContent = lead.score;
   document.getElementById("companyScoreRing").style.setProperty("--score", lead.score);
   document.getElementById("companyStatus").textContent = lead.score >= 85 ? "Alta oportunidade" : "Oportunidade qualificada";
   document.getElementById("companyCrmStatus").value = selectedLead.crmStatus;
+  document.getElementById("companyLeadSource").value = selectedLead.leadSource || "";
+  document.getElementById("companyTemperature").value = selectedLead.temperature || "warm";
   setInlineStatus("crmStatusInfo", `Etapa atual: ${crmStages.find(([key]) => key === selectedLead.crmStatus)?.[1] || "Lead novo"}.`);
   renderCompanyIntelligence(lead);
   renderCopilot(lead);
@@ -1244,14 +1430,14 @@ function generateProposal() {
 function renderDiagnosisDocument(lead = selectedLead) {
   const tone = document.getElementById("diagnosisTone")?.value || "consultivo";
   const packageKey = document.getElementById("diagnosisPackage")?.value || "tracking_ads";
-  const maturity = lead.score >= 88 ? "Média" : lead.score >= 78 ? "Baixa" : "Crítica";
+  const maturity = lead.score >= 88 ? "MÃ©dia" : lead.score >= 78 ? "Baixa" : "CrÃ­tica";
   const potential = lead.score >= 85 ? "Muito alto" : "Alto";
-  const adsReadiness = lead.flags.some((flag) => flag.toLowerCase().includes("conversao") || flag.toLowerCase().includes("ads")) ? "Crítico" : "Atenção";
+  const adsReadiness = lead.flags.some((flag) => flag.toLowerCase().includes("conversao") || flag.toLowerCase().includes("ads")) ? "CrÃ­tico" : "AtenÃ§Ã£o";
 
   const toneOpeners = {
-    consultivo: `A análise indica que ${lead.name} tem demanda local relevante, mas apresenta gargalos digitais que reduzem previsibilidade comercial.`,
-    direto: `${lead.name} está perdendo oportunidades por falhas digitais objetivas que podem ser corrigidas com rastreamento, presença local e Google Ads.`,
-    premium: `${lead.name} possui potencial para uma operação de aquisição local mais sofisticada, conectando reputação, intenção de busca, mídia paga e CRM.`,
+    consultivo: `A anÃ¡lise indica que ${lead.name} tem demanda local relevante, mas apresenta gargalos digitais que reduzem previsibilidade comercial.`,
+    direto: `${lead.name} estÃ¡ perdendo oportunidades por falhas digitais objetivas que podem ser corrigidas com rastreamento, presenÃ§a local e Google Ads.`,
+    premium: `${lead.name} possui potencial para uma operaÃ§Ã£o de aquisiÃ§Ã£o local mais sofisticada, conectando reputaÃ§Ã£o, intenÃ§Ã£o de busca, mÃ­dia paga e CRM.`,
   };
 
   document.getElementById("docCompanyName").textContent = lead.name;
@@ -1260,10 +1446,10 @@ function renderDiagnosisDocument(lead = selectedLead) {
   document.getElementById("docPotential").textContent = potential;
   document.getElementById("docAdsReadiness").textContent = adsReadiness;
   document.getElementById("docExecutiveSummary").textContent =
-    `${toneOpeners[tone]} Foram encontrados sinais como ${lead.flags.join(", ").toLowerCase()}. O cenário sugere oportunidade para melhorar captação, mensuração de conversões e abordagem comercial por WhatsApp.`;
+    `${toneOpeners[tone]} Foram encontrados sinais como ${lead.flags.join(", ").toLowerCase()}. O cenÃ¡rio sugere oportunidade para melhorar captaÃ§Ã£o, mensuraÃ§Ã£o de conversÃµes e abordagem comercial por WhatsApp.`;
 
   document.getElementById("docFindings").innerHTML = lead.flags
-    .map((flag) => `<div><strong>${flag}</strong><span>Impacta a capacidade de transformar buscas no Google em contatos rastreáveis e oportunidades comerciais.</span></div>`)
+    .map((flag) => `<div><strong>${flag}</strong><span>Impacta a capacidade de transformar buscas no Google em contatos rastreÃ¡veis e oportunidades comerciais.</span></div>`)
     .join("");
 
   document.getElementById("docPlan").innerHTML = diagnosisPackages[packageKey]
@@ -1271,7 +1457,7 @@ function renderDiagnosisDocument(lead = selectedLead) {
     .join("");
 
   document.getElementById("docPitch").textContent =
-    `Minha recomendação é iniciar com um diagnóstico técnico-comercial de rápida implementação, priorizando os pontos que mais afetam geração de contatos. A proposta é transformar presença local e intenção de busca em reuniões, chamadas e mensagens qualificadas, com acompanhamento por score e ROI.`;
+    `Minha recomendaÃ§Ã£o Ã© iniciar com um diagnÃ³stico tÃ©cnico-comercial de rÃ¡pida implementaÃ§Ã£o, priorizando os pontos que mais afetam geraÃ§Ã£o de contatos. A proposta Ã© transformar presenÃ§a local e intenÃ§Ã£o de busca em reuniÃµes, chamadas e mensagens qualificadas, com acompanhamento por score e ROI.`;
 }
 
 function onlyDigits(value) {
@@ -1382,6 +1568,8 @@ async function runLiveGoogleSearch() {
     const added = mergeLeads(newLeads);
     renderLeadTable(newLeads.length ? newLeads : leads);
     selectLead(newLeads[0] || selectedLead);
+    renderDashboardMetrics();
+    renderBulkLeadList();
     animateScanProgress();
     setInlineStatus("apiSearchStatus", `${newLeads.length} empresas retornadas, ${added} novas adicionadas ao funil.`);
   } catch (error) {
@@ -1404,6 +1592,8 @@ async function loadSavedLeadsFromApi() {
     renderLeadTable(leads);
     renderOpportunities();
     renderKanban();
+    renderDashboardMetrics();
+    renderBulkLeadList();
     selectLead(selectedLead);
     setInlineStatus("apiSearchStatus", `${apiLeads.length} leads carregados da base MVP.`);
   } catch (error) {
@@ -1454,6 +1644,8 @@ async function saveSelectedLeadToApi() {
 async function updateSelectedLeadCrmStatus() {
   const button = document.getElementById("saveCrmStatusApi");
   const nextStatus = document.getElementById("companyCrmStatus").value;
+  selectedLead.leadSource = document.getElementById("companyLeadSource").value.trim() || selectedLead.leadSource;
+  selectedLead.temperature = document.getElementById("companyTemperature").value;
   selectedLead.crmStatus = nextStatus;
   renderKanban();
   addLocalLeadEvent(`Status comercial atualizado para ${crmStages.find(([key]) => key === nextStatus)?.[1] || nextStatus}.`, "status_changed");
@@ -1593,10 +1785,76 @@ function simulateScan() {
   }, 850);
 }
 
+function getSearchFilters() {
+  return {
+    city: document.getElementById("searchCity").value.trim(),
+    segment: document.getElementById("searchSegment").value.trim(),
+    keyword: document.getElementById("searchKeyword").value.trim(),
+    region: document.getElementById("searchRegion").value,
+    state: document.getElementById("searchState").value,
+  };
+}
+
+function createLocalOpportunities(filters) {
+  const states =
+    filters.state && filters.state !== "Todo o Brasil"
+      ? [filters.state]
+      : regionStates[filters.region] || ["SP", "RJ", "MG", "PR", "SC", "RS", "BA", "PE", "GO", "DF", "AM", "PA"];
+  const templates = ["Prime", "Mais", "Viva", "Nova", "Alpha", "Center", "Digital", "Premium"];
+  return states.slice(0, 5).map((state, index) => {
+    const city = filters.city || stateCities[state]?.[index % (stateCities[state]?.length || 1)] || "Brasil";
+    const name = `${templates[index % templates.length]} ${filters.segment || "Empresa Local"} ${city}`.replace(/\s+/g, " ").trim();
+    const score = 72 + ((index * 7 + city.length) % 22);
+    return enrichLead(
+      {
+        name,
+        city: `${city}, ${state}`,
+        segment: filters.segment || "Negocio local",
+        score,
+        cnpj: "A enriquecer",
+        whatsapp: `(${10 + index}) 9${String(88000000 + index * 13457).slice(0, 8)}`,
+        whatsappNumber: `55${10 + index}9${String(88000000 + index * 13457).slice(0, 8)}`,
+        site: index % 2 ? "site sem tags detectadas" : "nao encontrado",
+        google: `${(3.6 + index * 0.2).toFixed(1).replace(".", ",")} estrelas | ${12 + index * 9} avaliacoes`,
+        flags: index % 2 ? ["Sem conversao", "GA4 ausente", "Sem remarketing"] : ["Sem site", "Sem WhatsApp visivel", "Perfil Google incompleto"],
+        diagnosis: `Busca local para ${filters.keyword || filters.segment || "oportunidade"} indica potencial de abordagem consultiva.`,
+        leadSource: "Busca simulada inteligente",
+      },
+      index,
+    );
+  });
+}
+
 function simulateSearch() {
-  const shuffled = [...leads].sort(() => Math.random() - 0.5);
-  renderLeadTable(shuffled);
+  const filters = getSearchFilters();
+  const normCity = normalizeText(filters.city);
+  const normSegment = normalizeText(filters.segment);
+  const normKeyword = normalizeText(filters.keyword);
+  const allowedStates = filters.state !== "Todo o Brasil" ? [filters.state] : regionStates[filters.region] || null;
+  let results = leads.filter((lead) => {
+    const state = getLeadState(lead);
+    const matchesState = !allowedStates || allowedStates.includes(state);
+    const matchesCity = !normCity || normalizeText(lead.city).includes(normCity);
+    const haystack = normalizeText([lead.name, lead.segment, lead.city, lead.diagnosis, lead.companySummary, ...lead.flags].join(" "));
+    const matchesSegment = !normSegment || haystack.includes(normSegment.split(" ")[0]);
+    const matchesKeyword = !normKeyword || haystack.includes(normKeyword.split(" ")[0]);
+    return matchesState && matchesCity && matchesSegment && matchesKeyword;
+  });
+
+  if (!results.length) {
+    results = createLocalOpportunities(filters);
+    mergeLeads(results);
+  }
+
+  results = results.map((lead, index) => enrichLead(lead, index)).sort((a, b) => b.score - a.score);
+  selectedLead = results[0] || selectedLead;
+  selectLead(selectedLead);
+  renderLeadTable(results);
+  renderOpportunities();
+  renderDashboardMetrics();
+  renderBulkLeadList();
   animateScanProgress();
+  setInlineStatus("apiSearchStatus", `${results.length} oportunidades localizadas para ${filters.city || filters.region || "Todo o Brasil"}. Use Google Places para dados reais.`);
 }
 
 function filterGlobalSearch(event) {
@@ -1613,6 +1871,91 @@ function animateScanProgress() {
   document.querySelectorAll("#scanProgress strong").forEach((item, index) => {
     item.textContent = `${values[index]}%`;
   });
+}
+
+function renderBulkLeadList() {
+  const list = document.getElementById("bulkLeadList");
+  const segmentFilter = document.getElementById("bulkSegmentFilter");
+  if (!list || !segmentFilter) return;
+
+  const currentValue = segmentFilter.value || "all";
+  const segments = Array.from(new Set(leads.map((lead) => lead.segment))).sort();
+  segmentFilter.innerHTML = `<option value="all">Todos os segmentos</option>${segments.map((segment) => `<option value="${segment}">${segment}</option>`).join("")}`;
+  segmentFilter.value = segments.includes(currentValue) ? currentValue : "all";
+
+  const filtered = leads.filter((lead) => {
+    const scoreFilter = document.getElementById("bulkScoreFilter")?.value || "all";
+    const segmentOk = segmentFilter.value === "all" || lead.segment === segmentFilter.value;
+    const scoreOk =
+      scoreFilter === "all" ||
+      (scoreFilter === "hot" && lead.score >= 80) ||
+      (scoreFilter === "risk" && lead.flags.some((flag) => /sem|ausente|ruim|lento|incompleto/i.test(flag)));
+    return segmentOk && scoreOk;
+  });
+
+  list.innerHTML = filtered
+    .map(
+      (lead) => `
+        <label>
+          <input type="checkbox" data-bulk-lead="${lead.name}" ${selectedBulkLeads.has(lead.name) ? "checked" : ""} />
+          <span><strong>${lead.name}</strong>${lead.segment} · ${lead.city} · score ${lead.score}</span>
+        </label>
+      `,
+    )
+    .join("");
+
+  list.querySelectorAll("[data-bulk-lead]").forEach((checkbox) => {
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) selectedBulkLeads.add(checkbox.dataset.bulkLead);
+      else selectedBulkLeads.delete(checkbox.dataset.bulkLead);
+      setInlineStatus("bulkAutomationStatus", `${selectedBulkLeads.size} leads selecionados para abordagem.`);
+    });
+  });
+}
+
+function prepareBulkMessage() {
+  const selected = leads.filter((lead) => selectedBulkLeads.has(lead.name));
+  const segments = Array.from(new Set(selected.map((lead) => lead.segment))).join(", ") || "segmentos selecionados";
+  messageText.value = `Oi, tudo bem? Estou analisando empresas de ${segments} e identifiquei oportunidades objetivas de captacao pelo Google, rastreamento e WhatsApp. Posso enviar um diagnostico gratuito e personalizado para sua empresa?`;
+  setInlineStatus("bulkAutomationStatus", `${selected.length} leads preparados. Revise a mensagem e envie um a um ou conecte a WhatsApp API para disparos oficiais.`);
+  switchSection("automation");
+}
+
+function buildCustomReport() {
+  const type = document.getElementById("reportType").value;
+  const format = document.getElementById("reportFormat").value;
+  const reportRows = leads.map((lead) => ({
+    empresa: lead.name,
+    cidade: lead.city,
+    segmento: lead.segment,
+    score: lead.score,
+    temperatura: lead.temperature,
+    origem: lead.leadSource,
+    falhas: lead.flags.join(" | "),
+    oferta: lead.offer,
+    resumo: lead.companySummary,
+  }));
+
+  if (format === "pdf") {
+    setInlineStatus("reportBuilderStatus", `Relatorio ${type} preparado para PDF. Use a janela de impressao para salvar.`);
+    window.print();
+    return;
+  }
+
+  const content = format === "json" ? JSON.stringify(reportRows, null, 2) : [
+    Object.keys(reportRows[0] || {}).join(","),
+    ...reportRows.map((row) => Object.values(row).map((value) => `"${String(value).replaceAll('"', '""')}"`).join(",")),
+  ].join("\n");
+  const blob = new Blob([content], { type: format === "json" ? "application/json;charset=utf-8" : "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `nodere-relatorio-${type}.${format === "json" ? "json" : "csv"}`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  setInlineStatus("reportBuilderStatus", `Relatorio ${type} exportado em ${format.toUpperCase()}.`);
 }
 
 async function exportCsv() {
@@ -1685,7 +2028,7 @@ document.getElementById("upgradePlan").addEventListener("click", () => {
   }, 1200);
 });
 document.getElementById("aiReply").addEventListener("click", () => {
-  document.getElementById("replyText").value = buildInboxReply("Enviar diagnóstico");
+  document.getElementById("replyText").value = buildInboxReply("Enviar diagnÃ³stico");
 });
 document.getElementById("sendReply").addEventListener("click", () => {
   const text = document.getElementById("replyText").value.trim();
@@ -1754,7 +2097,7 @@ document.getElementById("saveApiSettings").addEventListener("click", saveApiSett
 document.getElementById("testApiConnection").addEventListener("click", testApiConnection);
 document.getElementById("sendWhatsappMessage").addEventListener("click", () => openWhatsapp(selectedLead));
 document.getElementById("companyWhatsappButton").addEventListener("click", () => {
-  const text = `Oi, tudo bem? Sou Édipo Lima. Fiz uma análise rápida da presença digital da ${selectedLead.name} e encontrei oportunidades para melhorar captação, rastreamento e conversões pelo Google. Posso te enviar um diagnóstico gratuito?`;
+  const text = `Oi, tudo bem? Sou Ã‰dipo Lima. Fiz uma anÃ¡lise rÃ¡pida da presenÃ§a digital da ${selectedLead.name} e encontrei oportunidades para melhorar captaÃ§Ã£o, rastreamento e conversÃµes pelo Google. Posso te enviar um diagnÃ³stico gratuito?`;
   openWhatsapp(selectedLead, text);
 });
 document.getElementById("liveGoogleSearch").addEventListener("click", runLiveGoogleSearch);
@@ -1764,6 +2107,20 @@ document.getElementById("scanLeadApi").addEventListener("click", scanSelectedLea
 document.getElementById("diagnosisLeadApi").addEventListener("click", generateSelectedLeadDiagnosisWithApi);
 document.getElementById("saveCrmStatusApi").addEventListener("click", updateSelectedLeadCrmStatus);
 document.getElementById("saveLeadNote").addEventListener("click", saveLeadNote);
+document.getElementById("selectAllLeads").addEventListener("click", () => {
+  leads.forEach((lead) => selectedBulkLeads.add(lead.name));
+  renderBulkLeadList();
+  setInlineStatus("bulkAutomationStatus", `${selectedBulkLeads.size} leads selecionados.`);
+});
+document.getElementById("clearLeadSelection").addEventListener("click", () => {
+  selectedBulkLeads.clear();
+  renderBulkLeadList();
+  setInlineStatus("bulkAutomationStatus", "Selecao limpa.");
+});
+document.getElementById("bulkSegmentFilter").addEventListener("change", renderBulkLeadList);
+document.getElementById("bulkScoreFilter").addEventListener("change", renderBulkLeadList);
+document.getElementById("prepareBulkMessage").addEventListener("click", prepareBulkMessage);
+document.getElementById("buildCustomReport").addEventListener("click", buildCustomReport);
 ["adBudget", "ticketValue", "conversionRate"].forEach((id) => {
   document.getElementById(id).addEventListener("input", updateRoi);
 });
@@ -1791,6 +2148,7 @@ window.addEventListener("load", () => {
     document.getElementById("onboardingModal").classList.add("hidden");
   }
   renderOpportunities();
+  renderDashboardMetrics();
   renderLeadTable();
   renderRiskBars();
   renderAudit();
@@ -1801,6 +2159,7 @@ window.addEventListener("load", () => {
   renderBilling();
   renderInbox();
   renderPerformance();
+  renderBulkLeadList();
   selectLead(selectedLead);
   applyAccessVisibility();
   animateCounters();
