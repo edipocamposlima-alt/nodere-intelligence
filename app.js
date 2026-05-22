@@ -529,6 +529,58 @@ function getEditingUser() {
   return teamMembers.find((member) => member.id === editingAccessUserId) || teamMembers[0];
 }
 
+function closeCustomSelects(except = null) {
+  document.querySelectorAll(".custom-select.open").forEach((selectShell) => {
+    if (selectShell !== except) selectShell.classList.remove("open");
+  });
+}
+
+function syncCustomSelect(select) {
+  const shell = select.nextElementSibling?.classList?.contains("custom-select") ? select.nextElementSibling : null;
+  if (!shell) return;
+  const button = shell.querySelector(".custom-select-button");
+  const menu = shell.querySelector(".custom-select-menu");
+  const selectedOption = select.options[select.selectedIndex];
+  button.textContent = selectedOption?.textContent || "Selecione";
+  menu.innerHTML = Array.from(select.options)
+    .map(
+      (option) => `
+        <button type="button" class="custom-select-option ${option.value === select.value ? "active" : ""}" data-value="${option.value}">
+          ${option.textContent}
+        </button>
+      `,
+    )
+    .join("");
+  menu.querySelectorAll(".custom-select-option").forEach((optionButton) => {
+    optionButton.addEventListener("click", () => {
+      select.value = optionButton.dataset.value;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      syncCustomSelect(select);
+      closeCustomSelects();
+    });
+  });
+}
+
+function enhanceSelectControls() {
+  document.querySelectorAll("select").forEach((select) => {
+    let shell = select.nextElementSibling?.classList?.contains("custom-select") ? select.nextElementSibling : null;
+    if (!shell) {
+      shell = document.createElement("div");
+      shell.className = "custom-select";
+      shell.innerHTML = `<button type="button" class="custom-select-button"></button><div class="custom-select-menu"></div>`;
+      select.insertAdjacentElement("afterend", shell);
+      select.classList.add("native-select-hidden");
+      shell.querySelector(".custom-select-button").addEventListener("click", () => {
+        const isOpen = shell.classList.contains("open");
+        closeCustomSelects(shell);
+        shell.classList.toggle("open", !isOpen);
+      });
+      select.addEventListener("change", () => syncCustomSelect(select));
+    }
+    syncCustomSelect(select);
+  });
+}
+
 function canAccess(sectionId, user = getActiveUser()) {
   return user.role === "Owner" || user.permissions.includes(sectionId);
 }
@@ -964,6 +1016,7 @@ function renderAdmin() {
   renderAccessEditor();
   renderWhatsappStatus();
   renderApiSettingsStatus();
+  enhanceSelectControls();
 }
 
 function renderAccessEditor() {
@@ -1882,6 +1935,7 @@ function renderBulkLeadList() {
   const segments = Array.from(new Set(leads.map((lead) => lead.segment))).sort();
   segmentFilter.innerHTML = `<option value="all">Todos os segmentos</option>${segments.map((segment) => `<option value="${segment}">${segment}</option>`).join("")}`;
   segmentFilter.value = segments.includes(currentValue) ? currentValue : "all";
+  syncCustomSelect(segmentFilter);
 
   const filtered = leads.filter((lead) => {
     const scoreFilter = document.getElementById("bulkScoreFilter")?.value || "all";
@@ -2138,6 +2192,10 @@ document.querySelectorAll("[data-export]").forEach((button) => {
   });
 });
 
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".custom-select")) closeCustomSelects();
+});
+
 window.addEventListener("load", () => {
   renderLoginOptions();
   document.getElementById("currentUserButton").textContent = getActiveUser().name;
@@ -2161,6 +2219,7 @@ window.addEventListener("load", () => {
   renderPerformance();
   renderBulkLeadList();
   selectLead(selectedLead);
+  enhanceSelectControls();
   applyAccessVisibility();
   animateCounters();
   setTimeout(() => document.getElementById("loadingScreen").classList.add("hidden"), 650);
