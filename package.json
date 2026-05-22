@@ -1,0 +1,12 @@
+{
+  "name": "nodere-intelligence",
+  "version": "0.1.0-local-mvp",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node serve-nodere.mjs",
+    "serve": "node serve-nodere.mjs",
+    "api": "cd backend && npm run dev",
+    "check": "node --check app.js && node --check serve-nodere.mjs && node --check backend/src/server.js"
+  }
+}

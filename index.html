@@ -1,0 +1,1001 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#070b12" />
+    <title>Nodere Intelligence</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./nodere-icon.png" type="image/png" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="loading-screen" id="loadingScreen">
+      <div class="loader-mark">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <p>Nodere Intelligence</p>
+    </div>
+
+    <div class="onboarding-modal" id="onboardingModal" aria-label="Onboarding do produto">
+      <div class="onboarding-card">
+        <div class="brand-logo"><img src="./nodere-logo-wordmark.png" alt="Nodere" /></div>
+        <span class="section-kicker">Primeira varredura inteligente</span>
+        <h2>Encontre falhas digitais antes da concorrência.</h2>
+        <p>Configure cidade, segmento e sinais de baixa maturidade para priorizar empresas com maior chance de compra para Google Ads, tráfego pago e consultoria digital.</p>
+        <div class="onboarding-steps">
+          <span>1. Buscar empresas locais</span>
+          <span>2. Auditar presença digital</span>
+          <span>3. Priorizar por score comercial</span>
+        </div>
+        <button class="primary-action full" id="startOnboarding">Entrar no painel</button>
+      </div>
+    </div>
+
+    <div class="login-screen hidden" id="loginScreen" aria-label="Login">
+      <div class="login-card">
+        <div class="brand-logo"><img src="./nodere-logo-wordmark.png" alt="Nodere" /></div>
+        <span class="section-kicker">Acesso seguro</span>
+        <h2>Entrar no Nodere Intelligence</h2>
+        <p>Selecione um usuário para demonstrar autenticação, permissões por aba e experiência multiusuário.</p>
+        <label>Usuário
+          <select id="loginUserSelect"></select>
+        </label>
+        <label>Código de acesso
+          <input id="loginCode" value="demo-2026" />
+        </label>
+        <button class="primary-action full" id="loginButton">Entrar</button>
+        <small>Protótipo local. Em produção, este fluxo usaria Firebase Authentication, MFA e sessão segura.</small>
+      </div>
+    </div>
+
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navegacao principal">
+        <div class="brand">
+          <div class="brand-logo" aria-hidden="true"><img src="./nodere-logo-wordmark.png" alt="" /></div>
+          <div>
+            <strong>Nodere</strong>
+            <span>Intelligence</span>
+          </div>
+        </div>
+
+        <nav class="nav-list">
+          <button class="nav-item active" data-section="dashboard" title="Dashboard">
+            <span class="icon">D</span><span>Dashboard</span>
+          </button>
+          <button class="nav-item" data-section="search" title="Buscador">
+            <span class="icon">B</span><span>Buscador</span>
+          </button>
+          <button class="nav-item" data-section="scanner" title="Scanner">
+            <span class="icon">S</span><span>Scanner</span>
+          </button>
+          <button class="nav-item" data-section="google" title="Google">
+            <span class="icon">G</span><span>Google</span>
+          </button>
+          <button class="nav-item" data-section="company" title="Empresa">
+            <span class="icon">E</span><span>Empresa</span>
+          </button>
+          <button class="nav-item" data-section="crm" title="CRM">
+            <span class="icon">C</span><span>CRM</span>
+          </button>
+          <button class="nav-item" data-section="automation" title="Automacao">
+            <span class="icon">A</span><span>Automacao</span>
+          </button>
+          <button class="nav-item" data-section="inbox" title="Inbox">
+            <span class="icon">M</span><span>Inbox</span>
+          </button>
+          <button class="nav-item" data-section="copilot" title="Copilot IA">
+            <span class="icon">I</span><span>Copilot IA</span>
+          </button>
+          <button class="nav-item" data-section="diagnosis" title="Diagnostico">
+            <span class="icon">D</span><span>Diagnóstico</span>
+          </button>
+          <button class="nav-item" data-section="reports" title="Relatorios">
+            <span class="icon">R</span><span>Relatorios</span>
+          </button>
+          <button class="nav-item" data-section="admin" title="Admin">
+            <span class="icon">P</span><span>Admin</span>
+          </button>
+          <button class="nav-item" data-section="billing" title="Planos">
+            <span class="icon">L</span><span>Planos</span>
+          </button>
+          <button class="nav-item" data-section="performance" title="Performance">
+            <span class="icon">K</span><span>Performance</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-card">
+          <span>Plano Enterprise</span>
+          <strong>12.840 creditos</strong>
+          <small>Pronto para APIs Google, Meta, WhatsApp e Receita Federal.</small>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Transformando falhas digitais em oportunidades comerciais.</p>
+            <h1>Nodere Intelligence</h1>
+          </div>
+          <div class="top-actions">
+            <label class="searchbox">
+              <span>B</span>
+              <input id="globalSearch" type="search" placeholder="Buscar empresas, cidades ou segmentos" />
+            </label>
+            <button class="theme-toggle" id="themeToggle" title="Alternar tema">Light</button>
+            <button class="ghost-button user-chip" id="currentUserButton">Édipo Lima</button>
+            <button class="primary-action" id="runScan">Nova varredura</button>
+          </div>
+        </header>
+
+        <section class="mobile-hero">
+          <div class="brand-logo"><img src="./nodere-logo-wordmark.png" alt="Nodere" /></div>
+          <div>
+            <strong>Nodere Intelligence</strong>
+            <span>CRM inteligente para prospeccao local</span>
+          </div>
+        </section>
+
+        <section class="panel-section active" id="dashboard">
+          <div class="metric-grid">
+            <article class="metric-card accent-blue">
+              <span>Total de empresas</span>
+              <strong data-count="12847">0</strong>
+              <small>+18% nesta semana</small>
+            </article>
+            <article class="metric-card accent-green">
+              <span>Leads qualificados</span>
+              <strong data-count="3421">0</strong>
+              <small>812 com alta prioridade</small>
+            </article>
+            <article class="metric-card accent-red">
+              <span>Empresas com falhas</span>
+              <strong data-count="9034">0</strong>
+              <small>Sem site, tags ou Ads</small>
+            </article>
+            <article class="metric-card accent-slate">
+              <span>Score medio</span>
+              <strong data-count="74">0</strong>
+              <small>Potencial comercial</small>
+            </article>
+          </div>
+
+          <div class="dashboard-grid">
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Inteligencia comercial</span>
+                  <h2>Mapa de oportunidades</h2>
+                </div>
+                <button class="ghost-button">Ver mapa</button>
+              </div>
+              <div class="map-board" aria-label="Mapa geografico de oportunidades">
+                <span class="pin p1"></span>
+                <span class="pin p2 high"></span>
+                <span class="pin p3"></span>
+                <span class="pin p4 hot"></span>
+                <span class="pin p5"></span>
+                <div class="map-overlay">
+                  <strong>Regiao Sudeste</strong>
+                  <span>2.184 empresas sem conversao configurada</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Ranking</span>
+                  <h2>Top oportunidades</h2>
+                </div>
+              </div>
+              <div class="opportunity-list" id="opportunityList"></div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Pipeline</span>
+                  <h2>Conversoes</h2>
+                </div>
+              </div>
+              <div class="funnel">
+                <div style="--w: 96%"><span>Leads novos</span><strong>1.284</strong></div>
+                <div style="--w: 76%"><span>Diagnosticos</span><strong>842</strong></div>
+                <div style="--w: 52%"><span>Reunioes</span><strong>316</strong></div>
+                <div style="--w: 28%"><span>Propostas</span><strong>147</strong></div>
+                <div style="--w: 14%"><span>Fechados</span><strong>48</strong></div>
+              </div>
+            </article>
+
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Falhas digitais</span>
+                  <h2>Distribuicao de riscos detectados</h2>
+                </div>
+              </div>
+              <div class="chart-bars" id="riskBars"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel-section" id="search">
+          <div class="search-layout">
+            <article class="surface filters-panel">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Buscador inteligente</span>
+                  <h2>Filtros avancados</h2>
+                </div>
+              </div>
+              <div class="filter-stack">
+                <label>Cidade<input id="searchCity" value="Sao Paulo" /></label>
+                <label>Segmento<input id="searchSegment" value="Clinicas odontologicas" /></label>
+                <label>Palavra-chave<input id="searchKeyword" value="implante dentario" /></label>
+                <label>Regiao<select><option>Sudeste</option><option>Sul</option><option>Nordeste</option></select></label>
+                <label>Presenca digital<select><option>Baixa maturidade</option><option>Sem site</option><option>Sem WhatsApp</option><option>Sem Ads</option></select></label>
+                <div class="toggle-grid">
+                  <label><input type="checkbox" checked /> Sem site</label>
+                  <label><input type="checkbox" checked /> Sem pixel</label>
+                  <label><input type="checkbox" /> Sem avaliacoes</label>
+                  <label><input type="checkbox" checked /> Sem Google Ads</label>
+                </div>
+                <button class="ghost-button full" id="saveSearch">Salvar busca</button>
+                <button class="primary-action full" id="simulateSearch">Localizar oportunidades</button>
+                <button class="ghost-button full" id="liveGoogleSearch">Buscar via Google Places</button>
+                <button class="ghost-button full" id="loadApiLeads">Carregar leads salvos</button>
+                <small id="apiSearchStatus">Use a API MVP local para buscar empresas reais.</small>
+              </div>
+            </article>
+
+            <article class="surface results-panel">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Resultados enriquecidos</span>
+                  <h2>Empresas encontradas</h2>
+                </div>
+                <div class="status-pill pulse">varredura pronta</div>
+              </div>
+              <div class="scan-progress" id="scanProgress" aria-label="Progresso da varredura">
+                <div><span>Google Places</span><strong>100%</strong></div>
+                <div><span>Scanner de tags</span><strong>82%</strong></div>
+                <div><span>IA de diagnóstico</span><strong>74%</strong></div>
+              </div>
+              <div class="lead-table" id="leadTable"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel-section" id="scanner">
+          <div class="scanner-grid">
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Busca recorrente</span>
+                  <h2>Buscas salvas</h2>
+                </div>
+                <button class="primary-action" id="runSavedScans">Executar filas</button>
+              </div>
+              <div class="saved-searches" id="savedSearches"></div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Fila de auditoria</span>
+                  <h2>Varreduras em lote</h2>
+                </div>
+              </div>
+              <div class="scan-queue" id="scanQueue"></div>
+            </article>
+
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Central de alertas</span>
+                  <h2>Prioridades comerciais</h2>
+                </div>
+              </div>
+              <div class="alert-grid" id="alertGrid"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel-section" id="google">
+          <div class="google-grid">
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Google Intelligence</span>
+                  <h2>Ads + Perfil da Empresa conectados ao CRM</h2>
+                </div>
+                <button class="primary-action" id="runGoogleAudit">Auditar Google</button>
+              </div>
+              <div class="google-hero">
+                <div>
+                  <span class="status-pill">Cobertura maxima</span>
+                  <h2 id="googleLeadName">Odonto Prime Paulista</h2>
+                  <p id="googleLeadSummary">Unifica sinais de Google Business Profile, Google Ads, conversões, chamadas, avaliações, performance local e recomendações para priorizar leads com maior chance de compra.</p>
+                </div>
+                <div class="google-score-card">
+                  <span>Google Opportunity Score</span>
+                  <strong id="googleOpportunityScore">88</strong>
+                  <small>Baseado em presença local, Ads, conversões e ativos ausentes.</small>
+                </div>
+              </div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Google Meu Negócio</span>
+                  <h2>Sinais absorvíveis</h2>
+                </div>
+              </div>
+              <div class="google-signal-list" id="gbpSignals"></div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Google Ads</span>
+                  <h2>Auditoria de mídia</h2>
+                </div>
+              </div>
+              <div class="google-signal-list" id="adsSignals"></div>
+            </article>
+
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Oportunidades integráveis</span>
+                  <h2>Roadmap de módulos Google</h2>
+                </div>
+              </div>
+              <div class="google-module-grid" id="googleModuleGrid"></div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Plano de ação</span>
+                  <h2>Correções sugeridas</h2>
+                </div>
+              </div>
+              <div class="google-action-list" id="googleActionList"></div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Conectores</span>
+                  <h2>Status de integração</h2>
+                </div>
+              </div>
+              <div class="connector-list" id="googleConnectorList"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel-section" id="company">
+          <div class="company-grid">
+            <article class="surface company-profile">
+              <div class="company-cover">
+                <div>
+                  <span class="status-pill danger" id="companyStatus">Alta oportunidade</span>
+                  <h2 id="companyName">Odonto Prime Paulista</h2>
+                  <p id="companyMeta">Clinica odontologica | Sao Paulo, SP</p>
+                </div>
+                <div class="company-actions">
+                  <button class="primary-action" id="companyWhatsappButton">Enviar diagnostico</button>
+                  <button class="ghost-button" id="saveLeadApi">Salvar lead</button>
+                  <button class="ghost-button" id="scanLeadApi">Scanner real</button>
+                  <button class="ghost-button" id="diagnosisLeadApi">IA real</button>
+                </div>
+              </div>
+              <div class="crm-status-panel">
+                <label>Etapa CRM
+                  <select id="companyCrmStatus">
+                    <option value="lead_new">Lead novo</option>
+                    <option value="contact_started">Contato iniciado</option>
+                    <option value="diagnosis_sent">Diagnostico enviado</option>
+                    <option value="meeting_scheduled">Reuniao marcada</option>
+                    <option value="proposal_sent">Proposta enviada</option>
+                    <option value="won">Fechado</option>
+                    <option value="lost">Perdido</option>
+                  </select>
+                </label>
+                <button class="ghost-button" id="saveCrmStatusApi">Atualizar CRM</button>
+                <small id="crmStatusInfo">Status local enquanto a API nao estiver ativa.</small>
+              </div>
+              <div class="company-facts">
+                <span><strong>CNPJ</strong> <span id="companyCnpj">42.918.771/0001-20</span></span>
+                <span><strong>WhatsApp</strong> <span id="companyWhatsapp">inexistente</span></span>
+                <span><strong>Site</strong> <span id="companySite">lento e sem tags</span></span>
+                <span><strong>Google</strong> <span id="companyGoogle">3,8 estrelas | 12 avaliacoes</span></span>
+              </div>
+              <div class="site-preview">
+                <div class="browser-dots"><span></span><span></span><span></span></div>
+                <div class="preview-lines">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+                <div class="preview-alert">Sem GTM, sem GA4 e sem evento de conversao</div>
+              </div>
+            </article>
+
+            <article class="surface diagnosis-card">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">IA integrada</span>
+                  <h2>Diagnostico automatico</h2>
+                </div>
+              </div>
+              <p class="diagnosis-text" id="companyDiagnosis">Empresa sem conversao configurada, sem estrategia de remarketing e com baixa velocidade mobile. Potencial alto para Google Ads local com campanha de ligacao, WhatsApp e extensoes de local.</p>
+              <div class="score-ring" id="companyScoreRing" style="--score: 86">
+                <strong id="companyScore">86</strong>
+                <span>Score de oportunidade</span>
+              </div>
+              <div class="insight-list">
+                <span class="bad">Sem pixel Meta</span>
+                <span class="bad">Sem Google Ads ativo</span>
+                <span class="warn">SEO local fraco</span>
+                <span class="good">Alto ticket medio</span>
+              </div>
+            </article>
+
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Analise digital</span>
+                  <h2>Presenca, tags e performance</h2>
+                </div>
+              </div>
+              <div class="audit-grid" id="auditGrid"></div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Proxima melhor acao</span>
+                  <h2>Playbook comercial</h2>
+                </div>
+              </div>
+              <div class="playbook-list" id="playbookList"></div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Historico</span>
+                  <h2>Interacoes e sinais</h2>
+                </div>
+              </div>
+              <div class="timeline" id="companyTimeline"></div>
+              <div class="note-composer">
+                <textarea id="leadNoteText" placeholder="Registrar observacao, follow-up ou retorno do cliente..."></textarea>
+                <button class="primary-action full" id="saveLeadNote">Salvar nota</button>
+                <small id="leadNoteStatus">Notas ficam locais ate o lead ser salvo no Supabase.</small>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel-section" id="crm">
+          <div class="section-head standalone">
+            <div>
+              <span class="section-kicker">CRM comercial</span>
+              <h2>Pipeline Kanban</h2>
+            </div>
+            <button class="primary-action">Nova tarefa</button>
+          </div>
+          <div class="kanban" id="kanban"></div>
+        </section>
+
+        <section class="panel-section" id="automation">
+          <div class="automation-grid">
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Mensagens automaticas</span>
+                  <h2>Abordagem sugerida</h2>
+                </div>
+              </div>
+              <div class="message-composer">
+                <textarea id="messageText">Oi, tudo bem? Analisei a presenca digital da sua empresa no Google e encontrei oportunidades claras para gerar mais contatos qualificados. Posso te enviar um diagnostico gratuito com os pontos que hoje podem estar reduzindo suas conversoes?</textarea>
+                <div class="composer-actions">
+                  <button class="ghost-button" id="generateMessage">Gerar nova versao</button>
+                  <button class="primary-action" id="sendWhatsappMessage">Enviar via WhatsApp</button>
+                </div>
+              </div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Alertas</span>
+                  <h2>Automacoes ativas</h2>
+                </div>
+              </div>
+              <div class="automation-list">
+                <div><strong>Lead com score acima de 80</strong><span>Criar tarefa e sugerir contato imediato</span></div>
+                <div><strong>Empresa sem site detectada</strong><span>Gerar pitch para landing page + Google Ads</span></div>
+                <div><strong>Sem conversao configurada</strong><span>Enviar diagnostico de rastreamento</span></div>
+                <div><strong>Proposta sem resposta</strong><span>Follow-up em 48 horas</span></div>
+              </div>
+            </article>
+
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Roadmap de integracoes</span>
+                  <h2>Arquitetura pronta para APIs</h2>
+                </div>
+              </div>
+              <div class="integration-grid" id="integrationGrid"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel-section" id="inbox">
+          <div class="inbox-grid">
+            <article class="surface inbox-sidebar">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Inbox comercial</span>
+                  <h2>Conversas</h2>
+                </div>
+              </div>
+              <div class="conversation-list" id="conversationList"></div>
+            </article>
+
+            <article class="surface inbox-thread">
+              <div class="thread-header">
+                <div>
+                  <span class="section-kicker" id="threadChannel">WhatsApp</span>
+                  <h2 id="threadCompany">Odonto Prime Paulista</h2>
+                </div>
+                <span class="status-pill" id="threadStatus">Lead quente</span>
+              </div>
+              <div class="thread-messages" id="threadMessages"></div>
+              <div class="quick-replies" id="quickReplies"></div>
+              <div class="reply-box">
+                <textarea id="replyText" placeholder="Escreva uma resposta consultiva..."></textarea>
+                <div class="composer-actions">
+                  <button class="ghost-button" id="aiReply">Gerar resposta IA</button>
+                  <button class="primary-action" id="sendReply">Enviar mensagem</button>
+                </div>
+              </div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">SLA</span>
+                  <h2>Próximas ações</h2>
+                </div>
+              </div>
+              <div class="sla-list" id="slaList"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel-section" id="copilot">
+          <div class="copilot-grid">
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">IA comercial</span>
+                  <h2>Copilot de oportunidade</h2>
+                </div>
+                <button class="primary-action" id="generateProposal">Gerar proposta</button>
+              </div>
+              <div class="copilot-hero">
+                <div>
+                  <span class="status-pill">Lead prioritario</span>
+                  <h2 id="copilotLeadName">Odonto Prime Paulista</h2>
+                  <p id="copilotSummary">Empresa com falhas claras de rastreamento, baixa maturidade digital e alto potencial para campanhas locais de Google Ads.</p>
+                </div>
+                <div class="forecast-card">
+                  <span>Previsao de fechamento</span>
+                  <strong id="closeForecast">68%</strong>
+                  <small>Baseado em score, nicho, falhas e ticket estimado.</small>
+                </div>
+              </div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Servicos ideais</span>
+                  <h2>Oferta recomendada</h2>
+                </div>
+              </div>
+              <div class="service-stack" id="serviceStack"></div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Simulador</span>
+                  <h2>Potencial de ROI</h2>
+                </div>
+              </div>
+              <div class="roi-controls">
+                <label>Investimento mensal em Ads
+                  <input id="adBudget" type="range" min="1000" max="30000" step="500" value="6000" />
+                </label>
+                <label>Ticket medio
+                  <input id="ticketValue" type="range" min="300" max="12000" step="100" value="1800" />
+                </label>
+                <label>Taxa de conversao estimada
+                  <input id="conversionRate" type="range" min="1" max="20" step="1" value="7" />
+                </label>
+              </div>
+              <div class="roi-output" id="roiOutput"></div>
+            </article>
+
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Proposta automatica</span>
+                  <h2>Resumo gerado pela IA</h2>
+                </div>
+              </div>
+              <div class="proposal-box" id="proposalBox">
+                Selecione um lead e clique em gerar proposta para criar um resumo comercial consultivo.
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel-section" id="diagnosis">
+          <div class="diagnosis-grid">
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Diagnóstico comercial</span>
+                  <h2>Relatório pronto para o lead</h2>
+                </div>
+              </div>
+              <div class="diagnosis-controls">
+                <label>Tom da proposta
+                  <select id="diagnosisTone">
+                    <option value="consultivo">Consultivo</option>
+                    <option value="direto">Direto e comercial</option>
+                    <option value="premium">Premium e estratégico</option>
+                  </select>
+                </label>
+                <label>Pacote sugerido
+                  <select id="diagnosisPackage">
+                    <option value="tracking_ads">Tracking + Google Ads</option>
+                    <option value="profile_ads">Perfil Google + Google Ads</option>
+                    <option value="full_growth">Crescimento Local Completo</option>
+                  </select>
+                </label>
+                <button class="primary-action full" id="generateDiagnosis">Gerar diagnóstico</button>
+                <button class="ghost-button full" id="printDiagnosis">Salvar em PDF</button>
+                <small>O botão de PDF usa a impressão do navegador. Escolha “Salvar como PDF”.</small>
+              </div>
+            </article>
+
+            <article class="diagnosis-document" id="diagnosisDocument">
+              <div class="doc-header">
+                <div class="brand-logo"><img src="./nodere-logo-wordmark.png" alt="Nodere" /></div>
+                <div>
+                  <span>Nodere Intelligence</span>
+                  <h2 id="docCompanyName">Odonto Prime Paulista</h2>
+                </div>
+                <strong id="docScore">86/100</strong>
+              </div>
+
+              <div class="doc-section">
+                <span class="section-kicker">Resumo executivo</span>
+                <p id="docExecutiveSummary"></p>
+              </div>
+
+              <div class="doc-metrics">
+                <div><strong id="docMaturity">Baixa</strong><span>Maturidade digital</span></div>
+                <div><strong id="docPotential">Alto</strong><span>Potencial comercial</span></div>
+                <div><strong id="docAdsReadiness">Crítico</strong><span>Readiness Google Ads</span></div>
+              </div>
+
+              <div class="doc-section">
+                <span class="section-kicker">Falhas encontradas</span>
+                <div class="doc-list" id="docFindings"></div>
+              </div>
+
+              <div class="doc-section">
+                <span class="section-kicker">Plano recomendado</span>
+                <div class="doc-list" id="docPlan"></div>
+              </div>
+
+              <div class="doc-section">
+                <span class="section-kicker">Proposta de abordagem</span>
+                <p id="docPitch"></p>
+              </div>
+
+              <div class="doc-footer">
+                <span>Transformando falhas digitais em oportunidades comerciais.</span>
+                <strong>Nodere</strong>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel-section" id="reports">
+          <div class="reports-grid">
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Relatorios</span>
+                  <h2>Exportacao executiva</h2>
+                </div>
+                <div class="export-actions">
+                  <button class="ghost-button" data-export="pdf">PDF</button>
+                  <button class="ghost-button" data-export="excel">Excel</button>
+                  <button class="ghost-button" data-export="csv">CSV</button>
+                </div>
+              </div>
+              <div class="report-preview">
+                <div>
+                  <span>Melhores oportunidades</span>
+                  <strong>812 leads</strong>
+                </div>
+                <div>
+                  <span>Empresas sem presenca digital</span>
+                  <strong>3.104</strong>
+                </div>
+                <div>
+                  <span>Oportunidades por cidade</span>
+                  <strong>48 regioes</strong>
+                </div>
+                <div>
+                  <span>Nichos de maior potencial</span>
+                  <strong>Saude, beleza e servicos</strong>
+                </div>
+              </div>
+            </article>
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Mobile</span>
+                  <h2>App Android e iPhone</h2>
+                </div>
+              </div>
+              <div class="phone-mock">
+                <div class="phone-top"></div>
+                <strong>Lead quente</strong>
+                <span>Odonto Prime Paulista</span>
+                <div class="phone-score">86</div>
+                <button>Contato rapido</button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel-section" id="admin">
+          <div class="admin-grid">
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Painel administrativo</span>
+                  <h2>Usuarios, permissoes e seguranca</h2>
+                </div>
+                <button class="primary-action" id="inviteUser">Convidar usuario</button>
+              </div>
+              <div class="invite-box hidden" id="inviteBox">
+                <strong>Convite criado</strong>
+                <span id="inviteLinkText"></span>
+                <button class="ghost-button" id="copyInviteLink">Copiar link</button>
+              </div>
+              <div class="team-table" id="teamTable"></div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Permissoes por usuario</span>
+                  <h2>Controle de abas liberadas</h2>
+                </div>
+              </div>
+              <div class="access-editor">
+                <label>Usuario para configurar
+                  <select id="accessUserSelect"></select>
+                </label>
+                <div class="access-module-grid" id="accessModuleGrid"></div>
+                <div class="composer-actions">
+                  <button class="ghost-button" id="simulateUserAccess">Simular acesso</button>
+                  <button class="primary-action" id="saveUserAccess">Salvar permissoes</button>
+                </div>
+                <small id="accessStatus">Owner sempre mantem acesso total ao sistema.</small>
+              </div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Perfis padrao</span>
+                  <h2>Matriz de referencia</h2>
+                </div>
+              </div>
+              <div class="permission-grid" id="permissionGrid"></div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Seguranca</span>
+                  <h2>Controle empresarial</h2>
+                </div>
+              </div>
+              <div class="security-list">
+                <div><strong>Autenticacao</strong><span>Firebase Auth pronto para SSO e MFA</span></div>
+                <div><strong>Multi-tenant</strong><span>Dados isolados por organizacao</span></div>
+                <div><strong>Auditoria</strong><span>Historico de acoes criticas e exportacoes</span></div>
+                <div><strong>LGPD</strong><span>Retencao, fonte dos dados e base legal por lead</span></div>
+              </div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">WhatsApp</span>
+                  <h2>Contato integrado</h2>
+                </div>
+              </div>
+              <div class="whatsapp-settings">
+                <label>Seu WhatsApp comercial
+                  <input id="ownerWhatsapp" inputmode="tel" placeholder="5511999999999" />
+                </label>
+                <label>Modo de abertura
+                  <select id="whatsappMode">
+                    <option value="web">WhatsApp Web</option>
+                    <option value="app">Aplicativo WhatsApp</option>
+                  </select>
+                </label>
+                <button class="primary-action full" id="saveWhatsappSettings">Salvar integração</button>
+                <small id="whatsappSettingsStatus">Use DDI + DDD + numero. Exemplo: 5511999999999.</small>
+              </div>
+            </article>
+
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Integracoes</span>
+                  <h2>Console de APIs futuras</h2>
+                </div>
+              </div>
+              <div class="api-console" id="apiConsole"></div>
+            </article>
+
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">MVP local</span>
+                  <h2>Conexao com API</h2>
+                </div>
+              </div>
+              <div class="whatsapp-settings">
+                <label>URL da API
+                  <input id="apiBaseUrl" placeholder="http://localhost:3333" />
+                </label>
+                <label>Token pessoal
+                  <input id="apiOwnerToken" type="password" placeholder="MVP_OWNER_TOKEN" />
+                </label>
+                <button class="primary-action full" id="saveApiSettings">Salvar API</button>
+                <button class="ghost-button full" id="testApiConnection">Testar conexao</button>
+                <small id="apiSettingsStatus">Configure depois de rodar a API em backend/.</small>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel-section" id="billing">
+          <div class="billing-grid">
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Assinatura Nodere</span>
+                  <h2>Plano, créditos e limites de uso</h2>
+                </div>
+                <button class="primary-action" id="upgradePlan">Fazer upgrade</button>
+              </div>
+              <div class="billing-hero">
+                <div>
+                  <span class="status-pill">Enterprise</span>
+                  <h2>Plano atual: Nodere Enterprise</h2>
+                  <p>Controle varreduras, exportações, usuários, automações e módulos premium com créditos mensais por workspace.</p>
+                </div>
+                <div class="credit-card">
+                  <span>Créditos disponíveis</span>
+                  <strong id="availableCredits">12.840</strong>
+                  <small>Renovação em 12 dias</small>
+                </div>
+              </div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Consumo</span>
+                  <h2>Uso do mês</h2>
+                </div>
+              </div>
+              <div class="usage-list" id="usageList"></div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Planos</span>
+                  <h2>Comparativo comercial</h2>
+                </div>
+              </div>
+              <div class="plan-list" id="planList"></div>
+            </article>
+
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Financeiro</span>
+                  <h2>Faturas e eventos de cobrança</h2>
+                </div>
+              </div>
+              <div class="invoice-table" id="invoiceTable"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel-section" id="performance">
+          <div class="performance-grid">
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Performance comercial</span>
+                  <h2>Metas, produtividade e previsão de receita</h2>
+                </div>
+                <button class="primary-action" id="recalculateForecast">Recalcular forecast</button>
+              </div>
+              <div class="forecast-strip" id="forecastStrip"></div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Equipe</span>
+                  <h2>Ranking de operadores</h2>
+                </div>
+              </div>
+              <div class="operator-ranking" id="operatorRanking"></div>
+            </article>
+
+            <article class="surface">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Metas</span>
+                  <h2>Progresso mensal</h2>
+                </div>
+              </div>
+              <div class="goal-list" id="goalList"></div>
+            </article>
+
+            <article class="surface wide">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Atividades</span>
+                  <h2>Produtividade comercial</h2>
+                </div>
+              </div>
+              <div class="activity-heatmap" id="activityHeatmap"></div>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

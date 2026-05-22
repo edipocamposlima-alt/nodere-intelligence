@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Nodere Intelligence</title>
+  <desc id="desc">Logo minimalista com a letra N em estilo SaaS tecnológico.</desc>
+  <defs>
+    <linearGradient id="bg" x1="72" y1="64" x2="440" y2="448" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2f80ff"/>
+      <stop offset="1" stop-color="#07111f"/>
+    </linearGradient>
+    <linearGradient id="pulse" x1="160" y1="128" x2="384" y2="384" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#69a7ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <path d="M120 368V144h58l154 135V144h60v224h-54L180 230v138h-60Z" fill="url(#pulse)"/>
+  <circle cx="392" cy="144" r="20" fill="#22c55e"/>
+  <path d="M116 96h280c44 0 80 36 80 80v160c0 44-36 80-80 80H116" fill="none" stroke="#69a7ff" stroke-width="14" stroke-linecap="round" opacity=".35"/>
+</svg>
