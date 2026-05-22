@@ -14,9 +14,9 @@ export function Sidebar() {
   return (
     <aside className="hidden min-h-screen w-72 border-r border-line bg-ink/90 p-5 lg:block">
       <Link href="/" className="flex items-center gap-3">
-        <Image src="/leadradar-logo.png" alt="LeadRadar" width={52} height={52} className="rounded-xl object-cover" />
+        <Image src="/nodere-logo.png" alt="NODERE" width={52} height={52} className="rounded-xl object-cover" />
         <div>
-          <p className="text-sm font-semibold text-white">LeadRadar</p>
+          <p className="text-sm font-semibold text-white">NODERE</p>
           <p className="text-xs text-slate-400">Intelligence</p>
         </div>
       </Link>

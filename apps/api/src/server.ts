@@ -15,7 +15,7 @@ app.use(cors({ origin: config.webOrigin }));
 app.use(express.json());
 
 app.get("/health", (_req, res) => {
-  res.json({ ok: true, name: "LeadRadar API" });
+  res.json({ ok: true, name: "NODERE Intelligence API" });
 });
 
 app.use("/api/dashboard", dashboardRouter);
@@ -33,5 +33,5 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
 });
 
 app.listen(config.port, () => {
-  console.log(`LeadRadar API running on http://localhost:${config.port}`);
+  console.log(`NODERE Intelligence API running on http://localhost:${config.port}`);
 });

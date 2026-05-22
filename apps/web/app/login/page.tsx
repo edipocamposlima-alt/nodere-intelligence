@@ -7,9 +7,9 @@ export default function LoginPage() {
     <div className="grid min-h-screen place-items-center bg-ink p-4">
       <div className="w-full max-w-md rounded-lg border border-line bg-panel p-6 shadow-glow">
         <div className="flex items-center gap-3">
-          <Image src="/leadradar-logo.png" alt="LeadRadar" width={56} height={56} className="rounded-xl object-cover" />
+          <Image src="/nodere-logo.png" alt="NODERE" width={56} height={56} className="rounded-xl object-cover" />
           <div>
-            <h1 className="text-xl font-semibold text-white">LeadRadar</h1>
+            <h1 className="text-xl font-semibold text-white">NODERE Intelligence</h1>
             <p className="text-sm text-slate-400">Acesso ao scanner comercial</p>
           </div>
         </div>

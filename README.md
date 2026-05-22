@@ -1,4 +1,4 @@
-# LeadRadar
+# NODERE Intelligence
 
 MVP web para prospeccao inteligente focada em Google Ads, Google Meu Negocio e presenca digital local.
 
