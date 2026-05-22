@@ -1,5 +1,11 @@
 # Nodere Intelligence Implementation Roadmap
 
+Complementos enterprise:
+
+- `ENTERPRISE_PLATFORM_BLUEPRINT.md`
+- `ENTERPRISE_DATABASE_SCHEMA.sql`
+- `INTEGRATION_MATRIX.md`
+
 ## Phase 1 - SaaS Foundation
 
 - Next.js app with authenticated routes.

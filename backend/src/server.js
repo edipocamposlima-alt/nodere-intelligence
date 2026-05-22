@@ -42,6 +42,50 @@ app.get("/health", (_request, response) => {
   response.json({ ok: true, service: "nodere-mvp-api" });
 });
 
+app.get("/api/v1/integrations/status", (_request, response) => {
+  response.json({
+    integrations: [
+      { provider: "supabase", status: config.supabaseUrl ? "configured" : "missing_credentials" },
+      { provider: "google_places", status: config.googleMapsApiKey ? "configured" : "missing_credentials" },
+      { provider: "openai", status: config.openaiApiKey ? "configured" : "optional_fallback_enabled" },
+      { provider: "pagespeed", status: process.env.PAGESPEED_API_KEY ? "configured" : "planned" },
+      { provider: "whatsapp_cloud", status: process.env.META_ACCESS_TOKEN ? "configured" : "planned" },
+      { provider: "google_ads", status: process.env.GOOGLE_ADS_DEVELOPER_TOKEN ? "configured" : "planned" },
+      { provider: "google_business_profile", status: process.env.GOOGLE_CLIENT_ID ? "oauth_ready" : "planned" }
+    ]
+  });
+});
+
+app.post("/api/v1/jobs/discovery", async (request, response, next) => {
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from("mvp_crm_events")
+      .insert({
+        lead_id: request.body.leadId,
+        event_type: "discovery_job_requested",
+        body: JSON.stringify({
+          city: request.body.city,
+          state: request.body.state,
+          segment: request.body.segment,
+          radiusKm: request.body.radiusKm,
+          providers: request.body.providers || ["google_places"]
+        })
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    response.status(202).json({
+      status: "queued_placeholder",
+      event: data,
+      note: "For production, move this to a jobs table with Redis/BullMQ or Cloud Tasks."
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post("/api/v1/search/google-places", async (request, response, next) => {
   try {
     const results = await searchGooglePlaces(request.body);

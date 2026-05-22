@@ -66,6 +66,9 @@ http://localhost:4173
 - `API_CONTRACTS.md` - contratos REST propostos.
 - `ARCHITECTURE.md` - arquitetura técnica.
 - `IMPLEMENTATION_ROADMAP.md` - roadmap de produção.
+- `ENTERPRISE_PLATFORM_BLUEPRINT.md` - desenho completo da versao SaaS enterprise.
+- `ENTERPRISE_DATABASE_SCHEMA.sql` - schema avancado multi-tenant com geografia e scores.
+- `INTEGRATION_MATRIX.md` - matriz de APIs, prioridades e credenciais.
 - `.env.example` - variáveis de ambiente para backend real.
 
 ## Próxima fase recomendada
