@@ -65,6 +65,25 @@ GOOGLE_MAPS_API_KEY=...
 GOOGLE_PAGESPEED_API_KEY=...
 ```
 
+## Validar Google APIs
+
+Depois de preencher o `.env`, rode:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check-google-apis.ps1
+```
+
+O script nao imprime a chave. Ele mostra apenas se Places e PageSpeed estao liberadas.
+
+Se aparecer `SERVICE_DISABLED` ou `PERMISSION_DENIED`, habilite ou libere a chave no Google Cloud:
+
+- Places API (New): `https://console.developers.google.com/apis/api/places.googleapis.com/overview`
+- Maps JavaScript API: `https://console.developers.google.com/apis/api/maps-backend.googleapis.com/overview`
+- Geocoding API: `https://console.developers.google.com/apis/api/geocoding-backend.googleapis.com/overview`
+- PageSpeed Insights API: `https://console.developers.google.com/apis/api/pagespeedonline.googleapis.com/overview`
+
+Em `APIs e servicos > Credenciais`, edite a chave e permita essas APIs em `Restricoes de API`.
+
 ## Integracoes prontas
 
 O codigo ja possui conectores seguros para:
