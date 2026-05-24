@@ -1,6 +1,6 @@
 import { companies } from "../db/mockData.js";
 import { Company, CrmStatus, SearchRequest } from "../types.js";
-import { analyzeWebsite, searchGooglePlaces } from "./google.js";
+import { GoogleApiError, analyzeWebsite, searchGooglePlaces } from "./google.js";
 import { calculateOpportunityScore } from "./scoring.js";
 import { config } from "../config.js";
 import { randomUUID } from "node:crypto";
@@ -14,14 +14,57 @@ export function getCompany(id: string) {
 }
 
 export async function searchCompanies(input: SearchRequest) {
-  const generated = config.useMockData ? generateMockSearch(input) : await searchGooglePlaces(input);
+  const result = await searchCompaniesWithMeta(input);
+  return result.companies;
+}
 
-  for (const company of generated) {
-    const existing = companies.find((item) => item.id === company.id);
-    if (!existing) companies.push(company);
+export async function searchCompaniesWithMeta(input: SearchRequest) {
+  if (config.useMockData) {
+    const generated = generateMockSearch(input);
+    upsertCompanies(generated);
+    return {
+      source: "mock" as const,
+      companies: generated,
+      warning: "Modo demonstrativo ativo em USE_MOCK_DATA=true."
+    };
   }
 
-  return generated;
+  try {
+    const generated = await searchGooglePlaces(input);
+    upsertCompanies(generated);
+    return {
+      source: "google" as const,
+      companies: generated
+    };
+  } catch (error) {
+    if (error instanceof GoogleApiError) {
+      const generated = generateMockSearch(input);
+      upsertCompanies(generated);
+      return {
+        source: "fallback" as const,
+        companies: generated,
+        warning: "Google Places ainda nao esta liberado. Exibindo dados demonstrativos temporarios.",
+        error: {
+          service: "Google Places",
+          status: error.status,
+          code: error.code,
+          reason: error.reason,
+          message: error.message,
+          activationUrl: error.activationUrl
+        }
+      };
+    }
+
+    throw error;
+  }
+}
+
+function upsertCompanies(items: Company[]) {
+  for (const company of items) {
+    const existingIndex = companies.findIndex((item) => item.id === company.id);
+    if (existingIndex === -1) companies.push(company);
+    else companies[existingIndex] = { ...companies[existingIndex], ...company };
+  }
 }
 
 export async function enrichCompany(id: string) {

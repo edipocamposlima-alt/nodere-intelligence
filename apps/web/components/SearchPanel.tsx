@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Search, Sparkles } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Search, Sparkles } from "lucide-react";
 import { searchCompanies } from "@/lib/api";
 import { Company } from "@/lib/types";
 import { CompanyTable } from "./CompanyTable";
@@ -10,6 +10,7 @@ export function SearchPanel() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Company[]>([]);
   const [message, setMessage] = useState("Use cidade, estado e segmento para encontrar oportunidades.");
+  const [warning, setWarning] = useState<string | null>(null);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -23,7 +24,12 @@ export function SearchPanel() {
     };
     const response = await searchCompanies(payload);
     setResults(response.companies);
-    setMessage(`${response.companies.length} empresas analisadas e ranqueadas por potencial comercial.`);
+    setWarning(response.search.warning ?? null);
+    setMessage(
+      response.search.source === "google"
+        ? `${response.companies.length} empresas reais analisadas pelo Google Places.`
+        : `${response.companies.length} empresas demonstrativas ranqueadas enquanto a API Google for liberada.`
+    );
     setLoading(false);
   }
 
@@ -44,7 +50,18 @@ export function SearchPanel() {
             {loading ? "Buscando" : "Buscar"}
           </button>
         </div>
-        <p className="mt-3 text-xs text-slate-400">{message}</p>
+        <div className="mt-3 space-y-2">
+          <p className="flex items-center gap-2 text-xs text-slate-400">
+            <CheckCircle2 className="h-3.5 w-3.5 text-cyan" />
+            {message}
+          </p>
+          {warning && (
+            <p className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs leading-5 text-amber-100">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
+              {warning}
+            </p>
+          )}
+        </div>
       </form>
       {results.length > 0 && <CompanyTable companies={results} />}
     </section>

@@ -15,6 +15,22 @@ interface GooglePlace {
   location?: { latitude?: number; longitude?: number };
 }
 
+export class GoogleApiError extends Error {
+  status: number;
+  code?: string;
+  reason?: string;
+  activationUrl?: string;
+
+  constructor(message: string, options: { status: number; code?: string; reason?: string; activationUrl?: string }) {
+    super(message);
+    this.name = "GoogleApiError";
+    this.status = options.status;
+    this.code = options.code;
+    this.reason = options.reason;
+    this.activationUrl = options.activationUrl;
+  }
+}
+
 export async function searchGooglePlaces(input: SearchRequest): Promise<Company[]> {
   if (!config.google.placesKey) {
     throw new Error("GOOGLE_PLACES_API_KEY is not configured.");
@@ -33,7 +49,7 @@ export async function searchGooglePlaces(input: SearchRequest): Promise<Company[
   });
 
   if (!response.ok) {
-    throw new Error(`Google Places failed with status ${response.status}`);
+    throw await buildGoogleApiError(response, "Google Places");
   }
 
   const payload = (await response.json()) as { places?: GooglePlace[] };
@@ -83,6 +99,7 @@ export async function analyzeWebsite(url?: string) {
       pageSpeedUrl.searchParams.set("strategy", "mobile");
       pageSpeedUrl.searchParams.set("key", config.google.pageSpeedKey);
       const pageSpeedResponse = await fetch(pageSpeedUrl);
+      if (!pageSpeedResponse.ok) return result;
       const payload = await pageSpeedResponse.json();
       result.pageSpeed = Math.round((payload.lighthouseResult?.categories?.performance?.score ?? 0) * 100);
     } catch {
@@ -129,4 +146,25 @@ function normalizePlace(place: GooglePlace, input: SearchRequest): Company {
   };
 
   return { ...base, ...calculateOpportunityScore(base) };
+}
+
+async function buildGoogleApiError(response: Response, serviceName: string) {
+  let payload: any;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = undefined;
+  }
+
+  const details = Array.isArray(payload?.error?.details) ? payload.error.details : [];
+  const errorInfo = details.find((item: any) => item["@type"] === "type.googleapis.com/google.rpc.ErrorInfo");
+  const activationUrl = errorInfo?.metadata?.activationUrl;
+  const message = payload?.error?.message ?? `${serviceName} failed with status ${response.status}`;
+
+  return new GoogleApiError(message, {
+    status: response.status,
+    code: payload?.error?.status,
+    reason: errorInfo?.reason,
+    activationUrl
+  });
 }

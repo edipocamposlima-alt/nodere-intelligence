@@ -35,10 +35,17 @@ export function getCompany(id: string) {
 }
 
 export function searchCompanies(payload: { city: string; state?: string; segment: string; keyword?: string }) {
-  return api<{ companies: Company[]; search: unknown }>(
+  return api<{
+    companies: Company[];
+    search: {
+      source?: "google" | "mock" | "fallback";
+      warning?: string;
+      error?: { message?: string; activationUrl?: string; reason?: string; code?: string; status?: number };
+    };
+  }>(
     "/searches",
     { method: "POST", body: JSON.stringify(payload) },
-    { companies: mockCompanies, search: payload }
+    { companies: mockCompanies, search: { source: "fallback", warning: "API local indisponivel. Exibindo dados demonstrativos." } }
   );
 }
 
