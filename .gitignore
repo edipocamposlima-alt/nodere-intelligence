@@ -3,6 +3,8 @@ node_modules
 dist
 .env
 .env.local
+.env*.txt
+Novo(a) Documento de Texto.txt
 coverage
 *.log
 uploads
