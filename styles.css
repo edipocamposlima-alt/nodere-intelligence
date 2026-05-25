@@ -27,6 +27,7 @@ body {
 
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .55; }
 a { color: inherit; text-decoration: none; }
 p, h1, h2, h3 { margin: 0; }
 
@@ -314,6 +315,8 @@ select option { background: #07111e; color: #fff; }
   background: rgba(255,255,255,.035);
   color: var(--muted);
 }
+.result-box ul { margin: 10px 0 0; padding-left: 18px; }
+.result-box li { margin: 6px 0; }
 .success { color: var(--green); }
 .error { color: #ff9bad; }
 .loading { color: #9dccff; }
@@ -344,7 +347,7 @@ dialog::backdrop { background: rgba(0,0,0,.65); }
   .app-shell { grid-template-columns: 1fr; }
   .sidebar { position: static; height: auto; }
   .brand { margin-bottom: 12px; }
-  .nav-list { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .nav-list { grid-template-columns: repeat(7, minmax(0, 1fr)); }
   .nav-item { justify-content: center; font-size: 0; padding: 0 8px; }
   .agency-card { display: none; }
   .metrics-grid, .work-grid, .integration-grid { grid-template-columns: 1fr; }

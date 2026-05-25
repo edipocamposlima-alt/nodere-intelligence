@@ -2,7 +2,7 @@
 
 Sistema de prospeccao comercial para localizar empresas no Google, salvar leads em CRM, auditar presenca digital e gerar diagnosticos comerciais com OpenAI.
 
-## Versao emergencial funcional
+## Versao operacional simples
 
 A versao publicada no GitHub Pages funciona como uma SPA sem backend obrigatorio:
 
@@ -11,7 +11,7 @@ A versao publicada no GitHub Pages funciona como uma SPA sem backend obrigatorio
 - Busca Google Places usa a chave configurada na tela.
 - PageSpeed usa a chave configurada na tela.
 - WhatsApp abre `wa.me` com mensagem pronta.
-- IA mostra bloqueio claro em producao e fica preparada para backend `/api/openai`.
+- IA chama um endpoint backend seguro configuravel. Use `/api/openai` no backend Node/Express para nao expor `OPENAI_API_KEY`.
 
 Aviso: chaves salvas no navegador servem para operacao/teste simples. Em producao, use o backend e variaveis `.env`.
 
@@ -112,10 +112,10 @@ Abra:
 http://localhost:4173/#configuracoes
 ```
 
-Em `URL da API`, use:
+Para IA, configure em `Endpoint IA seguro`:
 
 ```text
-http://localhost:3333
+http://localhost:3333/api/openai
 ```
 
 ## Deploy
@@ -137,9 +137,10 @@ Depois do deploy:
 
 1. Abra `https://edipocamposlima-alt.github.io/nodere-intelligence/#configuracoes`.
 2. Informe a URL publica do backend.
-3. Informe `MVP_OWNER_TOKEN`, se configurado.
-4. Clique em `Salvar`.
-5. Clique em `Validar conexoes`.
+3. Informe as chaves Google que serao usadas no modo estatico.
+4. Informe o endpoint publico da IA, se o backend estiver publicado.
+5. Clique em `Salvar configuracoes`.
+6. Valide em `Integracoes`.
 
 ## Testes de Integração
 

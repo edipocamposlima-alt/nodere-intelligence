@@ -52,9 +52,12 @@ export async function generateDiagnosis(lead, scan) {
                 items: { type: "string" }
               },
               whatsappMessage: { type: "string" },
+              emailMessage: { type: "string" },
+              googleAdsStrategy: { type: "string" },
+              leadPotential: { type: "string" },
               opportunityScore: { type: "number" }
             },
-            required: ["summary", "diagnosis", "recommendedServices", "whatsappMessage", "opportunityScore"]
+            required: ["summary", "diagnosis", "recommendedServices", "whatsappMessage", "emailMessage", "googleAdsStrategy", "leadPotential", "opportunityScore"]
           }
         }
       }
