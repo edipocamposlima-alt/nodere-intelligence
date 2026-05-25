@@ -1093,6 +1093,53 @@ function loadSettingsForm() {
   });
 }
 
+function renderApiField(name, label, placeholder, testKey, secret = true, hint = "") {
+  const toggle = secret ? `<button type="button" data-toggle-secret="${name}">Ver</button>` : "";
+  const type = secret ? "password" : "text";
+  return `<label class="api-field" title="${escapeHtml(hint)}">
+    <span>${escapeHtml(label)}</span>
+    <div class="secret-control">
+      <input name="${escapeHtml(name)}" type="${type}" autocomplete="off" placeholder="${escapeHtml(placeholder)}" />
+      ${toggle}
+      <button type="button" data-copy-field="${escapeHtml(name)}">Copiar</button>
+      <button type="button" data-test="${escapeHtml(testKey)}">Validar</button>
+    </div>
+  </label>`;
+}
+
+function organizeApiSettings() {
+  const container = document.querySelector(".dev-settings");
+  if (!container || container.dataset.organized === "true") return;
+  container.dataset.organized = "true";
+  container.innerHTML = `
+    <div class="dev-settings-head">
+      <strong>Chaves locais para desenvolvimento</strong>
+      <small>Use apenas em localhost. Em producao, deixe vazio e use backend/.env.</small>
+    </div>
+    <section class="api-card">
+      <header><span class="status-dot pending"></span><div><strong>Google APIs</strong><small>Busca, mapa e PageSpeed.</small></div></header>
+      ${renderApiField("devGoogleApiKey", "GOOGLE_API_KEY", "Chave geral apenas em localhost", "google_maps", true, "Chave geral Google para testes locais.")}
+      ${renderApiField("devGooglePlacesApiKey", "GOOGLE_PLACES_API_KEY", "Opcional se GOOGLE_API_KEY tiver Places", "google_places", true, "Usada pela busca de empresas no Google Places.")}
+      ${renderApiField("devGoogleMapsApiKey", "GOOGLE_MAPS_API_KEY", "Opcional se GOOGLE_API_KEY tiver Maps", "google_maps", true, "Usada para Google Maps e geocoding.")}
+      ${renderApiField("devGooglePageSpeedApiKey", "GOOGLE_PAGESPEED_API_KEY", "Opcional se GOOGLE_API_KEY tiver PageSpeed", "google_pagespeed", true, "Usada para PageSpeed Insights.")}
+    </section>
+    <section class="api-card">
+      <header><span class="status-dot pending"></span><div><strong>OpenAI</strong><small>IA conversacional e diagnosticos.</small></div></header>
+      ${renderApiField("devOpenAiApiKey", "OPENAI_API_KEY", "sk-proj-... somente local", "openai", true, "Chave OpenAI para testar IA em localhost.")}
+    </section>
+    <section class="api-card">
+      <header><span class="status-dot pending"></span><div><strong>Google Auth</strong><small>OAuth para Calendar, Gmail, Drive e Business Profile.</small></div></header>
+      ${renderApiField("devGoogleClientId", "GOOGLE_CLIENT_ID", "Client ID OAuth", "google_calendar", false, "Client ID OAuth do Google.")}
+      ${renderApiField("devGoogleClientSecret", "GOOGLE_CLIENT_SECRET", "Client secret", "gmail", true, "Client Secret OAuth do Google.")}
+      ${renderApiField("devGoogleRefreshToken", "GOOGLE_REFRESH_TOKEN", "Refresh token", "google_drive", true, "Refresh token OAuth offline.")}
+    </section>
+    <section class="api-card">
+      <header><span class="status-dot pending"></span><div><strong>WhatsApp</strong><small>Estrutura para WhatsApp Cloud API.</small></div></header>
+      ${renderApiField("devWhatsappCloudToken", "WHATSAPP_CLOUD_TOKEN", "Token Cloud API", "whatsapp_cloud", true, "Token da WhatsApp Cloud API.")}
+      ${renderApiField("devWhatsappPhoneNumberId", "WHATSAPP_PHONE_NUMBER_ID", "Phone number ID", "whatsapp_cloud", false, "ID do numero de telefone WhatsApp.")}
+    </section>`;
+}
+
 async function testIntegration(key) {
   if (!apiConfigured()) throw new Error("URL do backend seguro ausente.");
   if (key === "apiBaseUrl") {
@@ -1246,6 +1293,42 @@ function bindEvents() {
     $("#settingsMessage").textContent = "Configuracoes salvas.";
     persistAll();
   });
+  $("#settingsForm")?.addEventListener("click", async (event) => {
+    const toggle = event.target.closest("[data-toggle-secret]");
+    const copy = event.target.closest("[data-copy-field]");
+    const test = event.target.closest("[data-test]");
+    if (toggle) {
+      const field = $("#settingsForm").elements[toggle.dataset.toggleSecret];
+      if (field) {
+        field.type = field.type === "password" ? "text" : "password";
+        toggle.textContent = field.type === "password" ? "Ver" : "Ocultar";
+      }
+    }
+    if (copy) {
+      const field = $("#settingsForm").elements[copy.dataset.copyField];
+      copyText(field?.value || "");
+      $("#settingsMessage").textContent = field?.value ? "Valor copiado." : "Campo vazio.";
+    }
+    if (test) {
+      const button = test;
+      button.disabled = true;
+      button.textContent = "Validando...";
+      try {
+        const data = Object.fromEntries(new FormData($("#settingsForm")));
+        data.hideSavedResults = $("#settingsForm").elements.hideSavedResults?.checked ? "on" : "off";
+        data.autoAiOnSave = $("#settingsForm").elements.autoAiOnSave?.checked ? "on" : "off";
+        data.devMode = $("#settingsForm").elements.devMode?.checked ? "on" : "off";
+        settings = sanitizeSettings({ ...settings, ...data });
+        writeJson(STORAGE.settings, settings);
+        $("#settingsMessage").textContent = await testIntegration(test.dataset.test);
+      } catch (error) {
+        $("#settingsMessage").textContent = error.message;
+      } finally {
+        button.disabled = false;
+        button.textContent = "Validar";
+      }
+    }
+  });
   $("#clearSettings")?.addEventListener("click", () => {
     if (!confirm("Apagar configuracoes locais?")) return;
     settings = { maxResults: 60, defaultSort: "opportunity", defaultOwner: "Agencia Digital", theme: "nodere-dark", accentColor: "#147dff", apiBaseUrl: "", ownerToken: "", hideSavedResults: "on", autoAiOnSave: "on", devMode: "off" };
@@ -1343,6 +1426,7 @@ function initSelects() {
 function init() {
   initSelects();
   applyTheme();
+  organizeApiSettings();
   loadSettingsForm();
   if ($("#resultSort")) $("#resultSort").value = settings.defaultSort || "opportunity";
   writeJson(STORAGE.settings, settings);

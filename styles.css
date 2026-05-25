@@ -268,11 +268,18 @@ h1 { font-size: 31px; line-height: 1.15; }
   gap: 14px;
   align-items: end;
 }
-.settings-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-label { display: grid; gap: 8px; font-size: 13px; font-weight: 700; }
+.settings-form {
+  width: 100%;
+  max-width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+}
+label { min-width: 0; display: grid; gap: 8px; font-size: 13px; font-weight: 700; }
 input, select, textarea {
+  min-width: 0;
   min-height: 46px;
   width: 100%;
+  max-width: 100%;
   padding: 0 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -325,19 +332,91 @@ select option { background: #07111e; color: #fff; }
 }
 
 .dev-only { display: none; }
-body.local-dev .dev-only { display: flex; }
+body.local-dev .check-row.dev-only { display: flex; }
 .dev-settings {
   grid-column: 1 / -1;
   display: none;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 14px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+body.local-dev .dev-settings { display: grid; }
+.dev-settings-head {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
   padding: 14px;
-  border: 1px solid color-mix(in srgb, var(--amber) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--amber) 50%, transparent);
   border-radius: 8px;
   background: rgba(255, 179, 0, .08);
 }
-.dev-settings strong, .dev-settings small { grid-column: 1 / -1; }
-.dev-settings small { color: var(--muted); }
+.dev-settings-head strong { color: var(--text); }
+.dev-settings-head small { color: var(--muted); }
+.api-card {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255,255,255,.035);
+  overflow: hidden;
+}
+.api-card header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.api-card header div { min-width: 0; }
+.api-card header strong, .api-card header small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.api-card header small { color: var(--muted); font-size: 12px; }
+.status-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 999px;
+  background: var(--amber);
+  box-shadow: 0 0 0 4px rgba(255,179,0,.12);
+}
+.status-dot.connected { background: var(--green); box-shadow: 0 0 0 4px rgba(49,211,107,.12); }
+.status-dot.error { background: var(--rose); box-shadow: 0 0 0 4px rgba(239,71,111,.12); }
+.api-field {
+  min-width: 0;
+  gap: 7px;
+}
+.api-field > span {
+  overflow-wrap: anywhere;
+  color: color-mix(in srgb, var(--accent) 70%, white);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+.secret-control {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 6px;
+  align-items: center;
+}
+.secret-control input { min-width: 0; height: 42px; }
+.secret-control button {
+  min-height: 38px;
+  max-width: 86px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(255,255,255,.055);
+  color: var(--text);
+  font-size: 12px;
+  white-space: nowrap;
+}
 
 .filters, .inline-form, .settings-actions {
   display: flex;
@@ -718,7 +797,7 @@ dialog {
   .nav-item { justify-content: center; font-size: 0; padding: 0 8px; }
   .agency-card { display: none; }
   .metrics-grid, .metrics-grid.advanced, .work-grid, .integration-grid, .agenda-grid, .insight-grid, .lead-form-grid { grid-template-columns: 1fr; }
-  .smart-search, .settings-form { grid-template-columns: 1fr; }
+  .smart-search, .settings-form, .dev-settings { grid-template-columns: 1fr; }
   .entry-form, .entry-form.compact { grid-template-columns: 1fr; }
   .topbar { flex-direction: column; }
   .global-search { width: 100%; }
@@ -726,4 +805,20 @@ dialog {
   .ai-chat.collapsed { display: none; }
   .ai-fab { right: 14px; bottom: 14px; }
   .catalog-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  .main { padding: 12px; }
+  .panel { padding: 12px; }
+  .secret-control {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .secret-control button {
+    width: 100%;
+    max-width: none;
+  }
+  .env-checklist code {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
 }
