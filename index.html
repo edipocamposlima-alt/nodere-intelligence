@@ -7,7 +7,7 @@
     <title>NODERE Intelligence</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./nodere-icon.png" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=saas-1" />
+    <link rel="stylesheet" href="./styles.css?v=saas-2" />
   </head>
   <body>
     <div class="app-shell">
@@ -23,7 +23,7 @@
           <button class="nav-item nav-agenda" type="button" data-nav="agenda"><span>◷</span>Agenda</button>
           <button class="nav-item nav-pipeline" type="button" data-nav="pipeline"><span>▤</span>Pipeline</button>
           <button class="nav-item nav-pagespeed" type="button" data-nav="pagespeed"><span>⚡</span>PageSpeed</button>
-          <button class="nav-item nav-ia" type="button" data-nav="ia"><span>AI</span>IA</button>
+          <button class="nav-item nav-ia" type="button" data-nav="ia"><span>IA</span>IA</button>
           <button class="nav-item nav-reports" type="button" data-nav="relatorios"><span>▥</span>Relatórios</button>
           <button class="nav-item nav-integrations" type="button" data-nav="integracoes"><span>↔</span>Integrações</button>
           <button class="nav-item nav-services" type="button" data-nav="servicos"><span>§</span>Serviços</button>
@@ -202,6 +202,9 @@
         <section class="view" id="relatorios">
           <article class="panel">
             <div class="panel-title"><span>BI</span><h2>Relatorios comerciais</h2></div>
+            <div class="filters">
+              <label>Tema dos relatórios<select id="reportThemeSelect"><option value="nodere-dark">Nodere Azul</option><option value="light">Modo claro</option><option value="green-performance">Verde performance</option><option value="purple-saas">Roxo SaaS</option><option value="executive-dark">Executivo escuro</option></select></label>
+            </div>
             <div class="metrics-grid" id="reportsGrid"></div>
             <div class="chart-list" id="pipelineChartReports"></div>
           </article>
@@ -253,15 +256,21 @@
         <section class="view" id="configuracoes">
           <article class="panel">
             <div class="panel-title"><span>Config</span><h2>Configuracoes</h2></div>
-            <p class="warning">Credenciais ficam somente no backend/.env. O navegador salva apenas a URL da API e um token opcional do proprietario.</p>
+            <p class="warning">Configure chaves reais somente no backend/.env. O navegador salva apenas a URL da API, token operacional opcional e preferências visuais.</p>
             <form class="settings-form" id="settingsForm">
               <label>URL do backend seguro<input name="apiBaseUrl" placeholder="https://sua-api.com" /></label>
               <label>Token do proprietário opcional<input name="ownerToken" type="password" autocomplete="off" /></label>
               <label>Responsavel padrao<input name="defaultOwner" placeholder="Agencia Digital" /></label>
               <label>Maximo por busca<input name="maxResults" type="number" min="10" max="80" step="10" value="60" /></label>
+              <label>Tema<select name="theme"><option value="nodere-dark">Nodere Azul</option><option value="light">Modo claro</option><option value="green-performance">Verde performance</option><option value="purple-saas">Roxo SaaS</option><option value="executive-dark">Executivo escuro</option></select></label>
+              <label>Cor principal<input name="accentColor" type="color" value="#147dff" /></label>
               <label class="check-row"><input name="hideSavedResults" type="checkbox" checked /> Ocultar empresas já salvas na busca</label>
               <label class="check-row"><input name="autoAiOnSave" type="checkbox" checked /> Gerar IA automaticamente ao salvar lead</label>
               <label>Ordenacao padrao<select name="defaultSort"><option value="opportunity">Maior oportunidade comercial</option><option value="ratingAsc">Menor avaliacao</option><option value="ratingDesc">Maior avaliacao</option></select></label>
+              <div class="env-checklist">
+                <strong>Variáveis obrigatórias no backend/.env</strong>
+                <code>GOOGLE_API_KEY</code><code>GOOGLE_PLACES_API_KEY</code><code>GOOGLE_MAPS_API_KEY</code><code>GOOGLE_PAGESPEED_API_KEY</code><code>OPENAI_API_KEY</code><code>GOOGLE_CLIENT_ID</code><code>GOOGLE_CLIENT_SECRET</code><code>GOOGLE_REFRESH_TOKEN</code><code>WHATSAPP_CLOUD_TOKEN</code><code>WHATSAPP_PHONE_NUMBER_ID</code>
+              </div>
               <div class="settings-actions">
                 <button class="primary-button" type="submit">Salvar configuracoes</button>
                 <button class="secondary-button" type="button" id="clearSettings">Apagar chaves</button>
@@ -274,10 +283,10 @@
       </main>
     </div>
 
-    <button class="ai-fab" type="button" id="chatToggle">AI</button>
+    <button class="ai-fab" type="button" id="chatToggle">IA</button>
     <section class="ai-chat collapsed" id="aiChat">
       <header>
-        <div><strong>NODERE AI</strong><small>ChatGPT operacional</small></div>
+        <div><strong>NODERE IA</strong><small>ChatGPT operacional</small></div>
         <div class="settings-actions">
           <button class="row-button" type="button" id="chatClear">Limpar</button>
           <button class="row-button" type="button" id="chatFullscreen">Tela cheia</button>
@@ -390,6 +399,6 @@
       </form>
     </dialog>
 
-    <script src="./app.js?v=saas-1"></script>
+    <script src="./app.js?v=saas-2"></script>
   </body>
 </html>

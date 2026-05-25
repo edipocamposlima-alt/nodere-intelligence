@@ -122,6 +122,35 @@ async function validateGoogleBusinessProfile() {
   return `${accountsPayload.accounts?.length || 0} conta(s) Business Profile acessível(is).`;
 }
 
+async function validateGoogleWorkspace(scopeName = "Google Workspace") {
+  const hasOAuth =
+    configured(config.googleWorkspaceClientId) &&
+    configured(config.googleWorkspaceClientSecret) &&
+    configured(config.googleWorkspaceRefreshToken);
+
+  if (!hasOAuth) return null;
+
+  const body = new URLSearchParams({
+    client_id: config.googleWorkspaceClientId,
+    client_secret: config.googleWorkspaceClientSecret,
+    refresh_token: config.googleWorkspaceRefreshToken,
+    grant_type: "refresh_token"
+  });
+
+  const tokenResponse = await fetch(GOOGLE_TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body
+  });
+
+  const tokenPayload = await safeJson(tokenResponse);
+  if (!tokenResponse.ok) {
+    throw new Error(tokenPayload.error_description || tokenPayload.error || `${scopeName} OAuth refresh failed.`);
+  }
+
+  return `${scopeName}: token OAuth renovado com sucesso.`;
+}
+
 async function validateOpenAI() {
   if (!configured(config.openaiApiKey)) return null;
 
@@ -150,10 +179,18 @@ const validators = {
   google_maps: validateMaps,
   google_pagespeed: validatePageSpeed,
   google_business_profile: validateGoogleBusinessProfile,
+  google_calendar: () => validateGoogleWorkspace("Google Calendar"),
+  gmail: () => validateGoogleWorkspace("Gmail"),
+  google_drive: () => validateGoogleWorkspace("Google Drive"),
   openai: validateOpenAI
 };
 
 export function getStaticIntegrationStatus() {
+  const workspaceConfigured =
+    configured(config.googleWorkspaceClientId) &&
+    configured(config.googleWorkspaceClientSecret) &&
+    configured(config.googleWorkspaceRefreshToken);
+
   return [
     statusEnvelope("google_places", "Google Places API", configured(config.googlePlacesApiKey), true),
     statusEnvelope("google_maps", "Google Maps API", configured(config.googleMapsApiKey), true),
@@ -166,6 +203,9 @@ export function getStaticIntegrationStatus() {
         configured(config.googleBusinessProfileRefreshToken),
       false
     ),
+    statusEnvelope("google_calendar", "Google Calendar API", workspaceConfigured, false),
+    statusEnvelope("gmail", "Gmail API", workspaceConfigured, false),
+    statusEnvelope("google_drive", "Google Drive API", workspaceConfigured, false),
     statusEnvelope("openai", "OpenAI / ChatGPT API", configured(config.openaiApiKey), false),
     statusEnvelope(
       "whatsapp_cloud",

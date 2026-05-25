@@ -6,11 +6,40 @@
   --text: #f7fbff;
   --muted: #9aa9bd;
   --blue: #0878ff;
+  --accent: #147dff;
   --green: #31d36b;
   --amber: #ffb300;
   --rose: #ef476f;
   --purple: #9b35ff;
   --shadow: 0 22px 70px rgba(0, 0, 0, 0.38);
+}
+
+body[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f7fb;
+  --panel: rgba(255, 255, 255, 0.94);
+  --line: rgba(32, 48, 70, 0.16);
+  --text: #111827;
+  --muted: #5f6f86;
+  background: linear-gradient(135deg, #f7fbff 0%, #eef4fb 100%);
+}
+
+body[data-theme="green-performance"] {
+  --blue: #16c784;
+  --accent: #16c784;
+  background: radial-gradient(circle at 70% -12%, rgba(22, 199, 132, .16), transparent 34rem), linear-gradient(135deg, #03110d 0%, #071814 100%);
+}
+
+body[data-theme="purple-saas"] {
+  --blue: #8b5cf6;
+  --accent: #8b5cf6;
+  background: radial-gradient(circle at 70% -12%, rgba(139, 92, 246, .18), transparent 34rem), linear-gradient(135deg, #090716 0%, #111022 100%);
+}
+
+body[data-theme="executive-dark"] {
+  --blue: #8aa4c8;
+  --accent: #8aa4c8;
+  background: linear-gradient(135deg, #040608 0%, #101820 100%);
 }
 
 * { box-sizing: border-box; }
@@ -264,8 +293,8 @@ select option { background: #07111e; color: #fff; }
 .primary-button:hover, .secondary-button:hover, .row-button:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(0,0,0,.22); }
 .primary-button {
   padding: 0 18px;
-  border-color: rgba(8, 120, 255, 0.8);
-  background: linear-gradient(135deg, #1190ff, #075fd8);
+  border-color: color-mix(in srgb, var(--accent) 80%, white 10%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 92%, white), color-mix(in srgb, var(--accent) 74%, black));
 }
 .secondary-button, .row-button {
   padding: 0 12px;
@@ -275,6 +304,25 @@ select option { background: #07111e; color: #fff; }
 .row-button.accent { border-color: rgba(49, 211, 107, .7); background: rgba(49, 211, 107, .14); color: #9ff5ba; }
 .secondary-button.purple, .row-button.purple { border-color: rgba(155, 53, 255, .68); background: rgba(155, 53, 255, .16); color: #d8b4ff; }
 .danger { border-color: rgba(239, 71, 111, .7); color: #ff9bad; }
+
+.env-checklist {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .035);
+}
+.env-checklist strong { width: 100%; color: var(--text); }
+.env-checklist code {
+  padding: 6px 8px;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, .25);
+  color: color-mix(in srgb, var(--accent) 72%, white);
+  font-size: 12px;
+}
 
 .filters, .inline-form, .settings-actions {
   display: flex;

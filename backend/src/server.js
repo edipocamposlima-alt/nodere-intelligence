@@ -125,12 +125,13 @@ app.post("/api/v1/pagespeed/analyze", async (request, response, next) => {
       throw error;
     }
 
-    const url = String(request.body.url || "").trim();
+    let url = String(request.body.url || "").trim();
     if (!url) {
       const error = new Error("Informe a URL do site.");
       error.status = 400;
       throw error;
     }
+    if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
 
     const endpoint = new URL("https://www.googleapis.com/pagespeedonline/v5/runPagespeed");
     endpoint.searchParams.set("url", url);
@@ -552,6 +553,12 @@ app.get("/api/v1/leads/export.csv", async (_request, response, next) => {
 
 app.use((error, _request, response, _next) => {
   const status = error.status || 500;
+  console.error(JSON.stringify({
+    level: "error",
+    status,
+    message: error.message || "Internal server error",
+    stack: process.env.NODE_ENV === "production" ? undefined : error.stack
+  }));
   response.status(status).json({
     error: error.message || "Internal server error"
   });

@@ -47,6 +47,8 @@ let settings = sanitizeSettings({
   maxResults: 60,
   defaultSort: "opportunity",
   defaultOwner: "Agencia Digital",
+  theme: "nodere-dark",
+  accentColor: "#147dff",
   hideSavedResults: "on",
   autoAiOnSave: "on",
   apiBaseUrl: "",
@@ -71,11 +73,16 @@ function writeJson(key, value) {
 }
 
 function sanitizeSettings(raw = {}) {
-  const allowed = ["maxResults", "defaultSort", "defaultOwner", "hideSavedResults", "autoAiOnSave", "apiBaseUrl", "ownerToken", "chatMode"];
+  const allowed = ["maxResults", "defaultSort", "defaultOwner", "theme", "accentColor", "hideSavedResults", "autoAiOnSave", "apiBaseUrl", "ownerToken", "chatMode"];
   return allowed.reduce((acc, key) => {
     if (raw[key] !== undefined) acc[key] = raw[key];
     return acc;
   }, {});
+}
+
+function applyTheme() {
+  document.body.dataset.theme = settings.theme || "nodere-dark";
+  document.documentElement.style.setProperty("--accent", settings.accentColor || "#147dff");
 }
 
 function apiConfigured() {
@@ -186,6 +193,7 @@ function persistAll() {
   writeJson(STORAGE.leads, leads);
   writeJson(STORAGE.settings, settings);
   writeJson(STORAGE.chat, chatMessages);
+  applyTheme();
   renderAll();
 }
 
@@ -494,6 +502,7 @@ function renderPipeline() {
 
 function renderReports() {
   if (!$("#reportsGrid")) return;
+  if ($("#reportThemeSelect")) $("#reportThemeSelect").value = settings.theme || "nodere-dark";
   const won = leads.filter((lead) => lead.status === "Fechado").length;
   const lost = leads.filter((lead) => ["Perdido", "Sem interesse"].includes(lead.status)).length;
   const proposals = leads.filter((lead) => lead.status === "Proposta enviada").length;
@@ -507,6 +516,16 @@ function renderReports() {
     ["Produtividade", `${leads.flatMap((lead) => lead.notes || []).length} obs.`]
   ].map(([label, value]) => `<article class="metric-card compact"><div><p>${label}</p><strong>${value}</strong></div></article>`).join("");
   renderMiniChart();
+}
+
+function renderIntegrationStatusList(statuses = []) {
+  if (!statuses.length) return `<div class="empty-state">Clique em validar para consultar o backend.</div>`;
+  return statuses.map((item) => `<article class="integration-row ${escapeHtml(item.status || "")}">
+    <strong>${escapeHtml(item.name)}</strong>
+    <span>${item.status === "connected" ? "Conectado" : item.status === "error" ? "Erro" : item.configured ? "Pendente" : "Desconectado"}</span>
+    <small>${escapeHtml(item.message || (item.configured ? "Credencial encontrada no backend/.env." : "Configure esta chave no backend/.env."))}</small>
+    <button class="secondary-button" type="button" data-test="${escapeHtml(item.key)}">Validar</button>
+  </article>`).join("");
 }
 
 function buildSearchBody(form, pageToken = "") {
@@ -692,7 +711,7 @@ function renderLeadTimeline(lead) {
     ...(lead.timeline || []),
     ...(lead.notes || []).map((note) => ({ id: note.id, type: `Obs: ${note.type}`, text: note.text, createdAt: note.createdAt, user: note.user })),
     ...(lead.tasks || []).map((task) => ({ id: task.id, type: `Agenda: ${task.status || "Aberta"}`, text: `${task.title} (${task.channel || "Canal nao definido"})`, createdAt: task.createdAt || task.dueAt, user: task.owner })),
-    ...(lead.aiAnalyses || []).map((ai) => ({ id: ai.id, type: "IA", text: ai.result?.summary || ai.result?.diagnosis || ai.text || "Analise IA", createdAt: ai.createdAt, user: "NODERE AI" }))
+    ...(lead.aiAnalyses || []).map((ai) => ({ id: ai.id, type: "IA", text: ai.result?.summary || ai.result?.diagnosis || ai.text || "Analise IA", createdAt: ai.createdAt, user: "NODERE IA" }))
   ].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   $("#leadTimeline").innerHTML = items.map((item) => `<article class="timeline-item"><div><strong>${escapeHtml(item.type)}</strong><small>${formatDate(item.createdAt)} | ${escapeHtml(item.user || "")}</small></div><p>${escapeHtml(item.text).replaceAll("\n", "<br>")}</p></article>`).join("") || `<div class="empty-state">Timeline vazia.</div>`;
 }
@@ -946,7 +965,7 @@ function renderAiLeadSelect() {
 
 function renderChat() {
   if (!$("#chatMessages")) return;
-  $("#chatMessages").innerHTML = chatMessages.slice(-30).map((message, index) => `<div class="chat-msg ${message.role}"><strong>${message.role === "user" ? "Voce" : "NODERE AI"}</strong><p>${escapeHtml(message.content).replaceAll("\n", "<br>")}</p>${message.role !== "user" ? `<div class="settings-actions"><button class="row-button" data-copy-chat="${index}">Copiar</button><button class="row-button" data-save-chat-note="${index}">Salvar como observacao</button><button class="row-button" data-save-chat-task="${index}">Criar tarefa</button></div>` : ""}</div>`).join("") || `<div class="empty-state">Pergunte quais leads priorizar, quem esta atrasado ou qual estrategia usar.</div>`;
+  $("#chatMessages").innerHTML = chatMessages.slice(-30).map((message, index) => `<div class="chat-msg ${message.role}"><strong>${message.role === "user" ? "Voce" : "NODERE IA"}</strong><p>${escapeHtml(message.content).replaceAll("\n", "<br>")}</p>${message.role !== "user" ? `<div class="settings-actions"><button class="row-button" data-copy-chat="${index}">Copiar</button><button class="row-button" data-save-chat-note="${index}">Salvar como observacao</button><button class="row-button" data-save-chat-task="${index}">Criar tarefa</button></div>` : ""}</div>`).join("") || `<div class="empty-state">Pergunte quais leads priorizar, quem esta atrasado ou qual estrategia usar.</div>`;
 }
 
 async function sendChat() {
@@ -983,7 +1002,7 @@ function saveChatAsNote(index) {
   const message = chatMessages.slice(-30)[index];
   const lead = currentLead() || leads[0];
   if (!message || !lead) return alert("Nao ha lead salvo para associar esta resposta.");
-  lead.notes = [{ id: uid("note"), type: "Interno", text: message.content, user: "NODERE AI", createdAt: nowIso(), updatedAt: nowIso() }, ...(lead.notes || [])];
+  lead.notes = [{ id: uid("note"), type: "Interno", text: message.content, user: "NODERE IA", createdAt: nowIso(), updatedAt: nowIso() }, ...(lead.notes || [])];
   addTimeline(lead, "IA", "Resposta do chat salva como observacao.");
   persistAll();
 }
@@ -1001,14 +1020,18 @@ function saveChatAsTask(index) {
 function renderIntegrations() {
   if (!$("#integrationGrid")) return;
   const items = [
-    ["apiBaseUrl", "Backend seguro", "API privada para IA, Google, CRM e integracoes"],
+    ["apiBaseUrl", "Backend seguro", "API privada para IA, Google, CRM e integrações"],
     ["openai", "OpenAI / ChatGPT", "Agente conversacional server-side"],
     ["google_places", "Google Places", "Busca de empresas via backend"],
-    ["google_pagespeed", "Google PageSpeed", "Performance, SEO e boas praticas via backend"],
-    ["google_workspace", "Gmail / Calendar / Drive", "OAuth seguro preparado no backend"],
+    ["google_maps", "Google Maps", "Geocoding e links de mapa via backend"],
+    ["google_pagespeed", "Google PageSpeed", "Performance, SEO e boas práticas via backend"],
+    ["google_business_profile", "Google Business Profile", "OAuth e dados de perfis gerenciados"],
+    ["google_calendar", "Google Calendar", "Agenda comercial via OAuth backend"],
+    ["gmail", "Gmail", "Rascunhos e envio de emails via backend"],
+    ["google_drive", "Google Drive", "Pastas e documentos de clientes via backend"],
     ["whatsapp_cloud", "WhatsApp Cloud API", "Envio futuro via backend oficial"]
   ];
-  $("#integrationGrid").innerHTML = items.map(([key, name, description]) => `<article class="integration-row"><strong>${name}</strong><span>${key === "apiBaseUrl" ? (apiConfigured() ? "Configurado" : "Pendente") : "Backend"}</span><small>${description}</small><div class="settings-actions"><button class="secondary-button" type="button" data-nav="configuracoes">Configurar</button><button class="secondary-button" type="button" data-test="${key}">Testar conexao</button></div></article>`).join("");
+  $("#integrationGrid").innerHTML = items.map(([key, name, description]) => `<article class="integration-row"><strong>${name}</strong><span>${key === "apiBaseUrl" ? (apiConfigured() ? "Configurado" : "Pendente") : "backend/.env"}</span><small>${description}. ${key !== "apiBaseUrl" ? "Configure esta chave no backend/.env." : ""}</small><div class="settings-actions"><button class="secondary-button" type="button" data-nav="configuracoes">Configurar</button><button class="secondary-button" type="button" data-test="${key}">Validar</button></div></article>`).join("");
 }
 
 function loadSettingsForm() {
@@ -1033,6 +1056,10 @@ async function testIntegration(key) {
   if (key === "google_places") {
     await apiFetch("/api/v1/search/google-places", { method: "POST", body: JSON.stringify({ keyword: "padaria", city: "Porto Alegre", limit: 1 }) });
     return "Google Places validado pelo backend.";
+  }
+  if (key === "google_maps" || key === "google_business_profile" || key === "google_calendar" || key === "gmail" || key === "google_drive" || key === "whatsapp_cloud") {
+    const payload = await apiFetch("/api/v1/integrations/test", { method: "POST", body: JSON.stringify({ key }) });
+    return payload.integration?.message || `${key} validado pelo backend.`;
   }
   if (key === "google_pagespeed") {
     await apiFetch("/api/v1/pagespeed/analyze", { method: "POST", body: JSON.stringify({ url: "https://www.wikipedia.org" }), timeoutMs: 45000 });
@@ -1163,14 +1190,14 @@ function bindEvents() {
     const data = Object.fromEntries(new FormData(event.target));
     data.hideSavedResults = event.target.elements.hideSavedResults?.checked ? "on" : "off";
     data.autoAiOnSave = event.target.elements.autoAiOnSave?.checked ? "on" : "off";
-    settings = { ...settings, ...data };
+    settings = sanitizeSettings({ ...settings, ...data });
     writeJson(STORAGE.settings, settings);
     $("#settingsMessage").textContent = "Configuracoes salvas.";
     persistAll();
   });
   $("#clearSettings")?.addEventListener("click", () => {
     if (!confirm("Apagar configuracoes locais?")) return;
-    settings = { maxResults: 60, defaultSort: "opportunity", defaultOwner: "Agencia Digital", apiBaseUrl: "", ownerToken: "", hideSavedResults: "on", autoAiOnSave: "on" };
+    settings = { maxResults: 60, defaultSort: "opportunity", defaultOwner: "Agencia Digital", theme: "nodere-dark", accentColor: "#147dff", apiBaseUrl: "", ownerToken: "", hideSavedResults: "on", autoAiOnSave: "on" };
     writeJson(STORAGE.settings, settings);
     $("#settingsForm").reset();
     loadSettingsForm();
@@ -1185,10 +1212,23 @@ function bindEvents() {
       try { alert(await testIntegration(test.dataset.test)); } catch (error) { alert(error.message); }
     }
   });
-  $("#testAllIntegrations")?.addEventListener("click", renderIntegrations);
+  $("#testAllIntegrations")?.addEventListener("click", async () => {
+    if (!apiConfigured()) return alert("Configure a URL do backend seguro primeiro.");
+    try {
+      const payload = await apiFetch("/api/v1/integrations/status?live=1", { method: "GET", timeoutMs: 60000 });
+      $("#integrationGrid").innerHTML = renderIntegrationStatusList(payload.integrations || []);
+    } catch (error) {
+      alert(error.message);
+    }
+  });
   $("#globalSearch")?.addEventListener("input", (event) => {
     $("#crmSearch").value = event.target.value;
     showView("crm");
+  });
+  $("#reportThemeSelect")?.addEventListener("change", (event) => {
+    settings.theme = event.target.value;
+    writeJson(STORAGE.settings, settings);
+    applyTheme();
   });
   $("#chatSend")?.addEventListener("click", sendChat);
   $("#sidebarToggle")?.addEventListener("click", () => document.body.classList.toggle("sidebar-collapsed"));
@@ -1251,6 +1291,7 @@ function initSelects() {
 
 function init() {
   initSelects();
+  applyTheme();
   loadSettingsForm();
   if ($("#resultSort")) $("#resultSort").value = settings.defaultSort || "opportunity";
   writeJson(STORAGE.settings, settings);

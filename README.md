@@ -160,6 +160,8 @@ Depois do deploy:
 
 Este projeto nao deve permanecer publico quando houver operacao comercial, clientes ou segredos nos ambientes de deploy.
 
+Chaves ja compartilhadas em conversa, prints, arquivos temporarios ou repositorio devem ser revogadas e regeradas no painel do provedor antes de qualquer uso real.
+
 No GitHub:
 
 1. Abra `Settings > General > Danger Zone`.
@@ -168,6 +170,12 @@ No GitHub:
 4. Revise `Settings > Collaborators`, `Actions secrets`, `Deploy keys` e tokens.
 
 O Codex nao deve versionar `.env`, tokens, dumps de banco ou arquivos com credenciais.
+
+Guias detalhados:
+
+- `docs/PRIVATE_REPO.md`
+- `docs/DEPLOY_BACKEND.md`
+- `docs/ENV_SETUP.md`
 
 ## Testes de Integração
 
