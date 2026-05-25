@@ -1,73 +1,67 @@
 # NODERE Intelligence
 
-MVP web para prospeccao inteligente focada em Google Ads, Google Meu Negocio e presenca digital local.
+**NODERE Intelligence** e uma plataforma para encontrar empresas com falhas digitais e transformar esses sinais em oportunidades comerciais para Google Ads, Google Business Profile, trafego pago e consultoria digital.
 
-O produto combina dashboard comercial, busca de empresas, score de oportunidade, diagnostico digital, WhatsApp rapido e CRM simples.
+Slogan:
 
-## Stack
+> Transformando falhas digitais em oportunidades comerciais.
 
-- Frontend: Next.js, React, TailwindCSS
-- Backend: Node.js, Express
-- Banco: PostgreSQL
-- Deploy sugerido: Vercel para `apps/web` e Railway/Render para `apps/api`
+## Status do MVP
 
-## Estrutura
+O repositorio contem duas camadas:
 
-```txt
-apps/
-  api/      Express API, scoring, adapters Google e CRM
-  web/      Next.js app, dashboard, empresas, CRM e integracoes
-packages/
-  database/ schema PostgreSQL
+- Prototipo web estatico pronto para GitHub Pages: `index.html`, `styles.css`, `app.js`, PWA e previews.
+- Base evolutiva com Next.js + Express em `apps/web` e `apps/api`, preparada para Google Places, PageSpeed, CRM, WhatsApp, OpenAI e PostgreSQL.
+
+## O que o prototipo entrega
+
+- Dashboard executivo.
+- Buscador inteligente de empresas.
+- Scanner com buscas salvas e fila de auditoria.
+- Google Intelligence para Ads e Perfil da Empresa.
+- Tela de empresa com diagnostico, score e playbook.
+- CRM Kanban.
+- Automacao comercial.
+- Inbox com WhatsApp/e-mail simulado.
+- Copilot IA com previsao, ROI e proposta.
+- Diagnostico printavel em PDF.
+- Relatorios e exportacao CSV.
+- Admin com usuarios, permissoes por aba e convites.
+- Planos, creditos, consumo e faturas.
+- PWA instalavel.
+
+## Como abrir localmente
+
+No Windows:
+
+```text
+INICIAR_NODERE.bat
 ```
 
-## Rodando localmente
-
-1. Instale dependencias:
+Ou:
 
 ```bash
-npm install
+npm run serve
 ```
 
-2. Crie o `.env`:
+Depois acesse:
 
-```bash
-cp .env.example .env
+```text
+http://localhost:4173
 ```
 
-3. Suba o Postgres opcional:
+Tambem e possivel abrir diretamente o arquivo `index.html`.
 
-```bash
-docker compose up -d
-```
+## Integracoes Google validadas
 
-4. Rode API e Web:
+O backend em `apps/api` possui conectores para:
 
-```bash
-npm run dev
-```
+- Google Places API: busca real de empresas por texto.
+- Google Maps API: mapas, links e coordenadas vindos do Places.
+- Google PageSpeed Insights API: performance mobile no diagnostico digital.
+- Google Business Profile API: variaveis e painel preparados para OAuth; a leitura real exige autorizacao dos perfis gerenciados.
 
-URLs:
-
-- Web: `http://localhost:3000`
-- API: `http://localhost:4000/health`
-
-## Modo MVP sem chaves
-
-Por padrao, `USE_MOCK_DATA=true`. A busca inteligente retorna dados demonstrativos e permite validar fluxo, score, WhatsApp por link e CRM sem custo de API.
-
-Para ativar busca real:
-
-```env
-USE_MOCK_DATA=false
-GOOGLE_PLACES_API_KEY=...
-GOOGLE_MAPS_API_KEY=...
-GOOGLE_PAGESPEED_API_KEY=...
-```
-
-## Validar Google APIs
-
-Depois de preencher o `.env`, rode:
+Para validar as chaves no `.env`, rode:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/check-google-apis.ps1
@@ -75,29 +69,12 @@ powershell -ExecutionPolicy Bypass -File scripts/check-google-apis.ps1
 
 O script nao imprime a chave. Ele mostra apenas se Places e PageSpeed estao liberadas.
 
-Se aparecer `SERVICE_DISABLED` ou `PERMISSION_DENIED`, habilite ou libere a chave no Google Cloud:
+## Variaveis principais
 
-- Places API (New): `https://console.developers.google.com/apis/api/places.googleapis.com/overview`
-- Maps JavaScript API: `https://console.developers.google.com/apis/api/maps-backend.googleapis.com/overview`
-- Geocoding API: `https://console.developers.google.com/apis/api/geocoding-backend.googleapis.com/overview`
-- PageSpeed Insights API: `https://console.developers.google.com/apis/api/pagespeedonline.googleapis.com/overview`
-
-Em `APIs e servicos > Credenciais`, edite a chave e permita essas APIs em `Restricoes de API`.
-
-## Integracoes prontas
-
-O codigo ja possui conectores seguros para:
-
-- Google Places API: busca real de empresas por texto.
-- Google Maps API: mapas, links e coordenadas vindos do Places.
-- Google PageSpeed Insights API: performance mobile no diagnostico digital.
-- Google Business Profile API: variaveis e painel preparados para OAuth; a leitura real exige que a conta Google autorize perfis gerenciados.
-- WhatsApp Cloud API: `POST /api/companies/:id/whatsapp` envia via Cloud API quando configurado; sem token, retorna link `wa.me`.
-- OpenAI API: `POST /api/companies/:id/diagnosis` gera diagnostico comercial; sem chave, usa diagnostico por template.
-
-Variaveis:
+Copie `.env.example` para `.env` e preencha conforme necessario:
 
 ```env
+USE_MOCK_DATA=false
 GOOGLE_PLACES_API_KEY=
 GOOGLE_MAPS_API_KEY=
 GOOGLE_PAGESPEED_API_KEY=
@@ -107,40 +84,19 @@ GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN=
 WHATSAPP_CLOUD_TOKEN=
 WHATSAPP_PHONE_NUMBER_ID=
 OPENAI_API_KEY=
+NEXT_PUBLIC_API_URL=http://localhost:4000/api
 ```
 
-## Endpoints principais
+## Deploy
 
-- `GET /api/dashboard`
-- `GET /api/companies`
-- `GET /api/companies/:id`
-- `POST /api/companies/:id/analyze`
-- `POST /api/companies/:id/whatsapp`
-- `POST /api/companies/:id/diagnosis`
-- `PATCH /api/companies/:id/status`
-- `POST /api/companies/:id/notes`
-- `POST /api/searches`
-- `GET /api/integrations`
-- `GET /api/integrations/health`
+O projeto ja possui `.github/workflows/pages.yml` para publicar o prototipo estatico no GitHub Pages a cada push na branch `main`.
 
-## Score de oportunidade
+Para a versao com API real:
 
-O score considera sinais como:
-
-- Nota abaixo de 4.2
-- Menos de 50 avaliacoes
-- Ausencia de site
-- Ausencia de WhatsApp
-- Ausencia de Google Ads detectado
-- Perfil sem descricao, fotos ou posts recentes
-- Falta de resposta a avaliacoes
-- Site lento no mobile
-
-Classificacao:
-
-- `Alta`: score >= 65
-- `Media`: score >= 40
-- `Baixa`: score < 40
+- Frontend Next.js: Vercel com root `apps/web`.
+- Backend Express: Railway ou Render com root `apps/api`.
+- Banco: PostgreSQL gerenciado.
+- Variaveis: usar os valores do `.env` no painel da plataforma, nunca commitadas no Git.
 
 ## Banco de dados
 
@@ -157,12 +113,11 @@ O schema em `packages/database/schema.sql` cria:
 
 ## Proximas evolucoes
 
-- Persistir API no PostgreSQL em vez de store em memoria
-- Autenticacao JWT ou Firebase Auth
-- Job diario para busca e atualizacao automatica
-- Persistencia completa dos leads e diagnosticos no PostgreSQL
-- Tela de configuracao OAuth do Google Business Profile
-- Templates aprovados de WhatsApp para disparos fora da janela de atendimento
-- Propostas comerciais geradas por IA
-- Pipeline com drag and drop
-- Relatorios por cidade, segmento e canal
+- Persistir a API no PostgreSQL em vez de store em memoria.
+- Autenticacao JWT ou Firebase Auth.
+- Job diario para busca e atualizacao automatica.
+- Tela OAuth do Google Business Profile.
+- WhatsApp Cloud API com templates aprovados.
+- Propostas comerciais geradas por IA.
+- Pipeline com drag and drop.
+- Relatorios por cidade, segmento e canal.

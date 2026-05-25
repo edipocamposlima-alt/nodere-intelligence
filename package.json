@@ -2,17 +2,22 @@
   "name": "nodere-intelligence",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "workspaces": [
     "apps/api",
     "apps/web"
   ],
   "scripts": {
+    "start": "node serve-nodere.mjs",
+    "serve": "node serve-nodere.mjs",
+    "api": "cd backend && npm run dev",
     "dev": "concurrently \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
     "dev:api": "npm run dev -w apps/api",
     "dev:web": "npm run dev -w apps/web",
     "build": "npm run build -w apps/api && npm run build -w apps/web",
     "lint": "npm run lint -w apps/web",
-    "typecheck": "npm run typecheck -w apps/api && npm run typecheck -w apps/web"
+    "typecheck": "npm run typecheck -w apps/api && npm run typecheck -w apps/web",
+    "check": "node --check app.js && node --check serve-nodere.mjs && node --check backend/src/server.js"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
