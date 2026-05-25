@@ -7,7 +7,7 @@
     <title>NODERE Intelligence</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./nodere-icon.png" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=ops-2" />
+    <link rel="stylesheet" href="./styles.css?v=ops-3" />
   </head>
   <body>
     <div class="app-shell">
@@ -16,16 +16,16 @@
           <img src="./nodere-logo-wordmark.png" alt="NODERE Intelligence" />
         </a>
         <nav class="nav-list" aria-label="Menu principal">
-          <button class="nav-item active" type="button" data-nav="dashboard"><span>DB</span>Dashboard</button>
-          <button class="nav-item" type="button" data-nav="empresas"><span>EM</span>Empresas</button>
-          <button class="nav-item" type="button" data-nav="crm"><span>CRM</span>CRM</button>
-          <button class="nav-item" type="button" data-nav="agenda"><span>AG</span>Agenda</button>
-          <button class="nav-item" type="button" data-nav="pipeline"><span>PL</span>Pipeline</button>
-          <button class="nav-item" type="button" data-nav="pagespeed"><span>PS</span>PageSpeed</button>
-          <button class="nav-item" type="button" data-nav="ia"><span>AI</span>IA</button>
-          <button class="nav-item" type="button" data-nav="relatorios"><span>RP</span>Relatorios</button>
-          <button class="nav-item" type="button" data-nav="integracoes"><span>IN</span>Integracoes</button>
-          <button class="nav-item" type="button" data-nav="configuracoes"><span>CF</span>Configuracoes</button>
+          <button class="nav-item active nav-home" type="button" data-nav="dashboard"><span>⌂</span>Início</button>
+          <button class="nav-item nav-search" type="button" data-nav="empresas"><span>⌕</span>Busca de empresas</button>
+          <button class="nav-item nav-crm" type="button" data-nav="crm"><span>◇</span>CRM</button>
+          <button class="nav-item nav-agenda" type="button" data-nav="agenda"><span>◷</span>Agenda</button>
+          <button class="nav-item nav-pipeline" type="button" data-nav="pipeline"><span>▤</span>Pipeline</button>
+          <button class="nav-item nav-pagespeed" type="button" data-nav="pagespeed"><span>⚡</span>PageSpeed</button>
+          <button class="nav-item nav-ia" type="button" data-nav="ia"><span>AI</span>IA</button>
+          <button class="nav-item nav-reports" type="button" data-nav="relatorios"><span>▥</span>Relatórios</button>
+          <button class="nav-item nav-integrations" type="button" data-nav="integracoes"><span>↔</span>Integrações</button>
+          <button class="nav-item nav-settings" type="button" data-nav="configuracoes"><span>⚙</span>Configurações</button>
         </nav>
         <div class="agency-card">
           <span class="avatar">AG</span>
@@ -97,7 +97,7 @@
         <section class="view" id="empresas">
           <article class="panel">
             <div class="table-header">
-              <div class="panel-title compact"><span>Google</span><h2>Busca real de empresas</h2></div>
+              <div class="panel-title compact"><span>Google</span><h2>Busca de empresas</h2></div>
               <button class="secondary-button" type="button" data-nav="configuracoes">Configurar APIs</button>
             </div>
             <form class="smart-search loose" id="placesSearchForm">
@@ -122,6 +122,8 @@
                 <option value="fewReviews">Poucas avaliacoes</option>
                 <option value="noHours">Sem horario</option>
                 <option value="incomplete">Perfil incompleto</option>
+                <option value="hideSaved">Ocultar empresas já salvas no CRM</option>
+                <option value="savedOnly">Mostrar apenas já salvas</option>
               </select>
               <button class="secondary-button" id="loadMorePlaces" type="button">Carregar mais</button>
             </div>
@@ -224,6 +226,8 @@
               <label>WHATSAPP_PHONE_NUMBER_ID<input name="whatsappPhoneNumberId" autocomplete="off" /></label>
               <label>Responsavel padrao<input name="defaultOwner" placeholder="Agencia Digital" /></label>
               <label>Maximo por busca<input name="maxResults" type="number" min="10" max="80" step="10" value="60" /></label>
+              <label class="check-row"><input name="hideSavedResults" type="checkbox" checked /> Ocultar empresas já salvas na busca</label>
+              <label class="check-row"><input name="autoAiOnSave" type="checkbox" checked /> Gerar IA automaticamente ao salvar lead</label>
               <label>Ordenacao padrao<select name="defaultSort"><option value="opportunity">Maior oportunidade comercial</option><option value="ratingAsc">Menor avaliacao</option><option value="ratingDesc">Maior avaliacao</option></select></label>
               <div class="settings-actions">
                 <button class="primary-button" type="submit">Salvar configuracoes</button>
@@ -251,8 +255,10 @@
         <div class="dialog-head">
           <h2 id="leadDialogTitle">Ficha operacional do lead</h2>
           <div class="settings-actions">
-            <button class="primary-button" value="save">Salvar ficha</button>
-            <button class="secondary-button" value="cancel">Fechar</button>
+            <button class="primary-button xl" value="save">Salvar lead</button>
+            <button class="secondary-button xl" type="button" id="leadHeaderPageSpeed">Analisar PageSpeed</button>
+            <button class="secondary-button xl purple" type="button" id="leadHeaderAi">Analisar com IA</button>
+            <button class="secondary-button xl" value="cancel">Cancelar</button>
           </div>
         </div>
         <input type="hidden" name="id" />
@@ -281,7 +287,7 @@
         </div>
 
         <nav class="lead-tabs" id="leadTabs">
-          <button class="secondary-button active" type="button" data-tab="overview">Visao geral</button>
+          <button class="secondary-button active" type="button" data-tab="overview">Dados</button>
           <button class="secondary-button" type="button" data-tab="notes">Observacoes</button>
           <button class="secondary-button" type="button" data-tab="agenda">Agenda</button>
           <button class="secondary-button" type="button" data-tab="timeline">Historico</button>
@@ -317,7 +323,7 @@
           <div class="result-box" id="leadAiResult"></div>
         </section>
         <section class="lead-tab" id="leadTab-pagespeed">
-          <button class="primary-button" type="button" id="leadPageSpeedButton">Analisar e salvar PageSpeed</button>
+          <button class="primary-button xl" type="button" id="leadPageSpeedButton">Analisar site automaticamente</button>
           <div class="result-box" id="leadPageSpeedBox"></div>
         </section>
         <section class="lead-tab" id="leadTab-proposals">
@@ -326,6 +332,6 @@
       </form>
     </dialog>
 
-    <script src="./app.js?v=ops-2"></script>
+    <script src="./app.js?v=ops-3"></script>
   </body>
 </html>

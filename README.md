@@ -27,14 +27,14 @@ GitHub Pages nao executa backend e nao pode guardar segredos. Portanto, chaves G
 
 ## Funcionalidades Operacionais
 
-- Busca real de empresas via Google Places.
+- Busca de empresas via Google Places, com prevencao de duplicidade e filtro para ocultar empresas ja salvas no CRM.
 - Dados retornados: nome, telefone, site, endereco, categoria, avaliacao, total de avaliacoes e link Google Maps.
 - CRM persistido no Supabase/PostgreSQL.
 - Pipeline profissional com drag and drop.
 - Observacoes longas por lead, com tipo, responsavel, data e historico.
 - Timeline operacional por lead com observacoes, status, tarefas, PageSpeed e IA.
 - Agenda comercial com follow-up, canal, prioridade, conclusao e alertas.
-- Dashboard com leads quentes, atrasados, contatos do dia, sem follow-up e propostas.
+- Inicio com leads quentes, atrasados, contatos do dia, sem follow-up e propostas.
 - Relatorios de conversao, ganhos, perdas, propostas e valor potencial.
 - Chat IA global com contexto da carteira.
 - Painel IA dentro da ficha do lead com acoes comerciais: WhatsApp, email, follow-up, diagnostico, proposta, objecoes, script de ligacao e estrategia Google Ads.

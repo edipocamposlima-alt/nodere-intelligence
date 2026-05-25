@@ -43,7 +43,7 @@ const aiActions = {
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
-let settings = { maxResults: 60, defaultSort: "opportunity", defaultOwner: "Agencia Digital", ...readJson(STORAGE.legacySettings, {}), ...readJson(STORAGE.settings, {}) };
+let settings = { maxResults: 60, defaultSort: "opportunity", defaultOwner: "Agencia Digital", hideSavedResults: "on", autoAiOnSave: "on", ...readJson(STORAGE.legacySettings, {}), ...readJson(STORAGE.settings, {}) };
 let leads = readJson(STORAGE.leads, readJson(STORAGE.legacyLeads, [])).map(normalizeLead);
 let chatMessages = readJson(STORAGE.chat, []);
 let searchResults = [];
@@ -243,6 +243,39 @@ function addTimeline(lead, type, text, user = settings.defaultOwner || "Agencia 
   lead.updatedAt = nowIso();
 }
 
+function normalizeKey(value = "") {
+  return String(value).trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "");
+}
+
+function leadIdentity(lead = {}) {
+  const phone = String(lead.whatsapp || lead.phone || "").replace(/\D/g, "");
+  return {
+    place: lead.placeId ? `place:${lead.placeId}` : "",
+    site: lead.website ? `site:${normalizeKey(lead.website.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, ""))}` : "",
+    phone: phone ? `phone:${phone}` : "",
+    nameAddress: `name:${normalizeKey(lead.company)}:${normalizeKey(lead.address || `${lead.city}${lead.state}`)}`
+  };
+}
+
+function sameLead(a = {}, b = {}) {
+  const ia = leadIdentity(a);
+  const ib = leadIdentity(b);
+  return Boolean(
+    (ia.place && ia.place === ib.place) ||
+    (ia.site && ia.site === ib.site) ||
+    (ia.phone && ia.phone === ib.phone) ||
+    (normalizeKey(a.company) && ia.nameAddress === ib.nameAddress)
+  );
+}
+
+function savedLeadFor(candidate) {
+  return leads.find((lead) => sameLead(lead, candidate));
+}
+
+function isSavedLead(candidate) {
+  return Boolean(savedLeadFor(candidate));
+}
+
 function normalizePlace(place, formData = {}) {
   return normalizeLead({
     tempId: place.id || uid("temp"),
@@ -318,19 +351,25 @@ function renderLeadRows(rows, target, mode) {
   container.innerHTML = `
     <div class="table-row table-head"><span>Empresa</span><span>Contato</span><span>Pipeline</span><span>Score</span><span>Proximo passo</span><span>Acoes</span></div>
     ${rows.map((lead) => {
+      const saved = mode !== "crm" ? savedLeadFor(lead) : null;
       const wa = whatsappUrl(lead);
       const maps = lead.mapsUrl || (lead.address ? `https://maps.google.com/?q=${encodeURIComponent(lead.address)}` : "");
       const task = nextTask(lead);
+      const site = lead.website || "";
       return `<div class="table-row">
-        <div class="company-cell"><span class="logo-ball">${escapeHtml((lead.company || "?").slice(0, 1))}</span><span><strong>${escapeHtml(lead.company)}</strong><small>${escapeHtml([lead.city, lead.state, lead.segment].filter(Boolean).join(" | ") || "Sem local")}</small></span></div>
+        <div class="company-cell"><span class="logo-ball">${escapeHtml((lead.company || "?").slice(0, 1))}</span><span><strong>${escapeHtml(lead.company)}</strong>${saved ? `<em class="saved-tag">Ja esta no CRM</em>` : ""}<small>${escapeHtml([lead.city, lead.state, lead.segment].filter(Boolean).join(" | ") || "Sem local")}</small></span></div>
         <span>${escapeHtml(lead.phone || lead.whatsapp || lead.email || "Sem contato")}<small>${escapeHtml(lead.contactName || lead.role || "")}</small></span>
-        <span>${mode === "crm" ? statusSelect(lead) : `<button class="row-button" data-save-place="${lead.tempId}">Salvar CRM</button>`}<small>${escapeHtml(lead.temperature)}</small></span>
+        <span>${mode === "crm" ? statusSelect(lead) : saved ? `<button class="row-button" data-open-lead="${saved.id}">Abrir no CRM</button>` : `<button class="row-button accent" data-save-place="${lead.tempId}">Salvar no CRM</button>`}<small>${escapeHtml(lead.temperature)}</small></span>
         <span><b class="score ${scoreLead(lead) >= 75 ? "high" : "mid"}">${scoreLead(lead)}</b><small>${escapeHtml(leadProblem(lead))}</small></span>
         <span>${task ? `${escapeHtml(task.title)}<small>${formatDate(task.dueAt)}</small>` : "Sem follow-up"}</span>
         <span class="actions">
           <button class="row-button" data-open="${mode === "crm" ? lead.id : lead.tempId}" data-mode="${mode}">Ficha</button>
+          ${mode !== "crm" ? `<button class="row-button purple" data-ai-preview="${lead.tempId}">Diagnostico IA</button>` : ""}
           ${wa ? `<a class="whatsapp" target="_blank" rel="noreferrer" href="${wa}">WA</a>` : ""}
+          ${site ? `<a class="site-link" target="_blank" rel="noreferrer" href="${escapeHtml(site)}">Site</a>` : ""}
           ${maps ? `<a class="maps" target="_blank" rel="noreferrer" href="${maps}">Map</a>` : ""}
+          ${lead.phone || lead.whatsapp ? `<button class="row-button" data-copy="${escapeHtml(lead.phone || lead.whatsapp)}">Copiar tel</button>` : ""}
+          ${lead.address ? `<button class="row-button" data-copy="${escapeHtml(lead.address)}">Copiar end.</button>` : ""}
           ${mode === "crm" ? `<button class="row-button danger" data-delete="${lead.id}">Excluir</button>` : ""}
         </span>
       </div>`;
@@ -477,6 +516,8 @@ function getFilteredResults() {
   if (filter === "fewReviews") rows = rows.filter((lead) => Number(lead.reviews || 0) < 50);
   if (filter === "noHours") rows = rows.filter((lead) => !lead.openingHours);
   if (filter === "incomplete") rows = rows.filter((lead) => !lead.website || !lead.phone || !lead.openingHours || !lead.segment);
+  if (filter === "hideSaved" || (settings.hideSavedResults === "on" && filter !== "savedOnly")) rows = rows.filter((lead) => !isSavedLead(lead));
+  if (filter === "savedOnly") rows = rows.filter((lead) => isSavedLead(lead));
   rows.sort((a, b) => {
     if (sort === "ratingAsc") return (Number(a.rating) || 99) - (Number(b.rating) || 99);
     if (sort === "ratingDesc") return (Number(b.rating) || 0) - (Number(a.rating) || 0);
@@ -489,14 +530,19 @@ function getFilteredResults() {
 function saveLeadFromPlace(tempId) {
   const place = searchResults.find((item) => item.tempId === tempId);
   if (!place) return;
-  if (leads.some((lead) => lead.placeId && lead.placeId === place.placeId)) {
-    setMessage("searchMessage", "Esse lead ja esta salvo no CRM.", "warning");
+  const duplicate = savedLeadFor(place);
+  if (duplicate) {
+    setMessage("searchMessage", "Esse lead ja esta salvo no CRM. Abrindo ficha existente.", "warning");
+    openLeadDialog(duplicate);
     return;
   }
   const lead = normalizeLead({ ...place, id: uid("lead"), createdAt: nowIso(), updatedAt: nowIso() });
   addTimeline(lead, "Prospecao", "Lead salvo a partir do Google Places.");
+  attachAutomaticAi(lead, "Lead salvo no CRM a partir da busca.");
   leads.unshift(lead);
   persistAll();
+  refreshAiInBackground(lead.id, "Lead salvo no CRM a partir da busca.");
+  renderLeadRows(getFilteredResults(), "searchResults", "search");
   setMessage("searchMessage", "Lead salvo no CRM com score, timeline e IA local.", "success");
 }
 
@@ -526,15 +572,25 @@ function saveLeadFromForm() {
       if (lead.id !== data.id) return lead;
       const updated = normalizeLead({ ...lead, ...data, updatedAt: now });
       addTimeline(updated, "Ficha", "Dados principais atualizados.");
+      attachAutomaticAi(updated, "Lead atualizado na ficha.");
       return updated;
     });
   } else {
+    const duplicate = savedLeadFor(data);
+    if (duplicate) {
+      alert("Este lead ja esta salvo no CRM. Vou abrir a ficha existente.");
+      openLeadDialog(duplicate);
+      return;
+    }
     const lead = normalizeLead({ ...data, id: uid("lead"), createdAt: now, updatedAt: now, source: data.source || "Manual" });
     addTimeline(lead, "Criacao", "Lead criado manualmente.");
+    attachAutomaticAi(lead, "Lead criado manualmente.");
     leads.unshift(lead);
     currentLeadId = lead.id;
+    setTimeout(() => refreshAiInBackground(lead.id, "Lead criado manualmente."), 0);
   }
   persistAll();
+  if (data.id) refreshAiInBackground(data.id, "Lead atualizado na ficha.");
 }
 
 function renderLeadTabs(lead) {
@@ -547,8 +603,21 @@ function renderLeadTabs(lead) {
   renderLeadPageSpeed(safeLead);
 }
 
+function activateLeadTab(tabName) {
+  $$("#leadTabs [data-tab]").forEach((item) => item.classList.toggle("active", item.dataset.tab === tabName));
+  $$(".lead-tab").forEach((tab) => tab.classList.toggle("active", tab.id === `leadTab-${tabName}`));
+}
+
 function renderLeadOverview(lead) {
   $("#leadOverview").innerHTML = `
+    <div class="client-site-card ${lead.website ? "" : "missing"}">
+      <span>Site do cliente</span>
+      <strong>${lead.website ? `<a target="_blank" rel="noreferrer" href="${escapeHtml(lead.website)}">${escapeHtml(lead.website)}</a>` : "Este lead nao possui site cadastrado"}</strong>
+      <div class="settings-actions">
+        <button class="primary-button xl" type="button" data-tab="pagespeed">Analisar PageSpeed</button>
+        <button class="secondary-button xl" type="button" data-tab="ia">Analisar com IA</button>
+      </div>
+    </div>
     <div class="insight-grid">
       <div><small>Score oportunidade</small><strong>${scoreLead(lead)}/100</strong></div>
       <div><small>Temperatura</small><strong>${escapeHtml(lead.temperature)}</strong></div>
@@ -587,7 +656,38 @@ function renderLeadAi(lead) {
 }
 
 function renderLeadPageSpeed(lead) {
-  $("#leadPageSpeedBox").innerHTML = lead.pageSpeed ? renderPageSpeedResult(lead.pageSpeed) : "Nenhuma analise PageSpeed salva.";
+  $("#leadPageSpeedBox").innerHTML = lead.website
+    ? `<div class="client-site-card"><span>Site cadastrado</span><strong><a target="_blank" rel="noreferrer" href="${escapeHtml(lead.website)}">${escapeHtml(lead.website)}</a></strong></div>${lead.pageSpeed ? renderPageSpeedResult(lead.pageSpeed) : "Nenhuma analise PageSpeed salva."}`
+    : `<div class="warning">Este lead nao possui site cadastrado.</div>`;
+}
+
+function attachAutomaticAi(lead, reason = "Atualizacao automatica") {
+  if (settings.autoAiOnSave !== "on") return;
+  const ai = localAi("analyze", lead, buildSystemContext(), reason);
+  lead.ai = ai;
+  lead.aiMessage = ai.whatsappMessage || lead.aiMessage;
+  lead.aiAnalyses = [{ id: uid("ai"), action: "auto-save", result: ai, createdAt: nowIso() }, ...(lead.aiAnalyses || [])];
+  addTimeline(lead, "IA automatica", `${ai.summary}: ${ai.leadPotential} potencial. ${ai.nextSteps?.[0] || ""}`);
+}
+
+function refreshAiInBackground(leadId, reason = "Analise automatica") {
+  if (settings.autoAiOnSave !== "on" || !settings.aiEndpoint) return;
+  const lead = leads.find((item) => item.id === leadId);
+  if (!lead) return;
+  requestAi("analyze", lead, reason).then((payload) => {
+    const freshLead = leads.find((item) => item.id === leadId);
+    if (!freshLead) return;
+    const ai = payload.diagnosis || payload;
+    freshLead.ai = ai;
+    freshLead.aiMessage = ai.whatsappMessage || freshLead.aiMessage;
+    freshLead.aiAnalyses = [{ id: uid("ai"), action: "auto-endpoint", result: ai, createdAt: nowIso() }, ...(freshLead.aiAnalyses || [])];
+    addTimeline(freshLead, "IA OpenAI", `${ai.summary || "Analise atualizada"} via endpoint seguro.`);
+    persistAll();
+  }).catch((error) => {
+    const freshLead = leads.find((item) => item.id === leadId);
+    if (freshLead) addTimeline(freshLead, "IA pendente", `Endpoint IA nao respondeu: ${error.message}`);
+    writeJson(STORAGE.leads, leads);
+  });
 }
 
 function addNote() {
@@ -824,10 +924,19 @@ async function sendChat() {
   persistAll();
 }
 
+function copyText(text = "") {
+  if (!text) return;
+  navigator.clipboard?.writeText(text).then(() => {
+    setMessage("searchMessage", "Copiado para a area de transferencia.", "success");
+  }).catch(() => {
+    prompt("Copie o conteudo:", text);
+  });
+}
+
 function renderIntegrations() {
   if (!$("#integrationGrid")) return;
   const items = [
-    ["googlePlacesKey", "Google Places", "Busca real de empresas"],
+    ["googlePlacesKey", "Google Places", "Busca de empresas"],
     ["googleMapsKey", "Google Maps", "Links e mapas"],
     ["googlePageSpeedKey", "Google PageSpeed", "Performance, SEO e boas praticas"],
     ["aiEndpoint", "IA / OpenAI Backend", "Agente operacional via endpoint seguro"],
@@ -838,7 +947,10 @@ function renderIntegrations() {
 
 function loadSettingsForm() {
   Object.entries(settings).forEach(([key, value]) => {
-    if ($("#settingsForm")?.elements[key]) $("#settingsForm").elements[key].value = value;
+    const field = $("#settingsForm")?.elements[key];
+    if (!field) return;
+    if (field.type === "checkbox") field.checked = value === "on" || value === true;
+    else field.value = value;
   });
 }
 
@@ -896,15 +1008,27 @@ function bindEvents() {
   $("#searchResults")?.addEventListener("click", (event) => {
     const save = event.target.closest("[data-save-place]");
     const open = event.target.closest("[data-open]");
+    const preview = event.target.closest("[data-ai-preview]");
+    const copy = event.target.closest("[data-copy]");
     if (save) saveLeadFromPlace(save.dataset.savePlace);
     if (open) openLeadDialog(searchResults.find((lead) => lead.tempId === open.dataset.open));
+    if (preview) {
+      const lead = searchResults.find((item) => item.tempId === preview.dataset.aiPreview);
+      if (lead) {
+        const ai = localAi("analyze", lead, buildSystemContext());
+        alert(`${ai.summary}\n\n${ai.diagnosis}\n\nProximo passo: ${ai.nextSteps?.[0] || ""}`);
+      }
+    }
+    if (copy) copyText(copy.dataset.copy);
   });
   $("#newLeadButton")?.addEventListener("click", () => openLeadDialog({ id: "" }));
   ["crmSearch", "crmStatusFilter", "crmTemperatureFilter", "crmOwnerFilter", "crmSpecialFilter"].forEach((id) => $(`#${id}`)?.addEventListener("input", renderCrm));
   $("#crmTable")?.addEventListener("click", (event) => {
     const open = event.target.closest("[data-open]");
     const remove = event.target.closest("[data-delete]");
+    const copy = event.target.closest("[data-copy]");
     if (open) openLeadDialog(leads.find((lead) => lead.id === open.dataset.open));
+    if (copy) copyText(copy.dataset.copy);
     if (remove && confirm("Excluir este lead?")) {
       leads = leads.filter((lead) => lead.id !== remove.dataset.delete);
       persistAll();
@@ -926,8 +1050,11 @@ function bindEvents() {
   $("#leadTabs")?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-tab]");
     if (!button) return;
-    $$("#leadTabs [data-tab]").forEach((item) => item.classList.toggle("active", item === button));
-    $$(".lead-tab").forEach((tab) => tab.classList.toggle("active", tab.id === `leadTab-${button.dataset.tab}`));
+    activateLeadTab(button.dataset.tab);
+  });
+  $("#leadOverview")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-tab]");
+    if (button) activateLeadTab(button.dataset.tab);
   });
   $("#addNoteButton")?.addEventListener("click", addNote);
   $("#addTaskButton")?.addEventListener("click", addTask);
@@ -942,8 +1069,19 @@ function bindEvents() {
   $("#leadPageSpeedButton")?.addEventListener("click", () => {
     const lead = currentLead();
     const url = lead?.website || $("#leadForm").elements.website.value;
-    if (!url) return alert("Informe o site da empresa.");
+    if (!url) {
+      $("#leadPageSpeedBox").innerHTML = `<div class="warning">Este lead nao possui site cadastrado.</div>`;
+      return;
+    }
     runPageSpeed(url, "leadPageSpeedBox", currentLeadId).catch((error) => $("#leadPageSpeedBox").textContent = error.message);
+  });
+  $("#leadHeaderPageSpeed")?.addEventListener("click", () => {
+    activateLeadTab("pagespeed");
+    $("#leadPageSpeedButton")?.click();
+  });
+  $("#leadHeaderAi")?.addEventListener("click", () => {
+    activateLeadTab("ia");
+    analyzeLeadWithAi(currentLeadId, "analyze", "leadAiResult").catch((error) => $("#leadAiResult").textContent = error.message);
   });
   $("#pageSpeedForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -956,7 +1094,10 @@ function bindEvents() {
   $("#aiAnalyzeButton")?.addEventListener("click", () => analyzeLeadWithAi($("#aiLeadSelect").value, $("#aiActionSelect").value, "aiResult").catch((error) => $("#aiResult").textContent = error.message));
   $("#settingsForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
-    settings = { ...settings, ...Object.fromEntries(new FormData(event.target)) };
+    const data = Object.fromEntries(new FormData(event.target));
+    data.hideSavedResults = event.target.elements.hideSavedResults?.checked ? "on" : "off";
+    data.autoAiOnSave = event.target.elements.autoAiOnSave?.checked ? "on" : "off";
+    settings = { ...settings, ...data };
     writeJson(STORAGE.settings, settings);
     $("#settingsMessage").textContent = "Configuracoes salvas.";
     persistAll();
