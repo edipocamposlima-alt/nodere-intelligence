@@ -52,14 +52,24 @@ http://localhost:4173
 
 Tambem e possivel abrir diretamente o arquivo `index.html`.
 
-## Integracoes Google validadas
+## Integracoes seguras
 
-O backend em `apps/api` possui conectores para:
+A URL em GitHub Pages e estatica. Por seguranca, ela nao le nem armazena chaves reais. Todas as chamadas com segredo devem passar pelo backend em `backend/` ou `apps/api`.
+
+O backend possui conectores para:
 
 - Google Places API: busca real de empresas por texto.
-- Google Maps API: mapas, links e coordenadas vindos do Places.
+- Google Maps API: geocoding, links e contexto local.
 - Google PageSpeed Insights API: performance mobile no diagnostico digital.
-- Google Business Profile API: variaveis e painel preparados para OAuth; a leitura real exige autorizacao dos perfis gerenciados.
+- Google Business Profile API: OAuth com `client_id`, `client_secret` e `refresh_token`.
+- OpenAI API: diagnosticos comerciais via endpoint seguro.
+
+Na tela `#configuracoes`, informe somente:
+
+- URL da API, por exemplo `http://localhost:3333` ou a URL publicada no Render/Railway.
+- Token da API, caso `MVP_OWNER_TOKEN` esteja configurado no backend.
+
+Nunca cole chaves Google/OpenAI na tela do navegador.
 
 Para validar as chaves no `.env`, rode:
 
@@ -67,7 +77,7 @@ Para validar as chaves no `.env`, rode:
 powershell -ExecutionPolicy Bypass -File scripts/check-google-apis.ps1
 ```
 
-O script nao imprime a chave. Ele mostra apenas se Places e PageSpeed estao liberadas.
+O script nao imprime as chaves. Ele mostra apenas o status de Places, Maps, PageSpeed, Business Profile e OpenAI.
 
 ## Variaveis principais
 
@@ -75,6 +85,9 @@ Copie `.env.example` para `.env` e preencha conforme necessario:
 
 ```env
 USE_MOCK_DATA=false
+FRONTEND_ORIGIN=http://localhost:4173
+PRODUCTION_FRONTEND_ORIGIN=https://edipocamposlima-alt.github.io
+MVP_OWNER_TOKEN=
 GOOGLE_PLACES_API_KEY=
 GOOGLE_MAPS_API_KEY=
 GOOGLE_PAGESPEED_API_KEY=
@@ -84,6 +97,7 @@ GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN=
 WHATSAPP_CLOUD_TOKEN=
 WHATSAPP_PHONE_NUMBER_ID=
 OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4.1-mini
 NEXT_PUBLIC_API_URL=http://localhost:4000/api
 ```
 
@@ -94,9 +108,17 @@ O projeto ja possui `.github/workflows/pages.yml` para publicar o prototipo esta
 Para a versao com API real:
 
 - Frontend Next.js: Vercel com root `apps/web`.
-- Backend Express: Railway ou Render com root `apps/api`.
+- Backend Express MVP: Render/Railway com root `backend` e comando `npm start`.
+- Backend Next/Express evolutivo: Render/Railway com root `apps/api`.
 - Banco: PostgreSQL gerenciado.
 - Variaveis: usar os valores do `.env` no painel da plataforma, nunca commitadas no Git.
+
+Depois do deploy do backend:
+
+1. Abra `https://edipocamposlima-alt.github.io/nodere-intelligence/#configuracoes`.
+2. Cole a URL publica da API no campo `URL da API`.
+3. Informe o token se `MVP_OWNER_TOKEN` estiver ativo.
+4. Clique em `Salvar` e depois em `Validar conexoes`.
 
 ## Banco de dados
 

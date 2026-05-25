@@ -20,9 +20,9 @@ export function getIntegrationStatus() {
       key: "google_business_profile",
       name: "Google Business Profile API",
       configured: Boolean(
-        process.env.GOOGLE_BUSINESS_PROFILE_CLIENT_ID &&
-          process.env.GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET &&
-          process.env.GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN
+        config.google.businessProfileClientId &&
+          config.google.businessProfileClientSecret &&
+          config.google.businessProfileRefreshToken
       ),
       required: false,
       capability: "Base preparada para OAuth e leitura de contas autorizadas do Google Business Profile."

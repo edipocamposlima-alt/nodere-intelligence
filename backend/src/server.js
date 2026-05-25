@@ -5,12 +5,15 @@ import { getSupabase } from "./supabase.js";
 import { searchGooglePlaces } from "./services/googlePlaces.js";
 import { scanWebsite } from "./services/siteScanner.js";
 import { generateDiagnosis } from "./services/aiDiagnosis.js";
+import { getLiveIntegrationStatus, getStaticIntegrationStatus, testIntegration, validatePageSpeed } from "./services/integrations.js";
 import { leadsToCsv } from "./services/csv.js";
 
 const app = express();
 
 const allowedOrigins = new Set([
   config.frontendOrigin,
+  config.productionFrontendOrigin,
+  "https://edipocamposlima-alt.github.io",
   "http://localhost:4173",
   "http://127.0.0.1:4173",
   "null"
@@ -42,18 +45,46 @@ app.get("/health", (_request, response) => {
   response.json({ ok: true, service: "nodere-mvp-api" });
 });
 
-app.get("/api/v1/integrations/status", (_request, response) => {
-  response.json({
-    integrations: [
-      { provider: "supabase", status: config.supabaseUrl ? "configured" : "missing_credentials" },
-      { provider: "google_places", status: config.googleMapsApiKey ? "configured" : "missing_credentials" },
-      { provider: "openai", status: config.openaiApiKey ? "configured" : "optional_fallback_enabled" },
-      { provider: "pagespeed", status: process.env.PAGESPEED_API_KEY ? "configured" : "planned" },
-      { provider: "whatsapp_cloud", status: process.env.META_ACCESS_TOKEN ? "configured" : "planned" },
-      { provider: "google_ads", status: process.env.GOOGLE_ADS_DEVELOPER_TOKEN ? "configured" : "planned" },
-      { provider: "google_business_profile", status: process.env.GOOGLE_CLIENT_ID ? "oauth_ready" : "planned" }
-    ]
-  });
+app.get("/api/v1/integrations/status", async (request, response, next) => {
+  try {
+    const live = request.query.live === "1" || request.query.live === "true";
+    const integrations = live ? await getLiveIntegrationStatus() : getStaticIntegrationStatus();
+    response.json({
+      ok: true,
+      live,
+      integrations,
+      ready: integrations.filter((item) => item.required).every((item) => item.configured && item.status !== "error")
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/v1/integrations/test", async (request, response, next) => {
+  try {
+    const integration = await testIntegration(request.body.key);
+    response.json({ integration });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/v1/ai/diagnosis", async (request, response, next) => {
+  try {
+    const diagnosis = await generateDiagnosis(request.body.lead || request.body, request.body.scan || null);
+    response.json({ mode: config.openaiApiKey ? "openai" : "template", diagnosis });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/v1/pagespeed", async (request, response, next) => {
+  try {
+    const message = await validatePageSpeed(request.body.url || "https://www.wikipedia.org");
+    response.json({ status: "connected", message });
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.post("/api/v1/jobs/discovery", async (request, response, next) => {

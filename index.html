@@ -7,7 +7,7 @@
     <title>NODERE Intelligence</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./nodere-icon.png" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=483f018" />
+    <link rel="stylesheet" href="./styles.css?v=integrations-1" />
   </head>
   <body>
     <div class="app-shell">
@@ -277,9 +277,71 @@
             </div>
           </div>
         </section>
+
+        <section class="panel settings-panel" id="configuracoes">
+          <header class="table-header">
+            <div class="panel-title compact">
+              <span>⚙</span>
+              <h2>Configurações e integrações</h2>
+            </div>
+            <button class="secondary-button" id="refreshIntegrations" type="button">
+              Validar conexões
+              <span>↻</span>
+            </button>
+          </header>
+
+          <div class="settings-grid">
+            <div class="api-card">
+              <h3>Backend seguro</h3>
+              <p>As chaves OpenAI e Google ficam apenas no backend. O GitHub Pages consulta esta API para buscar empresas, validar serviços e gerar diagnósticos.</p>
+              <label>
+                URL da API
+                <input id="apiBaseUrl" type="url" placeholder="http://localhost:3333" />
+              </label>
+              <label>
+                Token da API, se configurado
+                <input id="apiToken" type="password" placeholder="MVP_OWNER_TOKEN" />
+              </label>
+              <div class="settings-actions">
+                <button class="primary-button" id="saveApiSettings" type="button">Salvar</button>
+                <button class="secondary-button" id="testAi" type="button">Testar IA</button>
+                <button class="secondary-button" id="testPlaces" type="button">Testar Places</button>
+              </div>
+              <small id="settingsMessage">Configure a API para ver o status real das integrações.</small>
+            </div>
+
+            <div class="integration-status" id="integrationStatus">
+              <div class="integration-row pending">
+                <strong>OpenAI / ChatGPT API</strong>
+                <span>Pendente</span>
+                <small>Aguardando conexão com backend.</small>
+              </div>
+              <div class="integration-row pending">
+                <strong>Google Places API</strong>
+                <span>Pendente</span>
+                <small>Aguardando conexão com backend.</small>
+              </div>
+              <div class="integration-row pending">
+                <strong>Google Maps API</strong>
+                <span>Pendente</span>
+                <small>Aguardando conexão com backend.</small>
+              </div>
+              <div class="integration-row pending">
+                <strong>PageSpeed Insights API</strong>
+                <span>Pendente</span>
+                <small>Aguardando conexão com backend.</small>
+              </div>
+              <div class="integration-row pending">
+                <strong>Google Business Profile API</strong>
+                <span>Pendente</span>
+                <small>Aguardando conexão com backend.</small>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
 
-    <script src="./app.js?v=483f018"></script>
+    <script src="./app.js?v=integrations-1"></script>
   </body>
 </html>

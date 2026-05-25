@@ -1,4 +1,4 @@
-import { config, requireEnv } from "../config.js";
+import { config } from "../config.js";
 
 const TEXT_SEARCH_URL = "https://maps.googleapis.com/maps/api/place/textsearch/json";
 const DETAILS_URL = "https://maps.googleapis.com/maps/api/place/details/json";
@@ -29,7 +29,11 @@ async function fetchJson(url) {
 }
 
 export async function searchGooglePlaces(params) {
-  requireEnv(["GOOGLE_MAPS_API_KEY"]);
+  if (!config.googlePlacesApiKey) {
+    const error = new Error("GOOGLE_PLACES_API_KEY is not configured.");
+    error.status = 500;
+    throw error;
+  }
 
   const query = buildQuery(params);
   if (!query) {
@@ -42,7 +46,7 @@ export async function searchGooglePlaces(params) {
   textUrl.searchParams.set("query", query);
   textUrl.searchParams.set("language", "pt-BR");
   textUrl.searchParams.set("region", "br");
-  textUrl.searchParams.set("key", config.googleMapsApiKey);
+  textUrl.searchParams.set("key", config.googlePlacesApiKey);
 
   const searchData = await fetchJson(textUrl);
   const rawResults = (searchData.results || []).slice(0, Number(params.limit || 10));
@@ -56,7 +60,7 @@ export async function searchGooglePlaces(params) {
         "name,formatted_address,formatted_phone_number,international_phone_number,website,opening_hours,rating,user_ratings_total,types,business_status,url"
       );
       detailsUrl.searchParams.set("language", "pt-BR");
-      detailsUrl.searchParams.set("key", config.googleMapsApiKey);
+      detailsUrl.searchParams.set("key", config.googlePlacesApiKey);
 
       const details = await fetchJson(detailsUrl);
       const result = details.result || {};

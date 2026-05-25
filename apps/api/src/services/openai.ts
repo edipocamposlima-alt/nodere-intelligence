@@ -16,7 +16,7 @@ export async function generateCommercialDiagnosis(company: Company) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: "gpt-4.1-mini",
+      model: config.openai.model,
       input: [
         {
           role: "system",
@@ -37,6 +37,13 @@ export async function generateCommercialDiagnosis(company: Company) {
       ]
     })
   });
+
+  if (!response.ok) {
+    return {
+      mode: "template",
+      diagnosis: buildTemplateDiagnosis(company)
+    };
+  }
 
   const payload = await response.json();
   const text = payload.output_text ?? payload.output?.[0]?.content?.[0]?.text ?? buildTemplateDiagnosis(company);
