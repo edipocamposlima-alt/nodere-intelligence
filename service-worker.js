@@ -1,4 +1,4 @@
-const CACHE_NAME = "nodere-intelligence-v3";
+const CACHE_NAME = "nodere-intelligence-v4";
 const APP_SHELL = [
   "./",
   "./index.html",
