@@ -503,6 +503,11 @@ select option {
   margin: 0 -20px -21px;
 }
 
+.table-message {
+  margin: -6px 0 14px;
+  color: var(--muted);
+}
+
 .table-row {
   min-width: 1180px;
   display: grid;
@@ -512,6 +517,26 @@ select option {
   min-height: 62px;
   padding: 0 20px;
   border-top: 1px solid rgba(136, 161, 195, 0.13);
+}
+
+#leadRows {
+  display: contents;
+}
+
+.empty-row {
+  min-width: 1180px;
+  padding: 26px 20px;
+  border-top: 1px solid rgba(136, 161, 195, 0.13);
+  color: var(--muted);
+}
+
+.row-button {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #d9e7fb;
 }
 
 .table-head {

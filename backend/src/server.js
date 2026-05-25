@@ -9,6 +9,7 @@ import { getLiveIntegrationStatus, getStaticIntegrationStatus, testIntegration, 
 import { leadsToCsv } from "./services/csv.js";
 
 const app = express();
+const rateLimitBuckets = new Map();
 
 const allowedOrigins = new Set([
   config.frontendOrigin,
@@ -29,6 +30,26 @@ app.use(
   })
 );
 app.use(express.json({ limit: "1mb" }));
+
+app.use((request, response, next) => {
+  const ip = request.headers["x-forwarded-for"]?.toString().split(",")[0] || request.socket.remoteAddress || "unknown";
+  const now = Date.now();
+  const bucket = rateLimitBuckets.get(ip) || { count: 0, resetAt: now + 60_000 };
+
+  if (bucket.resetAt < now) {
+    bucket.count = 0;
+    bucket.resetAt = now + 60_000;
+  }
+
+  bucket.count += 1;
+  rateLimitBuckets.set(ip, bucket);
+
+  if (bucket.count > 120) {
+    return response.status(429).json({ error: "Rate limit exceeded. Try again in a few seconds." });
+  }
+
+  return next();
+});
 
 app.use((request, response, next) => {
   if (!config.ownerToken) return next();
@@ -78,6 +99,15 @@ app.post("/api/v1/ai/diagnosis", async (request, response, next) => {
   }
 });
 
+app.post("/api/openai", async (request, response, next) => {
+  try {
+    const diagnosis = await generateDiagnosis(request.body.lead || request.body, request.body.scan || null);
+    response.json({ mode: "openai", diagnosis });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post("/api/v1/pagespeed", async (request, response, next) => {
   try {
     const message = await validatePageSpeed(request.body.url || "https://www.wikipedia.org");
@@ -120,6 +150,19 @@ app.post("/api/v1/jobs/discovery", async (request, response, next) => {
 app.post("/api/v1/search/google-places", async (request, response, next) => {
   try {
     const results = await searchGooglePlaces(request.body);
+    try {
+      const supabase = getSupabase();
+      await supabase.from("mvp_searches").insert({
+        city: request.body.city || null,
+        state: request.body.state || null,
+        segment: request.body.segment || null,
+        keyword: request.body.keyword || null,
+        provider: "google_places",
+        result_count: results.length
+      });
+    } catch (_error) {
+      // Search must remain usable while the database is being provisioned.
+    }
     response.json({ results });
   } catch (error) {
     next(error);
@@ -156,6 +199,7 @@ app.post("/api/v1/leads", async (request, response, next) => {
       segment: request.body.segment || null,
       google_rating: request.body.googleRating || request.body.google_rating || null,
       google_reviews: request.body.googleReviews || request.body.google_reviews || 0,
+      google_maps_url: request.body.googleMapsUrl || request.body.google_maps_url || null,
       status: request.body.status || "lead_new",
       source: request.body.source || "google_places"
     };
@@ -187,6 +231,120 @@ app.patch("/api/v1/leads/:id/status", async (request, response, next) => {
     });
 
     response.json({ lead: data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.patch("/api/v1/leads/:id", async (request, response, next) => {
+  try {
+    const supabase = getSupabase();
+    const payload = {
+      company_name: request.body.companyName || request.body.company_name,
+      phone: request.body.phone,
+      whatsapp: request.body.whatsapp,
+      website: request.body.website,
+      address: request.body.address,
+      city: request.body.city,
+      state: request.body.state,
+      segment: request.body.segment,
+      notes: request.body.notes,
+      updated_at: new Date().toISOString()
+    };
+
+    Object.keys(payload).forEach((key) => payload[key] === undefined && delete payload[key]);
+
+    const { data, error } = await supabase.from("mvp_leads").update(payload).eq("id", request.params.id).select().single();
+    if (error) throw error;
+    response.json({ lead: data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete("/api/v1/leads/:id", async (request, response, next) => {
+  try {
+    const supabase = getSupabase();
+    const { error } = await supabase.from("mvp_leads").delete().eq("id", request.params.id);
+    if (error) throw error;
+    response.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/v1/tasks", async (_request, response, next) => {
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase.from("mvp_tasks").select("*, mvp_leads(company_name)").order("due_at", { ascending: true });
+    if (error) throw error;
+    response.json({ tasks: data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/v1/tasks", async (request, response, next) => {
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from("mvp_tasks")
+      .insert({
+        lead_id: request.body.leadId || request.body.lead_id,
+        title: request.body.title,
+        description: request.body.description || null,
+        due_at: request.body.dueAt || request.body.due_at || null,
+        status: request.body.status || "open"
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    response.status(201).json({ task: data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/v1/whatsapp/send", async (request, response, next) => {
+  try {
+    if (!config.whatsappCloudToken || !config.whatsappPhoneNumberId) {
+      const error = new Error("WHATSAPP_CLOUD_TOKEN and WHATSAPP_PHONE_NUMBER_ID are required to send messages.");
+      error.status = 503;
+      throw error;
+    }
+
+    const to = String(request.body.to || "").replace(/\D/g, "");
+    const text = String(request.body.text || "").trim();
+
+    if (!to || !text) {
+      const error = new Error("Informe destino e mensagem.");
+      error.status = 400;
+      throw error;
+    }
+
+    const responseApi = await fetch(`https://graph.facebook.com/v20.0/${config.whatsappPhoneNumberId}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.whatsappCloudToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: to.startsWith(config.whatsappDefaultCountryCode) ? to : `${config.whatsappDefaultCountryCode}${to}`,
+        type: "text",
+        text: { preview_url: false, body: text }
+      })
+    });
+
+    const payload = await responseApi.json().catch(() => ({}));
+    if (!responseApi.ok) {
+      const error = new Error(payload?.error?.message || "WhatsApp Cloud API request failed.");
+      error.status = responseApi.status;
+      throw error;
+    }
+
+    response.json({ message: payload });
   } catch (error) {
     next(error);
   }

@@ -7,7 +7,7 @@
     <title>NODERE Intelligence</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./nodere-icon.png" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=integrations-1" />
+    <link rel="stylesheet" href="./styles.css?v=real-crm-1" />
   </head>
   <body>
     <div class="app-shell">
@@ -78,7 +78,7 @@
             <span class="metric-icon blue">▥</span>
             <div>
               <p>Empresas encontradas</p>
-              <strong>124</strong>
+              <strong id="metricCompanies">0</strong>
               <small>Total no período</small>
             </div>
           </article>
@@ -86,7 +86,7 @@
             <span class="metric-icon amber">☆</span>
             <div>
               <p>Baixa avaliação</p>
-              <strong>37</strong>
+              <strong id="metricLowRating">0</strong>
               <small>Nota abaixo de 4.2</small>
             </div>
           </article>
@@ -94,7 +94,7 @@
             <span class="metric-icon purple">◉</span>
             <div>
               <p>Sem site</p>
-              <strong>42</strong>
+              <strong id="metricNoSite">0</strong>
               <small>Não possuem site</small>
             </div>
           </article>
@@ -102,7 +102,7 @@
             <span class="metric-icon green">♩</span>
             <div>
               <p>Sem Google Ads</p>
-              <strong>89</strong>
+              <strong id="metricNoAds">-</strong>
               <small>Sem anúncios ativos</small>
             </div>
           </article>
@@ -110,7 +110,7 @@
             <span class="metric-icon green">☏</span>
             <div>
               <p>Sem WhatsApp</p>
-              <strong>21</strong>
+              <strong id="metricNoWhatsapp">0</strong>
               <small>Não informaram WhatsApp</small>
             </div>
           </article>
@@ -118,7 +118,7 @@
             <span class="metric-icon blue">▤</span>
             <div>
               <p>Sem descrição</p>
-              <strong>55</strong>
+              <strong id="metricNoDescription">-</strong>
               <small>Descrição incompleta</small>
             </div>
           </article>
@@ -126,7 +126,7 @@
             <span class="metric-icon rose">▧</span>
             <div>
               <p>Sem fotos recentes</p>
-              <strong>48</strong>
+              <strong id="metricNoRecentPhotos">-</strong>
               <small>Sem fotos nos últimos 90 dias</small>
             </div>
           </article>
@@ -134,7 +134,7 @@
             <span class="metric-icon orange">♨</span>
             <div>
               <p>Leads quentes</p>
-              <strong>31</strong>
+              <strong id="metricHotLeads">0</strong>
               <small>Score acima de 70</small>
             </div>
           </article>
@@ -150,8 +150,8 @@
             <form class="smart-search" id="smartSearch">
               <label>
                 Segmento
-                <select>
-                  <option>Selecione o segmento</option>
+                <select id="searchSegment" required>
+                  <option value="">Selecione o segmento</option>
                   <option>Academias</option>
                   <option>Oficinas Mecânicas</option>
                   <option>Clínicas Odontológicas</option>
@@ -161,12 +161,12 @@
               </label>
               <label>
                 Cidade
-                <input type="text" placeholder="Digite a cidade" />
+                <input id="searchCity" type="text" placeholder="Digite a cidade" required />
               </label>
               <label>
                 Estado
-                <select>
-                  <option>Selecione o estado</option>
+                <select id="searchState" required>
+                  <option value="">Selecione o estado</option>
                   <option>RS</option>
                   <option>SC</option>
                   <option>PR</option>
@@ -175,7 +175,7 @@
               </label>
               <label>
                 Palavra-chave
-                <input type="text" placeholder="Ex: clínica, oficina, pizzaria" />
+                <input id="searchKeyword" type="text" placeholder="Ex: clínica, oficina, pizzaria" />
               </label>
               <button type="submit" class="primary-button">
                 <span>⌕</span>
@@ -213,6 +213,7 @@
               <span>›</span>
             </button>
           </header>
+          <p class="table-message" id="leadTableMessage">Conecte o backend para carregar leads reais.</p>
 
           <div class="lead-table" role="table" aria-label="Maiores oportunidades">
             <div class="table-row table-head" role="row">
@@ -225,56 +226,7 @@
               <span>Status CRM</span>
               <span>Ações</span>
             </div>
-            <div class="table-row" role="row">
-              <div class="company-cell"><img src="./nodere-icon.png" alt="" /><span><strong>Bella Fitness</strong><small>Porto Alegre, RS</small></span></div>
-              <span>Academias</span>
-              <span>3.8 <b class="star">★</b></span>
-              <span>23</span>
-              <span><b class="score high">82</b><em class="level high">Alta</em></span>
-              <span>Não responde avaliações</span>
-              <span><select class="status blue"><option>Novo Lead</option></select></span>
-              <span class="actions"><a class="whatsapp" href="https://wa.me/" target="_blank">☏</a><a class="maps" href="https://maps.google.com" target="_blank">◆</a></span>
-            </div>
-            <div class="table-row" role="row">
-              <div class="company-cell"><span class="logo-ball dark">⚙</span><span><strong>Oficina Master</strong><small>Caxias do Sul, RS</small></span></div>
-              <span>Oficinas Mecânicas</span>
-              <span>4.0 <b class="star">★</b></span>
-              <span>31</span>
-              <span><b class="score high">73</b><em class="level high">Alta</em></span>
-              <span>Sem site e sem Google Ads</span>
-              <span><select class="status cyan"><option>Contatado</option></select></span>
-              <span class="actions"><a class="whatsapp" href="https://wa.me/" target="_blank">☏</a><a class="maps" href="https://maps.google.com" target="_blank">◆</a></span>
-            </div>
-            <div class="table-row" role="row">
-              <div class="company-cell"><span class="logo-ball light">♡</span><span><strong>Clínica Sorriso</strong><small>Joinville, SC</small></span></div>
-              <span>Clínicas Odontológicas</span>
-              <span>4.2 <b class="star">★</b></span>
-              <span>18</span>
-              <span><b class="score mid">61</b><em class="level mid">Média</em></span>
-              <span>Poucas avaliações</span>
-              <span><select class="status amber"><option>Em negociação</option></select></span>
-              <span class="actions"><a class="whatsapp" href="https://wa.me/" target="_blank">☏</a><a class="maps" href="https://maps.google.com" target="_blank">◆</a></span>
-            </div>
-            <div class="table-row" role="row">
-              <div class="company-cell"><span class="logo-ball pizza">P</span><span><strong>Pizzaria Forno</strong><small>Florianópolis, SC</small></span></div>
-              <span>Restaurantes</span>
-              <span>3.5 <b class="star">★</b></span>
-              <span>12</span>
-              <span><b class="score high">79</b><em class="level high">Alta</em></span>
-              <span>Fotos desatualizadas</span>
-              <span><select class="status violet"><option>Reunião marcada</option></select></span>
-              <span class="actions"><a class="whatsapp" href="https://wa.me/" target="_blank">☏</a><a class="maps" href="https://maps.google.com" target="_blank">◆</a></span>
-            </div>
-            <div class="table-row" role="row">
-              <div class="company-cell"><span class="logo-ball pet">✤</span><span><strong>Pet Center Amigo</strong><small>Curitiba, PR</small></span></div>
-              <span>Pet Shops</span>
-              <span>4.6 <b class="star">★</b></span>
-              <span>67</span>
-              <span><b class="score low">34</b><em class="level low">Baixa</em></span>
-              <span>Perfil bem otimizado</span>
-              <span><select class="status violet"><option>Proposta enviada</option></select></span>
-              <span class="actions"><a class="whatsapp" href="https://wa.me/" target="_blank">☏</a><a class="maps" href="https://maps.google.com" target="_blank">◆</a></span>
-            </div>
+            <div id="leadRows"></div>
           </div>
         </section>
 
@@ -342,6 +294,6 @@
       </main>
     </div>
 
-    <script src="./app.js?v=integrations-1"></script>
+    <script src="./app.js?v=real-crm-1"></script>
   </body>
 </html>

@@ -4,7 +4,7 @@ const TEXT_SEARCH_URL = "https://maps.googleapis.com/maps/api/place/textsearch/j
 const DETAILS_URL = "https://maps.googleapis.com/maps/api/place/details/json";
 
 function buildQuery({ keyword = "", city = "", segment = "" }) {
-  return [segment, keyword, city].filter(Boolean).join(" ").trim();
+  return [segment, keyword, city].map((value) => String(value || "").trim()).filter(Boolean).join(" ").slice(0, 240).trim();
 }
 
 function parseAddress(address = "") {
@@ -49,7 +49,8 @@ export async function searchGooglePlaces(params) {
   textUrl.searchParams.set("key", config.googlePlacesApiKey);
 
   const searchData = await fetchJson(textUrl);
-  const rawResults = (searchData.results || []).slice(0, Number(params.limit || 10));
+  const limit = Math.max(1, Math.min(Number(params.limit || 10), 20));
+  const rawResults = (searchData.results || []).slice(0, limit);
 
   const enriched = await Promise.all(
     rawResults.map(async (place) => {

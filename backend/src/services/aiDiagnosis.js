@@ -1,19 +1,10 @@
 import { config } from "../config.js";
 
-function fallbackDiagnosis(lead, scan) {
-  const findings = scan?.findings?.length ? scan.findings.join(" ") : "Presenca digital com lacunas comerciais.";
-  return {
-    summary: `${lead.company_name || lead.companyName} apresenta sinais de oportunidade para captacao local e melhoria de rastreamento.`,
-    diagnosis: findings,
-    recommendedServices: ["Google Ads local", "Rastreamento de conversoes", "Otimização do Perfil da Empresa no Google"],
-    whatsappMessage: `Oi, tudo bem? Sou Édipo Lima. Fiz uma analise rapida da presenca digital da ${lead.company_name || lead.companyName} e encontrei oportunidades para melhorar captacao pelo Google. Posso te enviar um diagnostico gratuito?`,
-    opportunityScore: scan?.score ? Math.min(95, 100 - scan.score + 55) : 78
-  };
-}
-
 export async function generateDiagnosis(lead, scan) {
   if (!config.openaiApiKey) {
-    return fallbackDiagnosis(lead, scan);
+    const error = new Error("OPENAI_API_KEY is not configured.");
+    error.status = 503;
+    throw error;
   }
 
   const prompt = {
@@ -23,8 +14,12 @@ export async function generateDiagnosis(lead, scan) {
       "Gere um diagnostico comercial em portugues do Brasil para vender servicos de Google Ads, rastreamento e melhoria de presenca digital. Seja consultivo, objetivo e etico."
   };
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
+    signal: controller.signal,
     headers: {
       "content-type": "application/json",
       authorization: `Bearer ${config.openaiApiKey}`
@@ -64,13 +59,22 @@ export async function generateDiagnosis(lead, scan) {
         }
       }
     })
-  });
+  }).finally(() => clearTimeout(timeout));
 
   if (!response.ok) {
-    return fallbackDiagnosis(lead, scan);
+    const payload = await response.json().catch(() => ({}));
+    const error = new Error(payload?.error?.message || "OpenAI request failed.");
+    error.status = response.status;
+    throw error;
   }
 
   const data = await response.json();
   const text = data.output_text || data.output?.[0]?.content?.[0]?.text;
-  return text ? JSON.parse(text) : fallbackDiagnosis(lead, scan);
+  if (!text) {
+    const error = new Error("OpenAI returned an empty diagnosis.");
+    error.status = 502;
+    throw error;
+  }
+
+  return JSON.parse(text);
 }

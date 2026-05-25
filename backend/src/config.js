@@ -17,7 +17,10 @@ export const config = {
   googleBusinessProfileClientSecret: process.env.GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET || "",
   googleBusinessProfileRefreshToken: process.env.GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN || "",
   openaiApiKey: process.env.OPENAI_API_KEY || "",
-  openaiModel: process.env.OPENAI_MODEL || "gpt-4.1-mini"
+  openaiModel: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+  whatsappCloudToken: process.env.WHATSAPP_CLOUD_TOKEN || process.env.META_ACCESS_TOKEN || "",
+  whatsappPhoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || "",
+  whatsappDefaultCountryCode: process.env.WHATSAPP_DEFAULT_COUNTRY_CODE || "55"
 };
 
 export function requireEnv(keys) {

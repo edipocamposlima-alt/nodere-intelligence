@@ -1,145 +1,152 @@
 # NODERE Intelligence
 
-**NODERE Intelligence** e uma plataforma para encontrar empresas com falhas digitais e transformar esses sinais em oportunidades comerciais para Google Ads, Google Business Profile, trafego pago e consultoria digital.
+Sistema de prospeccao comercial para localizar empresas no Google, salvar leads em CRM, auditar presenca digital e gerar diagnosticos comerciais com OpenAI.
 
-Slogan:
+## Arquitetura Real
 
-> Transformando falhas digitais em oportunidades comerciais.
+O projeto usa duas camadas:
 
-## Status do MVP
+- `index.html`, `styles.css`, `app.js`: frontend estatico publicado no GitHub Pages.
+- `backend/`: API Node.js/Express segura para Google, OpenAI, WhatsApp e CRM persistido no Supabase/PostgreSQL.
 
-O repositorio contem duas camadas:
+GitHub Pages nao executa backend e nao pode guardar segredos. Portanto, chaves Google/OpenAI/WhatsApp ficam somente no backend, via variaveis de ambiente.
 
-- Prototipo web estatico pronto para GitHub Pages: `index.html`, `styles.css`, `app.js`, PWA e previews.
-- Base evolutiva com Next.js + Express em `apps/web` e `apps/api`, preparada para Google Places, PageSpeed, CRM, WhatsApp, OpenAI e PostgreSQL.
+## Funcionalidades Operacionais
 
-## O que o prototipo entrega
+- Busca real de empresas via Google Places.
+- Dados retornados: nome, telefone, site, endereco, categoria, avaliacao, total de avaliacoes e link Google Maps.
+- CRM persistido no Supabase/PostgreSQL.
+- Status do funil: novo lead, contatado, negociacao, reuniao, proposta, fechado e perdido.
+- Historico de eventos por lead.
+- Tarefas e follow-up.
+- Scanner de site.
+- Diagnostico comercial com OpenAI.
+- Validacao de Google Places, Maps, PageSpeed, Business Profile OAuth, OpenAI, WhatsApp e Supabase.
+- WhatsApp Cloud API preparado para envio real quando tokens estiverem configurados.
 
-- Dashboard executivo.
-- Buscador inteligente de empresas.
-- Scanner com buscas salvas e fila de auditoria.
-- Google Intelligence para Ads e Perfil da Empresa.
-- Tela de empresa com diagnostico, score e playbook.
-- CRM Kanban.
-- Automacao comercial.
-- Inbox com WhatsApp/e-mail simulado.
-- Copilot IA com previsao, ROI e proposta.
-- Diagnostico printavel em PDF.
-- Relatorios e exportacao CSV.
-- Admin com usuarios, permissoes por aba e convites.
-- Planos, creditos, consumo e faturas.
-- PWA instalavel.
+## Variaveis de Ambiente
 
-## Como abrir localmente
-
-No Windows:
-
-```text
-INICIAR_NODERE.bat
-```
-
-Ou:
-
-```bash
-npm run serve
-```
-
-Depois acesse:
-
-```text
-http://localhost:4173
-```
-
-Tambem e possivel abrir diretamente o arquivo `index.html`.
-
-## Integracoes seguras
-
-A URL em GitHub Pages e estatica. Por seguranca, ela nao le nem armazena chaves reais. Todas as chamadas com segredo devem passar pelo backend em `backend/` ou `apps/api`.
-
-O backend possui conectores para:
-
-- Google Places API: busca real de empresas por texto.
-- Google Maps API: geocoding, links e contexto local.
-- Google PageSpeed Insights API: performance mobile no diagnostico digital.
-- Google Business Profile API: OAuth com `client_id`, `client_secret` e `refresh_token`.
-- OpenAI API: diagnosticos comerciais via endpoint seguro.
-
-Na tela `#configuracoes`, informe somente:
-
-- URL da API, por exemplo `http://localhost:3333` ou a URL publicada no Render/Railway.
-- Token da API, caso `MVP_OWNER_TOKEN` esteja configurado no backend.
-
-Nunca cole chaves Google/OpenAI na tela do navegador.
-
-Para validar as chaves no `.env`, rode:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/check-google-apis.ps1
-```
-
-O script nao imprime as chaves. Ele mostra apenas o status de Places, Maps, PageSpeed, Business Profile e OpenAI.
-
-## Variaveis principais
-
-Copie `.env.example` para `.env` e preencha conforme necessario:
+Copie `.env.example` para `.env` na raiz ou configure essas variaveis no Render/Railway:
 
 ```env
-USE_MOCK_DATA=false
+PORT=3333
 FRONTEND_ORIGIN=http://localhost:4173
 PRODUCTION_FRONTEND_ORIGIN=https://edipocamposlima-alt.github.io
 MVP_OWNER_TOKEN=
+
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+
 GOOGLE_PLACES_API_KEY=
 GOOGLE_MAPS_API_KEY=
 GOOGLE_PAGESPEED_API_KEY=
 GOOGLE_BUSINESS_PROFILE_CLIENT_ID=
 GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET=
 GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN=
-WHATSAPP_CLOUD_TOKEN=
-WHATSAPP_PHONE_NUMBER_ID=
+
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4.1-mini
-NEXT_PUBLIC_API_URL=http://localhost:4000/api
+
+WHATSAPP_CLOUD_TOKEN=
+WHATSAPP_PHONE_NUMBER_ID=
+WHATSAPP_DEFAULT_COUNTRY_CODE=55
+```
+
+Nunca coloque chaves no frontend, no GitHub Pages ou no codigo.
+
+## Banco de Dados
+
+Use Supabase ou outro PostgreSQL compativel e execute:
+
+```sql
+mvp-supabase-schema.sql
+```
+
+Tabelas principais:
+
+- `mvp_leads`
+- `mvp_site_scans`
+- `mvp_diagnoses`
+- `mvp_crm_events`
+- `mvp_tasks`
+- `mvp_searches`
+
+## Rodar Localmente
+
+Frontend:
+
+```bash
+npm run serve
+```
+
+ou no Windows:
+
+```text
+INICIAR_NODERE.bat
+```
+
+API:
+
+```bash
+cd backend
+npm install
+npm start
+```
+
+Abra:
+
+```text
+http://localhost:4173/#configuracoes
+```
+
+Em `URL da API`, use:
+
+```text
+http://localhost:3333
 ```
 
 ## Deploy
 
-O projeto ja possui `.github/workflows/pages.yml` para publicar o prototipo estatico no GitHub Pages a cada push na branch `main`.
+Frontend:
 
-Para a versao com API real:
+- GitHub Pages publica automaticamente a branch `main`.
+- URL: `https://edipocamposlima-alt.github.io/nodere-intelligence/`
 
-- Frontend Next.js: Vercel com root `apps/web`.
-- Backend Express MVP: Render/Railway com root `backend` e comando `npm start`.
-- Backend Next/Express evolutivo: Render/Railway com root `apps/api`.
-- Banco: PostgreSQL gerenciado.
-- Variaveis: usar os valores do `.env` no painel da plataforma, nunca commitadas no Git.
+Backend:
 
-Depois do deploy do backend:
+- Render/Railway.
+- Root directory: `backend`.
+- Build command: `npm install`.
+- Start command: `npm start`.
+- Configure todas as variaveis de ambiente no painel da plataforma.
+
+Depois do deploy:
 
 1. Abra `https://edipocamposlima-alt.github.io/nodere-intelligence/#configuracoes`.
-2. Cole a URL publica da API no campo `URL da API`.
-3. Informe o token se `MVP_OWNER_TOKEN` estiver ativo.
-4. Clique em `Salvar` e depois em `Validar conexoes`.
+2. Informe a URL publica do backend.
+3. Informe `MVP_OWNER_TOKEN`, se configurado.
+4. Clique em `Salvar`.
+5. Clique em `Validar conexoes`.
 
-## Banco de dados
+## Testes de Integração
 
-O schema em `packages/database/schema.sql` cria:
+Rode sem expor chaves:
 
-- `users`
-- `companies`
-- `company_scores`
-- `company_contacts`
-- `crm_notes`
-- `crm_status`
-- `integrations`
-- `searches`
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\check-google-apis.ps1
+```
 
-## Proximas evolucoes
+O script testa:
 
-- Persistir a API no PostgreSQL em vez de store em memoria.
-- Autenticacao JWT ou Firebase Auth.
-- Job diario para busca e atualizacao automatica.
-- Tela OAuth do Google Business Profile.
-- WhatsApp Cloud API com templates aprovados.
-- Propostas comerciais geradas por IA.
-- Pipeline com drag and drop.
-- Relatorios por cidade, segmento e canal.
+- Google Places
+- Google Maps
+- PageSpeed
+- OpenAI
+- Google Business Profile OAuth
+
+## Status Conhecido
+
+- Google Places, Maps e PageSpeed dependem das chaves habilitadas no Google Cloud.
+- OpenAI exige chave valida e quota/billing ativo.
+- Google Business Profile exige `client_secret` e `refresh_token` gerado por OAuth com escopo `business.manage`.
+- O CRM exige Supabase configurado; sem banco, o frontend mostra erro em vez de dados simulados.

@@ -167,6 +167,12 @@ export function getStaticIntegrationStatus() {
       false
     ),
     statusEnvelope("openai", "OpenAI / ChatGPT API", configured(config.openaiApiKey), false),
+    statusEnvelope(
+      "whatsapp_cloud",
+      "WhatsApp Cloud API",
+      configured(config.whatsappCloudToken) && configured(config.whatsappPhoneNumberId),
+      false
+    ),
     statusEnvelope("supabase", "Supabase", configured(config.supabaseUrl) && configured(config.supabaseServiceRoleKey), false)
   ];
 }
