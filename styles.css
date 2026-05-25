@@ -324,6 +324,21 @@ select option { background: #07111e; color: #fff; }
   font-size: 12px;
 }
 
+.dev-only { display: none; }
+body.local-dev .dev-only { display: flex; }
+.dev-settings {
+  grid-column: 1 / -1;
+  display: none;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--amber) 55%, transparent);
+  border-radius: 8px;
+  background: rgba(255, 179, 0, .08);
+}
+.dev-settings strong, .dev-settings small { grid-column: 1 / -1; }
+.dev-settings small { color: var(--muted); }
+
 .filters, .inline-form, .settings-actions {
   display: flex;
   flex-wrap: wrap;

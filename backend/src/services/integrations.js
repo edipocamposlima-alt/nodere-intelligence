@@ -151,6 +151,30 @@ async function validateGoogleWorkspace(scopeName = "Google Workspace") {
   return `${scopeName}: token OAuth renovado com sucesso.`;
 }
 
+async function validateOAuthCredentials(scopeName, clientId, clientSecret, refreshToken) {
+  if (!(configured(clientId) && configured(clientSecret) && configured(refreshToken))) return null;
+
+  const body = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    refresh_token: refreshToken,
+    grant_type: "refresh_token"
+  });
+
+  const tokenResponse = await fetch(GOOGLE_TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body
+  });
+
+  const tokenPayload = await safeJson(tokenResponse);
+  if (!tokenResponse.ok) {
+    throw new Error(tokenPayload.error_description || tokenPayload.error || `${scopeName} OAuth refresh failed.`);
+  }
+
+  return `${scopeName}: token OAuth renovado com sucesso.`;
+}
+
 async function validateOpenAI() {
   if (!configured(config.openaiApiKey)) return null;
 
@@ -179,17 +203,16 @@ const validators = {
   google_maps: validateMaps,
   google_pagespeed: validatePageSpeed,
   google_business_profile: validateGoogleBusinessProfile,
-  google_calendar: () => validateGoogleWorkspace("Google Calendar"),
-  gmail: () => validateGoogleWorkspace("Gmail"),
-  google_drive: () => validateGoogleWorkspace("Google Drive"),
+  google_calendar: () => validateOAuthCredentials("Google Calendar", config.googleCalendarClientId, config.googleCalendarClientSecret, config.googleCalendarRefreshToken),
+  gmail: () => validateOAuthCredentials("Gmail", config.gmailClientId, config.gmailClientSecret, config.gmailRefreshToken),
+  google_drive: () => validateOAuthCredentials("Google Drive", config.googleDriveClientId, config.googleDriveClientSecret, config.googleDriveRefreshToken),
   openai: validateOpenAI
 };
 
 export function getStaticIntegrationStatus() {
-  const workspaceConfigured =
-    configured(config.googleWorkspaceClientId) &&
-    configured(config.googleWorkspaceClientSecret) &&
-    configured(config.googleWorkspaceRefreshToken);
+  const calendarConfigured = configured(config.googleCalendarClientId) && configured(config.googleCalendarClientSecret) && configured(config.googleCalendarRefreshToken);
+  const gmailConfigured = configured(config.gmailClientId) && configured(config.gmailClientSecret) && configured(config.gmailRefreshToken);
+  const driveConfigured = configured(config.googleDriveClientId) && configured(config.googleDriveClientSecret) && configured(config.googleDriveRefreshToken);
 
   return [
     statusEnvelope("google_places", "Google Places API", configured(config.googlePlacesApiKey), true),
@@ -203,9 +226,9 @@ export function getStaticIntegrationStatus() {
         configured(config.googleBusinessProfileRefreshToken),
       false
     ),
-    statusEnvelope("google_calendar", "Google Calendar API", workspaceConfigured, false),
-    statusEnvelope("gmail", "Gmail API", workspaceConfigured, false),
-    statusEnvelope("google_drive", "Google Drive API", workspaceConfigured, false),
+    statusEnvelope("google_calendar", "Google Calendar API", calendarConfigured, false),
+    statusEnvelope("gmail", "Gmail API", gmailConfigured, false),
+    statusEnvelope("google_drive", "Google Drive API", driveConfigured, false),
     statusEnvelope("openai", "OpenAI / ChatGPT API", configured(config.openaiApiKey), false),
     statusEnvelope(
       "whatsapp_cloud",

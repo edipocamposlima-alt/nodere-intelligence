@@ -54,6 +54,17 @@ let settings = sanitizeSettings({
   apiBaseUrl: "",
   ownerToken: "",
   chatMode: "compact",
+  devMode: "off",
+  devGoogleApiKey: "",
+  devGooglePlacesApiKey: "",
+  devGoogleMapsApiKey: "",
+  devGooglePageSpeedApiKey: "",
+  devOpenAiApiKey: "",
+  devGoogleClientId: "",
+  devGoogleClientSecret: "",
+  devGoogleRefreshToken: "",
+  devWhatsappCloudToken: "",
+  devWhatsappPhoneNumberId: "",
   ...readJson(STORAGE.legacySettings, {}),
   ...readJson(STORAGE.settings, {})
 });
@@ -73,7 +84,12 @@ function writeJson(key, value) {
 }
 
 function sanitizeSettings(raw = {}) {
-  const allowed = ["maxResults", "defaultSort", "defaultOwner", "theme", "accentColor", "hideSavedResults", "autoAiOnSave", "apiBaseUrl", "ownerToken", "chatMode"];
+  const allowed = [
+    "maxResults", "defaultSort", "defaultOwner", "theme", "accentColor", "hideSavedResults", "autoAiOnSave",
+    "apiBaseUrl", "ownerToken", "chatMode", "devMode", "devGoogleApiKey", "devGooglePlacesApiKey",
+    "devGoogleMapsApiKey", "devGooglePageSpeedApiKey", "devOpenAiApiKey", "devGoogleClientId",
+    "devGoogleClientSecret", "devGoogleRefreshToken", "devWhatsappCloudToken", "devWhatsappPhoneNumberId"
+  ];
   return allowed.reduce((acc, key) => {
     if (raw[key] !== undefined) acc[key] = raw[key];
     return acc;
@@ -85,12 +101,37 @@ function applyTheme() {
   document.documentElement.style.setProperty("--accent", settings.accentColor || "#147dff");
 }
 
+function isLocalDev() {
+  return ["localhost", "127.0.0.1"].includes(location.hostname);
+}
+
+function devModeEnabled() {
+  return isLocalDev() && (settings.devMode === "on" || settings.devMode === true);
+}
+
 function apiConfigured() {
-  return Boolean(settings.apiBaseUrl && String(settings.apiBaseUrl).trim());
+  return Boolean((settings.apiBaseUrl && String(settings.apiBaseUrl).trim()) || isLocalDev());
 }
 
 function apiUrl(path) {
-  return `${String(settings.apiBaseUrl || "").replace(/\/$/, "")}${path}`;
+  const base = String(settings.apiBaseUrl || "").trim() || location.origin;
+  return `${base.replace(/\/$/, "")}${path}`;
+}
+
+function devKeys() {
+  if (!devModeEnabled()) return {};
+  return {
+    googleApiKey: settings.devGoogleApiKey || "",
+    googlePlacesApiKey: settings.devGooglePlacesApiKey || settings.devGoogleApiKey || "",
+    googleMapsApiKey: settings.devGoogleMapsApiKey || settings.devGoogleApiKey || "",
+    googlePageSpeedApiKey: settings.devGooglePageSpeedApiKey || settings.devGoogleApiKey || "",
+    openaiApiKey: settings.devOpenAiApiKey || "",
+    googleClientId: settings.devGoogleClientId || "",
+    googleClientSecret: settings.devGoogleClientSecret || "",
+    googleRefreshToken: settings.devGoogleRefreshToken || "",
+    whatsappCloudToken: settings.devWhatsappCloudToken || "",
+    whatsappPhoneNumberId: settings.devWhatsappPhoneNumberId || ""
+  };
 }
 
 async function apiFetch(path, options = {}) {
@@ -103,8 +144,16 @@ async function apiFetch(path, options = {}) {
   const timeout = setTimeout(() => controller.abort(), Number(options.timeoutMs || 30000));
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   if (settings.ownerToken) headers.Authorization = `Bearer ${settings.ownerToken}`;
+  let body = options.body;
+  if (devModeEnabled() && body && typeof body === "string" && headers["Content-Type"]?.includes("application/json")) {
+    try {
+      body = JSON.stringify({ ...JSON.parse(body), devKeys: devKeys() });
+    } catch {
+      body = options.body;
+    }
+  }
   try {
-    const response = await fetch(apiUrl(path), { ...options, headers, signal: controller.signal });
+    const response = await fetch(apiUrl(path), { ...options, body, headers, signal: controller.signal });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.error || payload.message || `Backend retornou HTTP ${response.status}.`);
     return payload;
@@ -539,7 +588,7 @@ function buildSearchBody(form, pageToken = "") {
 
 async function searchPlaces(form, append = false) {
   if (!apiConfigured()) {
-    setMessage("searchMessage", "Backend seguro nao configurado. Abra Configuracoes e informe a URL da API.", "error");
+    setMessage("searchMessage", "Backend seguro nao configurado. Em localhost, ative o modo desenvolvimento e informe as chaves em Configuracoes.", "error");
     showView("configuracoes");
     return;
   }
@@ -560,7 +609,7 @@ async function searchPlaces(form, append = false) {
   lastSearchBody = { body, formData };
   renderLeadRows(getFilteredResults(), "searchResults", "search");
   $("#loadMorePlaces").disabled = !nextPageToken || searchResults.length >= Number(settings.maxResults || 60);
-  setMessage("searchMessage", `${searchResults.length} empresa(s) carregada(s). A IA local ja classificou oportunidade e dor principal.`, "success");
+  setMessage("searchMessage", `${searchResults.length} empresa(s) carregada(s). Resultados ordenados e prontos para salvar no CRM.`, "success");
 }
 
 function dedupePlaces(rows) {
@@ -1035,6 +1084,7 @@ function renderIntegrations() {
 }
 
 function loadSettingsForm() {
+  document.body.classList.toggle("local-dev", isLocalDev());
   Object.entries(settings).forEach(([key, value]) => {
     const field = $("#settingsForm")?.elements[key];
     if (!field) return;
@@ -1065,7 +1115,7 @@ async function testIntegration(key) {
     await apiFetch("/api/v1/pagespeed/analyze", { method: "POST", body: JSON.stringify({ url: "https://www.wikipedia.org" }), timeoutMs: 45000 });
     return "PageSpeed validado pelo backend.";
   }
-  const payload = await apiFetch("/api/v1/integrations/status", { method: "GET" });
+  const payload = await apiFetch("/api/v1/integrations/status", { method: "POST", body: JSON.stringify({}) });
   return payload.ok ? "Status de integracoes carregado do backend." : "Backend respondeu.";
 }
 
@@ -1190,6 +1240,7 @@ function bindEvents() {
     const data = Object.fromEntries(new FormData(event.target));
     data.hideSavedResults = event.target.elements.hideSavedResults?.checked ? "on" : "off";
     data.autoAiOnSave = event.target.elements.autoAiOnSave?.checked ? "on" : "off";
+    data.devMode = event.target.elements.devMode?.checked ? "on" : "off";
     settings = sanitizeSettings({ ...settings, ...data });
     writeJson(STORAGE.settings, settings);
     $("#settingsMessage").textContent = "Configuracoes salvas.";
@@ -1197,7 +1248,7 @@ function bindEvents() {
   });
   $("#clearSettings")?.addEventListener("click", () => {
     if (!confirm("Apagar configuracoes locais?")) return;
-    settings = { maxResults: 60, defaultSort: "opportunity", defaultOwner: "Agencia Digital", theme: "nodere-dark", accentColor: "#147dff", apiBaseUrl: "", ownerToken: "", hideSavedResults: "on", autoAiOnSave: "on" };
+    settings = { maxResults: 60, defaultSort: "opportunity", defaultOwner: "Agencia Digital", theme: "nodere-dark", accentColor: "#147dff", apiBaseUrl: "", ownerToken: "", hideSavedResults: "on", autoAiOnSave: "on", devMode: "off" };
     writeJson(STORAGE.settings, settings);
     $("#settingsForm").reset();
     loadSettingsForm();
@@ -1213,9 +1264,9 @@ function bindEvents() {
     }
   });
   $("#testAllIntegrations")?.addEventListener("click", async () => {
-    if (!apiConfigured()) return alert("Configure a URL do backend seguro primeiro.");
+    if (!apiConfigured()) return alert("Configure a URL do backend seguro primeiro ou use localhost com modo desenvolvimento.");
     try {
-      const payload = await apiFetch("/api/v1/integrations/status?live=1", { method: "GET", timeoutMs: 60000 });
+      const payload = await apiFetch("/api/v1/integrations/status?live=1", { method: "POST", body: JSON.stringify({}), timeoutMs: 60000 });
       $("#integrationGrid").innerHTML = renderIntegrationStatusList(payload.integrations || []);
     } catch (error) {
       alert(error.message);

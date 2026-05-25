@@ -7,7 +7,7 @@
     <title>NODERE Intelligence</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./nodere-icon.png" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=saas-2" />
+    <link rel="stylesheet" href="./styles.css?v=dev-1" />
   </head>
   <body>
     <div class="app-shell">
@@ -256,7 +256,7 @@
         <section class="view" id="configuracoes">
           <article class="panel">
             <div class="panel-title"><span>Config</span><h2>Configuracoes</h2></div>
-            <p class="warning">Configure chaves reais somente no backend/.env. O navegador salva apenas a URL da API, token operacional opcional e preferências visuais.</p>
+            <p class="warning">Produção: configure chaves reais somente no backend/.env. Localhost: você pode ativar o modo desenvolvimento para testar manualmente, com as chaves salvas apenas neste navegador.</p>
             <form class="settings-form" id="settingsForm">
               <label>URL do backend seguro<input name="apiBaseUrl" placeholder="https://sua-api.com" /></label>
               <label>Token do proprietário opcional<input name="ownerToken" type="password" autocomplete="off" /></label>
@@ -266,7 +266,21 @@
               <label>Cor principal<input name="accentColor" type="color" value="#147dff" /></label>
               <label class="check-row"><input name="hideSavedResults" type="checkbox" checked /> Ocultar empresas já salvas na busca</label>
               <label class="check-row"><input name="autoAiOnSave" type="checkbox" checked /> Gerar IA automaticamente ao salvar lead</label>
-              <label>Ordenacao padrao<select name="defaultSort"><option value="opportunity">Maior oportunidade comercial</option><option value="ratingAsc">Menor avaliacao</option><option value="ratingDesc">Maior avaliacao</option></select></label>
+              <label class="check-row dev-only"><input name="devMode" type="checkbox" /> Modo desenvolvimento local: permitir teste manual de APIs neste navegador</label>
+              <label>Ordenacao padrao<select name="defaultSort"><option value="opportunity">Maior oportunidade comercial</option><option value="ratingAsc">Menor avaliacao</option><option value="ratingDesc">Maior avaliacao</option></select></label>              <div class="dev-settings dev-only">
+                <strong>Chaves locais para desenvolvimento</strong>
+                <small>Use apenas em localhost. Em produção, deixe vazio e use backend/.env.</small>
+                <label>GOOGLE_API_KEY<input name="devGoogleApiKey" type="password" autocomplete="off" /></label>
+                <label>GOOGLE_PLACES_API_KEY<input name="devGooglePlacesApiKey" type="password" autocomplete="off" /></label>
+                <label>GOOGLE_MAPS_API_KEY<input name="devGoogleMapsApiKey" type="password" autocomplete="off" /></label>
+                <label>GOOGLE_PAGESPEED_API_KEY<input name="devGooglePageSpeedApiKey" type="password" autocomplete="off" /></label>
+                <label>OPENAI_API_KEY<input name="devOpenAiApiKey" type="password" autocomplete="off" /></label>
+                <label>GOOGLE_CLIENT_ID<input name="devGoogleClientId" autocomplete="off" /></label>
+                <label>GOOGLE_CLIENT_SECRET<input name="devGoogleClientSecret" type="password" autocomplete="off" /></label>
+                <label>GOOGLE_REFRESH_TOKEN<input name="devGoogleRefreshToken" type="password" autocomplete="off" /></label>
+                <label>WHATSAPP_CLOUD_TOKEN<input name="devWhatsappCloudToken" type="password" autocomplete="off" /></label>
+                <label>WHATSAPP_PHONE_NUMBER_ID<input name="devWhatsappPhoneNumberId" autocomplete="off" /></label>
+              </div>
               <div class="env-checklist">
                 <strong>Variáveis obrigatórias no backend/.env</strong>
                 <code>GOOGLE_API_KEY</code><code>GOOGLE_PLACES_API_KEY</code><code>GOOGLE_MAPS_API_KEY</code><code>GOOGLE_PAGESPEED_API_KEY</code><code>OPENAI_API_KEY</code><code>GOOGLE_CLIENT_ID</code><code>GOOGLE_CLIENT_SECRET</code><code>GOOGLE_REFRESH_TOKEN</code><code>WHATSAPP_CLOUD_TOKEN</code><code>WHATSAPP_PHONE_NUMBER_ID</code>
@@ -399,6 +413,6 @@
       </form>
     </dialog>
 
-    <script src="./app.js?v=saas-2"></script>
+    <script src="./app.js?v=dev-1"></script>
   </body>
 </html>

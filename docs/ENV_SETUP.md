@@ -59,3 +59,15 @@ SUPABASE_SERVICE_ROLE_KEY=
 3. Meta/WhatsApp: regenere token e revise permissao do app.
 
 Depois disso, atualize somente o backend/.env ou as variaveis do Render/Railway.
+
+## Modo desenvolvimento local
+
+Para testar sem publicar o backend:
+
+1. Rode o frontend local em `http://localhost:4173`.
+2. Abra `Configuracoes`.
+3. Ative `Modo desenvolvimento local`.
+4. Preencha as chaves de teste manual.
+5. Salve e valide em `Integracoes`.
+
+Esse modo usa endpoints locais em `serve-nodere.mjs` e deve ser usado apenas em `localhost`. Em producao, deixe esses campos vazios e use variaveis de ambiente no backend.

@@ -36,3 +36,14 @@ Teste:
 - `POST /api/openai`
 
 Se `MVP_OWNER_TOKEN` estiver preenchido, envie `Authorization: Bearer <token>` nas chamadas.
+
+## Desenvolvimento local sem Render
+
+O arquivo `serve-nodere.mjs` tambem expoe endpoints locais para testes em `localhost:4173`:
+
+- `POST /api/v1/search/google-places`
+- `POST /api/v1/pagespeed/analyze`
+- `POST /api/openai`
+- `POST /api/v1/integrations/status?live=1`
+
+Use esse modo somente para desenvolvimento local. Para operacao real, publique o backend Express em Render/Railway.

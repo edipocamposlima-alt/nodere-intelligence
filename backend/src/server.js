@@ -174,18 +174,18 @@ app.post("/api/v1/pagespeed/analyze", async (request, response, next) => {
 app.get("/api/v1/google-workspace/status", (_request, response) => {
   response.json({
     calendar: {
-      configured: Boolean(config.googleWorkspaceClientId && config.googleWorkspaceClientSecret && config.googleWorkspaceRefreshToken),
-      status: config.googleWorkspaceRefreshToken ? "ready" : "pending_oauth",
+      configured: Boolean(config.googleCalendarClientId && config.googleCalendarClientSecret && config.googleCalendarRefreshToken),
+      status: config.googleCalendarRefreshToken ? "ready" : "pending_oauth",
       message: "Use OAuth offline no backend para conectar Google Calendar sem hardcode de conta."
     },
     gmail: {
-      configured: Boolean(config.googleWorkspaceClientId && config.googleWorkspaceClientSecret && config.googleWorkspaceRefreshToken),
-      status: config.googleWorkspaceRefreshToken ? "ready" : "pending_oauth",
+      configured: Boolean(config.gmailClientId && config.gmailClientSecret && config.gmailRefreshToken),
+      status: config.gmailRefreshToken ? "ready" : "pending_oauth",
       message: "Envio e rascunhos exigem refresh token com escopos Gmail."
     },
     drive: {
-      configured: Boolean(config.googleWorkspaceClientId && config.googleWorkspaceClientSecret && config.googleWorkspaceRefreshToken),
-      status: config.googleWorkspaceRefreshToken ? "ready" : "pending_oauth",
+      configured: Boolean(config.googleDriveClientId && config.googleDriveClientSecret && config.googleDriveRefreshToken),
+      status: config.googleDriveRefreshToken ? "ready" : "pending_oauth",
       message: "Arquivos e pastas de clientes exigem refresh token com escopos Drive."
     }
   });
