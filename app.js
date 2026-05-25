@@ -1,62 +1,27 @@
-const searchForm = document.getElementById("smartSearch");
-const navItems = document.querySelectorAll(".nav-item");
-const globalSearch = document.querySelector(".global-search input");
-const apiBaseUrlInput = document.getElementById("apiBaseUrl");
-const apiTokenInput = document.getElementById("apiToken");
-const settingsMessage = document.getElementById("settingsMessage");
-const integrationStatus = document.getElementById("integrationStatus");
-const leadRows = document.getElementById("leadRows");
-const leadTableMessage = document.getElementById("leadTableMessage");
+const STORAGE = {
+  leads: "nodere:leads:v2",
+  settings: "nodere:settings:v2",
+  selectedLead: "nodere:selected-lead:v2"
+};
 
-const statusOptions = [
-  ["lead_new", "Novo Lead"],
-  ["contact_started", "Contatado"],
-  ["negotiating", "Em negociação"],
-  ["meeting_scheduled", "Reunião marcada"],
-  ["proposal_sent", "Proposta enviada"],
-  ["won", "Fechado"],
-  ["lost", "Perdido"]
-];
+const statuses = ["Novo Lead", "Contatado", "Em negociação", "Proposta enviada", "Fechado", "Perdido"];
+let leads = readJson(STORAGE.leads, []);
+let settings = readJson(STORAGE.settings, {});
+let searchResults = [];
 
-let currentRows = [];
-let allRows = [];
+const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => [...document.querySelectorAll(selector)];
 
-apiBaseUrlInput.value = localStorage.getItem("nodere:api-base-url") || "http://localhost:3333";
-apiTokenInput.value = localStorage.getItem("nodere:api-token") || "";
-
-navItems.forEach((item) => {
-  item.addEventListener("click", () => {
-    navItems.forEach((navItem) => navItem.classList.remove("active"));
-    item.classList.add("active");
-  });
-});
-
-function getApiBaseUrl() {
-  return (apiBaseUrlInput.value || "").trim().replace(/\/$/, "");
+function readJson(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key)) ?? fallback;
+  } catch {
+    return fallback;
+  }
 }
 
-function getApiHeaders() {
-  const headers = { "Content-Type": "application/json" };
-  const token = (apiTokenInput.value || "").trim();
-  if (token) headers.Authorization = `Bearer ${token}`;
-  return headers;
-}
-
-async function apiFetch(path, options = {}) {
-  const baseUrl = getApiBaseUrl();
-  if (!baseUrl) throw new Error("Informe a URL da API.");
-
-  const response = await fetch(`${baseUrl}${path}`, {
-    ...options,
-    headers: {
-      ...getApiHeaders(),
-      ...(options.headers || {})
-    }
-  });
-
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || payload.message || "Falha ao conectar com a API.");
-  return payload;
+function writeJson(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
 }
 
 function escapeHtml(value = "") {
@@ -68,323 +33,433 @@ function escapeHtml(value = "") {
     .replaceAll("'", "&#039;");
 }
 
-function normalizeLead(row) {
-  return {
-    id: row.id,
-    companyName: row.company_name || row.companyName || "Empresa sem nome",
-    googlePlaceId: row.google_place_id || row.googlePlaceId,
-    phone: row.phone || "",
-    whatsapp: row.whatsapp || row.phone || "",
-    website: row.website || "",
-    address: row.address || "",
-    city: row.city || "",
-    state: row.state || "",
-    segment: row.segment || row.category || "",
-    googleRating: Number(row.google_rating || row.googleRating || 0),
-    googleReviews: Number(row.google_reviews || row.googleReviews || 0),
-    googleMapsUrl: row.google_maps_url || row.googleMapsUrl || "",
-    status: row.status || "lead_new",
-    source: row.source || "google_places",
-    opportunityScore: Number(row.opportunity_score || row.opportunityScore || 0),
-    problem: row.problem || row.notes || "Aguardando diagnóstico real"
-  };
+function nowIso() {
+  return new Date().toISOString();
 }
 
-function buildWhatsappUrl(lead) {
-  const digits = String(lead.whatsapp || lead.phone || "").replace(/\D/g, "");
+function uid() {
+  return crypto.randomUUID ? crypto.randomUUID() : `lead-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function showView(id) {
+  $$(".view").forEach((view) => view.classList.toggle("active", view.id === id));
+  $$(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.nav === id));
+  history.replaceState(null, "", `#${id}`);
+  if (id === "crm") renderCrm();
+  if (id === "integracoes") renderIntegrations();
+  if (id === "dashboard") renderDashboard();
+}
+
+function hasKey(name) {
+  return Boolean(settings[name] && String(settings[name]).trim());
+}
+
+function setMessage(id, text, type = "") {
+  const element = document.getElementById(id);
+  element.textContent = text;
+  element.className = `table-message ${type}`;
+}
+
+function normalizePhone(value = "") {
+  return String(value).replace(/\D/g, "");
+}
+
+function whatsappUrl(lead) {
+  const digits = normalizePhone(lead.whatsapp || lead.phone);
   if (!digits) return "";
   const number = digits.startsWith("55") ? digits : `55${digits}`;
-  const text = encodeURIComponent(
-    `Olá, tudo bem? Analisei a presença digital da ${lead.companyName} no Google e identifiquei oportunidades comerciais. Posso te mostrar rapidamente?`
+  const message = encodeURIComponent(
+    lead.aiMessage ||
+      `Olá, tudo bem? Analisei a presença digital da ${lead.company} no Google e encontrei oportunidades para melhorar captação e conversões. Posso te mostrar rapidamente?`
   );
-  return `https://wa.me/${number}?text=${text}`;
+  return `https://wa.me/${number}?text=${message}`;
 }
 
-function scoreForLead(lead) {
-  if (lead.opportunityScore) return Math.round(lead.opportunityScore);
-  let score = 20;
-  if (!lead.website) score += 25;
-  if (lead.googleRating && lead.googleRating < 4.2) score += 20;
-  if (lead.googleReviews < 50) score += 15;
+function scoreLead(lead) {
+  let score = 35;
+  if (!lead.website) score += 20;
+  if (Number(lead.rating) && Number(lead.rating) < 4.2) score += 20;
+  if (Number(lead.reviews || 0) < 50) score += 15;
   if (!lead.phone && !lead.whatsapp) score += 10;
   return Math.min(95, score);
 }
 
-function levelForScore(score) {
-  if (score >= 70) return ["Alta", "high"];
-  if (score >= 45) return ["Média", "mid"];
-  return ["Baixa", "low"];
-}
-
-function problemForLead(lead) {
-  if (lead.problem && lead.problem !== "Aguardando diagnóstico real") return lead.problem;
+function leadProblem(lead) {
   if (!lead.website) return "Sem site detectado";
-  if (lead.googleRating && lead.googleRating < 4.2) return "Baixa avaliação no Google";
-  if (lead.googleReviews < 50) return "Poucas avaliações";
-  return "Aguardando análise PageSpeed/IA";
+  if (Number(lead.rating) && Number(lead.rating) < 4.2) return "Baixa avaliação no Google";
+  if (Number(lead.reviews || 0) < 50) return "Poucas avaliações";
+  return "Pronto para diagnóstico";
 }
 
-function renderRows(rows, mode = "saved") {
-  currentRows = rows.map(normalizeLead);
-  if (mode !== "filtered") allRows = currentRows;
-  updateMetrics(currentRows);
-  if (!currentRows.length) {
-    leadRows.innerHTML = `<div class="empty-row">Nenhum lead real carregado. Use a busca inteligente com o backend conectado.</div>`;
-    leadTableMessage.textContent = "Sem dados reais carregados.";
-    return;
-  }
+function renderDashboard() {
+  $("#metricLeads").textContent = leads.length;
+  $("#metricLowRating").textContent = leads.filter((lead) => Number(lead.rating) && Number(lead.rating) < 4.2).length;
+  $("#metricNoSite").textContent = leads.filter((lead) => !lead.website).length;
+  $("#metricWhatsapp").textContent = leads.filter((lead) => lead.whatsapp || lead.phone).length;
 
-  leadTableMessage.textContent =
-    mode === "search"
-      ? `${currentRows.length} empresa(s) real(is) retornada(s) pelo Google Places. Salve no CRM para persistir.`
-      : `${currentRows.length} lead(s) carregado(s) do CRM.`;
-
-  leadRows.innerHTML = currentRows
-    .map((lead, index) => {
-      const score = scoreForLead(lead);
-      const [level, levelClass] = levelForScore(score);
-      const location = [lead.city, lead.state].filter(Boolean).join(", ") || lead.address || "Local não informado";
-      const rating = lead.googleRating ? lead.googleRating.toFixed(1) : "-";
-      const mapsUrl = lead.googleMapsUrl || (lead.address ? `https://maps.google.com/?q=${encodeURIComponent(lead.address)}` : "");
-      const whatsappUrl = buildWhatsappUrl(lead);
-      const statusSelect = lead.id
-        ? `<select class="status blue" data-status-id="${lead.id}">${statusOptions
-            .map(([value, label]) => `<option value="${value}" ${value === lead.status ? "selected" : ""}>${label}</option>`)
-            .join("")}</select>`
-        : `<button class="row-button" data-save-index="${index}">Salvar CRM</button>`;
-
-      return `
-        <div class="table-row" role="row">
-          <div class="company-cell"><span class="logo-ball dark">${escapeHtml(lead.companyName.slice(0, 1))}</span><span><strong>${escapeHtml(lead.companyName)}</strong><small>${escapeHtml(location)}</small></span></div>
-          <span>${escapeHtml(lead.segment || "Sem categoria")}</span>
-          <span>${rating} ${lead.googleRating ? '<b class="star">★</b>' : ""}</span>
-          <span>${lead.googleReviews || 0}</span>
-          <span><b class="score ${levelClass}">${score}</b><em class="level ${levelClass}">${level}</em></span>
-          <span>${escapeHtml(problemForLead(lead))}</span>
-          <span>${statusSelect}</span>
-          <span class="actions">
-            ${whatsappUrl ? `<a class="whatsapp" href="${whatsappUrl}" target="_blank" rel="noreferrer">☏</a>` : `<button class="row-button" disabled>Sem WhatsApp</button>`}
-            ${mapsUrl ? `<a class="maps" href="${mapsUrl}" target="_blank" rel="noreferrer">◆</a>` : ""}
-          </span>
-        </div>
-      `;
-    })
+  const counts = statuses.map((status) => [status, leads.filter((lead) => lead.status === status).length]);
+  $("#funnelList").innerHTML = counts
+    .map(([status, count]) => `<div class="funnel-item"><span>${escapeHtml(status)}</span><strong>${count}</strong></div>`)
     .join("");
 }
 
-function updateMetrics(rows) {
-  const scores = rows.map(scoreForLead);
-  document.getElementById("metricCompanies").textContent = rows.length;
-  document.getElementById("metricLowRating").textContent = rows.filter((lead) => lead.googleRating && lead.googleRating < 4.2).length;
-  document.getElementById("metricNoSite").textContent = rows.filter((lead) => !lead.website).length;
-  document.getElementById("metricNoWhatsapp").textContent = rows.filter((lead) => !lead.whatsapp && !lead.phone).length;
-  document.getElementById("metricHotLeads").textContent = scores.filter((score) => score >= 70).length;
-}
-
-async function loadSavedLeads() {
-  leadTableMessage.textContent = "Carregando CRM...";
-  try {
-    const payload = await apiFetch("/api/v1/leads");
-    renderRows(payload.leads || [], "saved");
-  } catch (error) {
-    leadRows.innerHTML = `<div class="empty-row">${escapeHtml(error.message)}. Publique o backend e configure a URL da API em Configurações.</div>`;
-    leadTableMessage.textContent = "Backend indisponível.";
+function renderLeadRows(rows, target, mode) {
+  const container = document.getElementById(target);
+  if (!rows.length) {
+    container.innerHTML = `<div class="empty-state">Nenhum registro encontrado.</div>`;
+    return;
   }
+
+  container.innerHTML = `
+    <div class="table-row table-head">
+      <span>Empresa</span><span>Contato</span><span>Avaliação</span><span>Score</span><span>Status</span><span>Ações</span>
+    </div>
+    ${rows
+      .map((lead) => {
+        const maps = lead.mapsUrl || (lead.address ? `https://maps.google.com/?q=${encodeURIComponent(lead.address)}` : "");
+        const wa = whatsappUrl(lead);
+        return `
+          <div class="table-row compact-row">
+            <div class="company-cell"><span class="logo-ball dark">${escapeHtml((lead.company || "?").slice(0, 1))}</span><span><strong>${escapeHtml(lead.company)}</strong><small>${escapeHtml([lead.city, lead.state].filter(Boolean).join(", ") || lead.address || "Sem local")}</small></span></div>
+            <span>${escapeHtml(lead.phone || lead.whatsapp || lead.email || "Sem contato")}</span>
+            <span>${lead.rating ? `${escapeHtml(lead.rating)} ★` : "-"} <small>${lead.reviews ? `${lead.reviews} avaliações` : ""}</small></span>
+            <span><b class="score ${scoreLead(lead) >= 70 ? "high" : "mid"}">${scoreLead(lead)}</b><small>${escapeHtml(leadProblem(lead))}</small></span>
+            <span>${mode === "crm" ? statusSelect(lead) : `<button class="row-button" data-save-place="${lead.tempId}">Salvar CRM</button>`}</span>
+            <span class="actions">
+              ${wa ? `<a class="whatsapp" target="_blank" rel="noreferrer" href="${wa}">☏</a>` : ""}
+              ${maps ? `<a class="maps" target="_blank" rel="noreferrer" href="${maps}">◆</a>` : ""}
+              ${mode === "crm" ? `<button class="row-button" data-edit="${lead.id}">Editar</button><button class="row-button danger" data-delete="${lead.id}">Excluir</button>` : ""}
+            </span>
+          </div>
+        `;
+      })
+      .join("")}
+  `;
 }
 
-async function saveLead(lead) {
-  const payload = await apiFetch("/api/v1/leads", {
+function statusSelect(lead) {
+  return `<select class="status blue" data-status="${lead.id}">${statuses
+    .map((status) => `<option ${lead.status === status ? "selected" : ""}>${status}</option>`)
+    .join("")}</select>`;
+}
+
+async function searchPlaces(form, messageId) {
+  if (!hasKey("googlePlacesKey")) {
+    setMessage(messageId, "Google Places API não configurada. Abrindo Configurações.", "error");
+    showView("configuracoes");
+    return;
+  }
+
+  const data = new FormData(form);
+  const query = [data.get("segment"), data.get("keyword"), data.get("city"), data.get("state")].filter(Boolean).join(" ");
+  setMessage(messageId, "Consultando Google Places...", "loading");
+
+  const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
     method: "POST",
-    body: JSON.stringify({
-      companyName: lead.companyName,
-      googlePlaceId: lead.googlePlaceId,
-      phone: lead.phone,
-      whatsapp: lead.whatsapp,
-      website: lead.website,
-      address: lead.address,
-      city: lead.city,
-      state: lead.state,
-      segment: lead.segment,
-      googleRating: lead.googleRating || null,
-      googleReviews: lead.googleReviews || 0,
-      source: lead.source || "google_places"
-    })
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": settings.googlePlacesKey,
+      "X-Goog-FieldMask":
+        "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.googleMapsUri,places.primaryTypeDisplayName"
+    },
+    body: JSON.stringify({ textQuery: query, languageCode: "pt-BR", regionCode: "BR", maxResultCount: 10 })
   });
-  return payload.lead;
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload?.error?.message || "Falha no Google Places.");
+
+  searchResults = (payload.places || []).map((place) => ({
+    tempId: place.id,
+    placeId: place.id,
+    company: place.displayName?.text || "Empresa sem nome",
+    address: place.formattedAddress || "",
+    phone: place.nationalPhoneNumber || place.internationalPhoneNumber || "",
+    whatsapp: place.nationalPhoneNumber || place.internationalPhoneNumber || "",
+    website: place.websiteUri || "",
+    rating: place.rating || "",
+    reviews: place.userRatingCount || 0,
+    segment: place.primaryTypeDisplayName?.text || data.get("segment") || "",
+    city: data.get("city") || "",
+    state: data.get("state") || "",
+    mapsUrl: place.googleMapsUri || "",
+    source: "Google Places",
+    status: "Novo Lead",
+    notes: ""
+  }));
+
+  renderLeadRows(searchResults, "searchResults", "search");
+  setMessage(messageId, `${searchResults.length} empresa(s) reais retornadas pelo Google Places.`, "success");
 }
 
-function renderIntegrations(items = []) {
-  if (!items.length) return;
+function saveLeadFromPlace(tempId) {
+  const place = searchResults.find((item) => item.tempId === tempId);
+  if (!place) return;
+  const exists = leads.some((lead) => lead.placeId && lead.placeId === place.placeId);
+  if (exists) {
+    setMessage("searchMessage", "Esse lead já está salvo no CRM.", "warning");
+    return;
+  }
+  const now = nowIso();
+  leads.unshift({ ...place, id: uid(), createdAt: now, updatedAt: now });
+  persistLeads();
+  setMessage("searchMessage", "Lead salvo no CRM.", "success");
+  renderDashboard();
+}
 
-  const labels = {
-    connected: "Conectado",
-    error: "Erro",
-    pending: "Pendente",
-    pending_validation: "Pendente"
-  };
+function persistLeads() {
+  writeJson(STORAGE.leads, leads);
+}
 
-  integrationStatus.innerHTML = items
-    .map((item) => {
-      const status = item.status || (item.configured ? "pending_validation" : "pending");
-      return `
-        <div class="integration-row ${status}">
-          <strong>${escapeHtml(item.name)}</strong>
-          <span>${labels[status] || escapeHtml(status)}</span>
-          <small>${escapeHtml(item.message || item.capability || "Sem detalhes retornados.")}</small>
+function renderCrm() {
+  const query = $("#crmSearch").value.trim().toLowerCase();
+  const status = $("#crmStatusFilter").value;
+  const rows = leads.filter((lead) => {
+    const haystack = [lead.company, lead.city, lead.state, lead.segment, lead.phone, lead.email].join(" ").toLowerCase();
+    return (!query || haystack.includes(query)) && (!status || lead.status === status);
+  });
+  renderLeadRows(rows, "crmTable", "crm");
+  $("#crmMessage").textContent = `${rows.length} lead(s) exibido(s).`;
+}
+
+function openLeadDialog(lead = {}) {
+  const form = $("#leadForm");
+  form.reset();
+  $("#leadDialogTitle").textContent = lead.id ? "Editar lead" : "Novo lead";
+  Object.entries({
+    id: lead.id || "",
+    company: lead.company || "",
+    phone: lead.phone || "",
+    whatsapp: lead.whatsapp || "",
+    email: lead.email || "",
+    website: lead.website || "",
+    city: lead.city || "",
+    state: lead.state || "",
+    segment: lead.segment || "",
+    source: lead.source || "Manual",
+    status: lead.status || "Novo Lead",
+    notes: lead.notes || ""
+  }).forEach(([key, value]) => {
+    const field = form.elements[key];
+    if (field) field.value = value;
+  });
+  $("#leadDialog").showModal();
+}
+
+function saveLeadFromForm() {
+  const form = $("#leadForm");
+  const data = Object.fromEntries(new FormData(form));
+  const now = nowIso();
+  if (data.id) {
+    leads = leads.map((lead) => (lead.id === data.id ? { ...lead, ...data, updatedAt: now } : lead));
+  } else {
+    leads.unshift({ ...data, id: uid(), createdAt: now, updatedAt: now });
+  }
+  persistLeads();
+  renderCrm();
+  renderDashboard();
+}
+
+function renderIntegrations() {
+  const items = [
+    ["googlePlacesKey", "Google Places", "Busca real de empresas"],
+    ["googleMapsKey", "Google Maps", "Links e mapas"],
+    ["googlePageSpeedKey", "Google PageSpeed", "Performance, SEO e boas práticas"],
+    ["openaiKey", "OpenAI", "Análise comercial com IA"],
+    ["whatsappToken", "WhatsApp Cloud API", "Envio futuro via API oficial"]
+  ];
+  $("#integrationGrid").innerHTML = items
+    .map(([key, name, description]) => `
+      <article class="integration-row ${hasKey(key) ? "pending_validation" : "pending"}">
+        <strong>${name}</strong>
+        <span>${hasKey(key) ? "Configurado" : "Pendente"}</span>
+        <small>${description}</small>
+        <div class="settings-actions">
+          <button class="secondary-button" type="button" data-nav="configuracoes">Configurar</button>
+          <button class="secondary-button" type="button" data-test="${key}">Testar conexão</button>
         </div>
-      `;
-    })
+      </article>
+    `)
     .join("");
 }
 
-async function loadIntegrationStatus(live = false) {
-  settingsMessage.textContent = live ? "Validando conexões..." : "Carregando status das integrações...";
-  try {
-    const payload = await apiFetch(`/api/v1/integrations/status${live ? "?live=1" : ""}`);
-    renderIntegrations(payload.integrations);
-    settingsMessage.textContent = live ? "Validação concluída." : "Status carregado do backend.";
-  } catch (error) {
-    settingsMessage.textContent = error.message;
-  }
-}
-
-async function testAiDiagnosis() {
-  settingsMessage.textContent = "Testando IA...";
-  try {
-    const payload = await apiFetch("/api/v1/ai/diagnosis", {
-      method: "POST",
-      body: JSON.stringify({
-        lead: {
-          company_name: "Empresa real em análise",
-          segment: "Serviços locais",
-          city: "Porto Alegre",
-          google_rating: 3.8,
-          google_reviews: 23
-        },
-        scan: {
-          score: 62,
-          findings: ["Baixa avaliação", "Site sem eventos de conversão"]
-        }
-      })
-    });
-    settingsMessage.textContent = `IA respondeu: ${payload.diagnosis.summary || payload.diagnosis.diagnosis || "diagnóstico gerado"}`;
-  } catch (error) {
-    settingsMessage.textContent = error.message;
-  }
-}
-
-async function testPlacesSearch() {
-  settingsMessage.textContent = "Testando Google Places...";
-  try {
-    const payload = await apiFetch("/api/v1/search/google-places", {
-      method: "POST",
-      body: JSON.stringify({ city: "Porto Alegre", state: "RS", segment: "Academia", keyword: "fitness", limit: 3 })
-    });
-    settingsMessage.textContent = `Google Places respondeu com ${payload.results?.length || 0} empresa(s).`;
-  } catch (error) {
-    settingsMessage.textContent = error.message;
-  }
-}
-
-searchForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const button = searchForm.querySelector("button");
-  const originalText = button.innerHTML;
-  button.innerHTML = "<span>⌁</span> Buscando";
-  button.disabled = true;
-  leadTableMessage.textContent = "Buscando empresas reais no Google Places...";
-
-  try {
-    const payload = await apiFetch("/api/v1/search/google-places", {
-      method: "POST",
-      body: JSON.stringify({
-        segment: document.getElementById("searchSegment").value,
-        city: document.getElementById("searchCity").value,
-        state: document.getElementById("searchState").value,
-        keyword: document.getElementById("searchKeyword").value,
-        limit: 10
-      })
-    });
-    renderRows(payload.results || [], "search");
-    document.querySelector(".opportunities-panel").scrollIntoView({ behavior: "smooth", block: "start" });
-  } catch (error) {
-    leadTableMessage.textContent = error.message;
-  } finally {
-    button.innerHTML = originalText;
-    button.disabled = false;
-  }
-});
-
-leadRows.addEventListener("click", async (event) => {
-  const button = event.target.closest("[data-save-index]");
-  if (!button) return;
-
-  const lead = currentRows[Number(button.dataset.saveIndex)];
-  button.textContent = "Salvando...";
-  button.disabled = true;
-
-  try {
-    await saveLead(lead);
-    await loadSavedLeads();
-  } catch (error) {
-    leadTableMessage.textContent = error.message;
-    button.textContent = "Salvar CRM";
-    button.disabled = false;
-  }
-});
-
-leadRows.addEventListener("change", async (event) => {
-  const select = event.target.closest("[data-status-id]");
-  if (!select) return;
-
-  try {
-    await apiFetch(`/api/v1/leads/${select.dataset.statusId}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ status: select.value })
-    });
-    leadTableMessage.textContent = "Status atualizado no CRM.";
-  } catch (error) {
-    leadTableMessage.textContent = error.message;
-  }
-});
-
-document.getElementById("saveApiSettings").addEventListener("click", () => {
-  localStorage.setItem("nodere:api-base-url", getApiBaseUrl());
-  localStorage.setItem("nodere:api-token", apiTokenInput.value || "");
-  settingsMessage.textContent = "Configurações da API salvas neste navegador.";
-  loadIntegrationStatus(false);
-  loadSavedLeads();
-});
-
-document.getElementById("refreshIntegrations").addEventListener("click", () => loadIntegrationStatus(true));
-document.getElementById("testAi").addEventListener("click", testAiDiagnosis);
-document.getElementById("testPlaces").addEventListener("click", testPlacesSearch);
-
-globalSearch.addEventListener("input", () => {
-  const query = globalSearch.value.trim().toLowerCase();
-  if (!query) {
-    renderRows(allRows, "filtered");
-    return;
-  }
-  renderRows(
-    allRows.filter((lead) =>
-      [lead.companyName, lead.city, lead.state, lead.segment, lead.phone, lead.website].some((value) =>
-        String(value || "").toLowerCase().includes(query)
-      )
-    ),
-    "filtered"
-  );
-});
-
-if (location.hash === "#configuracoes") {
-  window.setTimeout(() => document.getElementById("configuracoes").scrollIntoView({ behavior: "smooth" }), 200);
-}
-
-loadIntegrationStatus(false);
-loadSavedLeads();
-
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+function loadSettingsForm() {
+  const form = $("#settingsForm");
+  Object.entries(settings).forEach(([key, value]) => {
+    if (form.elements[key]) form.elements[key].value = value;
   });
 }
+
+async function testIntegration(key) {
+  if (!hasKey(key)) throw new Error("Chave não configurada.");
+  if (key === "googlePlacesKey") {
+    const form = new FormData();
+    const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": settings.googlePlacesKey,
+        "X-Goog-FieldMask": "places.id"
+      },
+      body: JSON.stringify({ textQuery: "Padaria em Porto Alegre", languageCode: "pt-BR", maxResultCount: 1 })
+    });
+    if (!response.ok) throw new Error((await response.json()).error?.message || "Places inválido.");
+    return "Google Places conectado.";
+  }
+  if (key === "googlePageSpeedKey") {
+    return testPageSpeed("https://www.wikipedia.org", true);
+  }
+  if (key === "googleMapsKey") return "Google Maps configurado. Os links de Maps funcionam via URL pública.";
+  if (key === "openaiKey") {
+    if (location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+      throw new Error("Por segurança, OpenAI direto no frontend está bloqueado em produção. Use backend /api/openai.");
+    }
+    return "OpenAI configurado para teste local.";
+  }
+  if (key === "whatsappToken") return "Token salvo. Envio via Cloud API deve ser feito no backend.";
+  return "Configuração encontrada.";
+}
+
+async function testPageSpeed(url, silent = false) {
+  if (!hasKey("googlePageSpeedKey")) throw new Error("GOOGLE_PAGESPEED_API_KEY não configurada.");
+  const endpoint = new URL("https://www.googleapis.com/pagespeedonline/v5/runPagespeed");
+  endpoint.searchParams.set("url", url);
+  endpoint.searchParams.set("strategy", "mobile");
+  endpoint.searchParams.set("key", settings.googlePageSpeedKey);
+  const response = await fetch(endpoint);
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload?.error?.message || "Falha no PageSpeed.");
+  const categories = payload.lighthouseResult?.categories || {};
+  const result = {
+    performance: Math.round((categories.performance?.score || 0) * 100),
+    seo: Math.round((categories.seo?.score || 0) * 100),
+    accessibility: Math.round((categories.accessibility?.score || 0) * 100),
+    bestPractices: Math.round((categories["best-practices"]?.score || 0) * 100)
+  };
+  if (silent) return `PageSpeed OK. Performance ${result.performance}/100.`;
+  $("#pageSpeedResult").innerHTML = `<strong>Resultado PageSpeed</strong><p>Performance: ${result.performance}/100</p><p>SEO: ${result.seo}/100</p><p>Acessibilidade: ${result.accessibility}/100</p><p>Boas práticas: ${result.bestPractices}/100</p>`;
+}
+
+function analyzeLeadLocally() {
+  const lead = leads[0];
+  if (!lead) {
+    $("#aiResult").textContent = "Crie ou salve um lead antes de analisar.";
+    return;
+  }
+  if (!hasKey("openaiKey")) {
+    $("#aiResult").textContent = "OPENAI_API_KEY não configurada. Configure a chave ou use backend /api/openai em produção.";
+    return;
+  }
+  if (location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+    $("#aiResult").textContent = "Chave OpenAI não será enviada pelo GitHub Pages. Para IA real em produção, publique o backend seguro /api/openai.";
+    return;
+  }
+  const message = `Olá, tudo bem? Notei que a ${lead.company} pode melhorar captação pelo Google. Posso te mostrar um diagnóstico rápido?`;
+  leads = leads.map((item) => (item.id === lead.id ? { ...item, aiMessage: message, updatedAt: nowIso() } : item));
+  persistLeads();
+  $("#aiResult").innerHTML = `<strong>${escapeHtml(lead.company)}</strong><p>Resumo: ${escapeHtml(leadProblem(lead))}.</p><p>Abordagem sugerida: contato consultivo com foco em presença local, avaliações e conversão.</p><p>WhatsApp: ${escapeHtml(message)}</p>`;
+  renderCrm();
+}
+
+function bindEvents() {
+  $$("[data-nav]").forEach((item) => item.addEventListener("click", () => showView(item.dataset.nav)));
+  $("#quickSearchForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    showView("empresas");
+    Object.entries(Object.fromEntries(new FormData(event.target))).forEach(([key, value]) => {
+      const field = $(`#placesSearchForm [name="${key}"]`);
+      if (field) field.value = value;
+    });
+    await searchPlaces($("#placesSearchForm"), "searchMessage").catch((error) => setMessage("searchMessage", error.message, "error"));
+  });
+  $("#placesSearchForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    searchPlaces(event.target, "searchMessage").catch((error) => setMessage("searchMessage", error.message, "error"));
+  });
+  $("#searchResults").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-save-place]");
+    if (button) saveLeadFromPlace(button.dataset.savePlace);
+  });
+  $("#newLeadButton").addEventListener("click", () => openLeadDialog());
+  $("#crmSearch").addEventListener("input", renderCrm);
+  $("#crmStatusFilter").addEventListener("change", renderCrm);
+  $("#crmTable").addEventListener("click", (event) => {
+    const edit = event.target.closest("[data-edit]");
+    const remove = event.target.closest("[data-delete]");
+    if (edit) openLeadDialog(leads.find((lead) => lead.id === edit.dataset.edit));
+    if (remove && confirm("Excluir este lead?")) {
+      leads = leads.filter((lead) => lead.id !== remove.dataset.delete);
+      persistLeads();
+      renderCrm();
+      renderDashboard();
+    }
+  });
+  $("#crmTable").addEventListener("change", (event) => {
+    const select = event.target.closest("[data-status]");
+    if (!select) return;
+    leads = leads.map((lead) => (lead.id === select.dataset.status ? { ...lead, status: select.value, updatedAt: nowIso() } : lead));
+    persistLeads();
+    renderCrm();
+    renderDashboard();
+  });
+  $("#leadForm").addEventListener("submit", (event) => {
+    if (event.submitter?.value === "save") saveLeadFromForm();
+  });
+  $("#settingsForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    settings = Object.fromEntries(new FormData(event.target));
+    writeJson(STORAGE.settings, settings);
+    $("#settingsMessage").textContent = "Configurações salvas localmente.";
+    renderIntegrations();
+  });
+  $("#clearSettings").addEventListener("click", () => {
+    if (!confirm("Apagar todas as chaves locais?")) return;
+    settings = {};
+    writeJson(STORAGE.settings, settings);
+    $("#settingsForm").reset();
+    renderIntegrations();
+    $("#settingsMessage").textContent = "Chaves apagadas.";
+  });
+  $("#validateSettings").addEventListener("click", async () => {
+    renderIntegrations();
+    $("#settingsMessage").textContent = "Use Integrações > Testar conexão para validar cada API.";
+  });
+  $("#integrationGrid").addEventListener("click", async (event) => {
+    const nav = event.target.closest("[data-nav]");
+    const test = event.target.closest("[data-test]");
+    if (nav) showView(nav.dataset.nav);
+    if (test) {
+      try {
+        const result = await testIntegration(test.dataset.test);
+        alert(result);
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+  });
+  $("#testAllIntegrations").addEventListener("click", renderIntegrations);
+  $("#pageSpeedForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    $("#pageSpeedResult").textContent = "Analisando...";
+    testPageSpeed(new FormData(event.target).get("url")).catch((error) => {
+      $("#pageSpeedResult").textContent = error.message;
+    });
+  });
+  $("#aiAnalyzeButton").addEventListener("click", analyzeLeadLocally);
+  $("#globalSearch").addEventListener("input", (event) => {
+    $("#crmSearch").value = event.target.value;
+    showView("crm");
+    renderCrm();
+  });
+}
+
+function init() {
+  loadSettingsForm();
+  bindEvents();
+  renderDashboard();
+  renderCrm();
+  renderIntegrations();
+  const initial = location.hash?.replace("#", "") || "dashboard";
+  showView(["dashboard", "empresas", "crm", "integracoes", "configuracoes"].includes(initial) ? initial : "dashboard");
+}
+
+init();

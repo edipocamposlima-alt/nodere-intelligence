@@ -2,6 +2,19 @@
 
 Sistema de prospeccao comercial para localizar empresas no Google, salvar leads em CRM, auditar presenca digital e gerar diagnosticos comerciais com OpenAI.
 
+## Versao emergencial funcional
+
+A versao publicada no GitHub Pages funciona como uma SPA sem backend obrigatorio:
+
+- CRM persiste em `localStorage`.
+- Configuracoes persistem em `localStorage`.
+- Busca Google Places usa a chave configurada na tela.
+- PageSpeed usa a chave configurada na tela.
+- WhatsApp abre `wa.me` com mensagem pronta.
+- IA mostra bloqueio claro em producao e fica preparada para backend `/api/openai`.
+
+Aviso: chaves salvas no navegador servem para operacao/teste simples. Em producao, use o backend e variaveis `.env`.
+
 ## Arquitetura Real
 
 O projeto usa duas camadas:
@@ -149,4 +162,4 @@ O script testa:
 - Google Places, Maps e PageSpeed dependem das chaves habilitadas no Google Cloud.
 - OpenAI exige chave valida e quota/billing ativo.
 - Google Business Profile exige `client_secret` e `refresh_token` gerado por OAuth com escopo `business.manage`.
-- O CRM exige Supabase configurado; sem banco, o frontend mostra erro em vez de dados simulados.
+- A versão emergencial do GitHub Pages usa `localStorage` para CRM e configurações. Para produção multiusuário, publique o backend e migre a persistência para Supabase/PostgreSQL.

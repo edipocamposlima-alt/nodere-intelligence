@@ -7,45 +7,24 @@
     <title>NODERE Intelligence</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./nodere-icon.png" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=real-crm-1" />
+    <link rel="stylesheet" href="./styles.css?v=emergency-1" />
   </head>
   <body>
     <div class="app-shell">
-      <aside class="sidebar" aria-label="Navegacao principal">
-        <a class="brand" href="#dashboard" aria-label="NODERE Intelligence">
+      <aside class="sidebar">
+        <a class="brand" href="#dashboard" data-nav="dashboard" aria-label="NODERE Intelligence">
           <img src="./nodere-logo-wordmark.png" alt="NODERE Intelligence" />
         </a>
-
-        <nav class="nav-list">
-          <a class="nav-item active" href="#dashboard">
-            <span class="nav-icon">⌂</span>
-            <span>Dashboard</span>
-          </a>
-          <a class="nav-item" href="#empresas">
-            <span class="nav-icon">▦</span>
-            <span>Empresas</span>
-          </a>
-          <a class="nav-item" href="#crm">
-            <span class="nav-icon">♙</span>
-            <span>CRM</span>
-          </a>
-          <a class="nav-item" href="#integracoes">
-            <span class="nav-icon">ↄ</span>
-            <span>Integrações</span>
-          </a>
-          <a class="nav-item" href="#configuracoes">
-            <span class="nav-icon">⚙</span>
-            <span>Configurações</span>
-          </a>
+        <nav class="nav-list" aria-label="Menu principal">
+          <button class="nav-item active" type="button" data-nav="dashboard"><span>⌂</span>Dashboard</button>
+          <button class="nav-item" type="button" data-nav="empresas"><span>▦</span>Empresas</button>
+          <button class="nav-item" type="button" data-nav="crm"><span>▤</span>CRM</button>
+          <button class="nav-item" type="button" data-nav="integracoes"><span>↔</span>Integrações</button>
+          <button class="nav-item" type="button" data-nav="configuracoes"><span>⚙</span>Configurações</button>
         </nav>
-
         <div class="agency-card">
           <span class="avatar">AG</span>
-          <div>
-            <strong>Agência Digital</strong>
-            <small>Administrador</small>
-          </div>
-          <span class="chevron">⌄</span>
+          <div><strong>Agência Digital</strong><small>Operação local</small></div>
         </div>
       </aside>
 
@@ -53,247 +32,154 @@
         <header class="topbar">
           <div>
             <h1>NODERE Intelligence</h1>
-            <p>Prospecção inteligente Google</p>
+            <p>Prospecção real, CRM local e diagnóstico comercial.</p>
           </div>
-
-          <div class="top-actions">
-            <label class="global-search">
-              <span>⌕</span>
-              <input type="search" placeholder="Buscar empresa, cidade ou segmento..." />
-              <kbd>Ctrl + K</kbd>
-            </label>
-            <button class="icon-button" aria-label="Notificações">
-              ♧
-              <span class="badge">3</span>
-            </button>
-            <button class="profile-button" aria-label="Perfil">
-              AG
-              <span></span>
-            </button>
-          </div>
+          <label class="global-search">
+            <span>⌕</span>
+            <input id="globalSearch" type="search" placeholder="Buscar lead no CRM..." />
+          </label>
         </header>
 
-        <section class="metrics-grid" aria-label="Indicadores principais">
-          <article class="metric-card">
-            <span class="metric-icon blue">▥</span>
-            <div>
-              <p>Empresas encontradas</p>
-              <strong id="metricCompanies">0</strong>
-              <small>Total no período</small>
-            </div>
-          </article>
-          <article class="metric-card">
-            <span class="metric-icon amber">☆</span>
-            <div>
-              <p>Baixa avaliação</p>
-              <strong id="metricLowRating">0</strong>
-              <small>Nota abaixo de 4.2</small>
-            </div>
-          </article>
-          <article class="metric-card">
-            <span class="metric-icon purple">◉</span>
-            <div>
-              <p>Sem site</p>
-              <strong id="metricNoSite">0</strong>
-              <small>Não possuem site</small>
-            </div>
-          </article>
-          <article class="metric-card">
-            <span class="metric-icon green">♩</span>
-            <div>
-              <p>Sem Google Ads</p>
-              <strong id="metricNoAds">-</strong>
-              <small>Sem anúncios ativos</small>
-            </div>
-          </article>
-          <article class="metric-card">
-            <span class="metric-icon green">☏</span>
-            <div>
-              <p>Sem WhatsApp</p>
-              <strong id="metricNoWhatsapp">0</strong>
-              <small>Não informaram WhatsApp</small>
-            </div>
-          </article>
-          <article class="metric-card">
-            <span class="metric-icon blue">▤</span>
-            <div>
-              <p>Sem descrição</p>
-              <strong id="metricNoDescription">-</strong>
-              <small>Descrição incompleta</small>
-            </div>
-          </article>
-          <article class="metric-card">
-            <span class="metric-icon rose">▧</span>
-            <div>
-              <p>Sem fotos recentes</p>
-              <strong id="metricNoRecentPhotos">-</strong>
-              <small>Sem fotos nos últimos 90 dias</small>
-            </div>
-          </article>
-          <article class="metric-card">
-            <span class="metric-icon orange">♨</span>
-            <div>
-              <p>Leads quentes</p>
-              <strong id="metricHotLeads">0</strong>
-              <small>Score acima de 70</small>
-            </div>
-          </article>
+        <section class="view active" id="dashboard">
+          <div class="metrics-grid">
+            <article class="metric-card"><span class="metric-icon blue">▥</span><div><p>Leads no CRM</p><strong id="metricLeads">0</strong><small>Persistidos neste navegador</small></div></article>
+            <article class="metric-card"><span class="metric-icon amber">☆</span><div><p>Baixa avaliação</p><strong id="metricLowRating">0</strong><small>Nota abaixo de 4.2</small></div></article>
+            <article class="metric-card"><span class="metric-icon purple">◉</span><div><p>Sem site</p><strong id="metricNoSite">0</strong><small>Oportunidade de presença digital</small></div></article>
+            <article class="metric-card"><span class="metric-icon green">☏</span><div><p>Com WhatsApp</p><strong id="metricWhatsapp">0</strong><small>Prontos para contato</small></div></article>
+          </div>
+
+          <div class="work-grid">
+            <article class="panel">
+              <div class="panel-title"><span>⌕</span><h2>Busca rápida de empresas</h2></div>
+              <form class="smart-search" id="quickSearchForm">
+                <label>Segmento<input name="segment" placeholder="concreteiras" required /></label>
+                <label>Cidade<input name="city" placeholder="Porto Alegre" required /></label>
+                <label>Estado<input name="state" placeholder="RS" required /></label>
+                <label>Palavra-chave<input name="keyword" placeholder="britagem, mineração..." /></label>
+                <button class="primary-button" type="submit">Buscar</button>
+              </form>
+              <p class="hint">Usa Google Places quando a chave estiver configurada. Sem chave, mostra orientação clara.</p>
+            </article>
+
+            <article class="panel">
+              <div class="panel-title"><span>◎</span><h2>Resumo do funil</h2></div>
+              <div class="funnel-list" id="funnelList"></div>
+            </article>
+          </div>
         </section>
 
-        <section class="work-grid">
-          <article class="panel search-panel">
-            <header class="panel-title">
-              <span>⌕</span>
-              <h2>Busca inteligente</h2>
-            </header>
-
-            <form class="smart-search" id="smartSearch">
-              <label>
-                Segmento
-                <select id="searchSegment" required>
-                  <option value="">Selecione o segmento</option>
-                  <option>Academias</option>
-                  <option>Oficinas Mecânicas</option>
-                  <option>Clínicas Odontológicas</option>
-                  <option>Restaurantes</option>
-                  <option>Pet Shops</option>
-                </select>
-              </label>
-              <label>
-                Cidade
-                <input id="searchCity" type="text" placeholder="Digite a cidade" required />
-              </label>
-              <label>
-                Estado
-                <select id="searchState" required>
-                  <option value="">Selecione o estado</option>
-                  <option>RS</option>
-                  <option>SC</option>
-                  <option>PR</option>
-                  <option>SP</option>
-                </select>
-              </label>
-              <label>
-                Palavra-chave
-                <input id="searchKeyword" type="text" placeholder="Ex: clínica, oficina, pizzaria" />
-              </label>
-              <button type="submit" class="primary-button">
-                <span>⌕</span>
-                Buscar
-              </button>
+        <section class="view" id="empresas">
+          <article class="panel">
+            <div class="table-header">
+              <div class="panel-title compact"><span>▦</span><h2>Busca real de empresas</h2></div>
+              <button class="secondary-button" type="button" data-nav="configuracoes">Configurar APIs</button>
+            </div>
+            <form class="smart-search" id="placesSearchForm">
+              <label>Segmento<input name="segment" placeholder="transportadoras" required /></label>
+              <label>Cidade<input name="city" placeholder="Caxias do Sul" required /></label>
+              <label>Estado<input name="state" placeholder="RS" required /></label>
+              <label>Palavra-chave<input name="keyword" placeholder="frete, logística..." /></label>
+              <button class="primary-button" type="submit">Buscar no Google</button>
             </form>
-          </article>
-
-          <article class="panel score-panel">
-            <header class="panel-title compact">
-              <span>↗</span>
-              <h2>Score médio de oportunidade</h2>
-            </header>
-            <div class="score-row">
-              <strong>66</strong>
-              <span>/ 100</span>
-              <div>
-                <b>↑ 12%</b>
-                <small>vs período anterior</small>
-              </div>
-            </div>
-            <div class="score-track"><span></span></div>
-            <p>Bom potencial comercial</p>
+            <p class="table-message" id="searchMessage">Informe os filtros e clique em Buscar no Google.</p>
+            <div class="lead-table" id="searchResults"></div>
           </article>
         </section>
 
-        <section class="panel opportunities-panel">
-          <header class="table-header">
-            <div class="panel-title compact">
-              <span>◎</span>
-              <h2>Maiores oportunidades</h2>
+        <section class="view" id="crm">
+          <article class="panel">
+            <div class="table-header">
+              <div class="panel-title compact"><span>▤</span><h2>CRM funcional</h2></div>
+              <button class="primary-button" type="button" id="newLeadButton">Novo lead</button>
             </div>
-            <button class="secondary-button">
-              Ver todas
-              <span>›</span>
-            </button>
-          </header>
-          <p class="table-message" id="leadTableMessage">Conecte o backend para carregar leads reais.</p>
-
-          <div class="lead-table" role="table" aria-label="Maiores oportunidades">
-            <div class="table-row table-head" role="row">
-              <span>Empresa</span>
-              <span>Segmento</span>
-              <span>Avaliação</span>
-              <span>Avaliações</span>
-              <span>Score</span>
-              <span>Problema principal detectado</span>
-              <span>Status CRM</span>
-              <span>Ações</span>
+            <div class="filters">
+              <input id="crmSearch" placeholder="Pesquisar por empresa, cidade, segmento..." />
+              <select id="crmStatusFilter">
+                <option value="">Todos os status</option>
+                <option>Novo Lead</option>
+                <option>Contatado</option>
+                <option>Em negociação</option>
+                <option>Proposta enviada</option>
+                <option>Fechado</option>
+                <option>Perdido</option>
+              </select>
             </div>
-            <div id="leadRows"></div>
-          </div>
+            <p class="table-message" id="crmMessage">Dados salvos localmente neste navegador.</p>
+            <div class="lead-table" id="crmTable"></div>
+          </article>
         </section>
 
-        <section class="panel settings-panel" id="configuracoes">
-          <header class="table-header">
-            <div class="panel-title compact">
-              <span>⚙</span>
-              <h2>Configurações e integrações</h2>
+        <section class="view" id="integracoes">
+          <article class="panel">
+            <div class="table-header">
+              <div class="panel-title compact"><span>↔</span><h2>Integrações</h2></div>
+              <button class="secondary-button" type="button" id="testAllIntegrations">Testar tudo</button>
             </div>
-            <button class="secondary-button" id="refreshIntegrations" type="button">
-              Validar conexões
-              <span>↻</span>
-            </button>
-          </header>
+            <div class="integration-grid" id="integrationGrid"></div>
+          </article>
+        </section>
 
-          <div class="settings-grid">
-            <div class="api-card">
-              <h3>Backend seguro</h3>
-              <p>As chaves OpenAI e Google ficam apenas no backend. O GitHub Pages consulta esta API para buscar empresas, validar serviços e gerar diagnósticos.</p>
-              <label>
-                URL da API
-                <input id="apiBaseUrl" type="url" placeholder="http://localhost:3333" />
-              </label>
-              <label>
-                Token da API, se configurado
-                <input id="apiToken" type="password" placeholder="MVP_OWNER_TOKEN" />
-              </label>
+        <section class="view" id="configuracoes">
+          <article class="panel">
+            <div class="panel-title"><span>⚙</span><h2>Configurações locais</h2></div>
+            <p class="warning">Versão emergencial frontend: as chaves ficam no localStorage deste navegador para testes. Em produção, mova tudo para backend/.env.</p>
+            <form class="settings-form" id="settingsForm">
+              <label>GOOGLE_PLACES_API_KEY<input name="googlePlacesKey" type="password" autocomplete="off" /></label>
+              <label>GOOGLE_MAPS_API_KEY<input name="googleMapsKey" type="password" autocomplete="off" /></label>
+              <label>GOOGLE_PAGESPEED_API_KEY<input name="googlePageSpeedKey" type="password" autocomplete="off" /></label>
+              <label>OPENAI_API_KEY<input name="openaiKey" type="password" autocomplete="off" /></label>
+              <label>WHATSAPP_CLOUD_TOKEN<input name="whatsappToken" type="password" autocomplete="off" /></label>
+              <label>WHATSAPP_PHONE_NUMBER_ID<input name="whatsappPhoneNumberId" autocomplete="off" /></label>
               <div class="settings-actions">
-                <button class="primary-button" id="saveApiSettings" type="button">Salvar</button>
-                <button class="secondary-button" id="testAi" type="button">Testar IA</button>
-                <button class="secondary-button" id="testPlaces" type="button">Testar Places</button>
+                <button class="primary-button" type="submit">Salvar configurações</button>
+                <button class="secondary-button" type="button" id="clearSettings">Apagar chaves</button>
+                <button class="secondary-button" type="button" id="validateSettings">Validar</button>
               </div>
-              <small id="settingsMessage">Configure a API para ver o status real das integrações.</small>
-            </div>
+            </form>
+            <p class="table-message" id="settingsMessage">Configurações carregadas do navegador.</p>
+          </article>
 
-            <div class="integration-status" id="integrationStatus">
-              <div class="integration-row pending">
-                <strong>OpenAI / ChatGPT API</strong>
-                <span>Pendente</span>
-                <small>Aguardando conexão com backend.</small>
-              </div>
-              <div class="integration-row pending">
-                <strong>Google Places API</strong>
-                <span>Pendente</span>
-                <small>Aguardando conexão com backend.</small>
-              </div>
-              <div class="integration-row pending">
-                <strong>Google Maps API</strong>
-                <span>Pendente</span>
-                <small>Aguardando conexão com backend.</small>
-              </div>
-              <div class="integration-row pending">
-                <strong>PageSpeed Insights API</strong>
-                <span>Pendente</span>
-                <small>Aguardando conexão com backend.</small>
-              </div>
-              <div class="integration-row pending">
-                <strong>Google Business Profile API</strong>
-                <span>Pendente</span>
-                <small>Aguardando conexão com backend.</small>
-              </div>
-            </div>
-          </div>
+          <article class="panel">
+            <div class="panel-title"><span>⚡</span><h2>PageSpeed</h2></div>
+            <form class="inline-form" id="pageSpeedForm">
+              <input name="url" placeholder="https://exemplo.com.br" required />
+              <button class="primary-button" type="submit">Analisar site</button>
+            </form>
+            <div class="result-box" id="pageSpeedResult">Aguardando análise.</div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-title"><span>AI</span><h2>Assistente IA</h2></div>
+            <p class="hint">No GitHub Pages, chamadas diretas à OpenAI ficam bloqueadas por segurança. Use localhost para teste ou o endpoint futuro <code>/api/openai</code>.</p>
+            <button class="primary-button" type="button" id="aiAnalyzeButton">Analisar lead selecionado</button>
+            <div class="result-box" id="aiResult">Selecione ou crie um lead no CRM.</div>
+          </article>
         </section>
       </main>
     </div>
 
-    <script src="./app.js?v=real-crm-1"></script>
+    <dialog id="leadDialog">
+      <form method="dialog" id="leadForm" class="dialog-card">
+        <h2 id="leadDialogTitle">Lead</h2>
+        <input type="hidden" name="id" />
+        <label>Empresa<input name="company" required /></label>
+        <label>Telefone<input name="phone" /></label>
+        <label>WhatsApp<input name="whatsapp" /></label>
+        <label>E-mail<input name="email" type="email" /></label>
+        <label>Site<input name="website" /></label>
+        <label>Cidade<input name="city" /></label>
+        <label>Estado<input name="state" /></label>
+        <label>Segmento<input name="segment" /></label>
+        <label>Origem<input name="source" /></label>
+        <label>Status<select name="status"><option>Novo Lead</option><option>Contatado</option><option>Em negociação</option><option>Proposta enviada</option><option>Fechado</option><option>Perdido</option></select></label>
+        <label>Observações<textarea name="notes"></textarea></label>
+        <div class="settings-actions">
+          <button class="primary-button" value="save">Salvar</button>
+          <button class="secondary-button" value="cancel">Cancelar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="./app.js?v=emergency-1"></script>
   </body>
 </html>
