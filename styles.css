@@ -713,6 +713,25 @@ dialog::backdrop { background: rgba(0,0,0,.65); }
   background: rgba(255,255,255,.035);
 }
 .catalog-grid p { margin-top: 8px; color: #c8d4e6; line-height: 1.4; }
+.catalog-grid.operational { grid-template-columns: repeat(3, minmax(240px, 1fr)); }
+.ops-card, .ops-panel {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255,255,255,.035);
+}
+.ops-card header { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.ops-card strong, .ops-card p, .ops-card small { overflow-wrap: anywhere; }
+.muted-card { opacity: .58; }
+.price-row { display: flex; justify-content: space-between; gap: 10px; align-items: center; color: var(--green); }
+.proposal-workbench { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 14px; }
+.mini-list { display: grid; gap: 10px; }
+.mini-list article { padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(0,0,0,.14); }
+.compact-list .compact-row { min-width: 0; grid-template-columns: 1.6fr .6fr .7fr 1fr; }
+.negotiation-form { grid-template-columns: 1fr 120px 100px 140px auto; }
 
 dialog {
   width: min(1180px, calc(100% - 24px));
@@ -804,7 +823,8 @@ dialog {
   .ai-chat { position: static; width: auto; max-height: none; margin: 0 18px 18px; }
   .ai-chat.collapsed { display: none; }
   .ai-fab { right: 14px; bottom: 14px; }
-  .catalog-grid { grid-template-columns: 1fr; }
+  .catalog-grid, .catalog-grid.operational, .proposal-workbench { grid-template-columns: 1fr; }
+  .negotiation-form { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 720px) {

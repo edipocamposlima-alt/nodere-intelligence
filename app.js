@@ -2,6 +2,10 @@ const STORAGE = {
   leads: "nodere:leads:v4",
   settings: "nodere:settings:v4",
   chat: "nodere:ai-chat:v1",
+  services: "nodere:services:v1",
+  templates: "nodere:templates:v1",
+  proposals: "nodere:proposals:v1",
+  contracts: "nodere:contracts:v1",
   legacyLeads: "nodere:leads:v3",
   legacySettings: "nodere:settings:v3"
 };
@@ -69,6 +73,10 @@ let settings = sanitizeSettings({
   ...readJson(STORAGE.settings, {})
 });
 let leads = readJson(STORAGE.leads, readJson(STORAGE.legacyLeads, [])).map(normalizeLead);
+let services = readJson(STORAGE.services, defaultServices()).map(normalizeService);
+let templates = readJson(STORAGE.templates, defaultTemplates()).map(normalizeTemplate);
+let proposals = readJson(STORAGE.proposals, []).map(normalizeProposal);
+let contracts = readJson(STORAGE.contracts, []).map(normalizeContract);
 let chatMessages = readJson(STORAGE.chat, []);
 let searchResults = [];
 let nextPageToken = "";
@@ -218,6 +226,7 @@ function normalizeLead(raw = {}) {
     internalNotes: raw.internalNotes || "",
     notes: Array.isArray(raw.notes) ? raw.notes : [],
     tasks: Array.isArray(raw.tasks) ? raw.tasks : [],
+    negotiations: Array.isArray(raw.negotiations) ? raw.negotiations : [],
     timeline,
     aiAnalyses: Array.isArray(raw.aiAnalyses) ? raw.aiAnalyses : (raw.ai ? [{ id: uid("ai"), action: "analyze", result: raw.ai, createdAt: raw.updatedAt || now }] : []),
     pageSpeed: raw.pageSpeed || null,
@@ -240,10 +249,72 @@ function migrateStatus(status) {
 function persistAll() {
   leads = leads.map(normalizeLead);
   writeJson(STORAGE.leads, leads);
+  writeJson(STORAGE.services, services);
+  writeJson(STORAGE.templates, templates);
+  writeJson(STORAGE.proposals, proposals);
+  writeJson(STORAGE.contracts, contracts);
   writeJson(STORAGE.settings, settings);
   writeJson(STORAGE.chat, chatMessages);
   applyTheme();
   renderAll();
+}
+
+function currency(value) {
+  const number = Number(String(value || "0").replace(",", ".").replace(/[^\d.]/g, ""));
+  return number ? number.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "R$ 0,00";
+}
+
+function defaultServices() {
+  return [
+    { name: "Gestao Google Ads", category: "Trafego Pago", shortDescription: "Campanhas, otimizacao e relatorios.", type: "recorrente", suggestedPrice: 1800, minPrice: 1200, maxPrice: 4500, deadline: "30 dias", deliverables: "Planejamento\nCampanhas\nConversoes\nRelatorio mensal", checklist: "Briefing\nTags\nCampanhas\nOtimizacao semanal", active: true },
+    { name: "Google Meu Negocio", category: "SEO Local", shortDescription: "Otimizacao local, fotos, posts e avaliacoes.", type: "recorrente", suggestedPrice: 900, minPrice: 600, maxPrice: 1800, deadline: "15 dias", deliverables: "Perfil otimizado\nCategorias\nDescricao\nPosts", checklist: "Auditoria\nFotos\nDescricao\nPlano de postagens", active: true },
+    { name: "Landing Page", category: "Conversao", shortDescription: "Pagina de conversao para campanhas.", type: "pontual", suggestedPrice: 2500, minPrice: 1800, maxPrice: 6000, deadline: "20 dias", deliverables: "Layout\nCopy\nFormulario\nPublicacao", checklist: "Wireframe\nCopy\nDesign\nPublicacao", active: true }
+  ];
+}
+
+function normalizeService(raw = {}) {
+  return {
+    id: raw.id || uid("service"),
+    name: raw.name || "Novo servico",
+    category: raw.category || "Geral",
+    subcategory: raw.subcategory || "",
+    shortDescription: raw.shortDescription || raw.description || "",
+    fullDescription: raw.fullDescription || raw.shortDescription || raw.description || "",
+    type: raw.type || "pontual",
+    suggestedPrice: raw.suggestedPrice || raw.price || "",
+    minPrice: raw.minPrice || "",
+    maxPrice: raw.maxPrice || "",
+    deadline: raw.deadline || "",
+    deliverables: raw.deliverables || "",
+    notes: raw.notes || "",
+    checklist: raw.checklist || "",
+    proposalTemplateId: raw.proposalTemplateId || "",
+    contractTemplateId: raw.contractTemplateId || "",
+    active: raw.active !== false,
+    createdAt: raw.createdAt || nowIso(),
+    updatedAt: raw.updatedAt || nowIso()
+  };
+}
+
+function defaultTemplates() {
+  return [
+    { name: "WhatsApp inicial", category: "WhatsApp", body: "Ola {{nome_contato}}, tudo bem? Analisei a presenca digital da {{nome_empresa}} em {{cidade}} e vi oportunidades para gerar mais contatos pelo Google." },
+    { name: "Email diagnostico", category: "Email", body: "Assunto: oportunidades no Google para {{nome_empresa}}\n\nOla {{nome_contato}}, preparei um diagnostico objetivo para {{nome_empresa}} no segmento {{segmento}}." },
+    { name: "Proposta padrao", category: "Proposta", body: "Proposta comercial para {{empresa_cliente}} contemplando {{servico}}, investimento de {{valor}} e prazo {{prazo}}." },
+    { name: "Contrato recorrente", category: "Contrato", body: "Contrato de prestacao de servicos entre NODERE e {{empresa_cliente}}, referente a {{servico}}, valor {{valor}}, prazo {{prazo}}." }
+  ];
+}
+
+function normalizeTemplate(raw = {}) {
+  return { id: raw.id || uid("tpl"), name: raw.name || "Novo template", category: raw.category || "Email", body: raw.body || "", active: raw.active !== false, createdAt: raw.createdAt || nowIso(), updatedAt: raw.updatedAt || nowIso() };
+}
+
+function normalizeProposal(raw = {}) {
+  return { id: raw.id || uid("proposal"), leadId: raw.leadId || "", title: raw.title || "Proposta comercial", serviceIds: raw.serviceIds || [], items: raw.items || [], status: raw.status || "Rascunho", body: raw.body || "", notes: raw.notes || "", createdAt: raw.createdAt || nowIso(), updatedAt: raw.updatedAt || nowIso() };
+}
+
+function normalizeContract(raw = {}) {
+  return { id: raw.id || uid("contract"), leadId: raw.leadId || "", title: raw.title || "Contrato de prestacao de servicos", serviceIds: raw.serviceIds || [], status: raw.status || "Rascunho", clauses: raw.clauses || "", createdAt: raw.createdAt || nowIso(), updatedAt: raw.updatedAt || nowIso() };
 }
 
 function showView(id) {
@@ -406,6 +477,10 @@ function renderAll() {
   renderAgenda();
   renderPipeline();
   renderReports();
+  renderServices();
+  renderTemplates();
+  renderContracts();
+  renderProposalsModule();
   renderAiLeadSelect();
   renderIntegrations();
   renderChat();
@@ -567,6 +642,67 @@ function renderReports() {
   renderMiniChart();
 }
 
+window.addEventListener("hashchange", () => {
+  const id = location.hash?.replace("#", "") || "dashboard";
+  if (allowedViews().includes(id)) showView(id);
+});
+
+function renderServices() {
+  const view = $("#servicos .panel");
+  if (!view) return;
+  view.innerHTML = `
+    <div class="table-header"><div class="panel-title compact"><span>Servicos</span><h2>Catalogo comercial editavel</h2></div><button class="primary-button" type="button" data-service-new>Novo servico</button></div>
+    <div class="filters"><input id="serviceSearch" placeholder="Pesquisar servico, categoria ou entregavel..." /></div>
+    <div class="catalog-grid operational" id="servicesGrid">${services.map(renderServiceCard).join("")}</div>`;
+  $("#serviceSearch")?.addEventListener("input", (event) => {
+    const q = event.target.value.toLowerCase();
+    $("#servicesGrid").innerHTML = services.filter((s) => [s.name, s.category, s.deliverables].join(" ").toLowerCase().includes(q)).map(renderServiceCard).join("");
+  });
+}
+
+function renderServiceCard(service) {
+  return `<article class="ops-card ${service.active ? "" : "muted-card"}">
+    <header><strong>${escapeHtml(service.name)}</strong><span class="badge">${escapeHtml(service.type)}</span></header>
+    <small>${escapeHtml(service.category)} ${service.subcategory ? `| ${escapeHtml(service.subcategory)}` : ""}</small>
+    <p>${escapeHtml(service.shortDescription || service.fullDescription)}</p>
+    <div class="price-row"><b>${currency(service.suggestedPrice)}</b><small>min ${currency(service.minPrice)} | max ${currency(service.maxPrice)}</small></div>
+    <div class="settings-actions"><button class="row-button" data-service-edit="${service.id}">Editar</button><button class="row-button" data-service-duplicate="${service.id}">Duplicar</button><button class="row-button" data-service-toggle="${service.id}">${service.active ? "Desativar" : "Ativar"}</button><button class="row-button danger" data-service-delete="${service.id}">Excluir</button></div>
+  </article>`;
+}
+
+function renderTemplates() {
+  const view = $("#templates .panel");
+  if (!view) return;
+  view.innerHTML = `
+    <div class="table-header"><div class="panel-title compact"><span>Templates</span><h2>Modelos comerciais editaveis</h2></div><button class="primary-button" type="button" data-template-new>Novo template</button></div>
+    <div class="filters"><input id="templateSearch" placeholder="Pesquisar template..." /></div>
+    <div class="catalog-grid operational" id="templatesGrid">${templates.map(renderTemplateCard).join("")}</div>`;
+  $("#templateSearch")?.addEventListener("input", (event) => {
+    const q = event.target.value.toLowerCase();
+    $("#templatesGrid").innerHTML = templates.filter((t) => [t.name, t.category, t.body].join(" ").toLowerCase().includes(q)).map(renderTemplateCard).join("");
+  });
+}
+
+function renderTemplateCard(template) {
+  return `<article class="ops-card"><header><strong>${escapeHtml(template.name)}</strong><span class="badge">${escapeHtml(template.category)}</span></header><p>${escapeHtml(template.body).slice(0, 180)}</p><div class="settings-actions"><button class="row-button" data-template-edit="${template.id}">Editar</button><button class="row-button" data-template-duplicate="${template.id}">Duplicar</button><button class="row-button danger" data-template-delete="${template.id}">Excluir</button></div></article>`;
+}
+
+function renderContracts() {
+  const view = $("#contratos .panel");
+  if (!view) return;
+  view.innerHTML = `<div class="table-header"><div class="panel-title compact"><span>Contratos</span><h2>Contratos vinculados ao CRM</h2></div><button class="primary-button" type="button" data-contract-new>Novo contrato</button></div><div class="lead-table compact-list">${contracts.map(renderContractRow).join("") || `<div class="empty-state">Nenhum contrato criado.</div>`}</div>`;
+}
+
+function renderProposalsModule() {
+  const view = document.querySelector("#relatorios");
+  return view;
+}
+
+function renderContractRow(contract) {
+  const lead = leads.find((item) => item.id === contract.leadId) || {};
+  return `<div class="table-row compact-row"><span><strong>${escapeHtml(contract.title)}</strong><small>${escapeHtml(lead.company || "Sem lead")}</small></span><span>${escapeHtml(contract.status)}</span><span>${formatDate(contract.updatedAt)}</span><span class="actions"><button class="row-button" data-contract-edit="${contract.id}">Editar</button><button class="row-button" data-contract-print="${contract.id}">PDF</button></span></div>`;
+}
+
 function renderIntegrationStatusList(statuses = []) {
   if (!statuses.length) return `<div class="empty-state">Clique em validar para consultar o backend.</div>`;
   return statuses.map((item) => `<article class="integration-row ${escapeHtml(item.status || "")}">
@@ -717,6 +853,7 @@ function renderLeadTabs(lead) {
   renderLeadTimeline(safeLead);
   renderLeadAi(safeLead);
   renderLeadPageSpeed(safeLead);
+  renderLeadProposals(safeLead);
 }
 
 function activateLeadTab(tabName) {
@@ -775,6 +912,37 @@ function renderLeadPageSpeed(lead) {
   $("#leadPageSpeedBox").innerHTML = lead.website
     ? `<div class="client-site-card"><span>Site cadastrado</span><strong><a target="_blank" rel="noreferrer" href="${escapeHtml(lead.website)}">${escapeHtml(lead.website)}</a></strong></div>${lead.pageSpeed ? renderPageSpeedResult(lead.pageSpeed) : "Nenhuma analise PageSpeed salva."}`
     : `<div class="warning">Este lead nao possui site cadastrado.</div>`;
+}
+
+function renderLeadProposals(lead) {
+  const leadProposals = proposals.filter((proposal) => proposal.leadId === lead.id);
+  const leadContracts = contracts.filter((contract) => contract.leadId === lead.id);
+  const negotiations = lead.negotiations || [];
+  const servicesOptions = services.filter((service) => service.active).map((service) => `<option value="${service.id}">${escapeHtml(service.name)} - ${currency(service.suggestedPrice)}</option>`).join("");
+  $("#leadTab-proposals").innerHTML = `
+    <div class="proposal-workbench">
+      <section class="ops-panel">
+        <h3>Servicos em negociacao</h3>
+        <div class="entry-form compact negotiation-form">
+          <select id="leadServiceSelect">${servicesOptions}</select>
+          <input id="leadServicePrice" placeholder="Valor manual" />
+          <input id="leadServiceDiscount" placeholder="Desconto" />
+          <input id="leadServicePayment" placeholder="Pagamento" />
+          <button class="primary-button" type="button" data-add-service-lead>Adicionar</button>
+        </div>
+        <div class="mini-list">${negotiations.map((item) => `<article><strong>${escapeHtml(item.serviceName)}</strong><small>${currency(item.price)} | ${escapeHtml(item.status || "Interesse")} | ${formatDate(item.createdAt)}</small><p>${escapeHtml(item.notes || "")}</p></article>`).join("") || `<div class="empty-state">Nenhum servico selecionado.</div>`}</div>
+      </section>
+      <section class="ops-panel">
+        <h3>Propostas</h3>
+        <div class="settings-actions"><button class="primary-button" type="button" data-create-proposal="${lead.id}">Criar proposta</button><button class="secondary-button" type="button" data-ai-proposal="${lead.id}">Gerar com IA</button></div>
+        <div class="mini-list">${leadProposals.map((proposal) => `<article><strong>${escapeHtml(proposal.title)}</strong><small>${escapeHtml(proposal.status)} | ${formatDate(proposal.updatedAt)}</small><div class="settings-actions"><button class="row-button" data-proposal-edit="${proposal.id}">Editar</button><button class="row-button" data-proposal-print="${proposal.id}">PDF</button></div></article>`).join("") || `<div class="empty-state">Nenhuma proposta.</div>`}</div>
+      </section>
+      <section class="ops-panel">
+        <h3>Contratos</h3>
+        <div class="settings-actions"><button class="primary-button" type="button" data-create-contract="${lead.id}">Criar contrato</button></div>
+        <div class="mini-list">${leadContracts.map((contract) => `<article><strong>${escapeHtml(contract.title)}</strong><small>${escapeHtml(contract.status)} | ${formatDate(contract.updatedAt)}</small><div class="settings-actions"><button class="row-button" data-contract-edit="${contract.id}">Editar</button><button class="row-button" data-contract-print="${contract.id}">PDF</button></div></article>`).join("") || `<div class="empty-state">Nenhum contrato.</div>`}</div>
+      </section>
+    </div>`;
 }
 
 function attachAutomaticAi(lead, reason = "Atualizacao automatica") {
@@ -859,6 +1027,120 @@ function deleteNote(noteId) {
   addTimeline(lead, "Observacao", "Observacao excluida.");
   persistAll();
   openLeadDialog(lead);
+}
+
+function editService(id = "") {
+  const existing = services.find((item) => item.id === id) || normalizeService({});
+  const name = prompt("Nome do servico:", existing.name);
+  if (!name) return;
+  const category = prompt("Categoria:", existing.category) || existing.category;
+  const shortDescription = prompt("Descricao curta:", existing.shortDescription) || existing.shortDescription;
+  const suggestedPrice = prompt("Preco sugerido:", existing.suggestedPrice) || existing.suggestedPrice;
+  const deliverables = prompt("Entregaveis (um por linha):", existing.deliverables) || existing.deliverables;
+  const updated = normalizeService({ ...existing, name, category, shortDescription, suggestedPrice, deliverables, updatedAt: nowIso() });
+  services = services.some((item) => item.id === updated.id) ? services.map((item) => item.id === updated.id ? updated : item) : [updated, ...services];
+  persistAll();
+}
+
+function editTemplate(id = "") {
+  const existing = templates.find((item) => item.id === id) || normalizeTemplate({});
+  const name = prompt("Nome do template:", existing.name);
+  if (!name) return;
+  const category = prompt("Categoria:", existing.category) || existing.category;
+  const body = prompt("Texto do template:", existing.body) || existing.body;
+  const updated = normalizeTemplate({ ...existing, name, category, body, updatedAt: nowIso() });
+  templates = templates.some((item) => item.id === updated.id) ? templates.map((item) => item.id === updated.id ? updated : item) : [updated, ...templates];
+  persistAll();
+}
+
+function addServiceToLead() {
+  const lead = currentLead();
+  if (!lead) return alert("Salve o lead antes de negociar servicos.");
+  const service = services.find((item) => item.id === $("#leadServiceSelect")?.value);
+  if (!service) return;
+  const item = {
+    id: uid("neg"),
+    serviceId: service.id,
+    serviceName: service.name,
+    price: $("#leadServicePrice")?.value || service.suggestedPrice,
+    discount: $("#leadServiceDiscount")?.value || "",
+    payment: $("#leadServicePayment")?.value || "",
+    status: "Interesse",
+    owner: lead.owner || settings.defaultOwner,
+    createdAt: nowIso(),
+    notes: ""
+  };
+  lead.negotiations = [item, ...(lead.negotiations || [])];
+  lead.serviceInterest = [lead.serviceInterest, service.name].filter(Boolean).join(", ");
+  lead.status = "Diagnostico enviado";
+  addTimeline(lead, "Servico", `${service.name} adicionado em negociacao por ${currency(item.price)}.`);
+  persistAll();
+  openLeadDialog(lead);
+}
+
+function proposalBody(lead, items = []) {
+  const rows = items.length ? items : (lead.negotiations || []);
+  return `Proposta comercial NODERE para ${lead.company}\n\nObjetivo: melhorar presenca digital, gerar contatos qualificados e estruturar aquisicao pelo Google.\n\nServicos:\n${rows.map((item) => `- ${item.serviceName}: ${currency(item.price)} (${item.payment || "a combinar"})`).join("\n") || "- Servicos a definir"}\n\nEntregaveis:\nDiagnostico, plano de acao, implementacao orientada a conversao e acompanhamento comercial.\n\nCondicoes:\nValidade de 7 dias. Inicio apos aprovacao e envio dos acessos necessarios.`;
+}
+
+function createProposal(leadId, ai = false) {
+  const lead = leads.find((item) => item.id === leadId);
+  if (!lead) return;
+  const proposal = normalizeProposal({
+    leadId,
+    title: `Proposta NODERE - ${lead.company}`,
+    items: lead.negotiations || [],
+    body: ai && lead.ai?.diagnosis ? `${lead.ai.diagnosis}\n\n${proposalBody(lead)}` : proposalBody(lead),
+    status: "Rascunho"
+  });
+  proposals.unshift(proposal);
+  lead.status = "Proposta enviada";
+  addTimeline(lead, "Proposta", `Proposta criada: ${proposal.title}.`);
+  persistAll();
+  openDocumentEditor("proposal", proposal.id);
+}
+
+function createContract(leadId) {
+  const lead = leads.find((item) => item.id === leadId);
+  if (!lead) return;
+  const contract = normalizeContract({
+    leadId,
+    title: `Contrato NODERE - ${lead.company}`,
+    serviceIds: (lead.negotiations || []).map((item) => item.serviceId),
+    clauses: `CONTRATO DE PRESTACAO DE SERVICOS\n\nCliente: ${lead.company}\nServico: ${(lead.negotiations || []).map((item) => item.serviceName).join(", ") || "servicos digitais"}\nValor: ${currency((lead.negotiations || [])[0]?.price)}\nPrazo: conforme proposta aprovada.\n\nClausulas: escopo, responsabilidades, pagamento, confidencialidade e rescisao.`,
+    status: "Rascunho"
+  });
+  contracts.unshift(contract);
+  lead.status = "Contrato enviado";
+  addTimeline(lead, "Contrato", `Contrato criado: ${contract.title}.`);
+  persistAll();
+  openDocumentEditor("contract", contract.id);
+}
+
+function openDocumentEditor(type, id) {
+  const collection = type === "proposal" ? proposals : contracts;
+  const doc = collection.find((item) => item.id === id);
+  if (!doc) return;
+  const textKey = type === "proposal" ? "body" : "clauses";
+  const edited = prompt("Edite o conteudo antes de gerar o PDF:", doc[textKey]);
+  if (edited !== null) {
+    doc[textKey] = edited;
+    doc.updatedAt = nowIso();
+    persistAll();
+  }
+}
+
+function documentHtml(type, id) {
+  const doc = (type === "proposal" ? proposals : contracts).find((item) => item.id === id);
+  const lead = leads.find((item) => item.id === doc?.leadId) || {};
+  const content = type === "proposal" ? doc?.body : doc?.clauses;
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(doc?.title || "NODERE")}</title><style>body{font-family:Arial,sans-serif;margin:40px;color:#172033}.brand{display:flex;align-items:center;gap:14px;border-bottom:3px solid #147dff;padding-bottom:18px;margin-bottom:28px}.brand img{height:54px}.doc{max-width:820px;margin:auto}.meta{background:#f2f6fb;padding:16px;border-radius:8px;margin-bottom:24px}.content{white-space:pre-wrap;line-height:1.55}.footer{margin-top:40px;border-top:1px solid #d8e0ea;padding-top:18px;color:#667085}</style></head><body><main class="doc"><div class="brand"><img src="nodere-logo-wordmark.png"><div><h1>${escapeHtml(doc?.title || "Documento NODERE")}</h1><p>${new Date().toLocaleDateString("pt-BR")}</p></div></div><div class="meta"><strong>Cliente:</strong> ${escapeHtml(lead.company || "")}<br><strong>Contato:</strong> ${escapeHtml(lead.contactName || "")}<br><strong>Cidade:</strong> ${escapeHtml([lead.city, lead.state].filter(Boolean).join(" / "))}</div><section class="content">${escapeHtml(content || "")}</section><div class="footer">NODERE Intelligence | Prospecção, CRM e performance Google</div></main><script>window.print()</script></body></html>`;
+}
+
+function printDocument(type, id) {
+  const popup = window.open("", "_blank");
+  popup.document.write(documentHtml(type, id));
+  popup.document.close();
 }
 
 async function runPageSpeed(url, targetId = "pageSpeedResult", leadId = "") {
@@ -1293,6 +1575,23 @@ function bindEvents() {
     $("#settingsMessage").textContent = "Configuracoes salvas.";
     persistAll();
   });
+  $("#leadTab-proposals")?.addEventListener("click", (event) => {
+    if (event.target.closest("[data-add-service-lead]")) addServiceToLead();
+    const createProp = event.target.closest("[data-create-proposal]");
+    const aiProp = event.target.closest("[data-ai-proposal]");
+    const editProp = event.target.closest("[data-proposal-edit]");
+    const printProp = event.target.closest("[data-proposal-print]");
+    const createContractButton = event.target.closest("[data-create-contract]");
+    const editContract = event.target.closest("[data-contract-edit]");
+    const printContract = event.target.closest("[data-contract-print]");
+    if (createProp) createProposal(createProp.dataset.createProposal);
+    if (aiProp) createProposal(aiProp.dataset.aiProposal, true);
+    if (editProp) openDocumentEditor("proposal", editProp.dataset.proposalEdit);
+    if (printProp) printDocument("proposal", printProp.dataset.proposalPrint);
+    if (createContractButton) createContract(createContractButton.dataset.createContract);
+    if (editContract) openDocumentEditor("contract", editContract.dataset.contractEdit);
+    if (printContract) printDocument("contract", printContract.dataset.contractPrint);
+  });
   $("#settingsForm")?.addEventListener("click", async (event) => {
     const toggle = event.target.closest("[data-toggle-secret]");
     const copy = event.target.closest("[data-copy-field]");
@@ -1354,6 +1653,39 @@ function bindEvents() {
     } catch (error) {
       alert(error.message);
     }
+  });
+  $("#servicos")?.addEventListener("click", (event) => {
+    const edit = event.target.closest("[data-service-edit]");
+    const duplicate = event.target.closest("[data-service-duplicate]");
+    const toggle = event.target.closest("[data-service-toggle]");
+    const remove = event.target.closest("[data-service-delete]");
+    if (event.target.closest("[data-service-new]")) editService();
+    if (edit) editService(edit.dataset.serviceEdit);
+    if (duplicate) {
+      const source = services.find((item) => item.id === duplicate.dataset.serviceDuplicate);
+      if (source) { services.unshift(normalizeService({ ...source, id: uid("service"), name: `${source.name} copia`, createdAt: nowIso(), updatedAt: nowIso() })); persistAll(); }
+    }
+    if (toggle) { const s = services.find((item) => item.id === toggle.dataset.serviceToggle); if (s) { s.active = !s.active; s.updatedAt = nowIso(); persistAll(); } }
+    if (remove && confirm("Excluir servico?")) { services = services.filter((item) => item.id !== remove.dataset.serviceDelete); persistAll(); }
+  });
+  $("#templates")?.addEventListener("click", (event) => {
+    const edit = event.target.closest("[data-template-edit]");
+    const duplicate = event.target.closest("[data-template-duplicate]");
+    const remove = event.target.closest("[data-template-delete]");
+    if (event.target.closest("[data-template-new]")) editTemplate();
+    if (edit) editTemplate(edit.dataset.templateEdit);
+    if (duplicate) { const source = templates.find((item) => item.id === duplicate.dataset.templateDuplicate); if (source) { templates.unshift(normalizeTemplate({ ...source, id: uid("tpl"), name: `${source.name} copia`, createdAt: nowIso(), updatedAt: nowIso() })); persistAll(); } }
+    if (remove && confirm("Excluir template?")) { templates = templates.filter((item) => item.id !== remove.dataset.templateDelete); persistAll(); }
+  });
+  $("#contratos")?.addEventListener("click", (event) => {
+    if (event.target.closest("[data-contract-new]")) {
+      if (!leads.length) return alert("Crie um lead antes de gerar contrato.");
+      createContract(leads[0].id);
+    }
+    const edit = event.target.closest("[data-contract-edit]");
+    const print = event.target.closest("[data-contract-print]");
+    if (edit) openDocumentEditor("contract", edit.dataset.contractEdit);
+    if (print) printDocument("contract", print.dataset.contractPrint);
   });
   $("#globalSearch")?.addEventListener("input", (event) => {
     $("#crmSearch").value = event.target.value;
