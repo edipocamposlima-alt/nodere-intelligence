@@ -69,6 +69,7 @@
             <article class="panel compact-panel">
               <div class="panel-title"><span>Busca</span><h2>Busca rapida de empresas</h2></div>
               <form class="smart-search" id="quickSearchForm">
+                <label>Nome da empresa<input name="companyName" placeholder="Nome fantasia ou razao social" /></label>
                 <label>Segmento<input name="segment" placeholder="concreteiras" /></label>
                 <label>Cidade<input name="city" placeholder="Porto Alegre" /></label>
                 <label>Estado<input name="state" placeholder="RS" /></label>
@@ -115,6 +116,7 @@
               <button class="secondary-button" type="button" data-nav="configuracoes">Configurar backend</button>
             </div>
             <form class="smart-search loose" id="placesSearchForm">
+              <label>Nome da empresa<input name="companyName" placeholder="Ex: NODERE Intelligence" /></label>
               <label>Segmento<input name="segment" placeholder="transportadoras" /></label>
               <label>Cidade<input name="city" placeholder="Caxias do Sul" /></label>
               <label>Estado<input name="state" placeholder="RS" /></label>
@@ -141,7 +143,7 @@
               </select>
               <button class="secondary-button" id="loadMorePlaces" type="button">Carregar mais</button>
             </div>
-            <p class="table-message" id="searchMessage">Pesquise por qualquer combinacao: segmento, cidade, estado ou palavra-chave.</p>
+            <p class="table-message" id="searchMessage">Pesquise por nome da empresa, segmento, cidade, estado ou palavra-chave. Nenhum campo e obrigatorio sozinho.</p>
             <div class="lead-table" id="searchResults"></div>
           </article>
         </section>

@@ -139,6 +139,7 @@ Frontend:
 
 - GitHub Pages publica automaticamente a branch `main`.
 - URL: `https://edipocamposlima-alt.github.io/nodere-intelligence/`
+- Guia completo: `DEPLOY.md`
 
 Backend:
 

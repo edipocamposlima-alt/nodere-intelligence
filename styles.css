@@ -285,7 +285,7 @@ h1 { font-size: 25px; line-height: 1.15; }
 }
 .dashboard-search-row { display: grid; grid-template-columns: 1fr; }
 .dashboard-search-row .smart-search {
-  grid-template-columns: repeat(4, minmax(120px, 1fr)) minmax(94px, auto) minmax(92px, auto);
+  grid-template-columns: 1.35fr repeat(4, minmax(110px, 1fr)) minmax(94px, auto) minmax(92px, auto);
   gap: 10px;
   align-items: end;
 }
@@ -934,6 +934,38 @@ dialog {
   .metrics-grid.advanced { grid-template-columns: 1fr; }
   .funnel-list { grid-template-columns: 1fr; }
   .top-action, .top-badge, .profile-chip { min-height: 36px; font-size: 12px; }
+  .sidebar { padding: 10px; }
+  .brand { width: 160px; height: 44px; }
+  .nav-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .nav-item { min-height: 42px; border-radius: 9px; }
+  .nav-item span { width: 30px; height: 30px; }
+  .metric-card { min-height: 70px; }
+  .smart-search.loose { grid-template-columns: 1fr; }
+  .lead-table { overflow-x: visible; }
+  .table-row {
+    min-width: 0;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 10px;
+    min-height: 0;
+    padding: 12px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(136, 161, 195, 0.16);
+    border-radius: 8px;
+    background: rgba(255,255,255,.03);
+  }
+  .table-row.table-head { display: none; }
+  .table-row span, .table-row div { min-width: 0; }
+  .actions { gap: 7px; }
+  .actions .row-button, .actions a { min-height: 40px; }
+  dialog {
+    width: calc(100% - 16px);
+    max-height: calc(100vh - 16px);
+    overflow: auto;
+  }
+  .dialog-card { grid-template-columns: 1fr; }
+  .dialog-card h2, .dialog-card label:last-of-type, .dialog-card .settings-actions { grid-column: auto; }
+  .ai-chat.fullscreen { inset: 8px; }
   .secret-control {
     grid-template-columns: minmax(0, 1fr);
   }

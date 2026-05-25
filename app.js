@@ -727,8 +727,8 @@ function renderIntegrationStatusList(statuses = []) {
 
 function buildSearchBody(form, pageToken = "") {
   const data = Object.fromEntries(new FormData(form));
-  const query = [data.segment, data.keyword, data.city, data.state].map((value) => String(value || "").trim()).filter(Boolean).join(" ");
-  if (!query) throw new Error("Informe pelo menos segmento, cidade, estado ou palavra-chave.");
+  const query = [data.companyName, data.segment, data.keyword, data.city, data.state].map((value) => String(value || "").trim()).filter(Boolean).join(" ");
+  if (!query) throw new Error("Informe nome da empresa, segmento, cidade, estado ou palavra-chave.");
   const body = { textQuery: query, languageCode: "pt-BR", regionCode: "BR", maxResultCount: 20 };
   if (pageToken) body.pageToken = pageToken;
   return { body, formData: data };

@@ -230,7 +230,7 @@ app.post("/api/v1/search/google-places", async (request, response, next) => {
         city: request.body.city || null,
         state: request.body.state || null,
         segment: request.body.segment || null,
-        keyword: request.body.keyword || null,
+        keyword: request.body.keyword || request.body.companyName || null,
         provider: "google_places",
         result_count: search.results.length
       });

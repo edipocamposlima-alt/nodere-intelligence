@@ -3,8 +3,8 @@ import { config } from "../config.js";
 const TEXT_SEARCH_URL = "https://maps.googleapis.com/maps/api/place/textsearch/json";
 const DETAILS_URL = "https://maps.googleapis.com/maps/api/place/details/json";
 
-function buildQuery({ keyword = "", city = "", state = "", segment = "" }) {
-  return [segment, keyword, city, state].map((value) => String(value || "").trim()).filter(Boolean).join(" ").slice(0, 240).trim();
+function buildQuery({ companyName = "", company = "", keyword = "", city = "", state = "", segment = "" }) {
+  return [companyName || company, segment, keyword, city, state].map((value) => String(value || "").trim()).filter(Boolean).join(" ").slice(0, 240).trim();
 }
 
 function parseAddress(address = "") {
@@ -37,7 +37,7 @@ export async function searchGooglePlaces(params) {
 
   const query = buildQuery(params);
   if (!query) {
-    const error = new Error("Informe cidade, segmento ou palavra-chave.");
+    const error = new Error("Informe nome da empresa, cidade, segmento ou palavra-chave.");
     error.status = 400;
     throw error;
   }
