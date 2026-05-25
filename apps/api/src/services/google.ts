@@ -53,7 +53,8 @@ export async function searchGooglePlaces(input: SearchRequest): Promise<Company[
   }
 
   const payload = (await response.json()) as { places?: GooglePlace[] };
-  return (payload.places ?? []).map((place) => normalizePlace(place, input));
+  const places = (payload.places ?? []).map((place) => normalizePlace(place, input));
+  return Promise.all(places.map(enrichPlaceWithDigitalSignals));
 }
 
 export async function analyzeWebsite(url?: string) {
@@ -146,6 +147,20 @@ function normalizePlace(place: GooglePlace, input: SearchRequest): Company {
   };
 
   return { ...base, ...calculateOpportunityScore(base) };
+}
+
+async function enrichPlaceWithDigitalSignals(company: Company): Promise<Company> {
+  if (!company.website) return company;
+
+  const digital = await analyzeWebsite(company.website);
+  const scored = calculateOpportunityScore({ ...company, ...digital });
+
+  return {
+    ...company,
+    ...digital,
+    ...scored,
+    updatedAt: new Date().toISOString()
+  };
 }
 
 async function buildGoogleApiError(response: Response, serviceName: string) {

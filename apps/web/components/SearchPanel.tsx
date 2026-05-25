@@ -27,7 +27,7 @@ export function SearchPanel() {
     setWarning(response.search.warning ?? null);
     setMessage(
       response.search.source === "google"
-        ? `${response.companies.length} empresas reais analisadas pelo Google Places.`
+        ? `${response.companies.length} empresas reais analisadas com Google Places e sinais digitais.`
         : `${response.companies.length} empresas demonstrativas ranqueadas enquanto a API Google for liberada.`
     );
     setLoading(false);
