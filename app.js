@@ -43,7 +43,18 @@ const aiActions = {
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
-let settings = { maxResults: 60, defaultSort: "opportunity", defaultOwner: "Agencia Digital", hideSavedResults: "on", autoAiOnSave: "on", ...readJson(STORAGE.legacySettings, {}), ...readJson(STORAGE.settings, {}) };
+let settings = sanitizeSettings({
+  maxResults: 60,
+  defaultSort: "opportunity",
+  defaultOwner: "Agencia Digital",
+  hideSavedResults: "on",
+  autoAiOnSave: "on",
+  apiBaseUrl: "",
+  ownerToken: "",
+  chatMode: "compact",
+  ...readJson(STORAGE.legacySettings, {}),
+  ...readJson(STORAGE.settings, {})
+});
 let leads = readJson(STORAGE.leads, readJson(STORAGE.legacyLeads, [])).map(normalizeLead);
 let chatMessages = readJson(STORAGE.chat, []);
 let searchResults = [];
@@ -57,6 +68,42 @@ function readJson(key, fallback) {
 
 function writeJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function sanitizeSettings(raw = {}) {
+  const allowed = ["maxResults", "defaultSort", "defaultOwner", "hideSavedResults", "autoAiOnSave", "apiBaseUrl", "ownerToken", "chatMode"];
+  return allowed.reduce((acc, key) => {
+    if (raw[key] !== undefined) acc[key] = raw[key];
+    return acc;
+  }, {});
+}
+
+function apiConfigured() {
+  return Boolean(settings.apiBaseUrl && String(settings.apiBaseUrl).trim());
+}
+
+function apiUrl(path) {
+  return `${String(settings.apiBaseUrl || "").replace(/\/$/, "")}${path}`;
+}
+
+async function apiFetch(path, options = {}) {
+  if (!apiConfigured()) {
+    const error = new Error("Configure a URL do backend seguro em Configuracoes para usar APIs reais.");
+    error.status = 503;
+    throw error;
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Number(options.timeoutMs || 30000));
+  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+  if (settings.ownerToken) headers.Authorization = `Bearer ${settings.ownerToken}`;
+  try {
+    const response = await fetch(apiUrl(path), { ...options, headers, signal: controller.signal });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || payload.message || `Backend retornou HTTP ${response.status}.`);
+    return payload;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function uid(prefix = "id") {
@@ -278,20 +325,20 @@ function isSavedLead(candidate) {
 
 function normalizePlace(place, formData = {}) {
   return normalizeLead({
-    tempId: place.id || uid("temp"),
-    placeId: place.id || "",
-    company: place.displayName?.text || "Empresa sem nome",
-    address: place.formattedAddress || "",
-    phone: place.nationalPhoneNumber || place.internationalPhoneNumber || "",
-    whatsapp: place.nationalPhoneNumber || place.internationalPhoneNumber || "",
-    website: place.websiteUri || "",
-    rating: place.rating || "",
-    reviews: place.userRatingCount || 0,
-    segment: place.primaryTypeDisplayName?.text || formData.segment || "",
+    tempId: place.id || place.googlePlaceId || place.google_place_id || uid("temp"),
+    placeId: place.id || place.googlePlaceId || place.google_place_id || "",
+    company: place.displayName?.text || place.companyName || place.company_name || place.name || "Empresa sem nome",
+    address: place.formattedAddress || place.address || place.formatted_address || "",
+    phone: place.nationalPhoneNumber || place.internationalPhoneNumber || place.phone || "",
+    whatsapp: place.nationalPhoneNumber || place.internationalPhoneNumber || place.whatsapp || place.phone || "",
+    website: place.websiteUri || place.website || "",
+    rating: place.rating || place.googleRating || place.google_rating || "",
+    reviews: place.userRatingCount || place.googleReviews || place.google_reviews || 0,
+    segment: place.primaryTypeDisplayName?.text || place.segment || formData.segment || "",
     city: formData.city || "",
     state: formData.state || "",
-    mapsUrl: place.googleMapsUri || "",
-    openingHours: place.regularOpeningHours?.weekdayDescriptions?.join(" | ") || "",
+    mapsUrl: place.googleMapsUri || place.googleMapsUrl || place.google_maps_url || "",
+    openingHours: place.regularOpeningHours?.weekdayDescriptions?.join(" | ") || (Array.isArray(place.openingHours) ? place.openingHours.join(" | ") : place.openingHours || ""),
     source: "Google Places"
   });
 }
@@ -305,6 +352,10 @@ function renderAll() {
   renderAiLeadSelect();
   renderIntegrations();
   renderChat();
+}
+
+function allowedViews() {
+  return ["dashboard", "empresas", "crm", "agenda", "pipeline", "pagespeed", "ia", "relatorios", "integracoes", "servicos", "contratos", "templates", "configuracoes"];
 }
 
 function renderDashboard() {
@@ -468,28 +519,25 @@ function buildSearchBody(form, pageToken = "") {
 }
 
 async function searchPlaces(form, append = false) {
-  if (!hasKey("googlePlacesKey")) {
-    setMessage("searchMessage", "Google Places API nao configurada. Abrindo Configuracoes.", "error");
+  if (!apiConfigured()) {
+    setMessage("searchMessage", "Backend seguro nao configurado. Abra Configuracoes e informe a URL da API.", "error");
     showView("configuracoes");
     return;
   }
   const { body, formData } = append && lastSearchBody ? { body: { ...lastSearchBody.body, pageToken: nextPageToken }, formData: lastSearchBody.formData } : buildSearchBody(form);
   setMessage("searchMessage", append ? "Carregando mais empresas..." : "Consultando Google Places...", "loading");
-  const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+  const payload = await apiFetch("/api/v1/search/google-places", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Goog-Api-Key": settings.googlePlacesKey,
-      "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.googleMapsUri,places.primaryTypeDisplayName,places.regularOpeningHours,nextPageToken"
-    },
-    body: JSON.stringify(body)
+    body: JSON.stringify({
+      ...formData,
+      limit: 20,
+      pageToken: body.pageToken || ""
+    })
   });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload?.error?.message || "Falha no Google Places.");
-  const newRows = (payload.places || []).map((place) => normalizePlace(place, formData));
+  const newRows = (payload.results || payload.places || []).map((place) => normalizePlace(place, formData));
   searchResults = append ? dedupePlaces([...searchResults, ...newRows]) : newRows;
   searchResults = searchResults.map((lead) => ({ ...lead, aiPreview: localAi("analyze", lead, buildSystemContext()).summary }));
-  nextPageToken = payload.nextPageToken || "";
+  nextPageToken = payload.nextPageToken || payload.next_page_token || "";
   lastSearchBody = { body, formData };
   renderLeadRows(getFilteredResults(), "searchResults", "search");
   $("#loadMorePlaces").disabled = !nextPageToken || searchResults.length >= Number(settings.maxResults || 60);
@@ -671,7 +719,7 @@ function attachAutomaticAi(lead, reason = "Atualizacao automatica") {
 }
 
 function refreshAiInBackground(leadId, reason = "Analise automatica") {
-  if (settings.autoAiOnSave !== "on" || !settings.aiEndpoint) return;
+  if (settings.autoAiOnSave !== "on" || !apiConfigured()) return;
   const lead = leads.find((item) => item.id === leadId);
   if (!lead) return;
   requestAi("analyze", lead, reason).then((payload) => {
@@ -746,26 +794,14 @@ function deleteNote(noteId) {
 }
 
 async function runPageSpeed(url, targetId = "pageSpeedResult", leadId = "") {
-  if (!hasKey("googlePageSpeedKey")) throw new Error("GOOGLE_PAGESPEED_API_KEY nao configurada.");
-  const endpoint = new URL("https://www.googleapis.com/pagespeedonline/v5/runPagespeed");
-  endpoint.searchParams.set("url", url);
-  endpoint.searchParams.set("strategy", "mobile");
-  endpoint.searchParams.set("key", settings.googlePageSpeedKey);
+  if (!apiConfigured()) throw new Error("Configure a URL do backend seguro para rodar PageSpeed sem expor chave no navegador.");
   document.getElementById(targetId).textContent = "Analisando PageSpeed...";
-  const response = await fetch(endpoint);
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload?.error?.message || "Falha no PageSpeed.");
-  const categories = payload.lighthouseResult?.categories || {};
-  const result = {
-    url,
-    performance: Math.round((categories.performance?.score || 0) * 100),
-    seo: Math.round((categories.seo?.score || 0) * 100),
-    accessibility: Math.round((categories.accessibility?.score || 0) * 100),
-    bestPractices: Math.round((categories["best-practices"]?.score || 0) * 100),
-    createdAt: nowIso()
-  };
-  result.diagnosis = buildPageSpeedDiagnosis(result);
-  result.recommendations = buildPageSpeedRecommendations(result);
+  const payload = await apiFetch("/api/v1/pagespeed/analyze", {
+    method: "POST",
+    body: JSON.stringify({ url }),
+    timeoutMs: 45000
+  });
+  const result = payload.result || payload;
   document.getElementById(targetId).innerHTML = renderPageSpeedResult(result);
   if (leadId) {
     const lead = leads.find((item) => item.id === leadId);
@@ -825,15 +861,22 @@ function buildSystemContext() {
 
 async function requestAi(action, lead = null, question = "") {
   const context = buildSystemContext();
-  if (!settings.aiEndpoint) return { mode: "fallback-local", diagnosis: localAi(action, lead, context, question) };
-  const response = await fetch(settings.aiEndpoint, {
+  if (!apiConfigured()) return { mode: "fallback-local", diagnosis: localAi(action, lead, context, question) };
+  return apiFetch("/api/openai", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action, question, lead, context, pageSpeed: lead?.pageSpeed || null, history: lead?.timeline || [], notes: lead?.notes || [], tasks: lead?.tasks || [] })
+    body: JSON.stringify({
+      action,
+      question,
+      lead,
+      context,
+      conversation: chatMessages.slice(-12),
+      pageSpeed: lead?.pageSpeed || null,
+      history: lead?.timeline || [],
+      notes: lead?.notes || [],
+      tasks: lead?.tasks || []
+    }),
+    timeoutMs: 45000
   });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || payload.message || "Falha no endpoint IA.");
-  return payload;
 }
 
 async function analyzeLeadWithAi(leadId, action = "analyze", targetId = "aiResult") {
@@ -903,7 +946,7 @@ function renderAiLeadSelect() {
 
 function renderChat() {
   if (!$("#chatMessages")) return;
-  $("#chatMessages").innerHTML = chatMessages.slice(-20).map((message) => `<div class="chat-msg ${message.role}"><strong>${message.role === "user" ? "Voce" : "NODERE AI"}</strong><p>${escapeHtml(message.content).replaceAll("\n", "<br>")}</p></div>`).join("") || `<div class="empty-state">Pergunte quais leads priorizar, quem esta atrasado ou qual estrategia usar.</div>`;
+  $("#chatMessages").innerHTML = chatMessages.slice(-30).map((message, index) => `<div class="chat-msg ${message.role}"><strong>${message.role === "user" ? "Voce" : "NODERE AI"}</strong><p>${escapeHtml(message.content).replaceAll("\n", "<br>")}</p>${message.role !== "user" ? `<div class="settings-actions"><button class="row-button" data-copy-chat="${index}">Copiar</button><button class="row-button" data-save-chat-note="${index}">Salvar como observacao</button><button class="row-button" data-save-chat-task="${index}">Criar tarefa</button></div>` : ""}</div>`).join("") || `<div class="empty-state">Pergunte quais leads priorizar, quem esta atrasado ou qual estrategia usar.</div>`;
 }
 
 async function sendChat() {
@@ -912,13 +955,16 @@ async function sendChat() {
   if (!question) return;
   chatMessages.push({ role: "user", content: question, createdAt: nowIso() });
   input.value = "";
+  chatMessages.push({ role: "assistant", content: "Pensando com o contexto do CRM...", createdAt: nowIso(), loading: true });
   renderChat();
   try {
     const payload = await requestAi("global-chat", null, question);
     const ai = payload.diagnosis || payload;
+    chatMessages = chatMessages.filter((message) => !message.loading);
     chatMessages.push({ role: "assistant", content: `${ai.summary || "Analise"}\n${ai.diagnosis || ""}\n${(ai.nextSteps || []).map((item) => `- ${item}`).join("\n")}`, createdAt: nowIso() });
   } catch (error) {
     const fallback = localAi("global-chat", null, buildSystemContext(), question);
+    chatMessages = chatMessages.filter((message) => !message.loading);
     chatMessages.push({ role: "assistant", content: `${fallback.summary}\n${fallback.diagnosis}\n${fallback.nextSteps.map((item) => `- ${item}`).join("\n")}`, createdAt: nowIso() });
   }
   persistAll();
@@ -933,16 +979,36 @@ function copyText(text = "") {
   });
 }
 
+function saveChatAsNote(index) {
+  const message = chatMessages.slice(-30)[index];
+  const lead = currentLead() || leads[0];
+  if (!message || !lead) return alert("Nao ha lead salvo para associar esta resposta.");
+  lead.notes = [{ id: uid("note"), type: "Interno", text: message.content, user: "NODERE AI", createdAt: nowIso(), updatedAt: nowIso() }, ...(lead.notes || [])];
+  addTimeline(lead, "IA", "Resposta do chat salva como observacao.");
+  persistAll();
+}
+
+function saveChatAsTask(index) {
+  const message = chatMessages.slice(-30)[index];
+  const lead = currentLead() || leads[0];
+  if (!message || !lead) return alert("Nao ha lead salvo para associar esta tarefa.");
+  const due = new Date(Date.now() + 86400000);
+  lead.tasks = [{ id: uid("task"), leadId: lead.id, title: message.content.split("\n")[0].slice(0, 90), dueAt: due.toISOString().slice(0, 16), priority: "Media", channel: "Outro", owner: lead.owner || settings.defaultOwner, status: "Aberta", createdAt: nowIso(), updatedAt: nowIso() }, ...(lead.tasks || [])];
+  addTimeline(lead, "Agenda", "Tarefa criada a partir de resposta da IA.");
+  persistAll();
+}
+
 function renderIntegrations() {
   if (!$("#integrationGrid")) return;
   const items = [
-    ["googlePlacesKey", "Google Places", "Busca de empresas"],
-    ["googleMapsKey", "Google Maps", "Links e mapas"],
-    ["googlePageSpeedKey", "Google PageSpeed", "Performance, SEO e boas praticas"],
-    ["aiEndpoint", "IA / OpenAI Backend", "Agente operacional via endpoint seguro"],
-    ["whatsappToken", "WhatsApp Cloud API", "Envio futuro via backend oficial"]
+    ["apiBaseUrl", "Backend seguro", "API privada para IA, Google, CRM e integracoes"],
+    ["openai", "OpenAI / ChatGPT", "Agente conversacional server-side"],
+    ["google_places", "Google Places", "Busca de empresas via backend"],
+    ["google_pagespeed", "Google PageSpeed", "Performance, SEO e boas praticas via backend"],
+    ["google_workspace", "Gmail / Calendar / Drive", "OAuth seguro preparado no backend"],
+    ["whatsapp_cloud", "WhatsApp Cloud API", "Envio futuro via backend oficial"]
   ];
-  $("#integrationGrid").innerHTML = items.map(([key, name, description]) => `<article class="integration-row"><strong>${name}</strong><span>${hasKey(key) ? "Configurado" : "Pendente"}</span><small>${description}</small><div class="settings-actions"><button class="secondary-button" type="button" data-nav="configuracoes">Configurar</button><button class="secondary-button" type="button" data-test="${key}">Testar conexao</button></div></article>`).join("");
+  $("#integrationGrid").innerHTML = items.map(([key, name, description]) => `<article class="integration-row"><strong>${name}</strong><span>${key === "apiBaseUrl" ? (apiConfigured() ? "Configurado" : "Pendente") : "Backend"}</span><small>${description}</small><div class="settings-actions"><button class="secondary-button" type="button" data-nav="configuracoes">Configurar</button><button class="secondary-button" type="button" data-test="${key}">Testar conexao</button></div></article>`).join("");
 }
 
 function loadSettingsForm() {
@@ -955,25 +1021,25 @@ function loadSettingsForm() {
 }
 
 async function testIntegration(key) {
-  if (!hasKey(key)) throw new Error("Configuracao ausente.");
-  if (key === "googlePlacesKey") {
-    const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Goog-Api-Key": settings.googlePlacesKey, "X-Goog-FieldMask": "places.id" },
-      body: JSON.stringify({ textQuery: "Padaria em Porto Alegre", languageCode: "pt-BR", maxResultCount: 1 })
-    });
-    if (!response.ok) throw new Error((await response.json()).error?.message || "Places invalido.");
-    return "Google Places conectado.";
+  if (!apiConfigured()) throw new Error("URL do backend seguro ausente.");
+  if (key === "apiBaseUrl") {
+    const health = await apiFetch("/health", { method: "GET" });
+    return health.ok ? "Backend conectado." : "Backend respondeu, mas sem status ok.";
   }
-  if (key === "googlePageSpeedKey") {
-    await runPageSpeed("https://www.wikipedia.org", "pageSpeedResult");
-    return "PageSpeed conectado.";
-  }
-  if (key === "aiEndpoint") {
+  if (key === "openai") {
     const payload = await requestAi("test", normalizeLead({ company: "Teste NODERE", rating: 4.1, reviews: 22 }));
-    return payload.mode ? `Endpoint IA conectado (${payload.mode}).` : "Endpoint IA conectado.";
+    return payload.mode ? `IA respondeu (${payload.mode}).` : "IA respondeu.";
   }
-  return "Configuracao encontrada.";
+  if (key === "google_places") {
+    await apiFetch("/api/v1/search/google-places", { method: "POST", body: JSON.stringify({ keyword: "padaria", city: "Porto Alegre", limit: 1 }) });
+    return "Google Places validado pelo backend.";
+  }
+  if (key === "google_pagespeed") {
+    await apiFetch("/api/v1/pagespeed/analyze", { method: "POST", body: JSON.stringify({ url: "https://www.wikipedia.org" }), timeoutMs: 45000 });
+    return "PageSpeed validado pelo backend.";
+  }
+  const payload = await apiFetch("/api/v1/integrations/status", { method: "GET" });
+  return payload.ok ? "Status de integracoes carregado do backend." : "Backend respondeu.";
 }
 
 function bindEvents() {
@@ -1104,7 +1170,7 @@ function bindEvents() {
   });
   $("#clearSettings")?.addEventListener("click", () => {
     if (!confirm("Apagar configuracoes locais?")) return;
-    settings = { maxResults: 60, defaultSort: "opportunity", defaultOwner: "Agencia Digital" };
+    settings = { maxResults: 60, defaultSort: "opportunity", defaultOwner: "Agencia Digital", apiBaseUrl: "", ownerToken: "", hideSavedResults: "on", autoAiOnSave: "on" };
     writeJson(STORAGE.settings, settings);
     $("#settingsForm").reset();
     loadSettingsForm();
@@ -1125,6 +1191,28 @@ function bindEvents() {
     showView("crm");
   });
   $("#chatSend")?.addEventListener("click", sendChat);
+  $("#sidebarToggle")?.addEventListener("click", () => document.body.classList.toggle("sidebar-collapsed"));
+  $("#chatToggle")?.addEventListener("click", () => $("#aiChat")?.classList.remove("collapsed"));
+  $("#chatClose")?.addEventListener("click", () => $("#aiChat")?.classList.add("collapsed"));
+  $("#chatFullscreen")?.addEventListener("click", () => $("#aiChat")?.classList.toggle("fullscreen"));
+  $("#chatClear")?.addEventListener("click", () => {
+    if (!confirm("Limpar conversa da IA?")) return;
+    chatMessages = [];
+    persistAll();
+  });
+  $("#aiChat")?.addEventListener("click", (event) => {
+    const promptButton = event.target.closest("[data-prompt]");
+    const copyButton = event.target.closest("[data-copy-chat]");
+    const noteButton = event.target.closest("[data-save-chat-note]");
+    const taskButton = event.target.closest("[data-save-chat-task]");
+    if (promptButton) {
+      $("#chatInput").value = promptButton.dataset.prompt;
+      sendChat();
+    }
+    if (copyButton) copyText(chatMessages.slice(-30)[Number(copyButton.dataset.copyChat)]?.content || "");
+    if (noteButton) saveChatAsNote(Number(noteButton.dataset.saveChatNote));
+    if (taskButton) saveChatAsTask(Number(taskButton.dataset.saveChatTask));
+  });
   $("#chatInput")?.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -1169,7 +1257,7 @@ function init() {
   writeJson(STORAGE.leads, leads);
   bindEvents();
   const initial = location.hash?.replace("#", "") || "dashboard";
-  showView(["dashboard", "empresas", "crm", "agenda", "pipeline", "pagespeed", "ia", "relatorios", "integracoes", "configuracoes"].includes(initial) ? initial : "dashboard");
+  showView(allowedViews().includes(initial) ? initial : "dashboard");
 }
 
 init();

@@ -7,11 +7,12 @@
     <title>NODERE Intelligence</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./nodere-icon.png" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=ops-3" />
+    <link rel="stylesheet" href="./styles.css?v=saas-1" />
   </head>
   <body>
     <div class="app-shell">
       <aside class="sidebar">
+        <button class="sidebar-toggle" type="button" id="sidebarToggle">☰</button>
         <a class="brand" href="#dashboard" data-nav="dashboard" aria-label="NODERE Intelligence">
           <img src="./nodere-logo-wordmark.png" alt="NODERE Intelligence" />
         </a>
@@ -25,6 +26,9 @@
           <button class="nav-item nav-ia" type="button" data-nav="ia"><span>AI</span>IA</button>
           <button class="nav-item nav-reports" type="button" data-nav="relatorios"><span>▥</span>Relatórios</button>
           <button class="nav-item nav-integrations" type="button" data-nav="integracoes"><span>↔</span>Integrações</button>
+          <button class="nav-item nav-services" type="button" data-nav="servicos"><span>§</span>Serviços</button>
+          <button class="nav-item nav-contracts" type="button" data-nav="contratos"><span>□</span>Contratos</button>
+          <button class="nav-item nav-templates" type="button" data-nav="templates"><span>✎</span>Templates</button>
           <button class="nav-item nav-settings" type="button" data-nav="configuracoes"><span>⚙</span>Configurações</button>
         </nav>
         <div class="agency-card">
@@ -98,7 +102,7 @@
           <article class="panel">
             <div class="table-header">
               <div class="panel-title compact"><span>Google</span><h2>Busca de empresas</h2></div>
-              <button class="secondary-button" type="button" data-nav="configuracoes">Configurar APIs</button>
+              <button class="secondary-button" type="button" data-nav="configuracoes">Configurar backend</button>
             </div>
             <form class="smart-search loose" id="placesSearchForm">
               <label>Segmento<input name="segment" placeholder="transportadoras" /></label>
@@ -185,7 +189,7 @@
         <section class="view" id="ia">
           <article class="panel">
             <div class="panel-title"><span>IA</span><h2>Agente operacional</h2></div>
-            <p class="warning">No GitHub Pages, a chave OpenAI nao fica no navegador. Configure um endpoint backend seguro em Configuracoes. Sem endpoint, o sistema usa fallback operacional local claramente identificado.</p>
+            <p class="warning">A IA usa o backend seguro em /api/openai. Sem backend configurado, o sistema usa fallback local identificado para nao expor chaves no navegador.</p>
             <div class="filters">
               <select id="aiLeadSelect"></select>
               <select id="aiActionSelect"></select>
@@ -213,17 +217,46 @@
           </article>
         </section>
 
+        <section class="view" id="servicos">
+          <article class="panel">
+            <div class="panel-title"><span>Serviços</span><h2>Catálogo comercial</h2></div>
+            <div class="catalog-grid">
+              <article><strong>Gestão Google Ads</strong><small>Recorrente</small><p>Campanhas, otimização, conversões e relatórios.</p></article>
+              <article><strong>Google Meu Negócio</strong><small>Pontual/recorrente</small><p>Otimização local, fotos, descrições, posts e avaliações.</p></article>
+              <article><strong>Landing Page</strong><small>Pontual</small><p>Página de conversão para tráfego pago.</p></article>
+              <article><strong>GA4 + GTM</strong><small>Pontual</small><p>Mensuração, eventos, tags e conversões.</p></article>
+              <article><strong>Remarketing</strong><small>Recorrente</small><p>Estratégia de recuperação de audiência.</p></article>
+              <article><strong>Diagnóstico</strong><small>Pontual</small><p>Análise comercial, PageSpeed e oportunidade digital.</p></article>
+            </div>
+          </article>
+        </section>
+
+        <section class="view" id="contratos">
+          <article class="panel">
+            <div class="panel-title"><span>Contratos</span><h2>Contratos e propostas formais</h2></div>
+            <div class="result-box">Módulo preparado para contratos recorrentes, pontuais, variáveis como {{nome_cliente}}, PDF, envio por email e salvamento no Drive via backend seguro.</div>
+          </article>
+        </section>
+
+        <section class="view" id="templates">
+          <article class="panel">
+            <div class="panel-title"><span>Templates</span><h2>Modelos comerciais</h2></div>
+            <div class="catalog-grid">
+              <article><strong>WhatsApp inicial</strong><p>Olá {{nome_contato}}, analisei a presença digital da {{nome_empresa}} em {{cidade}}...</p></article>
+              <article><strong>Email diagnóstico</strong><p>Assunto: oportunidades no Google para {{nome_empresa}}</p></article>
+              <article><strong>Follow-up</strong><p>Retomando o diagnóstico enviado e próximos passos.</p></article>
+              <article><strong>Proposta</strong><p>Escopo, valor, prazo e entregáveis do serviço {{servico}}.</p></article>
+            </div>
+          </article>
+        </section>
+
         <section class="view" id="configuracoes">
           <article class="panel">
             <div class="panel-title"><span>Config</span><h2>Configuracoes</h2></div>
-            <p class="warning">Para producao SaaS, use backend com .env, Supabase/PostgreSQL e endpoint IA seguro. Esta versao estatica salva operacao localmente para uso imediato.</p>
+            <p class="warning">Credenciais ficam somente no backend/.env. O navegador salva apenas a URL da API e um token opcional do proprietario.</p>
             <form class="settings-form" id="settingsForm">
-              <label>GOOGLE_PLACES_API_KEY<input name="googlePlacesKey" type="password" autocomplete="off" /></label>
-              <label>GOOGLE_MAPS_API_KEY<input name="googleMapsKey" type="password" autocomplete="off" /></label>
-              <label>GOOGLE_PAGESPEED_API_KEY<input name="googlePageSpeedKey" type="password" autocomplete="off" /></label>
-              <label>Endpoint IA seguro<input name="aiEndpoint" placeholder="https://sua-api.com/api/openai" /></label>
-              <label>WHATSAPP_CLOUD_TOKEN<input name="whatsappToken" type="password" autocomplete="off" /></label>
-              <label>WHATSAPP_PHONE_NUMBER_ID<input name="whatsappPhoneNumberId" autocomplete="off" /></label>
+              <label>URL do backend seguro<input name="apiBaseUrl" placeholder="https://sua-api.com" /></label>
+              <label>Token do proprietário opcional<input name="ownerToken" type="password" autocomplete="off" /></label>
               <label>Responsavel padrao<input name="defaultOwner" placeholder="Agencia Digital" /></label>
               <label>Maximo por busca<input name="maxResults" type="number" min="10" max="80" step="10" value="60" /></label>
               <label class="check-row"><input name="hideSavedResults" type="checkbox" checked /> Ocultar empresas já salvas na busca</label>
@@ -241,13 +274,26 @@
       </main>
     </div>
 
-    <section class="ai-chat">
-      <header><strong>NODERE AI</strong><small>Chat operacional</small></header>
-      <div id="chatMessages" class="chat-messages"></div>
-      <div class="chat-input">
-        <textarea id="chatInput" placeholder="Ex: quais leads devo priorizar hoje?"></textarea>
-        <button class="primary-button" type="button" id="chatSend">Enviar</button>
+    <button class="ai-fab" type="button" id="chatToggle">AI</button>
+    <section class="ai-chat collapsed" id="aiChat">
+      <header>
+        <div><strong>NODERE AI</strong><small>ChatGPT operacional</small></div>
+        <div class="settings-actions">
+          <button class="row-button" type="button" id="chatClear">Limpar</button>
+          <button class="row-button" type="button" id="chatFullscreen">Tela cheia</button>
+          <button class="row-button" type="button" id="chatClose">Fechar</button>
+        </div>
+      </header>
+      <div class="quick-prompts">
+        <button class="row-button" data-prompt="Quais leads devo priorizar hoje?">Priorizar hoje</button>
+        <button class="row-button" data-prompt="Quais leads estao sem proximo passo?">Sem ação</button>
+        <button class="row-button" data-prompt="Crie um plano diario de prospeccao.">Plano diário</button>
       </div>
+      <div id="chatMessages" class="chat-messages"></div>
+      <footer class="chat-input">
+        <textarea id="chatInput" placeholder="Pergunte qualquer coisa sobre CRM, Google Ads, leads, agenda, propostas ou PageSpeed..."></textarea>
+        <button class="primary-button" type="button" id="chatSend">Enviar</button>
+      </footer>
     </section>
 
     <dialog id="leadDialog">
@@ -294,6 +340,9 @@
           <button class="secondary-button" type="button" data-tab="ia">IA</button>
           <button class="secondary-button" type="button" data-tab="pagespeed">PageSpeed</button>
           <button class="secondary-button" type="button" data-tab="proposals">Propostas</button>
+          <button class="secondary-button" type="button" data-tab="contracts">Contratos</button>
+          <button class="secondary-button" type="button" data-tab="documents">Documentos e mídias</button>
+          <button class="secondary-button" type="button" data-tab="emails">Emails</button>
         </nav>
 
         <section class="lead-tab active" id="leadTab-overview"><div id="leadOverview"></div></section>
@@ -329,9 +378,18 @@
         <section class="lead-tab" id="leadTab-proposals">
           <div class="result-box">Area preparada para propostas comerciais, anexos e historico de aceite.</div>
         </section>
+        <section class="lead-tab" id="leadTab-contracts">
+          <div class="result-box">Contratos recorrentes e pontuais serão gerados pelo backend, com variáveis do lead e histórico.</div>
+        </section>
+        <section class="lead-tab" id="leadTab-documents">
+          <div class="result-box">Documentos, PDFs, imagens e vídeos ficam preparados para integração Google Drive via OAuth seguro.</div>
+        </section>
+        <section class="lead-tab" id="leadTab-emails">
+          <div class="result-box">Emails e rascunhos serão associados ao lead via Gmail OAuth no backend.</div>
+        </section>
       </form>
     </dialog>
 
-    <script src="./app.js?v=ops-3"></script>
+    <script src="./app.js?v=saas-1"></script>
   </body>
 </html>

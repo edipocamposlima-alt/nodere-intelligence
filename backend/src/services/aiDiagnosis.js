@@ -13,6 +13,7 @@ export async function generateDiagnosis(lead, scan, operationalContext = {}) {
     notes: operationalContext.notes || [],
     tasks: operationalContext.tasks || [],
     history: operationalContext.history || [],
+    conversation: operationalContext.conversation || [],
     context: operationalContext.context || {},
     instruction:
       "Atue como agente operacional senior do CRM NODERE Intelligence. Analise contexto real do lead, historico, observacoes, agenda, pipeline, PageSpeed e carteira. Gere decisao comercial objetiva, proximos passos, abordagem, estrategia Google Ads e alertas. Nao responda genericamente."
@@ -21,14 +22,7 @@ export async function generateDiagnosis(lead, scan, operationalContext = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30000);
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    signal: controller.signal,
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${config.openaiApiKey}`
-    },
-    body: JSON.stringify({
+  const requestBody = {
       model: config.openaiModel,
       input: [
         {
@@ -85,8 +79,30 @@ export async function generateDiagnosis(lead, scan, operationalContext = {}) {
           }
         }
       }
-    })
-  }).finally(() => clearTimeout(timeout));
+  };
+
+  let response;
+  let lastError;
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      response = await fetch("https://api.openai.com/v1/responses", {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${config.openaiApiKey}`
+        },
+        body: JSON.stringify(requestBody)
+      });
+      if (response.ok || response.status < 500) break;
+    } catch (error) {
+      lastError = error;
+      if (attempt === 2) throw error;
+    }
+  }
+  clearTimeout(timeout);
+
+  if (!response && lastError) throw lastError;
 
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));

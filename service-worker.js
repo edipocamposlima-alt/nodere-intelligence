@@ -1,9 +1,9 @@
-const CACHE_NAME = "nodere-intelligence-v11";
+const CACHE_NAME = "nodere-intelligence-v12";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=ops-3",
-  "./app.js?v=ops-3",
+  "./styles.css?v=saas-1",
+  "./app.js?v=saas-1",
   "./manifest.webmanifest",
   "./nodere-icon.png",
   "./nodere-logo-wordmark.png"

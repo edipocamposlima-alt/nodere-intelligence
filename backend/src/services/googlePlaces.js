@@ -3,8 +3,8 @@ import { config } from "../config.js";
 const TEXT_SEARCH_URL = "https://maps.googleapis.com/maps/api/place/textsearch/json";
 const DETAILS_URL = "https://maps.googleapis.com/maps/api/place/details/json";
 
-function buildQuery({ keyword = "", city = "", segment = "" }) {
-  return [segment, keyword, city].map((value) => String(value || "").trim()).filter(Boolean).join(" ").slice(0, 240).trim();
+function buildQuery({ keyword = "", city = "", state = "", segment = "" }) {
+  return [segment, keyword, city, state].map((value) => String(value || "").trim()).filter(Boolean).join(" ").slice(0, 240).trim();
 }
 
 function parseAddress(address = "") {
@@ -43,7 +43,11 @@ export async function searchGooglePlaces(params) {
   }
 
   const textUrl = new URL(TEXT_SEARCH_URL);
-  textUrl.searchParams.set("query", query);
+  if (params.pageToken) {
+    textUrl.searchParams.set("pagetoken", params.pageToken);
+  } else {
+    textUrl.searchParams.set("query", query);
+  }
   textUrl.searchParams.set("language", "pt-BR");
   textUrl.searchParams.set("region", "br");
   textUrl.searchParams.set("key", config.googlePlacesApiKey);
@@ -87,5 +91,8 @@ export async function searchGooglePlaces(params) {
     })
   );
 
-  return enriched;
+  return {
+    results: enriched,
+    nextPageToken: searchData.next_page_token || null
+  };
 }

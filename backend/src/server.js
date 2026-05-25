@@ -117,6 +117,79 @@ app.post("/api/v1/pagespeed", async (request, response, next) => {
   }
 });
 
+app.post("/api/v1/pagespeed/analyze", async (request, response, next) => {
+  try {
+    if (!config.googlePageSpeedApiKey) {
+      const error = new Error("GOOGLE_PAGESPEED_API_KEY is not configured in the backend.");
+      error.status = 503;
+      throw error;
+    }
+
+    const url = String(request.body.url || "").trim();
+    if (!url) {
+      const error = new Error("Informe a URL do site.");
+      error.status = 400;
+      throw error;
+    }
+
+    const endpoint = new URL("https://www.googleapis.com/pagespeedonline/v5/runPagespeed");
+    endpoint.searchParams.set("url", url);
+    endpoint.searchParams.set("strategy", "mobile");
+    endpoint.searchParams.set("key", config.googlePageSpeedApiKey);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 40000);
+    const pageSpeedResponse = await fetch(endpoint, { signal: controller.signal }).finally(() => clearTimeout(timeout));
+    const payload = await pageSpeedResponse.json().catch(() => ({}));
+
+    if (!pageSpeedResponse.ok) {
+      const error = new Error(payload?.error?.message || "PageSpeed request failed.");
+      error.status = pageSpeedResponse.status;
+      throw error;
+    }
+
+    const categories = payload.lighthouseResult?.categories || {};
+    const result = {
+      url,
+      performance: Math.round((categories.performance?.score || 0) * 100),
+      seo: Math.round((categories.seo?.score || 0) * 100),
+      accessibility: Math.round((categories.accessibility?.score || 0) * 100),
+      bestPractices: Math.round((categories["best-practices"]?.score || 0) * 100),
+      diagnosis: "Analise PageSpeed executada pelo backend seguro.",
+      recommendations: [
+        "Otimizar imagens, cache e scripts que bloqueiam renderizacao.",
+        "Revisar SEO tecnico, headings e metadados.",
+        "Monitorar paginas de conversao antes de escalar Google Ads."
+      ],
+      createdAt: new Date().toISOString()
+    };
+
+    response.json({ result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/v1/google-workspace/status", (_request, response) => {
+  response.json({
+    calendar: {
+      configured: Boolean(config.googleWorkspaceClientId && config.googleWorkspaceClientSecret && config.googleWorkspaceRefreshToken),
+      status: config.googleWorkspaceRefreshToken ? "ready" : "pending_oauth",
+      message: "Use OAuth offline no backend para conectar Google Calendar sem hardcode de conta."
+    },
+    gmail: {
+      configured: Boolean(config.googleWorkspaceClientId && config.googleWorkspaceClientSecret && config.googleWorkspaceRefreshToken),
+      status: config.googleWorkspaceRefreshToken ? "ready" : "pending_oauth",
+      message: "Envio e rascunhos exigem refresh token com escopos Gmail."
+    },
+    drive: {
+      configured: Boolean(config.googleWorkspaceClientId && config.googleWorkspaceClientSecret && config.googleWorkspaceRefreshToken),
+      status: config.googleWorkspaceRefreshToken ? "ready" : "pending_oauth",
+      message: "Arquivos e pastas de clientes exigem refresh token com escopos Drive."
+    }
+  });
+});
+
 app.post("/api/v1/jobs/discovery", async (request, response, next) => {
   try {
     const supabase = getSupabase();
@@ -149,7 +222,7 @@ app.post("/api/v1/jobs/discovery", async (request, response, next) => {
 
 app.post("/api/v1/search/google-places", async (request, response, next) => {
   try {
-    const results = await searchGooglePlaces(request.body);
+    const search = await searchGooglePlaces(request.body);
     try {
       const supabase = getSupabase();
       await supabase.from("mvp_searches").insert({
@@ -158,12 +231,12 @@ app.post("/api/v1/search/google-places", async (request, response, next) => {
         segment: request.body.segment || null,
         keyword: request.body.keyword || null,
         provider: "google_places",
-        result_count: results.length
+        result_count: search.results.length
       });
     } catch (_error) {
       // Search must remain usable while the database is being provisioned.
     }
-    response.json({ results });
+    response.json(search);
   } catch (error) {
     next(error);
   }

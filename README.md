@@ -2,19 +2,19 @@
 
 Sistema de prospeccao comercial para localizar empresas no Google, salvar leads em CRM, auditar presenca digital e gerar diagnosticos comerciais com OpenAI.
 
-## Versao SaaS operacional
+## Versao SaaS segura
 
-A versao publicada no GitHub Pages funciona como uma SPA sem backend obrigatorio:
+A versao publicada no GitHub Pages funciona como interface estatica. Para uso comercial real, publique o backend e configure a URL da API em `Configuracoes`.
 
 - CRM operacional persiste em `localStorage` no GitHub Pages e tem estrutura preparada para Supabase/PostgreSQL.
-- Configuracoes persistem em `localStorage`.
-- Busca Google Places usa a chave configurada na tela.
-- PageSpeed usa a chave configurada na tela.
+- Configuracoes persistem em `localStorage`, mas guardam apenas URL do backend, token operacional opcional e preferencias.
+- Busca Google Places usa somente o backend seguro.
+- PageSpeed usa somente o backend seguro.
 - WhatsApp abre `wa.me` com mensagem pronta.
-- IA chama um endpoint backend seguro configuravel. Use `/api/openai` no backend Node/Express para nao expor `OPENAI_API_KEY`.
+- IA chama `/api/openai` no backend Node/Express para nao expor `OPENAI_API_KEY`.
 - Sem endpoint IA, o sistema usa fallback operacional local identificado para manter agenda, priorizacao e proximos passos funcionando.
 
-Aviso: chaves salvas no navegador servem para operacao/teste simples. Em producao, use o backend e variaveis `.env`.
+Aviso: nenhuma chave Google, OpenAI ou WhatsApp deve ser salva no navegador. Em producao, use somente o backend e variaveis `.env`.
 
 ## Arquitetura Real
 
@@ -37,8 +37,10 @@ GitHub Pages nao executa backend e nao pode guardar segredos. Portanto, chaves G
 - Inicio com leads quentes, atrasados, contatos do dia, sem follow-up e propostas.
 - Relatorios de conversao, ganhos, perdas, propostas e valor potencial.
 - Chat IA global com contexto da carteira.
+- Chat IA flutuante com modo compacto, expandido e tela cheia.
 - Painel IA dentro da ficha do lead com acoes comerciais: WhatsApp, email, follow-up, diagnostico, proposta, objecoes, script de ligacao e estrategia Google Ads.
-- Scanner de site.
+- PageSpeed pelo backend com performance, SEO, acessibilidade, boas praticas, diagnostico e recomendacoes.
+- Modulos iniciais de Servicos, Contratos e Templates para operacao comercial.
 - Diagnostico comercial com OpenAI.
 - Validacao de Google Places, Maps, PageSpeed, Business Profile OAuth, OpenAI, WhatsApp e Supabase.
 - WhatsApp Cloud API preparado para envio real quando tokens estiverem configurados.
@@ -62,6 +64,10 @@ GOOGLE_PAGESPEED_API_KEY=
 GOOGLE_BUSINESS_PROFILE_CLIENT_ID=
 GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET=
 GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN=
+GOOGLE_WORKSPACE_CLIENT_ID=
+GOOGLE_WORKSPACE_CLIENT_SECRET=
+GOOGLE_WORKSPACE_REFRESH_TOKEN=
+GOOGLE_WORKSPACE_SCOPES=https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/drive.file
 
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4.1-mini
@@ -121,10 +127,10 @@ Abra:
 http://localhost:4173/#configuracoes
 ```
 
-Para IA, configure em `Endpoint IA seguro`:
+Na tela `Configuracoes`, configure a URL da API:
 
 ```text
-http://localhost:3333/api/openai
+http://localhost:3333
 ```
 
 ## Deploy
@@ -146,10 +152,22 @@ Depois do deploy:
 
 1. Abra `https://edipocamposlima-alt.github.io/nodere-intelligence/#configuracoes`.
 2. Informe a URL publica do backend.
-3. Informe as chaves Google que serao usadas no modo estatico.
-4. Informe o endpoint publico da IA, se o backend estiver publicado.
-5. Clique em `Salvar configuracoes`.
-6. Valide em `Integracoes`.
+3. Informe o token operacional, se `MVP_OWNER_TOKEN` estiver ativo no backend.
+4. Clique em `Salvar configuracoes`.
+5. Valide em `Integracoes`.
+
+## Seguranca do Repositorio
+
+Este projeto nao deve permanecer publico quando houver operacao comercial, clientes ou segredos nos ambientes de deploy.
+
+No GitHub:
+
+1. Abra `Settings > General > Danger Zone`.
+2. Use `Change repository visibility`.
+3. Marque `Private`.
+4. Revise `Settings > Collaborators`, `Actions secrets`, `Deploy keys` e tokens.
+
+O Codex nao deve versionar `.env`, tokens, dumps de banco ou arquivos com credenciais.
 
 ## Testes de Integração
 
@@ -172,4 +190,5 @@ O script testa:
 - Google Places, Maps e PageSpeed dependem das chaves habilitadas no Google Cloud.
 - OpenAI exige chave valida e quota/billing ativo.
 - Google Business Profile exige `client_secret` e `refresh_token` gerado por OAuth com escopo `business.manage`.
+- Google Calendar, Gmail e Drive exigem OAuth offline com refresh token do backend.
 - A versao GitHub Pages usa `localStorage` para CRM e configuracoes. Para producao multiusuario, publique o backend e migre a persistencia para Supabase/PostgreSQL usando o schema atualizado.
