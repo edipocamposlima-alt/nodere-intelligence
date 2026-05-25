@@ -71,9 +71,54 @@ create table if not exists mvp_searches (
   created_at timestamptz not null default now()
 );
 
+alter table mvp_leads add column if not exists contact_name text;
+alter table mvp_leads add column if not exists role text;
+alter table mvp_leads add column if not exists owner text;
+alter table mvp_leads add column if not exists temperature text;
+alter table mvp_leads add column if not exists potential integer;
+alter table mvp_leads add column if not exists estimated_value numeric;
+alter table mvp_leads add column if not exists service_interest text;
+alter table mvp_leads add column if not exists internal_notes text;
+alter table mvp_tasks add column if not exists priority text;
+alter table mvp_tasks add column if not exists channel text;
+alter table mvp_tasks add column if not exists owner text;
+
+create table if not exists mvp_notes (
+  id uuid primary key default gen_random_uuid(),
+  lead_id uuid not null references mvp_leads(id) on delete cascade,
+  note_type text not null default 'Outro',
+  body text not null,
+  owner text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists mvp_ai_memory (
+  id uuid primary key default gen_random_uuid(),
+  lead_id uuid references mvp_leads(id) on delete cascade,
+  action text not null,
+  context jsonb not null default '{}',
+  result jsonb not null default '{}',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists mvp_notifications (
+  id uuid primary key default gen_random_uuid(),
+  lead_id uuid references mvp_leads(id) on delete cascade,
+  notification_type text not null,
+  message text not null,
+  status text not null default 'open',
+  due_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists mvp_leads_status_idx on mvp_leads(status);
 create index if not exists mvp_leads_city_segment_idx on mvp_leads(city, segment);
 create index if not exists mvp_site_scans_lead_idx on mvp_site_scans(lead_id, created_at desc);
 create index if not exists mvp_diagnoses_lead_idx on mvp_diagnoses(lead_id, created_at desc);
 create index if not exists mvp_tasks_lead_idx on mvp_tasks(lead_id, due_at);
 create index if not exists mvp_searches_created_idx on mvp_searches(created_at desc);
+create index if not exists mvp_notes_lead_idx on mvp_notes(lead_id, created_at desc);
+create index if not exists mvp_ai_memory_lead_idx on mvp_ai_memory(lead_id, created_at desc);
+create index if not exists mvp_notifications_due_idx on mvp_notifications(status, due_at);

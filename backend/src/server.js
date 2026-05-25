@@ -92,7 +92,7 @@ app.post("/api/v1/integrations/test", async (request, response, next) => {
 
 app.post("/api/v1/ai/diagnosis", async (request, response, next) => {
   try {
-    const diagnosis = await generateDiagnosis(request.body.lead || request.body, request.body.pageSpeed || request.body.scan || null);
+    const diagnosis = await generateDiagnosis(request.body.lead || request.body, request.body.pageSpeed || request.body.scan || null, request.body);
     response.json({ mode: config.openaiApiKey ? "openai" : "template", diagnosis });
   } catch (error) {
     next(error);
@@ -101,8 +101,8 @@ app.post("/api/v1/ai/diagnosis", async (request, response, next) => {
 
 app.post("/api/openai", async (request, response, next) => {
   try {
-    const diagnosis = await generateDiagnosis(request.body.lead || request.body, request.body.pageSpeed || request.body.scan || null);
-    response.json({ mode: "openai", diagnosis });
+    const diagnosis = await generateDiagnosis(request.body.lead || request.body, request.body.pageSpeed || request.body.scan || null, request.body);
+    response.json({ mode: config.openaiApiKey ? "openai" : "server-fallback", diagnosis });
   } catch (error) {
     next(error);
   }

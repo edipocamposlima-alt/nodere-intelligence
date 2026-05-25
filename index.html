@@ -7,7 +7,7 @@
     <title>NODERE Intelligence</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./nodere-icon.png" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=ops-1" />
+    <link rel="stylesheet" href="./styles.css?v=ops-2" />
   </head>
   <body>
     <div class="app-shell">
@@ -16,17 +16,20 @@
           <img src="./nodere-logo-wordmark.png" alt="NODERE Intelligence" />
         </a>
         <nav class="nav-list" aria-label="Menu principal">
-          <button class="nav-item active" type="button" data-nav="dashboard"><span>⌂</span>Dashboard</button>
-          <button class="nav-item" type="button" data-nav="empresas"><span>▦</span>Empresas</button>
-          <button class="nav-item" type="button" data-nav="crm"><span>▤</span>CRM</button>
-          <button class="nav-item" type="button" data-nav="pagespeed"><span>⚡</span>PageSpeed</button>
+          <button class="nav-item active" type="button" data-nav="dashboard"><span>DB</span>Dashboard</button>
+          <button class="nav-item" type="button" data-nav="empresas"><span>EM</span>Empresas</button>
+          <button class="nav-item" type="button" data-nav="crm"><span>CRM</span>CRM</button>
+          <button class="nav-item" type="button" data-nav="agenda"><span>AG</span>Agenda</button>
+          <button class="nav-item" type="button" data-nav="pipeline"><span>PL</span>Pipeline</button>
+          <button class="nav-item" type="button" data-nav="pagespeed"><span>PS</span>PageSpeed</button>
           <button class="nav-item" type="button" data-nav="ia"><span>AI</span>IA</button>
-          <button class="nav-item" type="button" data-nav="integracoes"><span>↔</span>Integrações</button>
-          <button class="nav-item" type="button" data-nav="configuracoes"><span>⚙</span>Configurações</button>
+          <button class="nav-item" type="button" data-nav="relatorios"><span>RP</span>Relatorios</button>
+          <button class="nav-item" type="button" data-nav="integracoes"><span>IN</span>Integracoes</button>
+          <button class="nav-item" type="button" data-nav="configuracoes"><span>CF</span>Configuracoes</button>
         </nav>
         <div class="agency-card">
           <span class="avatar">AG</span>
-          <div><strong>Agência Digital</strong><small>Operação local</small></div>
+          <div><strong>Agencia Digital</strong><small>Operacao comercial</small></div>
         </div>
       </aside>
 
@@ -34,79 +37,95 @@
         <header class="topbar">
           <div>
             <h1>NODERE Intelligence</h1>
-            <p>Prospecção, análise digital e CRM operacional.</p>
+            <p>CRM comercial, prospeccao, agenda, pipeline e agente operacional com IA.</p>
           </div>
           <label class="global-search">
-            <span>⌕</span>
-            <input id="globalSearch" type="search" placeholder="Buscar lead no CRM..." />
+            <span>Buscar</span>
+            <input id="globalSearch" type="search" placeholder="Buscar empresa, contato, telefone, cidade, observacao..." />
           </label>
         </header>
 
         <section class="view active" id="dashboard">
-          <div class="metrics-grid">
-            <article class="metric-card"><span class="metric-icon blue">▥</span><div><p>Leads no CRM</p><strong id="metricLeads">0</strong><small>Persistidos localmente</small></div></article>
-            <article class="metric-card"><span class="metric-icon amber">☆</span><div><p>Baixa avaliação</p><strong id="metricLowRating">0</strong><small>Nota abaixo de 4.2</small></div></article>
-            <article class="metric-card"><span class="metric-icon purple">◉</span><div><p>Sem site</p><strong id="metricNoSite">0</strong><small>Oportunidade de presença digital</small></div></article>
-            <article class="metric-card"><span class="metric-icon green">☏</span><div><p>Com WhatsApp</p><strong id="metricWhatsapp">0</strong><small>Prontos para contato</small></div></article>
+          <div class="metrics-grid advanced">
+            <article class="metric-card"><div><p>Leads novos</p><strong id="metricLeads">0</strong><small>Total no CRM</small></div></article>
+            <article class="metric-card"><div><p>Leads quentes</p><strong id="metricHot">0</strong><small>Alta oportunidade</small></div></article>
+            <article class="metric-card"><div><p>Atrasados</p><strong id="metricOverdue">0</strong><small>Follow-up vencido</small></div></article>
+            <article class="metric-card"><div><p>Contatos do dia</p><strong id="metricToday">0</strong><small>Agenda de hoje</small></div></article>
+            <article class="metric-card"><div><p>Sem follow-up</p><strong id="metricNoFollow">0</strong><small>Leads sem proximo passo</small></div></article>
+            <article class="metric-card"><div><p>Propostas</p><strong id="metricProposal">0</strong><small>Em aberto</small></div></article>
           </div>
           <div class="work-grid">
             <article class="panel">
-              <div class="panel-title"><span>⌕</span><h2>Busca rápida</h2></div>
+              <div class="panel-title"><span>Busca</span><h2>Busca rapida de empresas</h2></div>
               <form class="smart-search" id="quickSearchForm">
                 <label>Segmento<input name="segment" placeholder="concreteiras" /></label>
                 <label>Cidade<input name="city" placeholder="Porto Alegre" /></label>
                 <label>Estado<input name="state" placeholder="RS" /></label>
-                <label>Palavra-chave<input name="keyword" placeholder="britagem, mineração..." /></label>
+                <label>Palavra-chave<input name="keyword" placeholder="britagem, mineracao..." /></label>
                 <button class="primary-button" type="submit">Buscar</button>
               </form>
             </article>
             <article class="panel">
-              <div class="panel-title"><span>▤</span><h2>Funil comercial</h2></div>
+              <div class="panel-title"><span>Funil</span><h2>Pipeline</h2></div>
               <div class="funnel-list" id="funnelList"></div>
             </article>
           </div>
+          <div class="work-grid">
+            <article class="panel">
+              <div class="panel-title"><span>Alertas</span><h2>IA proativa</h2></div>
+              <div id="alertsList"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-title"><span>Hoje</span><h2>Contatos do dia</h2></div>
+              <div id="todayList"></div>
+            </article>
+          </div>
           <article class="panel">
-            <div class="panel-title"><span>⚡</span><h2>Análise rápida PageSpeed</h2></div>
+            <div class="panel-title"><span>Grafico</span><h2>Evolucao por etapa</h2></div>
+            <div id="pipelineChart" class="chart-list"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-title"><span>PageSpeed</span><h2>Analise rapida</h2></div>
             <form class="inline-form" id="dashboardPageSpeedForm">
               <input name="url" placeholder="https://site-da-empresa.com.br" />
               <button class="primary-button" type="submit">Analisar site</button>
             </form>
-            <div class="result-box" id="dashboardPageSpeedResult">Informe um site para analisar performance, SEO, acessibilidade e boas práticas.</div>
+            <div class="result-box" id="dashboardPageSpeedResult">Informe um site para analisar performance, SEO, acessibilidade e boas praticas.</div>
           </article>
         </section>
 
         <section class="view" id="empresas">
           <article class="panel">
             <div class="table-header">
-              <div class="panel-title compact"><span>▦</span><h2>Busca real de empresas</h2></div>
+              <div class="panel-title compact"><span>Google</span><h2>Busca real de empresas</h2></div>
               <button class="secondary-button" type="button" data-nav="configuracoes">Configurar APIs</button>
             </div>
             <form class="smart-search loose" id="placesSearchForm">
               <label>Segmento<input name="segment" placeholder="transportadoras" /></label>
               <label>Cidade<input name="city" placeholder="Caxias do Sul" /></label>
               <label>Estado<input name="state" placeholder="RS" /></label>
-              <label>Palavra-chave livre<input name="keyword" placeholder="frete, logística..." /></label>
+              <label>Palavra-chave livre<input name="keyword" placeholder="frete, logistica..." /></label>
               <button class="primary-button" type="submit">Buscar no Google</button>
             </form>
             <div class="filters">
               <select id="resultSort">
                 <option value="opportunity">Maior oportunidade comercial</option>
-                <option value="ratingAsc">Menor avaliação</option>
-                <option value="ratingDesc">Maior avaliação</option>
-                <option value="reviewsAsc">Poucas avaliações</option>
+                <option value="ratingAsc">Menor avaliacao</option>
+                <option value="ratingDesc">Maior avaliacao</option>
+                <option value="reviewsAsc">Poucas avaliacoes</option>
               </select>
               <select id="resultFilter">
                 <option value="">Todos os resultados</option>
                 <option value="noWebsite">Sem site</option>
                 <option value="noPhone">Sem telefone</option>
                 <option value="noWhatsapp">Sem WhatsApp</option>
-                <option value="fewReviews">Poucas avaliações</option>
-                <option value="noHours">Sem horário</option>
+                <option value="fewReviews">Poucas avaliacoes</option>
+                <option value="noHours">Sem horario</option>
                 <option value="incomplete">Perfil incompleto</option>
               </select>
               <button class="secondary-button" id="loadMorePlaces" type="button">Carregar mais</button>
             </div>
-            <p class="table-message" id="searchMessage">Pesquise por qualquer combinação: segmento, cidade, estado ou palavra-chave.</p>
+            <p class="table-message" id="searchMessage">Pesquise por qualquer combinacao: segmento, cidade, estado ou palavra-chave.</p>
             <div class="lead-table" id="searchResults"></div>
           </article>
         </section>
@@ -114,45 +133,78 @@
         <section class="view" id="crm">
           <article class="panel">
             <div class="table-header">
-              <div class="panel-title compact"><span>▤</span><h2>CRM funcional</h2></div>
+              <div class="panel-title compact"><span>CRM</span><h2>Central comercial</h2></div>
               <button class="primary-button" type="button" id="newLeadButton">Novo lead</button>
             </div>
-            <div class="filters">
-              <input id="crmSearch" placeholder="Pesquisar por empresa, cidade, segmento..." />
+            <div class="filters wide">
+              <input id="crmSearch" placeholder="Busca livre: empresa, contato, telefone, cidade, segmento, observacao..." />
               <select id="crmStatusFilter"><option value="">Todos os status</option></select>
+              <select id="crmTemperatureFilter"><option value="">Todas temperaturas</option></select>
+              <input id="crmOwnerFilter" placeholder="Responsavel" />
+              <select id="crmSpecialFilter">
+                <option value="">Todos</option>
+                <option value="overdue">Leads atrasados</option>
+                <option value="noNotes">Sem observacao</option>
+                <option value="noNextStep">Sem proximo passo</option>
+                <option value="hot">Maior oportunidade</option>
+              </select>
             </div>
-            <p class="table-message" id="crmMessage">Dados salvos localmente neste navegador.</p>
+            <p class="table-message" id="crmMessage">CRM com timeline, agenda, observacoes e IA contextual.</p>
             <div class="lead-table" id="crmTable"></div>
+          </article>
+        </section>
+
+        <section class="view" id="agenda">
+          <div class="table-header">
+            <div class="panel-title compact"><span>Agenda</span><h2>Agenda comercial e lembretes</h2></div>
+          </div>
+          <div class="agenda-grid" id="agendaBoard"></div>
+        </section>
+
+        <section class="view" id="pipeline">
+          <article class="panel">
+            <div class="panel-title"><span>Pipeline</span><h2>Pipeline comercial profissional</h2></div>
+            <p class="table-message">Arraste os cards entre etapas para atualizar o status.</p>
+            <div class="pipeline-board" id="pipelineBoard"></div>
           </article>
         </section>
 
         <section class="view" id="pagespeed">
           <article class="panel">
-            <div class="panel-title"><span>⚡</span><h2>PageSpeed</h2></div>
+            <div class="panel-title"><span>PageSpeed</span><h2>Analise de site</h2></div>
             <form class="inline-form" id="pageSpeedForm">
               <input name="url" placeholder="https://exemplo.com.br" required />
               <button class="primary-button" type="submit">Analisar site</button>
             </form>
-            <div class="result-box" id="pageSpeedResult">Aguardando análise.</div>
+            <div class="result-box" id="pageSpeedResult">Aguardando analise.</div>
           </article>
         </section>
 
         <section class="view" id="ia">
           <article class="panel">
-            <div class="panel-title"><span>AI</span><h2>Assistente IA</h2></div>
-            <p class="warning">No GitHub Pages, a chave OpenAI não deve ficar no navegador. Configure um endpoint backend seguro em Configurações.</p>
+            <div class="panel-title"><span>IA</span><h2>Agente operacional</h2></div>
+            <p class="warning">No GitHub Pages, a chave OpenAI nao fica no navegador. Configure um endpoint backend seguro em Configuracoes. Sem endpoint, o sistema usa fallback operacional local claramente identificado.</p>
             <div class="filters">
               <select id="aiLeadSelect"></select>
-              <button class="primary-button" type="button" id="aiAnalyzeButton">Analisar lead</button>
+              <select id="aiActionSelect"></select>
+              <button class="primary-button" type="button" id="aiAnalyzeButton">Executar IA</button>
             </div>
             <div class="result-box" id="aiResult">Selecione um lead salvo no CRM.</div>
+          </article>
+        </section>
+
+        <section class="view" id="relatorios">
+          <article class="panel">
+            <div class="panel-title"><span>BI</span><h2>Relatorios comerciais</h2></div>
+            <div class="metrics-grid" id="reportsGrid"></div>
+            <div class="chart-list" id="pipelineChartReports"></div>
           </article>
         </section>
 
         <section class="view" id="integracoes">
           <article class="panel">
             <div class="table-header">
-              <div class="panel-title compact"><span>↔</span><h2>Integrações</h2></div>
+              <div class="panel-title compact"><span>APIs</span><h2>Integracoes</h2></div>
               <button class="secondary-button" type="button" id="testAllIntegrations">Atualizar status</button>
             </div>
             <div class="integration-grid" id="integrationGrid"></div>
@@ -161,8 +213,8 @@
 
         <section class="view" id="configuracoes">
           <article class="panel">
-            <div class="panel-title"><span>⚙</span><h2>Configurações</h2></div>
-            <p class="warning">Para produção, use backend/.env. Esta versão salva localmente para operação imediata no navegador.</p>
+            <div class="panel-title"><span>Config</span><h2>Configuracoes</h2></div>
+            <p class="warning">Para producao SaaS, use backend com .env, Supabase/PostgreSQL e endpoint IA seguro. Esta versao estatica salva operacao localmente para uso imediato.</p>
             <form class="settings-form" id="settingsForm">
               <label>GOOGLE_PLACES_API_KEY<input name="googlePlacesKey" type="password" autocomplete="off" /></label>
               <label>GOOGLE_MAPS_API_KEY<input name="googleMapsKey" type="password" autocomplete="off" /></label>
@@ -170,47 +222,110 @@
               <label>Endpoint IA seguro<input name="aiEndpoint" placeholder="https://sua-api.com/api/openai" /></label>
               <label>WHATSAPP_CLOUD_TOKEN<input name="whatsappToken" type="password" autocomplete="off" /></label>
               <label>WHATSAPP_PHONE_NUMBER_ID<input name="whatsappPhoneNumberId" autocomplete="off" /></label>
-              <label>Máximo por busca<input name="maxResults" type="number" min="10" max="80" step="10" value="60" /></label>
-              <label>Ordenação padrão<select name="defaultSort"><option value="opportunity">Maior oportunidade comercial</option><option value="ratingAsc">Menor avaliação</option><option value="ratingDesc">Maior avaliação</option></select></label>
+              <label>Responsavel padrao<input name="defaultOwner" placeholder="Agencia Digital" /></label>
+              <label>Maximo por busca<input name="maxResults" type="number" min="10" max="80" step="10" value="60" /></label>
+              <label>Ordenacao padrao<select name="defaultSort"><option value="opportunity">Maior oportunidade comercial</option><option value="ratingAsc">Menor avaliacao</option><option value="ratingDesc">Maior avaliacao</option></select></label>
               <div class="settings-actions">
-                <button class="primary-button" type="submit">Salvar configurações</button>
+                <button class="primary-button" type="submit">Salvar configuracoes</button>
                 <button class="secondary-button" type="button" id="clearSettings">Apagar chaves</button>
                 <button class="secondary-button" type="button" id="validateSettings">Validar</button>
               </div>
             </form>
-            <p class="table-message" id="settingsMessage">Configurações carregadas do navegador.</p>
+            <p class="table-message" id="settingsMessage">Configuracoes carregadas do navegador.</p>
           </article>
         </section>
       </main>
     </div>
 
+    <section class="ai-chat">
+      <header><strong>NODERE AI</strong><small>Chat operacional</small></header>
+      <div id="chatMessages" class="chat-messages"></div>
+      <div class="chat-input">
+        <textarea id="chatInput" placeholder="Ex: quais leads devo priorizar hoje?"></textarea>
+        <button class="primary-button" type="button" id="chatSend">Enviar</button>
+      </div>
+    </section>
+
     <dialog id="leadDialog">
-      <form method="dialog" id="leadForm" class="dialog-card">
-        <h2 id="leadDialogTitle">Ficha da empresa</h2>
-        <input type="hidden" name="id" />
-        <label>Empresa<input name="company" required /></label>
-        <label>Telefone<input name="phone" /></label>
-        <label>WhatsApp<input name="whatsapp" /></label>
-        <label>E-mail<input name="email" type="email" /></label>
-        <label>Site<input name="website" /></label>
-        <label>Cidade<input name="city" /></label>
-        <label>Estado<input name="state" /></label>
-        <label>Segmento<input name="segment" /></label>
-        <label>Endereço<input name="address" /></label>
-        <label>Nota Google<input name="rating" /></label>
-        <label>Avaliações<input name="reviews" type="number" /></label>
-        <label>Status<select name="status" id="leadStatusSelect"></select></label>
-        <label>Observações<textarea name="notes"></textarea></label>
-        <div class="result-box" id="leadAnalysisBox">Histórico, PageSpeed e IA aparecem aqui após salvar análises.</div>
-        <div class="settings-actions">
-          <button class="primary-button" value="save">Salvar</button>
-          <button class="secondary-button" type="button" id="leadPageSpeedButton">PageSpeed</button>
-          <button class="secondary-button" type="button" id="leadAiButton">IA</button>
-          <button class="secondary-button" value="cancel">Cancelar</button>
+      <form method="dialog" id="leadForm" class="dialog-card lead-dialog">
+        <div class="dialog-head">
+          <h2 id="leadDialogTitle">Ficha operacional do lead</h2>
+          <div class="settings-actions">
+            <button class="primary-button" value="save">Salvar ficha</button>
+            <button class="secondary-button" value="cancel">Fechar</button>
+          </div>
         </div>
+        <input type="hidden" name="id" />
+        <div class="lead-form-grid">
+          <label>Empresa<input name="company" required /></label>
+          <label>Contato principal<input name="contactName" /></label>
+          <label>Cargo<input name="role" /></label>
+          <label>Responsavel<input name="owner" /></label>
+          <label>Telefone<input name="phone" /></label>
+          <label>WhatsApp<input name="whatsapp" /></label>
+          <label>E-mail<input name="email" type="email" /></label>
+          <label>Site<input name="website" /></label>
+          <label>Cidade<input name="city" /></label>
+          <label>Estado<input name="state" /></label>
+          <label>Segmento<input name="segment" /></label>
+          <label>Endereco<input name="address" /></label>
+          <label>Nota Google<input name="rating" /></label>
+          <label>Avaliacoes<input name="reviews" type="number" /></label>
+          <label>Temperatura<select name="temperature" id="leadTemperatureSelect"></select></label>
+          <label>Potencial comercial<input name="potential" type="number" min="0" max="100" /></label>
+          <label>Valor estimado<input name="estimatedValue" placeholder="Ex: 3500" /></label>
+          <label>Servico de interesse<input name="serviceInterest" placeholder="Google Ads, GMB, landing page..." /></label>
+          <label>Origem do lead<input name="source" /></label>
+          <label>Status<select name="status" id="leadStatusSelect"></select></label>
+          <label class="full">Observacoes internas gerais<textarea name="internalNotes"></textarea></label>
+        </div>
+
+        <nav class="lead-tabs" id="leadTabs">
+          <button class="secondary-button active" type="button" data-tab="overview">Visao geral</button>
+          <button class="secondary-button" type="button" data-tab="notes">Observacoes</button>
+          <button class="secondary-button" type="button" data-tab="agenda">Agenda</button>
+          <button class="secondary-button" type="button" data-tab="timeline">Historico</button>
+          <button class="secondary-button" type="button" data-tab="ia">IA</button>
+          <button class="secondary-button" type="button" data-tab="pagespeed">PageSpeed</button>
+          <button class="secondary-button" type="button" data-tab="proposals">Propostas</button>
+        </nav>
+
+        <section class="lead-tab active" id="leadTab-overview"><div id="leadOverview"></div></section>
+        <section class="lead-tab" id="leadTab-notes">
+          <div class="entry-form">
+            <select id="noteType"></select>
+            <input id="noteUser" placeholder="Responsavel" />
+            <textarea id="noteText" placeholder="Digite uma observacao longa, com contexto comercial, objecoes, combinados e proximos passos..."></textarea>
+            <button class="primary-button" type="button" id="addNoteButton">Adicionar observacao</button>
+          </div>
+          <div id="leadNotesList"></div>
+        </section>
+        <section class="lead-tab" id="leadTab-agenda">
+          <div class="entry-form compact">
+            <input id="taskTitle" placeholder="Ex: Retomar diagnostico" />
+            <input id="taskDueAt" type="datetime-local" />
+            <select id="taskChannel"></select>
+            <select id="taskPriority"></select>
+            <input id="taskOwner" placeholder="Responsavel" />
+            <button class="primary-button" type="button" id="addTaskButton">Criar lembrete</button>
+          </div>
+          <div id="leadTasksList"></div>
+        </section>
+        <section class="lead-tab" id="leadTab-timeline"><div id="leadTimeline"></div></section>
+        <section class="lead-tab" id="leadTab-ia">
+          <div class="settings-actions wrap" id="leadAiActions"></div>
+          <div class="result-box" id="leadAiResult"></div>
+        </section>
+        <section class="lead-tab" id="leadTab-pagespeed">
+          <button class="primary-button" type="button" id="leadPageSpeedButton">Analisar e salvar PageSpeed</button>
+          <div class="result-box" id="leadPageSpeedBox"></div>
+        </section>
+        <section class="lead-tab" id="leadTab-proposals">
+          <div class="result-box">Area preparada para propostas comerciais, anexos e historico de aceite.</div>
+        </section>
       </form>
     </dialog>
 
-    <script src="./app.js?v=ops-1"></script>
+    <script src="./app.js?v=ops-2"></script>
   </body>
 </html>

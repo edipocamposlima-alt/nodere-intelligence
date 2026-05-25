@@ -2,16 +2,17 @@
 
 Sistema de prospeccao comercial para localizar empresas no Google, salvar leads em CRM, auditar presenca digital e gerar diagnosticos comerciais com OpenAI.
 
-## Versao operacional simples
+## Versao SaaS operacional
 
 A versao publicada no GitHub Pages funciona como uma SPA sem backend obrigatorio:
 
-- CRM persiste em `localStorage`.
+- CRM operacional persiste em `localStorage` no GitHub Pages e tem estrutura preparada para Supabase/PostgreSQL.
 - Configuracoes persistem em `localStorage`.
 - Busca Google Places usa a chave configurada na tela.
 - PageSpeed usa a chave configurada na tela.
 - WhatsApp abre `wa.me` com mensagem pronta.
 - IA chama um endpoint backend seguro configuravel. Use `/api/openai` no backend Node/Express para nao expor `OPENAI_API_KEY`.
+- Sem endpoint IA, o sistema usa fallback operacional local identificado para manter agenda, priorizacao e proximos passos funcionando.
 
 Aviso: chaves salvas no navegador servem para operacao/teste simples. Em producao, use o backend e variaveis `.env`.
 
@@ -29,9 +30,14 @@ GitHub Pages nao executa backend e nao pode guardar segredos. Portanto, chaves G
 - Busca real de empresas via Google Places.
 - Dados retornados: nome, telefone, site, endereco, categoria, avaliacao, total de avaliacoes e link Google Maps.
 - CRM persistido no Supabase/PostgreSQL.
-- Status do funil: novo lead, contatado, negociacao, reuniao, proposta, fechado e perdido.
-- Historico de eventos por lead.
-- Tarefas e follow-up.
+- Pipeline profissional com drag and drop.
+- Observacoes longas por lead, com tipo, responsavel, data e historico.
+- Timeline operacional por lead com observacoes, status, tarefas, PageSpeed e IA.
+- Agenda comercial com follow-up, canal, prioridade, conclusao e alertas.
+- Dashboard com leads quentes, atrasados, contatos do dia, sem follow-up e propostas.
+- Relatorios de conversao, ganhos, perdas, propostas e valor potencial.
+- Chat IA global com contexto da carteira.
+- Painel IA dentro da ficha do lead com acoes comerciais: WhatsApp, email, follow-up, diagnostico, proposta, objecoes, script de ligacao e estrategia Google Ads.
 - Scanner de site.
 - Diagnostico comercial com OpenAI.
 - Validacao de Google Places, Maps, PageSpeed, Business Profile OAuth, OpenAI, WhatsApp e Supabase.
@@ -83,6 +89,9 @@ Tabelas principais:
 - `mvp_crm_events`
 - `mvp_tasks`
 - `mvp_searches`
+- `mvp_notes`
+- `mvp_ai_memory`
+- `mvp_notifications`
 
 ## Rodar Localmente
 
@@ -163,4 +172,4 @@ O script testa:
 - Google Places, Maps e PageSpeed dependem das chaves habilitadas no Google Cloud.
 - OpenAI exige chave valida e quota/billing ativo.
 - Google Business Profile exige `client_secret` e `refresh_token` gerado por OAuth com escopo `business.manage`.
-- A versão emergencial do GitHub Pages usa `localStorage` para CRM e configurações. Para produção multiusuário, publique o backend e migre a persistência para Supabase/PostgreSQL.
+- A versao GitHub Pages usa `localStorage` para CRM e configuracoes. Para producao multiusuario, publique o backend e migre a persistencia para Supabase/PostgreSQL usando o schema atualizado.
