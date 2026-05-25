@@ -7,7 +7,7 @@
     <title>NODERE Intelligence</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./nodere-icon.png" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=ops-1" />
+    <link rel="stylesheet" href="./styles.css?v=dashboard-1" />
   </head>
   <body>
     <div class="app-shell">
@@ -41,25 +41,32 @@
         <header class="topbar">
           <div>
             <h1>NODERE Intelligence</h1>
-            <p>CRM comercial, prospeccao, agenda, pipeline e agente operacional com IA.</p>
+            <p>Operacao comercial, prospeccao e CRM inteligente.</p>
           </div>
           <label class="global-search">
             <span>Buscar</span>
             <input id="globalSearch" type="search" placeholder="Buscar empresa, contato, telefone, cidade, observacao..." />
           </label>
+          <div class="top-actions">
+            <button class="top-action" type="button" data-nav="empresas">+ Lead</button>
+            <button class="top-action" type="button" id="topThemeToggle">Tema</button>
+            <button class="top-action ai" type="button" id="topAiButton">IA</button>
+            <span class="top-badge" id="topNotifications">0</span>
+            <span class="profile-chip">AG</span>
+          </div>
         </header>
 
         <section class="view active" id="dashboard">
-          <div class="metrics-grid advanced">
-            <article class="metric-card"><div><p>Leads novos</p><strong id="metricLeads">0</strong><small>Total no CRM</small></div></article>
-            <article class="metric-card"><div><p>Leads quentes</p><strong id="metricHot">0</strong><small>Alta oportunidade</small></div></article>
-            <article class="metric-card"><div><p>Atrasados</p><strong id="metricOverdue">0</strong><small>Follow-up vencido</small></div></article>
-            <article class="metric-card"><div><p>Contatos do dia</p><strong id="metricToday">0</strong><small>Agenda de hoje</small></div></article>
-            <article class="metric-card"><div><p>Sem follow-up</p><strong id="metricNoFollow">0</strong><small>Leads sem proximo passo</small></div></article>
-            <article class="metric-card"><div><p>Propostas</p><strong id="metricProposal">0</strong><small>Em aberto</small></div></article>
+          <div class="metrics-grid advanced dashboard-metrics">
+            <article class="metric-card"><span class="metric-dot blue"></span><div><p>Leads novos</p><strong id="metricLeads">0</strong><small>Total no CRM</small></div></article>
+            <article class="metric-card"><span class="metric-dot green"></span><div><p>Leads quentes</p><strong id="metricHot">0</strong><small>Alta oportunidade</small></div></article>
+            <article class="metric-card"><span class="metric-dot rose"></span><div><p>Atrasados</p><strong id="metricOverdue">0</strong><small>Follow-up vencido</small></div></article>
+            <article class="metric-card"><span class="metric-dot amber"></span><div><p>Contatos do dia</p><strong id="metricToday">0</strong><small>Agenda de hoje</small></div></article>
+            <article class="metric-card"><span class="metric-dot purple"></span><div><p>Sem follow-up</p><strong id="metricNoFollow">0</strong><small>Leads sem proximo passo</small></div></article>
+            <article class="metric-card"><span class="metric-dot cyan"></span><div><p>Propostas</p><strong id="metricProposal">0</strong><small>Em aberto</small></div></article>
           </div>
-          <div class="work-grid">
-            <article class="panel">
+          <div class="dashboard-search-row">
+            <article class="panel compact-panel">
               <div class="panel-title"><span>Busca</span><h2>Busca rapida de empresas</h2></div>
               <form class="smart-search" id="quickSearchForm">
                 <label>Segmento<input name="segment" placeholder="concreteiras" /></label>
@@ -67,35 +74,38 @@
                 <label>Estado<input name="state" placeholder="RS" /></label>
                 <label>Palavra-chave<input name="keyword" placeholder="britagem, mineracao..." /></label>
                 <button class="primary-button" type="submit">Buscar</button>
+                <button class="secondary-button" type="reset" id="quickSearchClear">Limpar</button>
               </form>
             </article>
+          </div>
+          <div class="dashboard-ops-grid">
             <article class="panel">
-              <div class="panel-title"><span>Funil</span><h2>Pipeline</h2></div>
+              <div class="panel-title"><span>Funil</span><h2>Pipeline resumido</h2></div>
               <div class="funnel-list" id="funnelList"></div>
             </article>
-          </div>
-          <div class="work-grid">
             <article class="panel">
-              <div class="panel-title"><span>Alertas</span><h2>IA proativa</h2></div>
+              <div class="panel-title"><span>Atividade</span><h2>Atividades recentes</h2></div>
+              <div id="activityList"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-title"><span>Alertas</span><h2>Alertas IA</h2></div>
               <div id="alertsList"></div>
             </article>
+          </div>
+          <div class="dashboard-bottom-grid">
             <article class="panel">
-              <div class="panel-title"><span>Hoje</span><h2>Contatos do dia</h2></div>
+              <div class="panel-title"><span>Hoje</span><h2>Proximos follow-ups</h2></div>
               <div id="todayList"></div>
             </article>
+            <article class="panel">
+              <div class="panel-title"><span>PageSpeed</span><h2>Analise rapida</h2></div>
+              <form class="inline-form" id="dashboardPageSpeedForm">
+                <input name="url" placeholder="https://site-da-empresa.com.br" />
+                <button class="primary-button" type="submit">Analisar</button>
+              </form>
+              <div class="result-box compact-result" id="dashboardPageSpeedResult">Informe um site para analisar performance, SEO, acessibilidade e boas praticas.</div>
+            </article>
           </div>
-          <article class="panel">
-            <div class="panel-title"><span>Grafico</span><h2>Evolucao por etapa</h2></div>
-            <div id="pipelineChart" class="chart-list"></div>
-          </article>
-          <article class="panel">
-            <div class="panel-title"><span>PageSpeed</span><h2>Analise rapida</h2></div>
-            <form class="inline-form" id="dashboardPageSpeedForm">
-              <input name="url" placeholder="https://site-da-empresa.com.br" />
-              <button class="primary-button" type="submit">Analisar site</button>
-            </form>
-            <div class="result-box" id="dashboardPageSpeedResult">Informe um site para analisar performance, SEO, acessibilidade e boas praticas.</div>
-          </article>
         </section>
 
         <section class="view" id="empresas">
@@ -413,6 +423,6 @@
       </form>
     </dialog>
 
-    <script src="./app.js?v=ops-1"></script>
+    <script src="./app.js?v=dashboard-1"></script>
   </body>
 </html>

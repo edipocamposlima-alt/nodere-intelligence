@@ -500,18 +500,30 @@ function renderDashboard() {
   $("#metricToday").textContent = tasks.filter(isToday).length;
   $("#metricNoFollow").textContent = leads.filter((lead) => !nextTask(lead)).length;
   $("#metricProposal").textContent = leads.filter((lead) => lead.status === "Proposta enviada").length;
-  $("#funnelList").innerHTML = statuses.map((status) => `<div class="funnel-item"><span>${status}</span><strong>${leads.filter((lead) => lead.status === status).length}</strong></div>`).join("");
-  $("#alertsList").innerHTML = alerts.slice(0, 8).map(({ alert, lead }) => `<div class="alert-row"><strong>${escapeHtml(alert)}</strong><span>${escapeHtml(lead.company)}</span><button class="row-button" data-open-lead="${lead.id}">Abrir</button></div>`).join("") || `<div class="empty-state">Nenhum alerta operacional agora.</div>`;
-  $("#todayList").innerHTML = tasks.filter(isToday).slice(0, 8).map(renderTaskRow).join("") || `<div class="empty-state">Nenhum contato para hoje.</div>`;
+  $("#topNotifications").textContent = alerts.length + tasks.filter(isOverdue).length;
+  const compactStages = ["Novo lead", "Primeiro contato", "Diagnostico enviado", "Proposta enviada", "Negociacao", "Fechado"];
+  $("#funnelList").innerHTML = compactStages.map((status) => {
+    const count = leads.filter((lead) => lead.status === status).length;
+    const late = leads.filter((lead) => lead.status === status && isOverdue(nextTask(lead))).length;
+    return `<button class="funnel-item compact" type="button" data-pipeline-jump="${status}"><span>${status}</span><strong>${count}</strong><small>${late} atrasado(s)</small></button>`;
+  }).join("");
+  $("#alertsList").innerHTML = alerts.slice(0, 6).map(({ alert, lead }) => `<div class="alert-row compact"><strong>${escapeHtml(alert)}</strong><span>${escapeHtml(lead.company)}</span><button class="row-button" data-open-lead="${lead.id}">Abrir</button></div>`).join("") || `<div class="empty-state">Nenhum alerta operacional agora.</div>`;
+  const activities = leads.flatMap((lead) => (lead.timeline || []).map((event) => ({ ...event, lead }))).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 7);
+  $("#activityList").innerHTML = activities.map((event) => `<div class="activity-row"><b>${escapeHtml(event.type)}</b><span>${escapeHtml(event.lead.company)}</span><small>${formatDate(event.createdAt)}</small></div>`).join("") || `<div class="empty-state">Nenhuma atividade recente.</div>`;
+  $("#todayList").innerHTML = tasks.filter((task) => isToday(task) || isOverdue(task)).slice(0, 6).map(renderTaskRow).join("") || `<div class="empty-state">Nenhum contato pendente.</div>`;
   renderMiniChart();
 }
 
 function renderMiniChart() {
   const total = Math.max(leads.length, 1);
-  $("#pipelineChart").innerHTML = statuses.map((status) => {
+  const html = statuses.map((status) => {
     const count = leads.filter((lead) => lead.status === status).length;
     return `<div class="chart-row"><span>${status}</span><b style="width:${Math.max(3, (count / total) * 100)}%"></b><strong>${count}</strong></div>`;
   }).join("");
+  ["pipelineChart", "pipelineChartReports"].forEach((id) => {
+    const target = document.getElementById(id);
+    if (target) target.innerHTML = html;
+  });
 }
 
 function renderTaskRow(task) {
@@ -1453,17 +1465,33 @@ function bindEvents() {
   document.addEventListener("click", (event) => {
     const open = event.target.closest("[data-open-lead]");
     const complete = event.target.closest("[data-complete-task]");
+    const jump = event.target.closest("[data-pipeline-jump]");
     if (open) openLeadDialog(leads.find((lead) => lead.id === open.dataset.openLead));
     if (complete) completeTask(complete.dataset.leadId, complete.dataset.completeTask);
+    if (jump) {
+      showView("pipeline");
+      setTimeout(() => document.querySelector(`[data-pipeline-status="${jump.dataset.pipelineJump}"]`)?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" }), 50);
+    }
   });
   $("#quickSearchForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
+    const form = event.target;
+    const submitButton = form.querySelector("[type='submit']");
+    const data = Object.fromEntries(new FormData(form));
+    writeJson("nodere:last-quick-search", data);
+    form.classList.add("is-loading");
+    if (submitButton) submitButton.textContent = "Buscando...";
     showView("empresas");
-    Object.entries(Object.fromEntries(new FormData(event.target))).forEach(([key, value]) => {
+    Object.entries(data).forEach(([key, value]) => {
       const field = $(`#placesSearchForm [name="${key}"]`);
       if (field) field.value = value;
     });
-    searchPlaces($("#placesSearchForm")).catch((error) => setMessage("searchMessage", error.message, "error"));
+    searchPlaces($("#placesSearchForm"))
+      .catch((error) => setMessage("searchMessage", error.message, "error"))
+      .finally(() => {
+        form.classList.remove("is-loading");
+        if (submitButton) submitButton.textContent = "Buscar";
+      });
   });
   $("#placesSearchForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -1574,6 +1602,10 @@ function bindEvents() {
     writeJson(STORAGE.settings, settings);
     $("#settingsMessage").textContent = "Configuracoes salvas.";
     persistAll();
+  });
+  $("#quickSearchClear")?.addEventListener("click", () => {
+    localStorage.removeItem("nodere:last-quick-search");
+    $("#quickSearchForm")?.reset();
   });
   $("#leadTab-proposals")?.addEventListener("click", (event) => {
     if (event.target.closest("[data-add-service-lead]")) addServiceToLead();
@@ -1697,6 +1729,12 @@ function bindEvents() {
     applyTheme();
   });
   $("#chatSend")?.addEventListener("click", sendChat);
+  $("#topAiButton")?.addEventListener("click", () => $("#aiChat")?.classList.remove("collapsed"));
+  $("#topThemeToggle")?.addEventListener("click", () => {
+    settings.theme = settings.theme === "light" ? "nodere-dark" : "light";
+    writeJson(STORAGE.settings, settings);
+    applyTheme();
+  });
   $("#sidebarToggle")?.addEventListener("click", () => document.body.classList.toggle("sidebar-collapsed"));
   $("#chatToggle")?.addEventListener("click", () => $("#aiChat")?.classList.remove("collapsed"));
   $("#chatClose")?.addEventListener("click", () => $("#aiChat")?.classList.add("collapsed"));
@@ -1760,6 +1798,11 @@ function init() {
   applyTheme();
   organizeApiSettings();
   loadSettingsForm();
+  const lastQuickSearch = readJson("nodere:last-quick-search", {});
+  Object.entries(lastQuickSearch).forEach(([key, value]) => {
+    const field = $(`#quickSearchForm [name="${key}"]`);
+    if (field) field.value = value;
+  });
   if ($("#resultSort")) $("#resultSort").value = settings.defaultSort || "opportunity";
   writeJson(STORAGE.settings, settings);
   writeJson(STORAGE.leads, leads);
