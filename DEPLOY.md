@@ -124,20 +124,17 @@ https://nodere-api.onrender.com
 
 Se a busca mostrar erro de conexão para `https://nodere-api.onrender.com`, o serviço ainda não existe, está suspenso ou falhou no deploy. Abra a URL `/api/health`; se ela não responder JSON, corrija o backend no Render antes de testar a busca.
 
-## Busca pelo navegador sem backend
+## Busca segura com backend
 
-Como o GitHub Pages hospeda apenas arquivos estaticos, o backend pode ficar indisponivel enquanto o Render/Railway nao estiver publicado. Para continuar pesquisando empresas nesse cenario:
+GitHub Pages hospeda apenas o frontend. A busca de empresas deve chamar somente o backend HTTPS, e o backend deve chamar Google Places com `GOOGLE_PLACES_API_KEY` em variável de ambiente.
 
-1. Crie uma chave publica no Google Cloud.
-2. Habilite `Maps JavaScript API` e `Places API`.
-3. Restrinja a chave por HTTP referrer:
-   - `https://edipocamposlima-alt.github.io/*`
-   - `https://edipocamposlima-alt.github.io/nodere-intelligence/*`
-4. Abra `Configuracoes` no sistema.
-5. Preencha `Chave publica Google Maps/Places para busca no navegador`.
-6. Salve e teste a busca.
+1. Publique `backend/` no Render/Railway.
+2. Configure `GOOGLE_PLACES_API_KEY`, `GOOGLE_MAPS_API_KEY` e demais secrets no painel da hospedagem.
+3. Abra `Configuracoes` no sistema.
+4. Preencha `URL do backend seguro` com a URL HTTPS publicada.
+5. Clique em `Validar` e teste `Google Places`.
 
-Essa chave fica visivel no navegador por natureza, por isso ela precisa ser publica e restrita por dominio. Secrets como `OPENAI_API_KEY`, OAuth client secret, refresh tokens e WhatsApp token continuam obrigatoriamente no backend/.env.
+Não coloque chaves Google, OpenAI, OAuth ou WhatsApp no frontend, no GitHub Pages ou em arquivos versionados.
 
 ## Repositorio privado
 

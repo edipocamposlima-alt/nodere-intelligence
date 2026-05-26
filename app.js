@@ -57,20 +57,8 @@ let settings = sanitizeSettings({
   hideSavedResults: "on",
   autoAiOnSave: "on",
   apiBaseUrl: DEFAULT_API_BASE_URL,
-  browserGoogleMapsApiKey: "",
   ownerToken: "",
   chatMode: "compact",
-  devMode: "off",
-  devGoogleApiKey: "",
-  devGooglePlacesApiKey: "",
-  devGoogleMapsApiKey: "",
-  devGooglePageSpeedApiKey: "",
-  devOpenAiApiKey: "",
-  devGoogleClientId: "",
-  devGoogleClientSecret: "",
-  devGoogleRefreshToken: "",
-  devWhatsappCloudToken: "",
-  devWhatsappPhoneNumberId: "",
   ...readJson(STORAGE.legacySettings, {}),
   ...readJson(STORAGE.settings, {})
 });
@@ -84,9 +72,6 @@ let searchResults = [];
 let nextPageToken = "";
 let lastSearchBody = null;
 let currentLeadId = "";
-let browserPlacesService = null;
-let browserPlacesPagination = null;
-let browserPlacesNextRequest = null;
 
 function readJson(key, fallback) {
   try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
@@ -99,9 +84,7 @@ function writeJson(key, value) {
 function sanitizeSettings(raw = {}) {
   const allowed = [
     "maxResults", "defaultSort", "defaultOwner", "theme", "accentColor", "hideSavedResults", "autoAiOnSave",
-    "apiBaseUrl", "browserGoogleMapsApiKey", "ownerToken", "chatMode", "devMode", "devGoogleApiKey", "devGooglePlacesApiKey",
-    "devGoogleMapsApiKey", "devGooglePageSpeedApiKey", "devOpenAiApiKey", "devGoogleClientId",
-    "devGoogleClientSecret", "devGoogleRefreshToken", "devWhatsappCloudToken", "devWhatsappPhoneNumberId"
+    "apiBaseUrl", "ownerToken", "chatMode"
   ];
   return allowed.reduce((acc, key) => {
     if (raw[key] !== undefined) acc[key] = raw[key];
@@ -116,24 +99,6 @@ function applyTheme() {
 
 function isLocalDev() {
   return ["localhost", "127.0.0.1"].includes(location.hostname);
-}
-
-function devModeEnabled() {
-  return isLocalDev() && (settings.devMode === "on" || settings.devMode === true);
-}
-
-function browserPlacesKey() {
-  return String(
-    settings.browserGoogleMapsApiKey ||
-    settings.devGooglePlacesApiKey ||
-    settings.devGoogleMapsApiKey ||
-    settings.devGoogleApiKey ||
-    ""
-  ).trim();
-}
-
-function browserPlacesConfigured() {
-  return Boolean(browserPlacesKey());
 }
 
 function apiConfigured() {
@@ -166,135 +131,13 @@ function apiConfigurationIssue() {
     if (isGithubPages || sameFrontendHost) {
       return "A URL configurada esta apontando para o GitHub Pages/frontend. GitHub Pages nao executa backend. Configure a URL HTTPS do backend publicado no Render/Railway.";
     }
+    if (!isLocalDev() && url.protocol !== "https:") {
+      return "Configure a URL HTTPS do backend em Configuracoes. URLs HTTP sao bloqueadas em producao por seguranca.";
+    }
   } catch {
     return "URL do backend invalida. Use uma URL completa, por exemplo https://sua-api.onrender.com.";
   }
   return "";
-}
-
-function browserPlacesIssue() {
-  if (!browserPlacesConfigured()) {
-    return "Configure a chave publica Google Maps/Places em Configuracoes ou publique o backend HTTPS. No GitHub Pages, o backend nao roda junto com o frontend.";
-  }
-  return "";
-}
-
-function googlePlacesStatusMessage(status) {
-  const messages = {
-    REQUEST_DENIED: "Google recusou a chave. Ative Maps JavaScript API e Places API, configure faturamento e restrinja a chave para https://edipocamposlima-alt.github.io/*.",
-    OVER_QUERY_LIMIT: "Limite da Google Places API atingido. Tente novamente em instantes ou revise a cota no Google Cloud.",
-    INVALID_REQUEST: "Consulta invalida para Google Places. Ajuste nome, segmento, cidade ou estado.",
-    UNKNOWN_ERROR: "Google Places retornou erro temporario. Tente novamente.",
-    ZERO_RESULTS: "Nenhuma empresa encontrada para esta busca."
-  };
-  return messages[status] || `Google Places retornou status ${status}.`;
-}
-
-function loadGoogleMapsPlacesSdk() {
-  if (window.google?.maps?.places) return Promise.resolve(window.google.maps);
-  const key = browserPlacesKey();
-  if (!key) return Promise.reject(new Error(browserPlacesIssue()));
-  if (window.__nodereGoogleMapsLoading) return window.__nodereGoogleMapsLoading;
-  window.__nodereGoogleMapsLoading = new Promise((resolve, reject) => {
-    const callback = `__nodereGoogleMapsReady_${Date.now()}`;
-    window[callback] = () => {
-      delete window[callback];
-      if (window.google?.maps?.places) resolve(window.google.maps);
-      else reject(new Error("Google Maps carregou sem biblioteca Places. Verifique se libraries=places esta habilitado."));
-    };
-    const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&callback=${callback}`;
-    script.async = true;
-    script.defer = true;
-    script.onerror = () => {
-      delete window[callback];
-      window.__nodereGoogleMapsLoading = null;
-      reject(new Error("Nao foi possivel carregar Google Maps JavaScript API. Verifique a chave publica, as APIs habilitadas e as restricoes de dominio."));
-    };
-    document.head.appendChild(script);
-  });
-  return window.__nodereGoogleMapsLoading;
-}
-
-async function getBrowserPlacesService() {
-  await loadGoogleMapsPlacesSdk();
-  if (!browserPlacesService) browserPlacesService = new google.maps.places.PlacesService(document.createElement("div"));
-  return browserPlacesService;
-}
-
-function browserTextSearch(query) {
-  return getBrowserPlacesService().then((service) => new Promise((resolve, reject) => {
-    service.textSearch({ query, region: "BR" }, (results, status, pagination) => {
-      const pending = browserPlacesNextRequest;
-      if (status === google.maps.places.PlacesServiceStatus.OK || status === "OK") {
-        browserPlacesPagination = pagination || null;
-        if (pending) {
-          browserPlacesNextRequest = null;
-          pending.resolve(results || []);
-          return;
-        }
-        resolve(results || []);
-        return;
-      }
-      browserPlacesPagination = null;
-      if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS || status === "ZERO_RESULTS") {
-        if (pending) {
-          browserPlacesNextRequest = null;
-          pending.resolve([]);
-          return;
-        }
-        resolve([]);
-        return;
-      }
-      if (pending) {
-        browserPlacesNextRequest = null;
-        pending.reject(new Error(googlePlacesStatusMessage(status)));
-        return;
-      }
-      reject(new Error(googlePlacesStatusMessage(status)));
-    });
-  }));
-}
-
-function browserNextPlacesPage() {
-  if (!browserPlacesPagination?.hasNextPage) return Promise.resolve([]);
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      if (browserPlacesNextRequest) {
-        browserPlacesNextRequest = null;
-        reject(new Error("Tempo esgotado ao carregar a proxima pagina do Google Places."));
-      }
-    }, 12000);
-    browserPlacesNextRequest = {
-      resolve: (value) => {
-        clearTimeout(timeout);
-        resolve(value);
-      },
-      reject: (error) => {
-        clearTimeout(timeout);
-        reject(error);
-      }
-    };
-    try {
-      browserPlacesPagination.nextPage();
-    } catch (error) {
-      browserPlacesNextRequest = null;
-      reject(error);
-    }
-  });
-}
-
-function browserPlaceDetails(placeId) {
-  if (!placeId) return Promise.resolve({});
-  return getBrowserPlacesService().then((service) => new Promise((resolve) => {
-    service.getDetails({
-      placeId,
-      fields: ["place_id", "name", "formatted_address", "formatted_phone_number", "international_phone_number", "website", "rating", "user_ratings_total", "types", "url", "opening_hours"]
-    }, (result, status) => {
-      if (status === google.maps.places.PlacesServiceStatus.OK || status === "OK") resolve(result || {});
-      else resolve({});
-    });
-  }));
 }
 
 function explainNetworkError(error, path = "") {
@@ -304,22 +147,6 @@ function explainNetworkError(error, path = "") {
     return `Nao foi possivel conectar ao backend em ${apiUrl(path)}. Possiveis causas: backend fora do ar, URL incorreta, CORS bloqueado ou HTTPS ausente.`;
   }
   return error?.message || "Erro inesperado ao consultar o backend.";
-}
-
-function devKeys() {
-  if (!devModeEnabled()) return {};
-  return {
-    googleApiKey: settings.devGoogleApiKey || "",
-    googlePlacesApiKey: settings.devGooglePlacesApiKey || settings.devGoogleApiKey || "",
-    googleMapsApiKey: settings.devGoogleMapsApiKey || settings.devGoogleApiKey || "",
-    googlePageSpeedApiKey: settings.devGooglePageSpeedApiKey || settings.devGoogleApiKey || "",
-    openaiApiKey: settings.devOpenAiApiKey || "",
-    googleClientId: settings.devGoogleClientId || "",
-    googleClientSecret: settings.devGoogleClientSecret || "",
-    googleRefreshToken: settings.devGoogleRefreshToken || "",
-    whatsappCloudToken: settings.devWhatsappCloudToken || "",
-    whatsappPhoneNumberId: settings.devWhatsappPhoneNumberId || ""
-  };
 }
 
 async function apiFetch(path, options = {}) {
@@ -334,13 +161,6 @@ async function apiFetch(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   if (settings.ownerToken) headers.Authorization = `Bearer ${settings.ownerToken}`;
   let body = options.body;
-  if (devModeEnabled() && body && typeof body === "string" && headers["Content-Type"]?.includes("application/json")) {
-    try {
-      body = JSON.stringify({ ...JSON.parse(body), devKeys: devKeys() });
-    } catch {
-      body = options.body;
-    }
-  }
   try {
     const response = await fetch(apiUrl(path), { ...options, body, headers, signal: controller.signal });
     const payload = await response.json().catch(() => ({}));
@@ -917,62 +737,10 @@ function buildSearchBody(form, pageToken = "") {
   return { body, formData: data };
 }
 
-function normalizeBrowserPlace(place = {}, details = {}, formData = {}) {
-  const placeId = details.place_id || place.place_id || "";
-  const types = details.types || place.types || [];
-  return {
-    placeId,
-    name: details.name || place.name || "",
-    address: details.formatted_address || place.formatted_address || place.vicinity || "",
-    phone: details.international_phone_number || details.formatted_phone_number || "",
-    website: details.website || "",
-    rating: details.rating || place.rating || "",
-    userRatingsTotal: details.user_ratings_total || place.user_ratings_total || 0,
-    category: types.slice(0, 2).join(", ") || formData.segment || "",
-    city: formData.city || "",
-    state: formData.state || "",
-    mapsUrl: details.url || (placeId ? `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(placeId)}` : ""),
-    openingHours: details.opening_hours?.weekday_text || []
-  };
-}
-
-async function searchPlacesInBrowser(form, append = false) {
-  const { body, formData } = append && lastSearchBody ? lastSearchBody : buildSearchBody(form);
-  const issue = browserPlacesIssue();
-  if (issue) {
-    setMessage("searchMessage", issue, "error");
-    showView("configuracoes");
-    return;
-  }
-  setMessage("searchMessage", append ? "Carregando mais empresas direto do Google..." : "Consultando Google Places pelo navegador...", "loading");
-  const places = append ? await browserNextPlacesPage() : await browserTextSearch(body.textQuery);
-  const limit = Math.min(20, Math.max(1, Number(settings.maxResults || 60) - (append ? searchResults.length : 0)));
-  const detailed = await Promise.allSettled(places.slice(0, limit).map(async (place) => {
-    const details = await browserPlaceDetails(place.place_id);
-    return normalizePlace(normalizeBrowserPlace(place, details, formData), formData);
-  }));
-  const newRows = detailed.filter((item) => item.status === "fulfilled").map((item) => item.value);
-  searchResults = append ? dedupePlaces([...searchResults, ...newRows]) : dedupePlaces(newRows);
-  searchResults = searchResults.map((lead) => ({ ...lead, aiPreview: localAi("analyze", lead, buildSystemContext()).summary }));
-  nextPageToken = browserPlacesPagination?.hasNextPage ? "browser-next-page" : "";
-  lastSearchBody = { body, formData };
-  renderLeadRows(getFilteredResults(), "searchResults", "search");
-  $("#loadMorePlaces").disabled = !nextPageToken || searchResults.length >= Number(settings.maxResults || 60);
-  if (!searchResults.length) {
-    setMessage("searchMessage", "Nenhuma empresa encontrada. Tente ampliar a palavra-chave ou remover filtros.", "error");
-    return;
-  }
-  setMessage("searchMessage", `${searchResults.length} empresa(s) carregada(s) via Google Places no navegador.`, "success");
-}
-
 async function searchPlaces(form, append = false) {
   const issue = apiConfigurationIssue();
   if (!apiConfigured() || issue) {
-    if (browserPlacesConfigured()) {
-      await searchPlacesInBrowser(form, append);
-      return;
-    }
-    setMessage("searchMessage", `${issue || "Backend seguro nao configurado."} Alternativa imediata: informe uma chave publica Google Maps/Places restrita por dominio em Configuracoes.`, "error");
+    setMessage("searchMessage", issue || "Configure a URL HTTPS do backend em Configuracoes.", "error");
     if (!append) showView("configuracoes");
     return;
   }
@@ -991,9 +759,6 @@ async function searchPlaces(form, append = false) {
         method: "POST",
         body: JSON.stringify({ ...formData, limit: 20, pageToken: body.pageToken || "" })
       });
-    } else if (browserPlacesConfigured()) {
-      await searchPlacesInBrowser(form, append);
-      return;
     } else {
       throw error;
     }
@@ -1624,19 +1389,16 @@ function renderIntegrations() {
     ["whatsapp_cloud", "WhatsApp Cloud API", "Envio futuro via backend oficial"]
   ];
   $("#integrationGrid").innerHTML = items.map(([key, name, description]) => {
-    const browserPlaces = key === "google_places" && browserPlacesConfigured();
-    const status = key === "apiBaseUrl" ? (!issue && apiConfigured() ? "Configurado" : "Pendente") : browserPlaces ? "Chave publica configurada" : "backend/.env";
+    const status = key === "apiBaseUrl" ? (!issue && apiConfigured() ? "Configurado" : "Pendente") : "backend/.env";
     const detail = key === "apiBaseUrl"
       ? (issue || "Informe a URL HTTPS do backend publicado.")
-      : browserPlaces
-        ? "Busca pode funcionar direto no navegador. Restrinja a chave por dominio no Google Cloud."
-        : "Configure esta chave no backend/.env.";
+      : "Configure esta chave no backend/.env. O frontend nunca chama Google/OpenAI diretamente.";
     return `<article class="integration-row"><strong>${name}</strong><span>${status}</span><small>${description}. ${detail}</small><div class="settings-actions"><button class="secondary-button" type="button" data-nav="configuracoes">Configurar</button><button class="secondary-button" type="button" data-test="${key}">Validar</button></div></article>`;
   }).join("");
 }
 
 function loadSettingsForm() {
-  document.body.classList.toggle("local-dev", isLocalDev());
+  document.body.classList.remove("local-dev");
   Object.entries(settings).forEach(([key, value]) => {
     const field = $("#settingsForm")?.elements[key];
     if (!field) return;
@@ -1665,39 +1427,29 @@ function organizeApiSettings() {
   container.dataset.organized = "true";
   container.innerHTML = `
     <div class="dev-settings-head">
-      <strong>Chaves locais para desenvolvimento</strong>
-      <small>Use apenas em localhost. Em producao, deixe vazio e use backend/.env.</small>
+      <strong>Chaves somente no backend</strong>
+      <small>Por segurança, Google, OpenAI, OAuth e WhatsApp devem ser configurados no backend/.env.</small>
     </div>
     <section class="api-card">
       <header><span class="status-dot pending"></span><div><strong>Google APIs</strong><small>Busca, mapa e PageSpeed.</small></div></header>
-      ${renderApiField("devGoogleApiKey", "GOOGLE_API_KEY", "Chave geral apenas em localhost", "google_maps", true, "Chave geral Google para testes locais.")}
-      ${renderApiField("devGooglePlacesApiKey", "GOOGLE_PLACES_API_KEY", "Opcional se GOOGLE_API_KEY tiver Places", "google_places", true, "Usada pela busca de empresas no Google Places.")}
-      ${renderApiField("devGoogleMapsApiKey", "GOOGLE_MAPS_API_KEY", "Opcional se GOOGLE_API_KEY tiver Maps", "google_maps", true, "Usada para Google Maps e geocoding.")}
-      ${renderApiField("devGooglePageSpeedApiKey", "GOOGLE_PAGESPEED_API_KEY", "Opcional se GOOGLE_API_KEY tiver PageSpeed", "google_pagespeed", true, "Usada para PageSpeed Insights.")}
+      <p>Configure <code>GOOGLE_PLACES_API_KEY</code>, <code>GOOGLE_MAPS_API_KEY</code> e <code>GOOGLE_PAGESPEED_API_KEY</code> no painel do Render/Railway ou em <code>backend/.env</code>.</p>
     </section>
     <section class="api-card">
       <header><span class="status-dot pending"></span><div><strong>OpenAI</strong><small>IA conversacional e diagnosticos.</small></div></header>
-      ${renderApiField("devOpenAiApiKey", "OPENAI_API_KEY", "sk-proj-... somente local", "openai", true, "Chave OpenAI para testar IA em localhost.")}
+      <p>Configure <code>OPENAI_API_KEY</code> somente no backend.</p>
     </section>
     <section class="api-card">
       <header><span class="status-dot pending"></span><div><strong>Google Auth</strong><small>OAuth para Calendar, Gmail, Drive e Business Profile.</small></div></header>
-      ${renderApiField("devGoogleClientId", "GOOGLE_CLIENT_ID", "Client ID OAuth", "google_calendar", false, "Client ID OAuth do Google.")}
-      ${renderApiField("devGoogleClientSecret", "GOOGLE_CLIENT_SECRET", "Client secret", "gmail", true, "Client Secret OAuth do Google.")}
-      ${renderApiField("devGoogleRefreshToken", "GOOGLE_REFRESH_TOKEN", "Refresh token", "google_drive", true, "Refresh token OAuth offline.")}
+      <p>Configure client secrets e refresh tokens no backend. O frontend nao salva secrets.</p>
     </section>
     <section class="api-card">
       <header><span class="status-dot pending"></span><div><strong>WhatsApp</strong><small>Estrutura para WhatsApp Cloud API.</small></div></header>
-      ${renderApiField("devWhatsappCloudToken", "WHATSAPP_CLOUD_TOKEN", "Token Cloud API", "whatsapp_cloud", true, "Token da WhatsApp Cloud API.")}
-      ${renderApiField("devWhatsappPhoneNumberId", "WHATSAPP_PHONE_NUMBER_ID", "Phone number ID", "whatsapp_cloud", false, "ID do numero de telefone WhatsApp.")}
+      <p>Configure <code>WHATSAPP_CLOUD_TOKEN</code> e <code>WHATSAPP_PHONE_NUMBER_ID</code> no backend.</p>
     </section>`;
 }
 
 async function testIntegration(key) {
   const issue = apiConfigurationIssue();
-  if (key === "google_places" && browserPlacesConfigured()) {
-    await browserTextSearch("padaria Porto Alegre RS");
-    return "Google Places validado pela chave publica do navegador.";
-  }
   if (!apiConfigured() || issue) throw new Error(issue || "URL do backend seguro ausente.");
   if (key === "apiBaseUrl") {
     const health = await apiFetch("/api/health", { method: "GET" });
@@ -1860,7 +1612,6 @@ function bindEvents() {
     const data = Object.fromEntries(new FormData(event.target));
     data.hideSavedResults = event.target.elements.hideSavedResults?.checked ? "on" : "off";
     data.autoAiOnSave = event.target.elements.autoAiOnSave?.checked ? "on" : "off";
-    data.devMode = event.target.elements.devMode?.checked ? "on" : "off";
     settings = sanitizeSettings({ ...settings, ...data });
     writeJson(STORAGE.settings, settings);
     $("#settingsMessage").textContent = "Configuracoes salvas.";
@@ -1911,7 +1662,6 @@ function bindEvents() {
         const data = Object.fromEntries(new FormData($("#settingsForm")));
         data.hideSavedResults = $("#settingsForm").elements.hideSavedResults?.checked ? "on" : "off";
         data.autoAiOnSave = $("#settingsForm").elements.autoAiOnSave?.checked ? "on" : "off";
-        data.devMode = $("#settingsForm").elements.devMode?.checked ? "on" : "off";
         settings = sanitizeSettings({ ...settings, ...data });
         writeJson(STORAGE.settings, settings);
         $("#settingsMessage").textContent = await testIntegration(test.dataset.test);
@@ -1925,7 +1675,7 @@ function bindEvents() {
   });
   $("#clearSettings")?.addEventListener("click", () => {
     if (!confirm("Apagar configuracoes locais?")) return;
-    settings = { maxResults: 60, defaultSort: "opportunity", defaultOwner: "Agencia Digital", theme: "nodere-dark", accentColor: "#147dff", apiBaseUrl: "", browserGoogleMapsApiKey: "", ownerToken: "", hideSavedResults: "on", autoAiOnSave: "on", devMode: "off" };
+    settings = { maxResults: 60, defaultSort: "opportunity", defaultOwner: "Agencia Digital", theme: "nodere-dark", accentColor: "#147dff", apiBaseUrl: "", ownerToken: "", hideSavedResults: "on", autoAiOnSave: "on" };
     writeJson(STORAGE.settings, settings);
     $("#settingsForm").reset();
     loadSettingsForm();

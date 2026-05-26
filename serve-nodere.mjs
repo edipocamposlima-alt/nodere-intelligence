@@ -48,23 +48,18 @@ async function readBody(request) {
   }
 }
 
-function keyFrom(body, name) {
-  const dev = body.devKeys || {};
-  return dev[name] || process.env[name] || "";
-}
-
 function googleKeys(body) {
   return {
-    googleApiKey: keyFrom(body, "googleApiKey") || process.env.GOOGLE_API_KEY || "",
-    places: keyFrom(body, "googlePlacesApiKey") || process.env.GOOGLE_PLACES_API_KEY || keyFrom(body, "googleApiKey") || process.env.GOOGLE_API_KEY || "",
-    maps: keyFrom(body, "googleMapsApiKey") || process.env.GOOGLE_MAPS_API_KEY || keyFrom(body, "googleApiKey") || process.env.GOOGLE_API_KEY || "",
-    pageSpeed: keyFrom(body, "googlePageSpeedApiKey") || process.env.GOOGLE_PAGESPEED_API_KEY || keyFrom(body, "googleApiKey") || process.env.GOOGLE_API_KEY || "",
-    openai: keyFrom(body, "openaiApiKey") || process.env.OPENAI_API_KEY || "",
-    clientId: keyFrom(body, "googleClientId") || process.env.GOOGLE_CLIENT_ID || "",
-    clientSecret: keyFrom(body, "googleClientSecret") || process.env.GOOGLE_CLIENT_SECRET || "",
-    refreshToken: keyFrom(body, "googleRefreshToken") || process.env.GOOGLE_REFRESH_TOKEN || "",
-    whatsappCloudToken: keyFrom(body, "whatsappCloudToken") || process.env.WHATSAPP_CLOUD_TOKEN || "",
-    whatsappPhoneNumberId: keyFrom(body, "whatsappPhoneNumberId") || process.env.WHATSAPP_PHONE_NUMBER_ID || ""
+    googleApiKey: process.env.GOOGLE_API_KEY || "",
+    places: process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_API_KEY || "",
+    maps: process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_API_KEY || "",
+    pageSpeed: process.env.GOOGLE_PAGESPEED_API_KEY || process.env.GOOGLE_API_KEY || "",
+    openai: process.env.OPENAI_API_KEY || "",
+    clientId: process.env.GOOGLE_CLIENT_ID || "",
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+    refreshToken: process.env.GOOGLE_REFRESH_TOKEN || "",
+    whatsappCloudToken: process.env.WHATSAPP_CLOUD_TOKEN || "",
+    whatsappPhoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || ""
   };
 }
 
@@ -90,7 +85,12 @@ function parseAddress(address = "") {
 
 async function searchPlaces(body) {
   const keys = googleKeys(body);
-  if (!keys.places) throw new Error("GOOGLE_PLACES_API_KEY ausente. Configure no backend/.env ou no modo desenvolvimento local.");
+  if (!keys.places) {
+    const error = new Error("GOOGLE_PLACES_API_KEY ausente. Configure no backend/.env.");
+    error.status = 503;
+    error.code = "GOOGLE_PLACES_KEY_MISSING";
+    throw error;
+  }
 
   const query = [body.companyName, body.segment, body.keyword, body.city, body.state].map((item) => String(item || "").trim()).filter(Boolean).join(" ");
   if (!query && !body.pageToken) throw new Error("Informe segmento, cidade, estado ou palavra-chave.");
@@ -261,7 +261,7 @@ async function handleApi(request, response, pathname) {
     return sendJson(response, 404, { error: "Endpoint local nao encontrado." });
   } catch (error) {
     console.error(JSON.stringify({ level: "error", path: pathname, message: error.message }));
-    return sendJson(response, 500, { error: error.message || "Falha na API local." });
+    return sendJson(response, error.status || 500, { error: error.message || "Falha na API local.", code: error.code || "LOCAL_API_ERROR" });
   }
 }
 

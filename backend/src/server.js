@@ -289,6 +289,29 @@ app.get("/api/places/search", async (request, response, next) => {
   }
 });
 
+app.get("/api/debug/places", async (_request, response, next) => {
+  try {
+    const startedAt = new Date().toISOString();
+    const search = await searchGooglePlaces({
+      segment: "Academia",
+      city: "Caxias do Sul",
+      state: "RS",
+      limit: 3
+    });
+    response.json({
+      ok: true,
+      startedAt,
+      finishedAt: new Date().toISOString(),
+      query: "Academia em Caxias do Sul RS",
+      resultCount: search.results.length,
+      nextPageToken: search.nextPageToken || null,
+      sample: search.results.slice(0, 3)
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get("/api/v1/leads", async (_request, response, next) => {
   try {
     const supabase = getSupabase();
@@ -602,11 +625,15 @@ app.use((error, _request, response, _next) => {
   console.error(JSON.stringify({
     level: "error",
     status,
+    code: error.code || "INTERNAL_ERROR",
+    googleStatus: error.googleStatus,
     message: error.message || "Internal server error",
     stack: process.env.NODE_ENV === "production" ? undefined : error.stack
   }));
   response.status(status).json({
-    error: error.message || "Internal server error"
+    error: error.message || "Internal server error",
+    code: error.code || "INTERNAL_ERROR",
+    googleStatus: error.googleStatus || undefined
   });
 });
 

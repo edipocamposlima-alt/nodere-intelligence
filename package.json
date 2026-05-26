@@ -9,6 +9,7 @@
     "dev": "node serve-nodere.mjs",
     "build": "node --check app.js && node --check serve-nodere.mjs && node --check backend/src/server.js",
     "check": "node --check app.js && node --check serve-nodere.mjs && node --check backend/src/server.js",
+    "debug:places": "node scripts/debug-google-places.mjs",
     "api": "cd backend && npm start"
   }
 }
