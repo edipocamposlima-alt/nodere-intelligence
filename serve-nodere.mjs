@@ -92,7 +92,7 @@ async function searchPlaces(body) {
   const keys = googleKeys(body);
   if (!keys.places) throw new Error("GOOGLE_PLACES_API_KEY ausente. Configure no backend/.env ou no modo desenvolvimento local.");
 
-  const query = [body.segment, body.keyword, body.city, body.state].map((item) => String(item || "").trim()).filter(Boolean).join(" ");
+  const query = [body.companyName, body.segment, body.keyword, body.city, body.state].map((item) => String(item || "").trim()).filter(Boolean).join(" ");
   if (!query && !body.pageToken) throw new Error("Informe segmento, cidade, estado ou palavra-chave.");
 
   const textUrl = new URL("https://maps.googleapis.com/maps/api/place/textsearch/json");
@@ -241,13 +241,23 @@ async function integrationStatus(body, live = false) {
 async function handleApi(request, response, pathname) {
   if (request.method === "OPTIONS") return sendJson(response, 204, {});
   const body = await readBody(request);
+  const params = new URL(request.url, `http://localhost:${port}`).searchParams;
+  const queryBody = request.method === "GET" ? {
+    companyName: params.get("companyName") || "",
+    segment: params.get("segment") || "",
+    city: params.get("city") || "",
+    state: params.get("state") || "",
+    keyword: params.get("keyword") || "",
+    limit: params.get("limit") || 20,
+    pageToken: params.get("pageToken") || ""
+  } : body;
   try {
-    if (pathname === "/health") return sendJson(response, 200, { ok: true, service: "nodere-local-dev" });
-    if (pathname === "/api/v1/search/google-places") return sendJson(response, 200, await searchPlaces(body));
-    if (pathname === "/api/v1/pagespeed/analyze") return sendJson(response, 200, await analyzePageSpeed(body));
-    if (pathname === "/api/openai" || pathname === "/api/v1/ai/diagnosis") return sendJson(response, 200, await openAi(body));
-    if (pathname === "/api/v1/integrations/status") return sendJson(response, 200, await integrationStatus(body, new URL(request.url, `http://localhost:${port}`).searchParams.get("live") === "1"));
-    if (pathname === "/api/v1/integrations/test") return sendJson(response, 200, { integration: (await integrationStatus(body, true)).integrations.find((item) => item.key === body.key) || null });
+    if (pathname === "/health" || pathname === "/api/health") return sendJson(response, 200, { ok: true, service: "nodere-local-dev" });
+    if (pathname === "/api/places/search" || pathname === "/api/v1/search/google-places") return sendJson(response, 200, await searchPlaces(queryBody));
+    if (pathname === "/api/pagespeed" || pathname === "/api/v1/pagespeed/analyze") return sendJson(response, 200, await analyzePageSpeed(queryBody));
+    if (pathname === "/api/openai" || pathname === "/api/openai/analyze" || pathname === "/api/v1/ai/diagnosis") return sendJson(response, 200, await openAi(queryBody));
+    if (pathname === "/api/v1/integrations/status") return sendJson(response, 200, await integrationStatus(queryBody, params.get("live") === "1"));
+    if (pathname === "/api/v1/integrations/test") return sendJson(response, 200, { integration: (await integrationStatus(queryBody, true)).integrations.find((item) => item.key === queryBody.key) || null });
     return sendJson(response, 404, { error: "Endpoint local nao encontrado." });
   } catch (error) {
     console.error(JSON.stringify({ level: "error", path: pathname, message: error.message }));

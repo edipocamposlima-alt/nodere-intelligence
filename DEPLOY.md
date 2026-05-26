@@ -124,6 +124,21 @@ https://nodere-api.onrender.com
 
 Se a busca mostrar erro de conexão para `https://nodere-api.onrender.com`, o serviço ainda não existe, está suspenso ou falhou no deploy. Abra a URL `/api/health`; se ela não responder JSON, corrija o backend no Render antes de testar a busca.
 
+## Busca pelo navegador sem backend
+
+Como o GitHub Pages hospeda apenas arquivos estaticos, o backend pode ficar indisponivel enquanto o Render/Railway nao estiver publicado. Para continuar pesquisando empresas nesse cenario:
+
+1. Crie uma chave publica no Google Cloud.
+2. Habilite `Maps JavaScript API` e `Places API`.
+3. Restrinja a chave por HTTP referrer:
+   - `https://edipocamposlima-alt.github.io/*`
+   - `https://edipocamposlima-alt.github.io/nodere-intelligence/*`
+4. Abra `Configuracoes` no sistema.
+5. Preencha `Chave publica Google Maps/Places para busca no navegador`.
+6. Salve e teste a busca.
+
+Essa chave fica visivel no navegador por natureza, por isso ela precisa ser publica e restrita por dominio. Secrets como `OPENAI_API_KEY`, OAuth client secret, refresh tokens e WhatsApp token continuam obrigatoriamente no backend/.env.
+
 ## Repositorio privado
 
 Se o sistema for usado comercialmente:

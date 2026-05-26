@@ -57,6 +57,7 @@ let settings = sanitizeSettings({
   hideSavedResults: "on",
   autoAiOnSave: "on",
   apiBaseUrl: DEFAULT_API_BASE_URL,
+  browserGoogleMapsApiKey: "",
   ownerToken: "",
   chatMode: "compact",
   devMode: "off",
@@ -83,6 +84,9 @@ let searchResults = [];
 let nextPageToken = "";
 let lastSearchBody = null;
 let currentLeadId = "";
+let browserPlacesService = null;
+let browserPlacesPagination = null;
+let browserPlacesNextRequest = null;
 
 function readJson(key, fallback) {
   try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
@@ -95,7 +99,7 @@ function writeJson(key, value) {
 function sanitizeSettings(raw = {}) {
   const allowed = [
     "maxResults", "defaultSort", "defaultOwner", "theme", "accentColor", "hideSavedResults", "autoAiOnSave",
-    "apiBaseUrl", "ownerToken", "chatMode", "devMode", "devGoogleApiKey", "devGooglePlacesApiKey",
+    "apiBaseUrl", "browserGoogleMapsApiKey", "ownerToken", "chatMode", "devMode", "devGoogleApiKey", "devGooglePlacesApiKey",
     "devGoogleMapsApiKey", "devGooglePageSpeedApiKey", "devOpenAiApiKey", "devGoogleClientId",
     "devGoogleClientSecret", "devGoogleRefreshToken", "devWhatsappCloudToken", "devWhatsappPhoneNumberId"
   ];
@@ -116,6 +120,20 @@ function isLocalDev() {
 
 function devModeEnabled() {
   return isLocalDev() && (settings.devMode === "on" || settings.devMode === true);
+}
+
+function browserPlacesKey() {
+  return String(
+    settings.browserGoogleMapsApiKey ||
+    settings.devGooglePlacesApiKey ||
+    settings.devGoogleMapsApiKey ||
+    settings.devGoogleApiKey ||
+    ""
+  ).trim();
+}
+
+function browserPlacesConfigured() {
+  return Boolean(browserPlacesKey());
 }
 
 function apiConfigured() {
@@ -152,6 +170,131 @@ function apiConfigurationIssue() {
     return "URL do backend invalida. Use uma URL completa, por exemplo https://sua-api.onrender.com.";
   }
   return "";
+}
+
+function browserPlacesIssue() {
+  if (!browserPlacesConfigured()) {
+    return "Configure a chave publica Google Maps/Places em Configuracoes ou publique o backend HTTPS. No GitHub Pages, o backend nao roda junto com o frontend.";
+  }
+  return "";
+}
+
+function googlePlacesStatusMessage(status) {
+  const messages = {
+    REQUEST_DENIED: "Google recusou a chave. Ative Maps JavaScript API e Places API, configure faturamento e restrinja a chave para https://edipocamposlima-alt.github.io/*.",
+    OVER_QUERY_LIMIT: "Limite da Google Places API atingido. Tente novamente em instantes ou revise a cota no Google Cloud.",
+    INVALID_REQUEST: "Consulta invalida para Google Places. Ajuste nome, segmento, cidade ou estado.",
+    UNKNOWN_ERROR: "Google Places retornou erro temporario. Tente novamente.",
+    ZERO_RESULTS: "Nenhuma empresa encontrada para esta busca."
+  };
+  return messages[status] || `Google Places retornou status ${status}.`;
+}
+
+function loadGoogleMapsPlacesSdk() {
+  if (window.google?.maps?.places) return Promise.resolve(window.google.maps);
+  const key = browserPlacesKey();
+  if (!key) return Promise.reject(new Error(browserPlacesIssue()));
+  if (window.__nodereGoogleMapsLoading) return window.__nodereGoogleMapsLoading;
+  window.__nodereGoogleMapsLoading = new Promise((resolve, reject) => {
+    const callback = `__nodereGoogleMapsReady_${Date.now()}`;
+    window[callback] = () => {
+      delete window[callback];
+      if (window.google?.maps?.places) resolve(window.google.maps);
+      else reject(new Error("Google Maps carregou sem biblioteca Places. Verifique se libraries=places esta habilitado."));
+    };
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&callback=${callback}`;
+    script.async = true;
+    script.defer = true;
+    script.onerror = () => {
+      delete window[callback];
+      window.__nodereGoogleMapsLoading = null;
+      reject(new Error("Nao foi possivel carregar Google Maps JavaScript API. Verifique a chave publica, as APIs habilitadas e as restricoes de dominio."));
+    };
+    document.head.appendChild(script);
+  });
+  return window.__nodereGoogleMapsLoading;
+}
+
+async function getBrowserPlacesService() {
+  await loadGoogleMapsPlacesSdk();
+  if (!browserPlacesService) browserPlacesService = new google.maps.places.PlacesService(document.createElement("div"));
+  return browserPlacesService;
+}
+
+function browserTextSearch(query) {
+  return getBrowserPlacesService().then((service) => new Promise((resolve, reject) => {
+    service.textSearch({ query, region: "BR" }, (results, status, pagination) => {
+      const pending = browserPlacesNextRequest;
+      if (status === google.maps.places.PlacesServiceStatus.OK || status === "OK") {
+        browserPlacesPagination = pagination || null;
+        if (pending) {
+          browserPlacesNextRequest = null;
+          pending.resolve(results || []);
+          return;
+        }
+        resolve(results || []);
+        return;
+      }
+      browserPlacesPagination = null;
+      if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS || status === "ZERO_RESULTS") {
+        if (pending) {
+          browserPlacesNextRequest = null;
+          pending.resolve([]);
+          return;
+        }
+        resolve([]);
+        return;
+      }
+      if (pending) {
+        browserPlacesNextRequest = null;
+        pending.reject(new Error(googlePlacesStatusMessage(status)));
+        return;
+      }
+      reject(new Error(googlePlacesStatusMessage(status)));
+    });
+  }));
+}
+
+function browserNextPlacesPage() {
+  if (!browserPlacesPagination?.hasNextPage) return Promise.resolve([]);
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      if (browserPlacesNextRequest) {
+        browserPlacesNextRequest = null;
+        reject(new Error("Tempo esgotado ao carregar a proxima pagina do Google Places."));
+      }
+    }, 12000);
+    browserPlacesNextRequest = {
+      resolve: (value) => {
+        clearTimeout(timeout);
+        resolve(value);
+      },
+      reject: (error) => {
+        clearTimeout(timeout);
+        reject(error);
+      }
+    };
+    try {
+      browserPlacesPagination.nextPage();
+    } catch (error) {
+      browserPlacesNextRequest = null;
+      reject(error);
+    }
+  });
+}
+
+function browserPlaceDetails(placeId) {
+  if (!placeId) return Promise.resolve({});
+  return getBrowserPlacesService().then((service) => new Promise((resolve) => {
+    service.getDetails({
+      placeId,
+      fields: ["place_id", "name", "formatted_address", "formatted_phone_number", "international_phone_number", "website", "rating", "user_ratings_total", "types", "url", "opening_hours"]
+    }, (result, status) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK || status === "OK") resolve(result || {});
+      else resolve({});
+    });
+  }));
 }
 
 function explainNetworkError(error, path = "") {
@@ -501,7 +644,7 @@ function normalizePlace(place, formData = {}) {
     whatsapp: place.nationalPhoneNumber || place.internationalPhoneNumber || place.whatsapp || place.phone || "",
     website: place.websiteUri || place.website || "",
     rating: place.rating || place.googleRating || place.google_rating || "",
-    reviews: place.userRatingCount || place.googleReviews || place.google_reviews || 0,
+    reviews: place.userRatingCount || place.userRatingsTotal || place.user_ratings_total || place.googleReviews || place.google_reviews || 0,
     segment: place.primaryTypeDisplayName?.text || place.category || place.segment || formData.segment || "",
     city: place.city || formData.city || "",
     state: place.state || formData.state || "",
@@ -774,11 +917,63 @@ function buildSearchBody(form, pageToken = "") {
   return { body, formData: data };
 }
 
+function normalizeBrowserPlace(place = {}, details = {}, formData = {}) {
+  const placeId = details.place_id || place.place_id || "";
+  const types = details.types || place.types || [];
+  return {
+    placeId,
+    name: details.name || place.name || "",
+    address: details.formatted_address || place.formatted_address || place.vicinity || "",
+    phone: details.international_phone_number || details.formatted_phone_number || "",
+    website: details.website || "",
+    rating: details.rating || place.rating || "",
+    userRatingsTotal: details.user_ratings_total || place.user_ratings_total || 0,
+    category: types.slice(0, 2).join(", ") || formData.segment || "",
+    city: formData.city || "",
+    state: formData.state || "",
+    mapsUrl: details.url || (placeId ? `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(placeId)}` : ""),
+    openingHours: details.opening_hours?.weekday_text || []
+  };
+}
+
+async function searchPlacesInBrowser(form, append = false) {
+  const { body, formData } = append && lastSearchBody ? lastSearchBody : buildSearchBody(form);
+  const issue = browserPlacesIssue();
+  if (issue) {
+    setMessage("searchMessage", issue, "error");
+    showView("configuracoes");
+    return;
+  }
+  setMessage("searchMessage", append ? "Carregando mais empresas direto do Google..." : "Consultando Google Places pelo navegador...", "loading");
+  const places = append ? await browserNextPlacesPage() : await browserTextSearch(body.textQuery);
+  const limit = Math.min(20, Math.max(1, Number(settings.maxResults || 60) - (append ? searchResults.length : 0)));
+  const detailed = await Promise.allSettled(places.slice(0, limit).map(async (place) => {
+    const details = await browserPlaceDetails(place.place_id);
+    return normalizePlace(normalizeBrowserPlace(place, details, formData), formData);
+  }));
+  const newRows = detailed.filter((item) => item.status === "fulfilled").map((item) => item.value);
+  searchResults = append ? dedupePlaces([...searchResults, ...newRows]) : dedupePlaces(newRows);
+  searchResults = searchResults.map((lead) => ({ ...lead, aiPreview: localAi("analyze", lead, buildSystemContext()).summary }));
+  nextPageToken = browserPlacesPagination?.hasNextPage ? "browser-next-page" : "";
+  lastSearchBody = { body, formData };
+  renderLeadRows(getFilteredResults(), "searchResults", "search");
+  $("#loadMorePlaces").disabled = !nextPageToken || searchResults.length >= Number(settings.maxResults || 60);
+  if (!searchResults.length) {
+    setMessage("searchMessage", "Nenhuma empresa encontrada. Tente ampliar a palavra-chave ou remover filtros.", "error");
+    return;
+  }
+  setMessage("searchMessage", `${searchResults.length} empresa(s) carregada(s) via Google Places no navegador.`, "success");
+}
+
 async function searchPlaces(form, append = false) {
   const issue = apiConfigurationIssue();
   if (!apiConfigured() || issue) {
-    setMessage("searchMessage", issue || "Backend seguro nao configurado. Em localhost, ative o modo desenvolvimento e informe as chaves em Configuracoes.", "error");
-    showView("configuracoes");
+    if (browserPlacesConfigured()) {
+      await searchPlacesInBrowser(form, append);
+      return;
+    }
+    setMessage("searchMessage", `${issue || "Backend seguro nao configurado."} Alternativa imediata: informe uma chave publica Google Maps/Places restrita por dominio em Configuracoes.`, "error");
+    if (!append) showView("configuracoes");
     return;
   }
   const { body, formData } = append && lastSearchBody ? { body: { ...lastSearchBody.body, pageToken: nextPageToken }, formData: lastSearchBody.formData } : buildSearchBody(form);
@@ -791,11 +986,17 @@ async function searchPlaces(form, append = false) {
   try {
     payload = await apiFetch(`/api/places/search?${params.toString()}`, { method: "GET" });
   } catch (error) {
-    if (!String(error.message || "").includes("Endpoint nao encontrado")) throw error;
-    payload = await apiFetch("/api/v1/search/google-places", {
-      method: "POST",
-      body: JSON.stringify({ ...formData, limit: 20, pageToken: body.pageToken || "" })
-    });
+    if (String(error.message || "").includes("Endpoint nao encontrado")) {
+      payload = await apiFetch("/api/v1/search/google-places", {
+        method: "POST",
+        body: JSON.stringify({ ...formData, limit: 20, pageToken: body.pageToken || "" })
+      });
+    } else if (browserPlacesConfigured()) {
+      await searchPlacesInBrowser(form, append);
+      return;
+    } else {
+      throw error;
+    }
   }
   const newRows = (payload.results || payload.places || []).map((place) => normalizePlace(place, formData));
   searchResults = append ? dedupePlaces([...searchResults, ...newRows]) : newRows;
@@ -1422,7 +1623,16 @@ function renderIntegrations() {
     ["google_drive", "Google Drive", "Pastas e documentos de clientes via backend"],
     ["whatsapp_cloud", "WhatsApp Cloud API", "Envio futuro via backend oficial"]
   ];
-  $("#integrationGrid").innerHTML = items.map(([key, name, description]) => `<article class="integration-row"><strong>${name}</strong><span>${key === "apiBaseUrl" ? (!issue && apiConfigured() ? "Configurado" : "Pendente") : "backend/.env"}</span><small>${description}. ${key === "apiBaseUrl" ? (issue || "Informe a URL HTTPS do backend publicado.") : "Configure esta chave no backend/.env."}</small><div class="settings-actions"><button class="secondary-button" type="button" data-nav="configuracoes">Configurar</button><button class="secondary-button" type="button" data-test="${key}">Validar</button></div></article>`).join("");
+  $("#integrationGrid").innerHTML = items.map(([key, name, description]) => {
+    const browserPlaces = key === "google_places" && browserPlacesConfigured();
+    const status = key === "apiBaseUrl" ? (!issue && apiConfigured() ? "Configurado" : "Pendente") : browserPlaces ? "Chave publica configurada" : "backend/.env";
+    const detail = key === "apiBaseUrl"
+      ? (issue || "Informe a URL HTTPS do backend publicado.")
+      : browserPlaces
+        ? "Busca pode funcionar direto no navegador. Restrinja a chave por dominio no Google Cloud."
+        : "Configure esta chave no backend/.env.";
+    return `<article class="integration-row"><strong>${name}</strong><span>${status}</span><small>${description}. ${detail}</small><div class="settings-actions"><button class="secondary-button" type="button" data-nav="configuracoes">Configurar</button><button class="secondary-button" type="button" data-test="${key}">Validar</button></div></article>`;
+  }).join("");
 }
 
 function loadSettingsForm() {
@@ -1484,6 +1694,10 @@ function organizeApiSettings() {
 
 async function testIntegration(key) {
   const issue = apiConfigurationIssue();
+  if (key === "google_places" && browserPlacesConfigured()) {
+    await browserTextSearch("padaria Porto Alegre RS");
+    return "Google Places validado pela chave publica do navegador.";
+  }
   if (!apiConfigured() || issue) throw new Error(issue || "URL do backend seguro ausente.");
   if (key === "apiBaseUrl") {
     const health = await apiFetch("/api/health", { method: "GET" });
@@ -1711,7 +1925,7 @@ function bindEvents() {
   });
   $("#clearSettings")?.addEventListener("click", () => {
     if (!confirm("Apagar configuracoes locais?")) return;
-    settings = { maxResults: 60, defaultSort: "opportunity", defaultOwner: "Agencia Digital", theme: "nodere-dark", accentColor: "#147dff", apiBaseUrl: "", ownerToken: "", hideSavedResults: "on", autoAiOnSave: "on", devMode: "off" };
+    settings = { maxResults: 60, defaultSort: "opportunity", defaultOwner: "Agencia Digital", theme: "nodere-dark", accentColor: "#147dff", apiBaseUrl: "", browserGoogleMapsApiKey: "", ownerToken: "", hideSavedResults: "on", autoAiOnSave: "on", devMode: "off" };
     writeJson(STORAGE.settings, settings);
     $("#settingsForm").reset();
     loadSettingsForm();
