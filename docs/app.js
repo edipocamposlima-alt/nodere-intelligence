@@ -138,6 +138,11 @@ function apiConfigurationIssue() {
   if (!base) return "Configure a URL HTTPS do backend em Configuracoes. O GitHub Pages hospeda apenas o frontend.";
   try {
     const url = new URL(base, location.href);
+    const value = `${url.hostname}${url.pathname}`.toLowerCase();
+    const placeholders = ["sua-api", "example", "exemplo", "localhost:3333/api", "api.com"];
+    if (placeholders.some((item) => value.includes(item))) {
+      return "A URL do backend ainda e um exemplo. Publique o backend em Render/Railway e cole a URL real, por exemplo https://nodere-api.onrender.com.";
+    }
     const isGithubPages = url.hostname.endsWith("github.io");
     const sameFrontendHost = url.hostname === location.hostname && url.pathname.includes("nodere-intelligence");
     if (isGithubPages || sameFrontendHost) {
