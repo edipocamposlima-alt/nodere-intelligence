@@ -2,6 +2,7 @@ import { config } from "../config.js";
 
 const TEXT_SEARCH_URL = "https://maps.googleapis.com/maps/api/place/textsearch/json";
 const DETAILS_URL = "https://maps.googleapis.com/maps/api/place/details/json";
+export const PLACES_ENDPOINT_USED = "legacy_text_search";
 const PLACES_NEW_TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
 
 function buildQuery({ companyName = "", company = "", keyword = "", city = "", state = "", segment = "" }) {
@@ -172,44 +173,6 @@ export async function searchGooglePlaces(params) {
   }
 
   const limit = Math.max(1, Math.min(Number(params.limit || 10), 20));
-
-  try {
-    const searchDataV1 = await fetchGooglePlacesNew(query, limit);
-    const places = searchDataV1.places || [];
-
-    return {
-      results: places.map((place) => {
-        const parsedAddress = parseAddress(place.formattedAddress || "");
-        return {
-          source: "google_places_new",
-          googlePlaceId: place.id,
-          companyName: place.displayName?.text || "",
-          phone: place.internationalPhoneNumber || place.nationalPhoneNumber || "",
-          whatsapp: place.internationalPhoneNumber || place.nationalPhoneNumber || "",
-          website: place.websiteUri || "",
-          address: parsedAddress.address,
-          city: parsedAddress.city,
-          state: parsedAddress.state,
-          segment: params.segment || (place.types || []).slice(0, 2).join(", "),
-          googleRating: place.rating || null,
-          googleReviews: place.userRatingCount || 0,
-          googleMapsUrl: place.googleMapsUri || "",
-          businessStatus: place.businessStatus || "",
-          openingHours: place.regularOpeningHours?.weekdayDescriptions || []
-        };
-      }),
-      nextPageToken: null
-    };
-  } catch (placesNewError) {
-    if (!["GOOGLE_PLACES_NOT_ENABLED", "GOOGLE_PLACES_ERROR"].includes(placesNewError.code)) {
-      throw placesNewError;
-    }
-    console.warn(JSON.stringify({
-      level: "warn",
-      code: placesNewError.code,
-      message: "Places API New failed; trying legacy Text Search fallback."
-    }));
-  }
 
   const textUrl = new URL(TEXT_SEARCH_URL);
   if (params.pageToken) {

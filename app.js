@@ -46,7 +46,7 @@ const aiActions = {
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
-const DEFAULT_API_BASE_URL = window.NODERE_API_BASE_URL || "";
+const DEFAULT_API_BASE_URL = window.NODERE_API_BASE_URL || "https://nodere-api.onrender.com";
 
 let settings = sanitizeSettings({
   maxResults: 60,
@@ -164,9 +164,15 @@ function apiConfigurationIssue() {
 
 function explainNetworkError(error, path = "") {
   if (error?.name === "AbortError") return `Tempo esgotado ao chamar ${apiUrl(path)}. Verifique se o backend esta online.`;
+  if (error?.code === "GOOGLE_INVALID_API_KEY") {
+    return "A chave Google Places configurada no backend foi rejeitada. Verifique a variavel GOOGLE_PLACES_API_KEY no Render e as permissoes da chave no Google Cloud.";
+  }
+  if (error?.code === "GOOGLE_REQUEST_DENIED" || error?.googleStatus === "REQUEST_DENIED") {
+    return "A API Places pode nao estar ativada, billing pode estar pendente ou ha restricao incompativel na chave.";
+  }
   if (String(error?.message || "").includes("HTTP 404")) return `Endpoint nao encontrado em ${apiUrl(path)}. Verifique se a URL configurada e do backend, nao do GitHub Pages, e se o deploy possui esta rota.`;
   if (String(error?.message || "").toLowerCase().includes("failed to fetch")) {
-    return `Nao foi possivel conectar ao backend em ${apiUrl(path)}. Possiveis causas: backend fora do ar, URL incorreta, CORS bloqueado ou HTTPS ausente.`;
+    return `Backend indisponivel. Verifique https://nodere-api.onrender.com/api/health. Detalhe: nao foi possivel conectar ao backend em ${apiUrl(path)}.`;
   }
   return error?.message || "Erro inesperado ao consultar o backend.";
 }
@@ -186,7 +192,13 @@ async function apiFetch(path, options = {}) {
   try {
     const response = await fetch(apiUrl(path), { ...options, body, headers, signal: controller.signal });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(payload.error || payload.message || `Backend retornou HTTP ${response.status}.`);
+    if (!response.ok) {
+      const error = new Error(payload.error || payload.message || `Backend retornou HTTP ${response.status}.`);
+      error.status = response.status;
+      error.code = payload.code || payload.errorType || "";
+      error.googleStatus = payload.googleStatus || "";
+      throw error;
+    }
     return payload;
   } catch (error) {
     throw new Error(explainNetworkError(error, path));

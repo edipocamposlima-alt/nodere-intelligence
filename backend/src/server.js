@@ -2,7 +2,7 @@ import cors from "cors";
 import express from "express";
 import { config } from "./config.js";
 import { getSupabase } from "./supabase.js";
-import { searchGooglePlaces } from "./services/googlePlaces.js";
+import { PLACES_ENDPOINT_USED, searchGooglePlaces } from "./services/googlePlaces.js";
 import { scanWebsite } from "./services/siteScanner.js";
 import { generateDiagnosis } from "./services/aiDiagnosis.js";
 import { getLiveIntegrationStatus, getStaticIntegrationStatus, testIntegration, validatePageSpeed } from "./services/integrations.js";
@@ -73,6 +73,66 @@ app.get("/api/health", (_request, response) => {
     googlePlacesConfigured: Boolean(config.googlePlacesApiKey),
     openaiConfigured: Boolean(config.openaiApiKey)
   });
+});
+
+function maskSecret(value = "") {
+  const text = String(value || "");
+  return {
+    hasValue: Boolean(text),
+    length: text.length,
+    prefix: text ? text.slice(0, 6) : "",
+    suffix: text ? text.slice(-4) : ""
+  };
+}
+
+app.get("/api/debug/google-config", (_request, response) => {
+  const masked = maskSecret(config.googlePlacesApiKey);
+  response.json({
+    hasGooglePlacesKey: masked.hasValue,
+    googlePlacesKeyLength: masked.length,
+    googlePlacesKeyPrefix: masked.prefix,
+    googlePlacesKeySuffix: masked.suffix,
+    allowedOrigins: Array.from(allowedOrigins),
+    nodeEnv: process.env.NODE_ENV || "",
+    placesApiEndpointUsed: PLACES_ENDPOINT_USED,
+    backendTime: new Date().toISOString()
+  });
+});
+
+app.get("/api/debug/google-places-test", async (_request, response) => {
+  try {
+    const search = await searchGooglePlaces({
+      segment: "Academia",
+      city: "Caxias do Sul",
+      state: "RS",
+      limit: 3
+    });
+    response.json({
+      success: true,
+      googleStatus: "OK",
+      errorType: "",
+      message: "Google Places retornou resultados para Academia em Caxias do Sul RS.",
+      requestEndpoint: PLACES_ENDPOINT_USED,
+      resultCount: search.results.length,
+      sample: search.results.slice(0, 3).map((item) => ({
+        name: item.companyName,
+        address: item.address,
+        rating: item.googleRating,
+        userRatingsTotal: item.googleReviews,
+        website: item.website,
+        placeId: item.googlePlaceId
+      }))
+    });
+  } catch (error) {
+    response.status(error.status || 500).json({
+      success: false,
+      googleStatus: error.googleStatus || "",
+      errorType: error.code || "GOOGLE_PLACES_TEST_FAILED",
+      message: error.message || "Falha ao testar Google Places.",
+      rawGoogleError: error.googleStatus ? `${error.googleStatus}: ${error.message}` : error.message,
+      requestEndpoint: PLACES_ENDPOINT_USED
+    });
+  }
 });
 
 app.get("/api/v1/integrations/status", async (request, response, next) => {
