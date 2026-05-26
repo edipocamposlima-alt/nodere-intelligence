@@ -105,9 +105,15 @@ function apiConfigured() {
   return Boolean((settings.apiBaseUrl && String(settings.apiBaseUrl).trim()) || DEFAULT_API_BASE_URL || isLocalDev());
 }
 
+function isPlaceholderApiBase(value = "") {
+  const text = String(value || "").toLowerCase();
+  return ["url-real", "seu-backend", "sua-api", "example", "exemplo", "url-https-do-backend"].some((item) => text.includes(item));
+}
+
 function normalizeApiBaseUrl(value = "") {
   const raw = String(value || "").trim();
   if (!raw) return "";
+  if (isPlaceholderApiBase(raw)) return "";
   try {
     const url = new URL(raw, location.href);
     const path = url.pathname.replace(/\/+$/, "");
@@ -139,8 +145,7 @@ function apiConfigurationIssue() {
   try {
     const url = new URL(base, location.href);
     const value = `${url.hostname}${url.pathname}`.toLowerCase();
-    const placeholders = ["seu-backend", "sua-api", "example", "exemplo", "localhost:3333/api", "api.com", "url-https-do-backend"];
-    if (placeholders.some((item) => value.includes(item))) {
+    if (isPlaceholderApiBase(value) || value.includes("localhost:3333/api") || value.includes("api.com")) {
       return "A URL do backend ainda e um exemplo. Cole apenas a raiz HTTPS real do backend, por exemplo https://nodere-api.onrender.com, sem /api/places/search.";
     }
     const isGithubPages = url.hostname.endsWith("github.io");
@@ -1416,12 +1421,28 @@ function renderIntegrations() {
 
 function loadSettingsForm() {
   document.body.classList.remove("local-dev");
+  settings.apiBaseUrl = normalizeApiBaseUrl(settings.apiBaseUrl || "");
   Object.entries(settings).forEach(([key, value]) => {
     const field = $("#settingsForm")?.elements[key];
     if (!field) return;
     if (field.type === "checkbox") field.checked = value === "on" || value === true;
     else field.value = value;
   });
+}
+
+async function clearLegacyAppCache() {
+  try {
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+    }
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((key) => key.startsWith("nodere-intelligence")).map((key) => caches.delete(key)));
+    }
+  } catch (_error) {
+    // Cache cleanup is best-effort only.
+  }
 }
 
 function renderApiField(name, label, placeholder, testKey, secret = true, hint = "") {
@@ -1828,6 +1849,8 @@ function initSelects() {
 }
 
 function init() {
+  clearLegacyAppCache();
+  settings.apiBaseUrl = normalizeApiBaseUrl(settings.apiBaseUrl || "");
   initSelects();
   applyTheme();
   organizeApiSettings();
