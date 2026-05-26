@@ -1271,7 +1271,7 @@ function buildSystemContext() {
 async function requestAi(action, lead = null, question = "") {
   const context = buildSystemContext();
   if (!apiConfigured()) return { mode: "fallback-local", diagnosis: localAi(action, lead, context, question) };
-  return apiFetch("/api/openai", {
+  return apiFetch("/api/openai/analyze", {
     method: "POST",
     body: JSON.stringify({
       action,
@@ -1506,8 +1506,10 @@ async function testIntegration(key) {
     return health.ok ? "Backend conectado." : "Backend respondeu, mas sem status ok.";
   }
   if (key === "openai") {
-    const payload = await requestAi("test", normalizeLead({ company: "Teste NODERE", rating: 4.1, reviews: 22 }));
-    return payload.mode ? `IA respondeu (${payload.mode}).` : "IA respondeu.";
+    const health = await apiFetch("/api/openai/health", { method: "GET" });
+    if (!health.openaiConfigured) return "OpenAI pendente: configure OPENAI_API_KEY no Render.";
+    const payload = await requestAi("test", normalizeLead({ company: "Teste NODERE", segment: "Academia", city: "Caxias do Sul", rating: 4.1, reviews: 22 }));
+    return payload.mode ? `IA respondeu (${payload.mode}) usando ${health.model}.` : "IA respondeu.";
   }
   if (key === "google_places") {
     await apiFetch("/api/places/search?keyword=padaria&city=Porto%20Alegre&limit=1", { method: "GET" });

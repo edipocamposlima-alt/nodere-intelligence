@@ -108,6 +108,7 @@ export async function generateDiagnosis(lead, scan, operationalContext = {}) {
     const payload = await response.json().catch(() => ({}));
     const error = new Error(payload?.error?.message || "OpenAI request failed.");
     error.status = response.status;
+    error.code = classifyOpenAIError(response.status, payload?.error);
     throw error;
   }
 
@@ -120,6 +121,17 @@ export async function generateDiagnosis(lead, scan, operationalContext = {}) {
   }
 
   return JSON.parse(text);
+}
+
+function classifyOpenAIError(status, payload = {}) {
+  const code = String(payload?.code || payload?.type || "").toLowerCase();
+  const message = String(payload?.message || "").toLowerCase();
+  if (status === 401 || code.includes("invalid_api_key") || message.includes("incorrect api key")) return "OPENAI_INVALID_API_KEY";
+  if (status === 402 || message.includes("billing") || message.includes("quota") || code.includes("insufficient_quota")) return "OPENAI_BILLING_OR_QUOTA";
+  if (status === 404 || code.includes("model_not_found") || message.includes("model")) return "OPENAI_MODEL_NOT_FOUND";
+  if (status === 429) return "OPENAI_RATE_LIMIT";
+  if (status >= 500) return "OPENAI_UPSTREAM_ERROR";
+  return "OPENAI_REQUEST_FAILED";
 }
 
 function fallbackDiagnosis(lead = {}, scan = null, operationalContext = {}) {

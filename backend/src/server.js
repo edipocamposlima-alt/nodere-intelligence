@@ -85,6 +85,28 @@ function maskSecret(value = "") {
   };
 }
 
+function normalizeOpenAILead(input = {}) {
+  return {
+    ...input,
+    company: input.company || input.companyName || input.empresa || input.nome || "",
+    segment: input.segment || input.segmento || "",
+    city: input.city || input.cidade || "",
+    state: input.state || input.estado || "",
+    rating: input.rating || input.avaliacao || input.googleRating || "",
+    reviews: input.reviews || input.avaliacoes || input.googleReviews || "",
+    notesText: input.notesText || input.problema || input.observacoes || ""
+  };
+}
+
+function openAIErrorMessage(error) {
+  if (error.code === "OPENAI_INVALID_API_KEY") return "Chave OpenAI invalida ou rejeitada. Atualize OPENAI_API_KEY no Render.";
+  if (error.code === "OPENAI_BILLING_OR_QUOTA") return "Billing, creditos ou limite da OpenAI indisponivel para este projeto.";
+  if (error.code === "OPENAI_MODEL_NOT_FOUND") return `Modelo OpenAI indisponivel: ${config.openaiModel}. Ajuste OPENAI_MODEL no Render.`;
+  if (error.code === "OPENAI_RATE_LIMIT") return "Limite de requisicoes da OpenAI excedido. Tente novamente em alguns instantes.";
+  if (error.name === "AbortError") return "Tempo esgotado ao chamar OpenAI.";
+  return error.message || "Falha na chamada OpenAI.";
+}
+
 app.get("/api/debug/google-config", (_request, response) => {
   const masked = maskSecret(config.googlePlacesApiKey);
   response.json({
@@ -97,6 +119,64 @@ app.get("/api/debug/google-config", (_request, response) => {
     placesApiEndpointUsed: PLACES_ENDPOINT_USED,
     backendTime: new Date().toISOString()
   });
+});
+
+app.get("/api/debug/openai-config", (_request, response) => {
+  const masked = maskSecret(config.openaiApiKey);
+  response.json({
+    hasOpenAIKey: masked.hasValue,
+    keyLength: masked.length,
+    keyPrefix: masked.prefix,
+    keySuffix: masked.suffix,
+    model: config.openaiModel,
+    nodeEnv: process.env.NODE_ENV || "",
+    backendTime: new Date().toISOString()
+  });
+});
+
+app.get("/api/openai/health", (_request, response) => {
+  response.json({
+    openaiConfigured: Boolean(config.openaiApiKey),
+    model: config.openaiModel,
+    backendTime: new Date().toISOString()
+  });
+});
+
+app.post("/api/openai/analyze", async (request, response) => {
+  if (!config.openaiApiKey) {
+    return response.status(503).json({
+      error: "OPENAI_API_KEY ausente no backend/Render.",
+      code: "OPENAI_KEY_MISSING"
+    });
+  }
+
+  try {
+    const lead = normalizeOpenAILead(request.body.lead || request.body);
+    const context = request.body.context || {};
+    const diagnosis = await generateDiagnosis(lead, request.body.pageSpeed || request.body.scan || null, {
+      ...request.body,
+      question: request.body.prompt || request.body.question || "",
+      context
+    });
+
+    response.json({
+      mode: "openai",
+      model: config.openaiModel,
+      summary: diagnosis.summary,
+      commercialSummary: diagnosis.summary,
+      detectedOpportunity: diagnosis.diagnosis,
+      likelyPains: diagnosis.alerts || [],
+      approachSuggestion: diagnosis.nextSteps?.[0] || diagnosis.followUp || "",
+      whatsappMessage: diagnosis.whatsappMessage,
+      nextSteps: diagnosis.nextSteps || [],
+      diagnosis
+    });
+  } catch (error) {
+    response.status(error.status || 500).json({
+      error: openAIErrorMessage(error),
+      code: error.code || "OPENAI_ANALYZE_FAILED"
+    });
+  }
 });
 
 app.get("/api/debug/google-places-test", async (_request, response) => {
@@ -170,8 +250,14 @@ app.post("/api/v1/ai/diagnosis", async (request, response, next) => {
 
 app.post("/api/openai", async (request, response, next) => {
   try {
-    const diagnosis = await generateDiagnosis(request.body.lead || request.body, request.body.pageSpeed || request.body.scan || null, request.body);
-    response.json({ mode: config.openaiApiKey ? "openai" : "server-fallback", diagnosis });
+    if (!config.openaiApiKey) {
+      const error = new Error("OPENAI_API_KEY ausente no backend/Render.");
+      error.status = 503;
+      error.code = "OPENAI_KEY_MISSING";
+      throw error;
+    }
+    const diagnosis = await generateDiagnosis(normalizeOpenAILead(request.body.lead || request.body), request.body.pageSpeed || request.body.scan || null, request.body);
+    response.json({ mode: "openai", diagnosis });
   } catch (error) {
     next(error);
   }
