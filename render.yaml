@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: nodere-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_ORIGIN
+        value: https://edipocamposlima-alt.github.io
+      - key: PRODUCTION_FRONTEND_ORIGIN
+        value: https://edipocamposlima-alt.github.io
+      - key: GOOGLE_PLACES_API_KEY
+        sync: false
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: GOOGLE_PAGESPEED_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: MVP_OWNER_TOKEN
+        sync: false

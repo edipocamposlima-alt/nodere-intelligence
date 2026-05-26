@@ -144,6 +144,7 @@ Frontend:
 Backend:
 
 - Render/Railway.
+- Render Blueprint disponivel em `render.yaml` na raiz.
 - Root directory: `backend`.
 - Build command: `npm install`.
 - Start command: `npm start`.

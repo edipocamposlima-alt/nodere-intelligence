@@ -37,10 +37,24 @@ GitHub Pages nao executa backend. Para Google APIs, OpenAI, PageSpeed, Gmail, Ca
 
 ### Render
 
+Opção mais rápida: use o Blueprint do Render com o arquivo `render.yaml` da raiz.
+
+1. Abra Render > New > Blueprint.
+2. Conecte o repositório `edipocamposlima-alt/nodere-intelligence`.
+3. Confirme o serviço `nodere-api`.
+4. Configure as variáveis marcadas como `sync: false`, principalmente `GOOGLE_PLACES_API_KEY`.
+5. Depois do deploy, teste:
+
+```text
+https://nodere-api.onrender.com/api/health
+```
+
+Configuração manual equivalente:
+
 - Root directory: `backend`
 - Build command: `npm install`
 - Start command: `npm start`
-- Health check: `/health`
+- Health check: `/api/health`
 
 Endpoints mínimos usados pelo frontend:
 
@@ -107,6 +121,8 @@ https://nodere-api.onrender.com
 
 3. Salve.
 4. Abra `Integracoes` e valide Google Places, PageSpeed e OpenAI.
+
+Se a busca mostrar erro de conexão para `https://nodere-api.onrender.com`, o serviço ainda não existe, está suspenso ou falhou no deploy. Abra a URL `/api/health`; se ela não responder JSON, corrija o backend no Render antes de testar a busca.
 
 ## Repositorio privado
 
