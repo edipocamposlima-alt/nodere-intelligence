@@ -119,18 +119,39 @@ function devModeEnabled() {
 }
 
 function apiConfigured() {
-  return Boolean((settings.apiBaseUrl && String(settings.apiBaseUrl).trim()) || isLocalDev());
+  return Boolean((settings.apiBaseUrl && String(settings.apiBaseUrl).trim()) || DEFAULT_API_BASE_URL || isLocalDev());
+}
+
+function configuredApiBase() {
+  const localDefault = isLocalDev() ? "http://localhost:3333" : "";
+  return String(settings.apiBaseUrl || DEFAULT_API_BASE_URL || localDefault).trim();
 }
 
 function apiUrl(path) {
-  const localDefault = isLocalDev() ? "http://localhost:3333" : "";
-  const base = String(settings.apiBaseUrl || DEFAULT_API_BASE_URL || localDefault).trim();
+  const base = configuredApiBase();
   if (!base) return path;
   return `${base.replace(/\/$/, "")}${path}`;
 }
 
+function apiConfigurationIssue() {
+  const base = configuredApiBase();
+  if (!base) return "Configure a URL HTTPS do backend em Configuracoes. O GitHub Pages hospeda apenas o frontend.";
+  try {
+    const url = new URL(base, location.href);
+    const isGithubPages = url.hostname.endsWith("github.io");
+    const sameFrontendHost = url.hostname === location.hostname && url.pathname.includes("nodere-intelligence");
+    if (isGithubPages || sameFrontendHost) {
+      return "A URL configurada esta apontando para o GitHub Pages/frontend. GitHub Pages nao executa backend. Configure a URL HTTPS do backend publicado no Render/Railway.";
+    }
+  } catch {
+    return "URL do backend invalida. Use uma URL completa, por exemplo https://sua-api.onrender.com.";
+  }
+  return "";
+}
+
 function explainNetworkError(error, path = "") {
   if (error?.name === "AbortError") return `Tempo esgotado ao chamar ${apiUrl(path)}. Verifique se o backend esta online.`;
+  if (String(error?.message || "").includes("HTTP 404")) return `Endpoint nao encontrado em ${apiUrl(path)}. Verifique se a URL configurada e do backend, nao do GitHub Pages, e se o deploy possui esta rota.`;
   if (String(error?.message || "").toLowerCase().includes("failed to fetch")) {
     return `Nao foi possivel conectar ao backend em ${apiUrl(path)}. Possiveis causas: backend fora do ar, URL incorreta, CORS bloqueado ou HTTPS ausente.`;
   }
@@ -154,8 +175,9 @@ function devKeys() {
 }
 
 async function apiFetch(path, options = {}) {
-  if (!apiConfigured()) {
-    const error = new Error("Configure a URL do backend seguro em Configuracoes para usar APIs reais.");
+  const issue = apiConfigurationIssue();
+  if (!apiConfigured() || issue) {
+    const error = new Error(issue || "Configure a URL do backend seguro em Configuracoes para usar APIs reais.");
     error.status = 503;
     throw error;
   }
@@ -748,8 +770,9 @@ function buildSearchBody(form, pageToken = "") {
 }
 
 async function searchPlaces(form, append = false) {
-  if (!apiConfigured()) {
-    setMessage("searchMessage", "Backend seguro nao configurado. Em localhost, ative o modo desenvolvimento e informe as chaves em Configuracoes.", "error");
+  const issue = apiConfigurationIssue();
+  if (!apiConfigured() || issue) {
+    setMessage("searchMessage", issue || "Backend seguro nao configurado. Em localhost, ative o modo desenvolvimento e informe as chaves em Configuracoes.", "error");
     showView("configuracoes");
     return;
   }
@@ -759,7 +782,16 @@ async function searchPlaces(form, append = false) {
   Object.entries({ ...formData, limit: 20, pageToken: body.pageToken || "" }).forEach(([key, value]) => {
     if (value !== undefined && value !== null && String(value).trim()) params.set(key, String(value).trim());
   });
-  const payload = await apiFetch(`/api/places/search?${params.toString()}`, { method: "GET" });
+  let payload;
+  try {
+    payload = await apiFetch(`/api/places/search?${params.toString()}`, { method: "GET" });
+  } catch (error) {
+    if (!String(error.message || "").includes("Endpoint nao encontrado")) throw error;
+    payload = await apiFetch("/api/v1/search/google-places", {
+      method: "POST",
+      body: JSON.stringify({ ...formData, limit: 20, pageToken: body.pageToken || "" })
+    });
+  }
   const newRows = (payload.results || payload.places || []).map((place) => normalizePlace(place, formData));
   searchResults = append ? dedupePlaces([...searchResults, ...newRows]) : newRows;
   searchResults = searchResults.map((lead) => ({ ...lead, aiPreview: localAi("analyze", lead, buildSystemContext()).summary }));
@@ -1372,6 +1404,7 @@ function saveChatAsTask(index) {
 
 function renderIntegrations() {
   if (!$("#integrationGrid")) return;
+  const issue = apiConfigurationIssue();
   const items = [
     ["apiBaseUrl", "Backend seguro", "API privada para IA, Google, CRM e integrações"],
     ["openai", "OpenAI / ChatGPT", "Agente conversacional server-side"],
@@ -1384,7 +1417,7 @@ function renderIntegrations() {
     ["google_drive", "Google Drive", "Pastas e documentos de clientes via backend"],
     ["whatsapp_cloud", "WhatsApp Cloud API", "Envio futuro via backend oficial"]
   ];
-  $("#integrationGrid").innerHTML = items.map(([key, name, description]) => `<article class="integration-row"><strong>${name}</strong><span>${key === "apiBaseUrl" ? (apiConfigured() ? "Configurado" : "Pendente") : "backend/.env"}</span><small>${description}. ${key !== "apiBaseUrl" ? "Configure esta chave no backend/.env." : ""}</small><div class="settings-actions"><button class="secondary-button" type="button" data-nav="configuracoes">Configurar</button><button class="secondary-button" type="button" data-test="${key}">Validar</button></div></article>`).join("");
+  $("#integrationGrid").innerHTML = items.map(([key, name, description]) => `<article class="integration-row"><strong>${name}</strong><span>${key === "apiBaseUrl" ? (!issue && apiConfigured() ? "Configurado" : "Pendente") : "backend/.env"}</span><small>${description}. ${key === "apiBaseUrl" ? (issue || "Informe a URL HTTPS do backend publicado.") : "Configure esta chave no backend/.env."}</small><div class="settings-actions"><button class="secondary-button" type="button" data-nav="configuracoes">Configurar</button><button class="secondary-button" type="button" data-test="${key}">Validar</button></div></article>`).join("");
 }
 
 function loadSettingsForm() {
@@ -1445,7 +1478,8 @@ function organizeApiSettings() {
 }
 
 async function testIntegration(key) {
-  if (!apiConfigured()) throw new Error("URL do backend seguro ausente.");
+  const issue = apiConfigurationIssue();
+  if (!apiConfigured() || issue) throw new Error(issue || "URL do backend seguro ausente.");
   if (key === "apiBaseUrl") {
     const health = await apiFetch("/api/health", { method: "GET" });
     return health.ok ? "Backend conectado." : "Backend respondeu, mas sem status ok.";
