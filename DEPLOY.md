@@ -42,6 +42,13 @@ GitHub Pages nao executa backend. Para Google APIs, OpenAI, PageSpeed, Gmail, Ca
 - Start command: `npm start`
 - Health check: `/health`
 
+Endpoints mínimos usados pelo frontend:
+
+- `GET /api/health`
+- `GET /api/places/search?companyName=&segment=&city=&state=&keyword=`
+- `GET /api/v1/pagespeed/analyze`
+- `POST /api/openai`
+
 ### Railway
 
 - Root directory: `backend`

@@ -66,6 +66,15 @@ app.get("/health", (_request, response) => {
   response.json({ ok: true, service: "nodere-mvp-api" });
 });
 
+app.get("/api/health", (_request, response) => {
+  response.json({
+    ok: true,
+    service: "nodere-mvp-api",
+    googlePlacesConfigured: Boolean(config.googlePlacesApiKey),
+    openaiConfigured: Boolean(config.openaiApiKey)
+  });
+});
+
 app.get("/api/v1/integrations/status", async (request, response, next) => {
   try {
     const live = request.query.live === "1" || request.query.live === "true";
@@ -238,6 +247,43 @@ app.post("/api/v1/search/google-places", async (request, response, next) => {
       // Search must remain usable while the database is being provisioned.
     }
     response.json(search);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/places/search", async (request, response, next) => {
+  try {
+    const params = {
+      companyName: request.query.companyName || "",
+      segment: request.query.segment || "",
+      city: request.query.city || "",
+      state: request.query.state || "",
+      keyword: request.query.keyword || "",
+      pageToken: request.query.pageToken || "",
+      limit: request.query.limit || 20
+    };
+    const search = await searchGooglePlaces(params);
+    const results = search.results.map((item) => ({
+      name: item.companyName,
+      companyName: item.companyName,
+      address: item.address,
+      phone: item.phone,
+      website: item.website,
+      rating: item.googleRating,
+      userRatingsTotal: item.googleReviews,
+      category: item.segment,
+      segment: item.segment,
+      placeId: item.googlePlaceId,
+      googlePlaceId: item.googlePlaceId,
+      mapsUrl: item.googleMapsUrl,
+      googleMapsUrl: item.googleMapsUrl,
+      city: item.city,
+      state: item.state,
+      whatsapp: item.whatsapp,
+      openingHours: item.openingHours
+    }));
+    response.json({ results, nextPageToken: search.nextPageToken });
   } catch (error) {
     next(error);
   }
