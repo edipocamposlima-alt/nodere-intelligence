@@ -264,6 +264,8 @@ function normalizeLead(raw = {}) {
     notes: Array.isArray(raw.notes) ? raw.notes : [],
     tasks: Array.isArray(raw.tasks) ? raw.tasks : [],
     negotiations: Array.isArray(raw.negotiations) ? raw.negotiations : [],
+    files: Array.isArray(raw.files) ? raw.files : [],
+    whatsappTemplates: Array.isArray(raw.whatsappTemplates) ? raw.whatsappTemplates : [],
     timeline,
     aiAnalyses: Array.isArray(raw.aiAnalyses) ? raw.aiAnalyses : (raw.ai ? [{ id: uid("ai"), action: "analyze", result: raw.ai, createdAt: raw.updatedAt || now }] : []),
     pageSpeed: raw.pageSpeed || null,
@@ -514,17 +516,14 @@ function renderAll() {
   renderAgenda();
   renderPipeline();
   renderReports();
-  renderServices();
   renderTemplates();
-  renderContracts();
-  renderProposalsModule();
   renderAiLeadSelect();
   renderIntegrations();
   renderChat();
 }
 
 function allowedViews() {
-  return ["dashboard", "empresas", "crm", "agenda", "pipeline", "pagespeed", "ia", "relatorios", "integracoes", "servicos", "contratos", "templates", "configuracoes"];
+  return ["dashboard", "empresas", "crm", "agenda", "pipeline", "pagespeed", "ia", "relatorios", "integracoes", "modelos", "configuracoes"];
 }
 
 function renderDashboard() {
@@ -696,34 +695,12 @@ window.addEventListener("hashchange", () => {
   if (allowedViews().includes(id)) showView(id);
 });
 
-function renderServices() {
-  const view = $("#servicos .panel");
-  if (!view) return;
-  view.innerHTML = `
-    <div class="table-header"><div class="panel-title compact"><span>Servicos</span><h2>Catalogo comercial editavel</h2></div><button class="primary-button" type="button" data-service-new>Novo servico</button></div>
-    <div class="filters"><input id="serviceSearch" placeholder="Pesquisar servico, categoria ou entregavel..." /></div>
-    <div class="catalog-grid operational" id="servicesGrid">${services.map(renderServiceCard).join("")}</div>`;
-  $("#serviceSearch")?.addEventListener("input", (event) => {
-    const q = event.target.value.toLowerCase();
-    $("#servicesGrid").innerHTML = services.filter((s) => [s.name, s.category, s.deliverables].join(" ").toLowerCase().includes(q)).map(renderServiceCard).join("");
-  });
-}
-
-function renderServiceCard(service) {
-  return `<article class="ops-card ${service.active ? "" : "muted-card"}">
-    <header><strong>${escapeHtml(service.name)}</strong><span class="badge">${escapeHtml(service.type)}</span></header>
-    <small>${escapeHtml(service.category)} ${service.subcategory ? `| ${escapeHtml(service.subcategory)}` : ""}</small>
-    <p>${escapeHtml(service.shortDescription || service.fullDescription)}</p>
-    <div class="price-row"><b>${currency(service.suggestedPrice)}</b><small>min ${currency(service.minPrice)} | max ${currency(service.maxPrice)}</small></div>
-    <div class="settings-actions"><button class="row-button" data-service-edit="${service.id}">Editar</button><button class="row-button" data-service-duplicate="${service.id}">Duplicar</button><button class="row-button" data-service-toggle="${service.id}">${service.active ? "Desativar" : "Ativar"}</button><button class="row-button danger" data-service-delete="${service.id}">Excluir</button></div>
-  </article>`;
-}
-
 function renderTemplates() {
-  const view = $("#templates .panel");
+  const view = $("#modelos .panel");
   if (!view) return;
   view.innerHTML = `
-    <div class="table-header"><div class="panel-title compact"><span>Templates</span><h2>Modelos comerciais editaveis</h2></div><button class="primary-button" type="button" data-template-new>Novo template</button></div>
+    <div class="table-header"><div class="panel-title compact"><span>Modelos</span><h2>Modelos comerciais editaveis</h2></div><button class="primary-button" type="button" data-template-new>Novo modelo</button></div>
+    <p class="table-message">Modelos salvos pela IA, WhatsApp e textos comerciais reutilizaveis. Use na ficha do lead para gerar conteudo contextual.</p>
     <div class="filters"><input id="templateSearch" placeholder="Pesquisar template..." /></div>
     <div class="catalog-grid operational" id="templatesGrid">${templates.map(renderTemplateCard).join("")}</div>`;
   $("#templateSearch")?.addEventListener("input", (event) => {
@@ -734,22 +711,6 @@ function renderTemplates() {
 
 function renderTemplateCard(template) {
   return `<article class="ops-card"><header><strong>${escapeHtml(template.name)}</strong><span class="badge">${escapeHtml(template.category)}</span></header><p>${escapeHtml(template.body).slice(0, 180)}</p><div class="settings-actions"><button class="row-button" data-template-edit="${template.id}">Editar</button><button class="row-button" data-template-duplicate="${template.id}">Duplicar</button><button class="row-button danger" data-template-delete="${template.id}">Excluir</button></div></article>`;
-}
-
-function renderContracts() {
-  const view = $("#contratos .panel");
-  if (!view) return;
-  view.innerHTML = `<div class="table-header"><div class="panel-title compact"><span>Contratos</span><h2>Contratos vinculados ao CRM</h2></div><button class="primary-button" type="button" data-contract-new>Novo contrato</button></div><div class="lead-table compact-list">${contracts.map(renderContractRow).join("") || `<div class="empty-state">Nenhum contrato criado.</div>`}</div>`;
-}
-
-function renderProposalsModule() {
-  const view = document.querySelector("#relatorios");
-  return view;
-}
-
-function renderContractRow(contract) {
-  const lead = leads.find((item) => item.id === contract.leadId) || {};
-  return `<div class="table-row compact-row"><span><strong>${escapeHtml(contract.title)}</strong><small>${escapeHtml(lead.company || "Sem lead")}</small></span><span>${escapeHtml(contract.status)}</span><span>${formatDate(contract.updatedAt)}</span><span class="actions"><button class="row-button" data-contract-edit="${contract.id}">Editar</button><button class="row-button" data-contract-print="${contract.id}">PDF</button></span></div>`;
 }
 
 function renderIntegrationStatusList(statuses = []) {
@@ -912,7 +873,7 @@ function renderLeadTabs(lead) {
   renderLeadTimeline(safeLead);
   renderLeadAi(safeLead);
   renderLeadPageSpeed(safeLead);
-  renderLeadProposals(safeLead);
+  renderLeadFiles(safeLead);
 }
 
 function activateLeadTab(tabName) {
@@ -963,8 +924,9 @@ function renderLeadTimeline(lead) {
 
 function renderLeadAi(lead) {
   const latest = lead.aiAnalyses?.[0]?.result || lead.ai;
-  $("#leadAiActions").innerHTML = Object.entries(aiActions).map(([key, label]) => `<button class="secondary-button" type="button" data-ai-action="${key}">${label}</button>`).join("");
-  $("#leadAiResult").innerHTML = latest ? renderAiResult(latest) : "Use os botoes para gerar inteligencia operacional contextual.";
+  const editor = $("#leadAiEditor");
+  if (editor && !editor.value && latest) editor.value = aiToEditableText(latest, "summary");
+  if ($("#leadAiStatus")) $("#leadAiStatus").textContent = latest ? "Ultima analise carregada. Edite, copie, salve em observacoes ou gere PDF." : "Escolha o tipo de geracao e clique em Gerar com IA.";
 }
 
 function renderLeadPageSpeed(lead) {
@@ -973,35 +935,30 @@ function renderLeadPageSpeed(lead) {
     : `<div class="warning">Este lead nao possui site cadastrado.</div>`;
 }
 
-function renderLeadProposals(lead) {
-  const leadProposals = proposals.filter((proposal) => proposal.leadId === lead.id);
-  const leadContracts = contracts.filter((contract) => contract.leadId === lead.id);
-  const negotiations = lead.negotiations || [];
-  const servicesOptions = services.filter((service) => service.active).map((service) => `<option value="${service.id}">${escapeHtml(service.name)} - ${currency(service.suggestedPrice)}</option>`).join("");
-  $("#leadTab-proposals").innerHTML = `
-    <div class="proposal-workbench">
-      <section class="ops-panel">
-        <h3>Servicos em negociacao</h3>
-        <div class="entry-form compact negotiation-form">
-          <select id="leadServiceSelect">${servicesOptions}</select>
-          <input id="leadServicePrice" placeholder="Valor manual" />
-          <input id="leadServiceDiscount" placeholder="Desconto" />
-          <input id="leadServicePayment" placeholder="Pagamento" />
-          <button class="primary-button" type="button" data-add-service-lead>Adicionar</button>
-        </div>
-        <div class="mini-list">${negotiations.map((item) => `<article><strong>${escapeHtml(item.serviceName)}</strong><small>${currency(item.price)} | ${escapeHtml(item.status || "Interesse")} | ${formatDate(item.createdAt)}</small><p>${escapeHtml(item.notes || "")}</p></article>`).join("") || `<div class="empty-state">Nenhum servico selecionado.</div>`}</div>
-      </section>
-      <section class="ops-panel">
-        <h3>Propostas</h3>
-        <div class="settings-actions"><button class="primary-button" type="button" data-create-proposal="${lead.id}">Criar proposta</button><button class="secondary-button" type="button" data-ai-proposal="${lead.id}">Gerar com IA</button></div>
-        <div class="mini-list">${leadProposals.map((proposal) => `<article><strong>${escapeHtml(proposal.title)}</strong><small>${escapeHtml(proposal.status)} | ${formatDate(proposal.updatedAt)}</small><div class="settings-actions"><button class="row-button" data-proposal-edit="${proposal.id}">Editar</button><button class="row-button" data-proposal-print="${proposal.id}">PDF</button></div></article>`).join("") || `<div class="empty-state">Nenhuma proposta.</div>`}</div>
-      </section>
-      <section class="ops-panel">
-        <h3>Contratos</h3>
-        <div class="settings-actions"><button class="primary-button" type="button" data-create-contract="${lead.id}">Criar contrato</button></div>
-        <div class="mini-list">${leadContracts.map((contract) => `<article><strong>${escapeHtml(contract.title)}</strong><small>${escapeHtml(contract.status)} | ${formatDate(contract.updatedAt)}</small><div class="settings-actions"><button class="row-button" data-contract-edit="${contract.id}">Editar</button><button class="row-button" data-contract-print="${contract.id}">PDF</button></div></article>`).join("") || `<div class="empty-state">Nenhum contrato.</div>`}</div>
-      </section>
-    </div>`;
+function renderLeadFiles(lead) {
+  const files = lead.files || [];
+  const templates = lead.whatsappTemplates || [];
+  $("#leadFilesBox").innerHTML = `
+    <div class="table-header"><div><strong>Arquivos do cliente</strong><small>PDFs e documentos gerados pela IA/editor.</small></div></div>
+    <div class="mini-list">${files.map((file) => `<article>
+      <strong>${escapeHtml(file.name)}</strong>
+      <small>${escapeHtml(file.type || "PDF")} | ${formatDate(file.createdAt)}</small>
+      <div class="settings-actions">
+        <a class="row-button" download="${escapeHtml(file.name)}" href="${file.dataUrl}">Baixar</a>
+        <button class="row-button" type="button" data-rename-file="${file.id}">Renomear</button>
+        <button class="row-button danger" type="button" data-delete-file="${file.id}">Excluir</button>
+      </div>
+    </article>`).join("") || `<div class="empty-state">Nenhum arquivo salvo. Gere uma proposta na aba IA e clique em "Salvar como proposta PDF".</div>`}</div>
+    <div class="table-header"><div><strong>Modelos WhatsApp deste lead</strong><small>Textos prontos para copiar ou abrir no WhatsApp.</small></div></div>
+    <div class="mini-list">${templates.map((tpl) => `<article>
+      <strong>${escapeHtml(tpl.name)}</strong>
+      <p>${escapeHtml(tpl.body).replaceAll("\n", "<br>")}</p>
+      <div class="settings-actions">
+        <button class="row-button" type="button" data-copy-template="${tpl.id}">Copiar</button>
+        ${lead.whatsapp || lead.phone ? `<a class="whatsapp" target="_blank" rel="noreferrer" href="${whatsappUrl({ ...lead, aiMessage: tpl.body })}">Abrir WhatsApp</a>` : `<span class="badge">Sem telefone</span>`}
+        <button class="row-button danger" type="button" data-delete-template="${tpl.id}">Excluir</button>
+      </div>
+    </article>`).join("") || `<div class="empty-state">Nenhum modelo WhatsApp salvo para este lead.</div>`}</div>`;
 }
 
 function attachAutomaticAi(lead, reason = "Atualizacao automatica") {
@@ -1301,6 +1258,158 @@ async function analyzeLeadWithAi(leadId, action = "analyze", targetId = "aiResul
   persistAll();
   document.getElementById(targetId).innerHTML = renderAiResult(ai, payload.mode);
   if ($("#leadDialog").open) openLeadDialog(lead);
+}
+
+const leadAiTypes = {
+  summary: "Resumo comercial",
+  approach: "Proxima abordagem",
+  whatsapp: "Mensagem WhatsApp",
+  email: "E-mail comercial",
+  proposal: "Proposta comercial",
+  diagnosis: "Diagnostico",
+  objections: "Objecoes e respostas",
+  contract: "Contrato simples"
+};
+
+function aiToEditableText(ai = {}, type = "summary") {
+  if (type === "whatsapp") return ai.whatsappMessage || "";
+  if (type === "email") return ai.emailMessage || "";
+  if (type === "proposal") {
+    return `PROPOSTA COMERCIAL NODERE\n\n${ai.summary || ""}\n\nDiagnostico:\n${ai.diagnosis || ""}\n\nEscopo recomendado:\n${(ai.recommendedServices || []).map((item) => `- ${item}`).join("\n")}\n\nProximos passos:\n${(ai.nextSteps || []).map((item) => `- ${item}`).join("\n")}\n\nEstrategia Google Ads:\n${ai.googleAdsStrategy || ""}`;
+  }
+  if (type === "contract") {
+    return `CONTRATO SIMPLES DE PRESTACAO DE SERVICOS\n\nCliente: {{nome_cliente}}\nEmpresa: {{empresa_cliente}}\nServico: ${(ai.recommendedServices || ["Gestao Google Ads"]).join(", ")}\n\nObjeto:\nPrestacao de servicos digitais conforme proposta aprovada.\n\nCondicoes:\nValor, prazo e forma de pagamento devem ser revisados antes do envio.\n\nObservacoes:\n${ai.diagnosis || ""}`;
+  }
+  if (type === "objections") return `Objecoes provaveis:\n${(ai.objections || []).map((item) => `- ${item}`).join("\n")}\n\nResposta sugerida:\n${ai.followUp || ai.callScript || ""}`;
+  if (type === "approach") return `${ai.followUp || ""}\n\n${(ai.nextSteps || []).map((item) => `- ${item}`).join("\n")}`;
+  if (type === "diagnosis") return `${ai.diagnosis || ""}\n\nGoogle Ads:\n${ai.googleAdsStrategy || ""}`;
+  return `${ai.summary || ""}\n\n${ai.diagnosis || ""}\n\nPotencial: ${ai.leadPotential || ""}\nPrioridade: ${ai.priority || ""}\n\nProximos passos:\n${(ai.nextSteps || []).map((item) => `- ${item}`).join("\n")}`;
+}
+
+async function generateLeadAssistantText() {
+  const lead = currentLead();
+  if (!lead) return alert("Salve o lead antes de usar a IA.");
+  const type = $("#leadAiType")?.value || "summary";
+  const instruction = $("#leadAiInstruction")?.value || "";
+  $("#leadAiStatus").textContent = "Gerando texto com IA pelo backend seguro...";
+  $("#leadAiGenerate").disabled = true;
+  try {
+    const payload = await requestAi(type, lead, `${leadAiTypes[type] || type}. ${instruction}`.trim());
+    const ai = payload.diagnosis || payload;
+    lead.ai = ai;
+    lead.aiMessage = ai.whatsappMessage || lead.aiMessage;
+    lead.aiAnalyses = [{ id: uid("ai"), action: type, result: ai, createdAt: nowIso() }, ...(lead.aiAnalyses || [])];
+    $("#leadAiEditor").value = aiToEditableText(ai, type);
+    addTimeline(lead, "IA", `${leadAiTypes[type] || "IA"} gerado no assistente.`);
+    persistAll();
+    $("#leadAiStatus").textContent = `Texto gerado (${payload.mode || "openai"}). Edite antes de salvar ou enviar.`;
+  } catch (error) {
+    $("#leadAiStatus").textContent = error.message;
+  } finally {
+    $("#leadAiGenerate").disabled = false;
+  }
+}
+
+function editorText() {
+  return ($("#leadAiEditor")?.value || "").trim();
+}
+
+function saveEditorAsNote() {
+  const lead = currentLead();
+  const text = editorText();
+  if (!lead || !text) return alert("Gere ou digite um texto antes de salvar.");
+  const type = leadAiTypes[$("#leadAiType")?.value] || "IA";
+  const note = { id: uid("note"), type, text, user: "NODERE IA", createdAt: nowIso(), updatedAt: nowIso() };
+  lead.notes = [note, ...(lead.notes || [])];
+  addTimeline(lead, "Observacao", `${type} salvo a partir do assistente IA.`);
+  persistAll();
+  openLeadDialog(lead);
+  activateLeadTab("notes");
+}
+
+function saveEditorAsWhatsappTemplate() {
+  const lead = currentLead();
+  const text = editorText();
+  if (!lead || !text) return alert("Gere ou digite uma mensagem antes de salvar.");
+  const tpl = { id: uid("wapp"), name: `WhatsApp - ${formatDate(nowIso())}`, body: text, createdAt: nowIso() };
+  lead.whatsappTemplates = [tpl, ...(lead.whatsappTemplates || [])];
+  lead.aiMessage = text;
+  addTimeline(lead, "WhatsApp", "Modelo WhatsApp salvo a partir do assistente IA.");
+  persistAll();
+  openLeadDialog(lead);
+  activateLeadTab("files");
+}
+
+function copyEditorText() {
+  const text = editorText();
+  if (!text) return alert("Nada para copiar.");
+  copyText(text);
+  $("#leadAiStatus").textContent = "Texto copiado.";
+}
+
+function applyEditorFormat(prefix = "", suffix = "") {
+  const editor = $("#leadAiEditor");
+  if (!editor) return;
+  const start = editor.selectionStart || 0;
+  const end = editor.selectionEnd || 0;
+  const selected = editor.value.slice(start, end) || "texto";
+  editor.value = `${editor.value.slice(0, start)}${prefix}${selected}${suffix}${editor.value.slice(end)}`;
+  editor.focus();
+  editor.selectionStart = start + prefix.length;
+  editor.selectionEnd = start + prefix.length + selected.length;
+}
+
+function saveEditorAsPdf() {
+  const lead = currentLead();
+  const text = editorText();
+  if (!lead || !text) return alert("Gere ou digite uma proposta antes de salvar PDF.");
+  const type = $("#leadAiType")?.value || "proposal";
+  const title = `${type === "contract" ? "Contrato" : "Proposta"} NODERE - ${lead.company}`;
+  const dataUrl = createPdfDataUrl(title, text, lead);
+  const file = {
+    id: uid("file"),
+    name: `${title.replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").toLowerCase()}-${Date.now()}.pdf`,
+    type: "PDF",
+    source: leadAiTypes[type] || "Assistente IA",
+    text,
+    dataUrl,
+    createdAt: nowIso(),
+    updatedAt: nowIso()
+  };
+  lead.files = [file, ...(lead.files || [])];
+  if (type === "proposal") lead.status = "Proposta enviada";
+  addTimeline(lead, "Arquivo", `PDF salvo: ${file.name}.`);
+  persistAll();
+  openLeadDialog(lead);
+  activateLeadTab("files");
+}
+
+function createPdfDataUrl(title, text, lead = {}) {
+  const clean = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x20-\x7E\n\r]/g, "");
+  const lines = [
+    "NODERE Intelligence",
+    title,
+    `Cliente: ${lead.company || ""}`,
+    `Cidade: ${[lead.city, lead.state].filter(Boolean).join(" / ")}`,
+    `Data: ${new Date().toLocaleDateString("pt-BR")}`,
+    "",
+    ...clean(text).split(/\r?\n/).flatMap((line) => line.match(/.{1,88}/g) || [""])
+  ].slice(0, 70);
+  const content = `BT /F1 12 Tf 50 790 Td 14 TL ${lines.map((line) => `(${clean(line).replace(/[()\\]/g, "\\$&")}) Tj T*`).join(" ")} ET`;
+  const objects = [
+    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
+    "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
+    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj",
+    "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
+    `5 0 obj << /Length ${content.length} >> stream\n${content}\nendstream endobj`
+  ];
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+  objects.forEach((obj) => { offsets.push(pdf.length); pdf += `${obj}\n`; });
+  const xref = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.slice(1).map((offset) => `${String(offset).padStart(10, "0")} 00000 n `).join("\n")}\n`;
+  pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return `data:application/pdf;base64,${btoa(pdf)}`;
 }
 
 function renderAiResult(ai, mode = "") {
@@ -1629,9 +1738,20 @@ function bindEvents() {
     const remove = event.target.closest("[data-delete-note]");
     if (remove && confirm("Excluir observacao?")) deleteNote(remove.dataset.deleteNote);
   });
-  $("#leadAiActions")?.addEventListener("click", (event) => {
-    const action = event.target.closest("[data-ai-action]")?.dataset.aiAction;
-    if (action) analyzeLeadWithAi(currentLeadId, action, "leadAiResult").catch((error) => $("#leadAiResult").textContent = error.message);
+  $("#leadAiGenerate")?.addEventListener("click", generateLeadAssistantText);
+  $("#leadAiSaveNote")?.addEventListener("click", saveEditorAsNote);
+  $("#leadAiSaveWhatsapp")?.addEventListener("click", saveEditorAsWhatsappTemplate);
+  $("#leadAiSavePdf")?.addEventListener("click", saveEditorAsPdf);
+  $("#leadAiCopy")?.addEventListener("click", copyEditorText);
+  $("#leadAiClear")?.addEventListener("click", () => {
+    $("#leadAiEditor").value = "";
+    $("#leadAiStatus").textContent = "Editor limpo.";
+  });
+  document.querySelector(".editor-toolbar")?.addEventListener("click", (event) => {
+    const wrap = event.target.closest("[data-editor-wrap]");
+    const prefix = event.target.closest("[data-editor-prefix]");
+    if (wrap) applyEditorFormat(wrap.dataset.editorWrap, wrap.dataset.editorWrap);
+    if (prefix) applyEditorFormat(prefix.dataset.editorPrefix, "");
   });
   $("#leadPageSpeedButton")?.addEventListener("click", () => {
     const lead = currentLead();
@@ -1648,7 +1768,26 @@ function bindEvents() {
   });
   $("#leadHeaderAi")?.addEventListener("click", () => {
     activateLeadTab("ia");
-    analyzeLeadWithAi(currentLeadId, "analyze", "leadAiResult").catch((error) => $("#leadAiResult").textContent = error.message);
+    generateLeadAssistantText();
+  });
+  $("#leadTab-files")?.addEventListener("click", (event) => {
+    const lead = currentLead();
+    if (!lead) return;
+    const rename = event.target.closest("[data-rename-file]");
+    const delFile = event.target.closest("[data-delete-file]");
+    const copyTpl = event.target.closest("[data-copy-template]");
+    const delTpl = event.target.closest("[data-delete-template]");
+    if (rename) {
+      const file = (lead.files || []).find((item) => item.id === rename.dataset.renameFile);
+      const name = file && prompt("Novo nome do arquivo:", file.name);
+      if (file && name) { file.name = name.endsWith(".pdf") ? name : `${name}.pdf`; file.updatedAt = nowIso(); addTimeline(lead, "Arquivo", `Arquivo renomeado para ${file.name}.`); persistAll(); openLeadDialog(lead); activateLeadTab("files"); }
+    }
+    if (delFile && confirm("Excluir arquivo?")) { lead.files = (lead.files || []).filter((item) => item.id !== delFile.dataset.deleteFile); addTimeline(lead, "Arquivo", "Arquivo excluido."); persistAll(); openLeadDialog(lead); activateLeadTab("files"); }
+    if (copyTpl) {
+      const tpl = (lead.whatsappTemplates || []).find((item) => item.id === copyTpl.dataset.copyTemplate);
+      if (tpl) copyText(tpl.body);
+    }
+    if (delTpl && confirm("Excluir modelo WhatsApp?")) { lead.whatsappTemplates = (lead.whatsappTemplates || []).filter((item) => item.id !== delTpl.dataset.deleteTemplate); addTimeline(lead, "WhatsApp", "Modelo WhatsApp excluido."); persistAll(); openLeadDialog(lead); activateLeadTab("files"); }
   });
   $("#pageSpeedForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -1674,23 +1813,6 @@ function bindEvents() {
   $("#quickSearchClear")?.addEventListener("click", () => {
     localStorage.removeItem("nodere:last-quick-search");
     $("#quickSearchForm")?.reset();
-  });
-  $("#leadTab-proposals")?.addEventListener("click", (event) => {
-    if (event.target.closest("[data-add-service-lead]")) addServiceToLead();
-    const createProp = event.target.closest("[data-create-proposal]");
-    const aiProp = event.target.closest("[data-ai-proposal]");
-    const editProp = event.target.closest("[data-proposal-edit]");
-    const printProp = event.target.closest("[data-proposal-print]");
-    const createContractButton = event.target.closest("[data-create-contract]");
-    const editContract = event.target.closest("[data-contract-edit]");
-    const printContract = event.target.closest("[data-contract-print]");
-    if (createProp) createProposal(createProp.dataset.createProposal);
-    if (aiProp) createProposal(aiProp.dataset.aiProposal, true);
-    if (editProp) openDocumentEditor("proposal", editProp.dataset.proposalEdit);
-    if (printProp) printDocument("proposal", printProp.dataset.proposalPrint);
-    if (createContractButton) createContract(createContractButton.dataset.createContract);
-    if (editContract) openDocumentEditor("contract", editContract.dataset.contractEdit);
-    if (printContract) printDocument("contract", printContract.dataset.contractPrint);
   });
   $("#settingsForm")?.addEventListener("click", async (event) => {
     const toggle = event.target.closest("[data-toggle-secret]");
@@ -1755,21 +1877,7 @@ function bindEvents() {
       alert(error.message);
     }
   });
-  $("#servicos")?.addEventListener("click", (event) => {
-    const edit = event.target.closest("[data-service-edit]");
-    const duplicate = event.target.closest("[data-service-duplicate]");
-    const toggle = event.target.closest("[data-service-toggle]");
-    const remove = event.target.closest("[data-service-delete]");
-    if (event.target.closest("[data-service-new]")) editService();
-    if (edit) editService(edit.dataset.serviceEdit);
-    if (duplicate) {
-      const source = services.find((item) => item.id === duplicate.dataset.serviceDuplicate);
-      if (source) { services.unshift(normalizeService({ ...source, id: uid("service"), name: `${source.name} copia`, createdAt: nowIso(), updatedAt: nowIso() })); persistAll(); }
-    }
-    if (toggle) { const s = services.find((item) => item.id === toggle.dataset.serviceToggle); if (s) { s.active = !s.active; s.updatedAt = nowIso(); persistAll(); } }
-    if (remove && confirm("Excluir servico?")) { services = services.filter((item) => item.id !== remove.dataset.serviceDelete); persistAll(); }
-  });
-  $("#templates")?.addEventListener("click", (event) => {
+  $("#modelos")?.addEventListener("click", (event) => {
     const edit = event.target.closest("[data-template-edit]");
     const duplicate = event.target.closest("[data-template-duplicate]");
     const remove = event.target.closest("[data-template-delete]");
@@ -1777,16 +1885,6 @@ function bindEvents() {
     if (edit) editTemplate(edit.dataset.templateEdit);
     if (duplicate) { const source = templates.find((item) => item.id === duplicate.dataset.templateDuplicate); if (source) { templates.unshift(normalizeTemplate({ ...source, id: uid("tpl"), name: `${source.name} copia`, createdAt: nowIso(), updatedAt: nowIso() })); persistAll(); } }
     if (remove && confirm("Excluir template?")) { templates = templates.filter((item) => item.id !== remove.dataset.templateDelete); persistAll(); }
-  });
-  $("#contratos")?.addEventListener("click", (event) => {
-    if (event.target.closest("[data-contract-new]")) {
-      if (!leads.length) return alert("Crie um lead antes de gerar contrato.");
-      createContract(leads[0].id);
-    }
-    const edit = event.target.closest("[data-contract-edit]");
-    const print = event.target.closest("[data-contract-print]");
-    if (edit) openDocumentEditor("contract", edit.dataset.contractEdit);
-    if (print) printDocument("contract", print.dataset.contractPrint);
   });
   $("#globalSearch")?.addEventListener("input", (event) => {
     $("#crmSearch").value = event.target.value;

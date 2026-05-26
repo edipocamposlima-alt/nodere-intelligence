@@ -26,9 +26,7 @@
           <button class="nav-item nav-ia" type="button" data-nav="ia"><span>IA</span>IA</button>
           <button class="nav-item nav-reports" type="button" data-nav="relatorios"><span>▥</span>Relatórios</button>
           <button class="nav-item nav-integrations" type="button" data-nav="integracoes"><span>↔</span>Integrações</button>
-          <button class="nav-item nav-services" type="button" data-nav="servicos"><span>§</span>Serviços</button>
-          <button class="nav-item nav-contracts" type="button" data-nav="contratos"><span>□</span>Contratos</button>
-          <button class="nav-item nav-templates" type="button" data-nav="templates"><span>✎</span>Templates</button>
+          <button class="nav-item nav-templates" type="button" data-nav="modelos"><span>M</span>Modelos</button>
           <button class="nav-item nav-settings" type="button" data-nav="configuracoes"><span>⚙</span>Configurações</button>
         </nav>
         <div class="agency-card">
@@ -231,40 +229,13 @@
             <div class="integration-grid" id="integrationGrid"></div>
           </article>
         </section>
-
-        <section class="view" id="servicos">
+        <section class="view" id="modelos">
           <article class="panel">
-            <div class="panel-title"><span>Serviços</span><h2>Catálogo comercial</h2></div>
-            <div class="catalog-grid">
-              <article><strong>Gestão Google Ads</strong><small>Recorrente</small><p>Campanhas, otimização, conversões e relatórios.</p></article>
-              <article><strong>Google Meu Negócio</strong><small>Pontual/recorrente</small><p>Otimização local, fotos, descrições, posts e avaliações.</p></article>
-              <article><strong>Landing Page</strong><small>Pontual</small><p>Página de conversão para tráfego pago.</p></article>
-              <article><strong>GA4 + GTM</strong><small>Pontual</small><p>Mensuração, eventos, tags e conversões.</p></article>
-              <article><strong>Remarketing</strong><small>Recorrente</small><p>Estratégia de recuperação de audiência.</p></article>
-              <article><strong>Diagnóstico</strong><small>Pontual</small><p>Análise comercial, PageSpeed e oportunidade digital.</p></article>
-            </div>
+            <div class="panel-title"><span>Modelos</span><h2>Modelos comerciais funcionais</h2></div>
+            <p class="table-message">Use a IA da ficha para gerar WhatsApp, e-mail, proposta e contrato simples. Aqui ficam os textos reutilizaveis.</p>
+            <div id="templatesGrid"></div>
           </article>
         </section>
-
-        <section class="view" id="contratos">
-          <article class="panel">
-            <div class="panel-title"><span>Contratos</span><h2>Contratos e propostas formais</h2></div>
-            <div class="result-box">Módulo preparado para contratos recorrentes, pontuais, variáveis como {{nome_cliente}}, PDF, envio por email e salvamento no Drive via backend seguro.</div>
-          </article>
-        </section>
-
-        <section class="view" id="templates">
-          <article class="panel">
-            <div class="panel-title"><span>Templates</span><h2>Modelos comerciais</h2></div>
-            <div class="catalog-grid">
-              <article><strong>WhatsApp inicial</strong><p>Olá {{nome_contato}}, analisei a presença digital da {{nome_empresa}} em {{cidade}}...</p></article>
-              <article><strong>Email diagnóstico</strong><p>Assunto: oportunidades no Google para {{nome_empresa}}</p></article>
-              <article><strong>Follow-up</strong><p>Retomando o diagnóstico enviado e próximos passos.</p></article>
-              <article><strong>Proposta</strong><p>Escopo, valor, prazo e entregáveis do serviço {{servico}}.</p></article>
-            </div>
-          </article>
-        </section>
-
         <section class="view" id="configuracoes">
           <article class="panel">
             <div class="panel-title"><span>Config</span><h2>Configuracoes</h2></div>
@@ -361,12 +332,9 @@
           <button class="secondary-button" type="button" data-tab="notes">Observacoes</button>
           <button class="secondary-button" type="button" data-tab="agenda">Agenda</button>
           <button class="secondary-button" type="button" data-tab="timeline">Historico</button>
-          <button class="secondary-button" type="button" data-tab="ia">IA</button>
+          <button class="secondary-button" type="button" data-tab="ia">IA / Assistente</button>
           <button class="secondary-button" type="button" data-tab="pagespeed">PageSpeed</button>
-          <button class="secondary-button" type="button" data-tab="proposals">Propostas</button>
-          <button class="secondary-button" type="button" data-tab="contracts">Contratos</button>
-          <button class="secondary-button" type="button" data-tab="documents">Documentos e mídias</button>
-          <button class="secondary-button" type="button" data-tab="emails">Emails</button>
+          <button class="secondary-button" type="button" data-tab="files">Arquivos</button>
         </nav>
 
         <section class="lead-tab active" id="leadTab-overview"><div id="leadOverview"></div></section>
@@ -392,28 +360,48 @@
         </section>
         <section class="lead-tab" id="leadTab-timeline"><div id="leadTimeline"></div></section>
         <section class="lead-tab" id="leadTab-ia">
-          <div class="settings-actions wrap" id="leadAiActions"></div>
-          <div class="result-box" id="leadAiResult"></div>
+          <div class="ai-workbench">
+            <div class="entry-form compact">
+              <select id="leadAiType">
+                <option value="summary">Resumo comercial</option>
+                <option value="approach">Proxima abordagem</option>
+                <option value="whatsapp">Mensagem WhatsApp</option>
+                <option value="email">E-mail comercial</option>
+                <option value="proposal">Proposta comercial</option>
+                <option value="diagnosis">Diagnostico</option>
+                <option value="objections">Objecoes e respostas</option>
+                <option value="contract">Contrato simples</option>
+              </select>
+              <input id="leadAiInstruction" placeholder="Instrucao manual opcional para a IA" />
+              <button class="primary-button" type="button" id="leadAiGenerate">Gerar com IA</button>
+            </div>
+            <div class="editor-toolbar">
+              <button type="button" data-editor-wrap="**">B</button>
+              <button type="button" data-editor-wrap="_">I</button>
+              <button type="button" data-editor-prefix="# ">Titulo</button>
+              <button type="button" data-editor-prefix="- ">Lista</button>
+            </div>
+            <textarea id="leadAiEditor" class="document-editor" placeholder="O texto gerado pela IA aparece aqui. Edite antes de salvar, copiar, enviar por WhatsApp ou transformar em PDF."></textarea>
+            <div class="settings-actions wrap">
+              <button class="secondary-button" type="button" id="leadAiSaveNote">Salvar em observacoes</button>
+              <button class="secondary-button" type="button" id="leadAiSaveWhatsapp">Salvar como modelo WhatsApp</button>
+              <button class="secondary-button" type="button" id="leadAiSavePdf">Salvar como proposta PDF</button>
+              <button class="secondary-button" type="button" id="leadAiCopy">Copiar texto</button>
+              <button class="secondary-button danger" type="button" id="leadAiClear">Limpar</button>
+            </div>
+            <p class="table-message" id="leadAiStatus">Escolha o tipo de geracao e clique em Gerar com IA.</p>
+          </div>
         </section>
         <section class="lead-tab" id="leadTab-pagespeed">
           <button class="primary-button xl" type="button" id="leadPageSpeedButton">Analisar site automaticamente</button>
           <div class="result-box" id="leadPageSpeedBox"></div>
         </section>
-        <section class="lead-tab" id="leadTab-proposals">
-          <div class="result-box">Area preparada para propostas comerciais, anexos e historico de aceite.</div>
-        </section>
-        <section class="lead-tab" id="leadTab-contracts">
-          <div class="result-box">Contratos recorrentes e pontuais serão gerados pelo backend, com variáveis do lead e histórico.</div>
-        </section>
-        <section class="lead-tab" id="leadTab-documents">
-          <div class="result-box">Documentos, PDFs, imagens e vídeos ficam preparados para integração Google Drive via OAuth seguro.</div>
-        </section>
-        <section class="lead-tab" id="leadTab-emails">
-          <div class="result-box">Emails e rascunhos serão associados ao lead via Gmail OAuth no backend.</div>
+        <section class="lead-tab" id="leadTab-files">
+          <div class="result-box" id="leadFilesBox"></div>
         </section>
       </form>
     </dialog>
 
-    <script src="./app.js?v=secure-backend-3"></script>
+    <script src="./app.js?v=lean-crm-1"></script>
   </body>
 </html>

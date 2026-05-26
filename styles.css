@@ -894,6 +894,51 @@ dialog {
 }
 .client-site-card.missing { border-color: rgba(255,179,0,.42); background: rgba(255,179,0,.08); }
 .client-site-card strong { font-size: 18px; word-break: break-word; }
+.ai-workbench {
+  display: grid;
+  gap: 14px;
+}
+.document-editor {
+  width: 100%;
+  min-height: 300px;
+  resize: vertical;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(5, 11, 21, 0.86);
+  color: var(--text);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.editor-toolbar button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255,255,255,.045);
+  color: var(--text);
+  cursor: pointer;
+}
+.editor-toolbar button:hover,
+.row-button:hover,
+.secondary-button:hover {
+  border-color: rgba(8,120,255,.62);
+  background: rgba(8,120,255,.12);
+}
+.row-button.danger,
+.secondary-button.danger {
+  border-color: rgba(255, 94, 94, 0.38);
+  color: #ff9a9a;
+}
+.row-button.danger:hover,
+.secondary-button.danger:hover {
+  background: rgba(255, 94, 94, 0.12);
+}
 .check-row {
   display: flex;
   align-items: center;
