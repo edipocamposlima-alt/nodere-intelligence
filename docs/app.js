@@ -105,9 +105,26 @@ function apiConfigured() {
   return Boolean((settings.apiBaseUrl && String(settings.apiBaseUrl).trim()) || DEFAULT_API_BASE_URL || isLocalDev());
 }
 
+function normalizeApiBaseUrl(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  try {
+    const url = new URL(raw, location.href);
+    const path = url.pathname.replace(/\/+$/, "");
+    const apiIndex = path.toLowerCase().indexOf("/api/");
+    if (apiIndex >= 0) url.pathname = path.slice(0, apiIndex) || "/";
+    else if (path.toLowerCase() === "/api") url.pathname = "/";
+    url.search = "";
+    url.hash = "";
+    return url.toString().replace(/\/$/, "");
+  } catch {
+    return raw;
+  }
+}
+
 function configuredApiBase() {
   const localDefault = isLocalDev() ? "http://localhost:3333" : "";
-  return String(settings.apiBaseUrl || DEFAULT_API_BASE_URL || localDefault).trim();
+  return normalizeApiBaseUrl(settings.apiBaseUrl || DEFAULT_API_BASE_URL || localDefault);
 }
 
 function apiUrl(path) {
@@ -122,9 +139,9 @@ function apiConfigurationIssue() {
   try {
     const url = new URL(base, location.href);
     const value = `${url.hostname}${url.pathname}`.toLowerCase();
-    const placeholders = ["sua-api", "example", "exemplo", "localhost:3333/api", "api.com"];
+    const placeholders = ["seu-backend", "sua-api", "example", "exemplo", "localhost:3333/api", "api.com", "url-https-do-backend"];
     if (placeholders.some((item) => value.includes(item))) {
-      return "A URL do backend ainda e um exemplo. Publique o backend em Render/Railway e cole a URL real, por exemplo https://nodere-api.onrender.com.";
+      return "A URL do backend ainda e um exemplo. Cole apenas a raiz HTTPS real do backend, por exemplo https://nodere-api.onrender.com, sem /api/places/search.";
     }
     const isGithubPages = url.hostname.endsWith("github.io");
     const sameFrontendHost = url.hostname === location.hostname && url.pathname.includes("nodere-intelligence");
@@ -1610,11 +1627,13 @@ function bindEvents() {
   $("#settingsForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(event.target));
+    data.apiBaseUrl = normalizeApiBaseUrl(data.apiBaseUrl);
     data.hideSavedResults = event.target.elements.hideSavedResults?.checked ? "on" : "off";
     data.autoAiOnSave = event.target.elements.autoAiOnSave?.checked ? "on" : "off";
     settings = sanitizeSettings({ ...settings, ...data });
     writeJson(STORAGE.settings, settings);
-    $("#settingsMessage").textContent = "Configuracoes salvas.";
+    loadSettingsForm();
+    $("#settingsMessage").textContent = apiConfigurationIssue() || "Configuracoes salvas.";
     persistAll();
   });
   $("#quickSearchClear")?.addEventListener("click", () => {
@@ -1660,10 +1679,12 @@ function bindEvents() {
       button.textContent = "Validando...";
       try {
         const data = Object.fromEntries(new FormData($("#settingsForm")));
+        data.apiBaseUrl = normalizeApiBaseUrl(data.apiBaseUrl);
         data.hideSavedResults = $("#settingsForm").elements.hideSavedResults?.checked ? "on" : "off";
         data.autoAiOnSave = $("#settingsForm").elements.autoAiOnSave?.checked ? "on" : "off";
         settings = sanitizeSettings({ ...settings, ...data });
         writeJson(STORAGE.settings, settings);
+        loadSettingsForm();
         $("#settingsMessage").textContent = await testIntegration(test.dataset.test);
       } catch (error) {
         $("#settingsMessage").textContent = error.message;
@@ -1691,7 +1712,7 @@ function bindEvents() {
     }
   });
   $("#testAllIntegrations")?.addEventListener("click", async () => {
-    if (!apiConfigured()) return alert("Configure a URL do backend seguro primeiro ou use localhost com modo desenvolvimento.");
+    if (!apiConfigured()) return alert("Configure a URL HTTPS do backend seguro primeiro.");
     try {
       const payload = await apiFetch("/api/v1/integrations/status?live=1", { method: "POST", body: JSON.stringify({}), timeoutMs: 60000 });
       $("#integrationGrid").innerHTML = renderIntegrationStatusList(payload.integrations || []);

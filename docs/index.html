@@ -7,7 +7,7 @@
     <title>NODERE Intelligence</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./nodere-icon.png" type="image/png" />
-    <link rel="stylesheet" href="./styles.css?v=dashboard-1" />
+    <link rel="stylesheet" href="./styles.css?v=secure-backend-2" />
   </head>
   <body>
     <div class="app-shell">
@@ -270,7 +270,7 @@
             <div class="panel-title"><span>Config</span><h2>Configuracoes</h2></div>
             <p class="warning">Produção: configure chaves reais somente no backend/.env. O frontend GitHub Pages chama apenas o backend HTTPS e nunca salva chaves Google/OpenAI.</p>
             <form class="settings-form" id="settingsForm">
-              <label>URL do backend seguro<input name="apiBaseUrl" placeholder="Cole a URL real do Render/Railway. Ex: https://nodere-api.onrender.com" /></label>
+              <label>URL do backend seguro<input name="apiBaseUrl" placeholder="Cole apenas a raiz. Ex: https://nodere-api.onrender.com" /></label>
               <label>Token do proprietário opcional<input name="ownerToken" type="password" autocomplete="off" /></label>
               <label>Responsavel padrao<input name="defaultOwner" placeholder="Agencia Digital" /></label>
               <label>Maximo por busca<input name="maxResults" type="number" min="10" max="80" step="10" value="60" /></label>
@@ -414,6 +414,6 @@
       </form>
     </dialog>
 
-    <script src="./app.js?v=dashboard-1"></script>
+    <script src="./app.js?v=secure-backend-2"></script>
   </body>
 </html>
