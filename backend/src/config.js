@@ -17,7 +17,7 @@ export const config = {
   googleApiKey: env("GOOGLE_API_KEY"),
   googleMapsApiKey: env("GOOGLE_MAPS_API_KEY") || env("GOOGLE_API_KEY"),
   googlePlacesApiKey: env("GOOGLE_PLACES_API_KEY") || env("GOOGLE_API_KEY") || env("GOOGLE_MAPS_API_KEY"),
-  googlePageSpeedApiKey: env("GOOGLE_PAGESPEED_API_KEY") || env("GOOGLE_API_KEY"),
+  googlePageSpeedApiKey: env("GOOGLE_PAGESPEED_API_KEY") || env("GOOGLE_API_KEY") || env("GOOGLE_MAPS_API_KEY") || env("GOOGLE_PLACES_API_KEY"),
   googleBusinessProfileClientId: env("GOOGLE_BUSINESS_PROFILE_CLIENT_ID") || env("GOOGLE_CLIENT_ID"),
   googleBusinessProfileClientSecret: env("GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET") || env("GOOGLE_CLIENT_SECRET"),
   googleBusinessProfileRefreshToken: env("GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN") || env("GOOGLE_REFRESH_TOKEN"),
