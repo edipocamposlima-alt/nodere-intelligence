@@ -3,6 +3,9 @@ import { z } from "zod";
 import { addNote, getCompany, listCompanies, updateStatus } from "../services/companyStore.js";
 import { queueEnrichment, getJobByCompany } from "../services/enrichmentQueue.js";
 import { consumeEnrichment } from "../services/credits.js";
+import { getAudit } from "../db/auditStore.js";
+import { calculateCommercialScore, calculateMaturityScore, calculatePaidTrafficScore } from "../services/scoring.js";
+import { config } from "../config.js";
 import { generateCommercialDiagnosis } from "../services/openai.js";
 import { defaultProspectingMessage, sendWhatsappMessage } from "../services/whatsapp.js";
 
@@ -57,6 +60,36 @@ router.post("/:id/whatsapp", async (req, res, next) => {
   } catch (error) {
     return next(error);
   }
+});
+
+router.get("/:id/audit", (req, res) => {
+  const company = getCompany(req.params.id);
+  if (!company) return res.status(404).json({ message: "Company not found" });
+
+  const scan = getAudit(req.params.id);
+  const maturityScore = scan ? calculateMaturityScore(scan) : (company.maturityScore ?? 0);
+  const commercialScore = scan ? calculateCommercialScore(company, scan) : (company.commercialScore ?? 0);
+  const paidTrafficScore = scan ? calculatePaidTrafficScore(scan) : (company.paidTrafficScore ?? 0);
+
+  const gbpConfigured = Boolean(config.google.businessProfileRefreshToken);
+  const gbp = {
+    status: gbpConfigured ? "configured" as const : "not_configured" as const,
+    message: gbpConfigured
+      ? "Perfil Google Business configurado — dados de avaliações, posts e fotos disponíveis via API."
+      : "Configure GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN para ingerir dados de avaliações, posts, fotos e Q&A."
+  };
+
+  return res.json({
+    companyId: company.id,
+    companyName: company.name,
+    website: company.website,
+    scan: scan ?? null,
+    maturityScore,
+    commercialScore,
+    paidTrafficScore,
+    opportunityScore: company.score,
+    gbp
+  });
 });
 
 router.post("/:id/diagnosis", async (req, res, next) => {

@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { EnrichmentJob } from "../types.js";
-import { analyzeWebsite } from "./google.js";
-import { calculateOpportunityScore } from "./scoring.js";
+import { scanWebsite } from "./websiteScanner.js";
+import { calculateOpportunityScore, calculateMaturityScore, calculateCommercialScore, calculatePaidTrafficScore } from "./scoring.js";
+import { saveAudit } from "../db/auditStore.js";
 import { getCompany, updateCompany } from "./companyStore.js";
 
 const jobs: EnrichmentJob[] = [];
@@ -9,16 +10,12 @@ const MAX_CONCURRENT = 3;
 let running = 0;
 
 export function getQueueStatus() {
-  const pending = jobs.filter((j) => j.status === "pending").length;
-  const inProgress = jobs.filter((j) => j.status === "running").length;
-  const done = jobs.filter((j) => j.status === "done").length;
-  const error = jobs.filter((j) => j.status === "error").length;
   return {
     total: jobs.length,
-    pending,
-    running: inProgress,
-    done,
-    error,
+    pending: jobs.filter((j) => j.status === "pending").length,
+    running: jobs.filter((j) => j.status === "running").length,
+    done: jobs.filter((j) => j.status === "done").length,
+    error: jobs.filter((j) => j.status === "error").length,
     jobs: jobs.slice(-100).reverse()
   };
 }
@@ -28,7 +25,9 @@ export function getJobByCompany(companyId: string) {
 }
 
 export function queueEnrichment(companyId: string, companyName: string): EnrichmentJob {
-  const active = jobs.find((j) => j.companyId === companyId && (j.status === "pending" || j.status === "running"));
+  const active = jobs.find(
+    (j) => j.companyId === companyId && (j.status === "pending" || j.status === "running")
+  );
   if (active) return active;
 
   const job: EnrichmentJob = {
@@ -39,7 +38,6 @@ export function queueEnrichment(companyId: string, companyName: string): Enrichm
     createdAt: new Date().toISOString()
   };
   jobs.push(job);
-
   scheduleNext();
   return job;
 }
@@ -60,12 +58,46 @@ async function processJob(job: EnrichmentJob) {
     const company = getCompany(job.companyId);
     if (!company) throw new Error("Company not found in store");
 
-    const digital = await analyzeWebsite(company.website);
-    const scored = calculateOpportunityScore({ ...company, ...digital });
+    const scan = await scanWebsite(company.website);
+    saveAudit(job.companyId, scan);
+
+    const opportunityData = calculateOpportunityScore({ ...company, ...scan });
 
     updateCompany(job.companyId, {
-      ...digital,
-      ...scored,
+      // basic signals (backward compat)
+      hasSsl: scan.hasSsl,
+      isResponsive: scan.isResponsive,
+      pageSpeed: scan.pageSpeed,
+      metaPixel: scan.hasMetaPixel,
+      googleTagManager: scan.hasGTM,
+      googleAnalytics: scan.hasGA4 || (scan as any).googleAnalytics,
+      seoBasics: scan.hasTitle && scan.hasMetaDescription,
+      // social
+      instagram: scan.instagram,
+      facebook: scan.facebook,
+      linkedin: scan.linkedin,
+      youtube: scan.youtube,
+      // Phase 3 deep signals
+      hasGA4: scan.hasGA4,
+      ga4MeasurementId: scan.ga4MeasurementId,
+      gtmContainerId: scan.gtmContainerId,
+      metaPixelId: scan.metaPixelId,
+      hasConversionEvents: scan.hasConversionEvents,
+      conversionEvents: scan.conversionEvents,
+      hasH1: scan.hasH1,
+      hasCanonical: scan.hasCanonical,
+      hasOpenGraph: scan.hasOpenGraph,
+      hasStructuredData: scan.hasStructuredData,
+      hasSitemap: scan.hasSitemap,
+      lcp: scan.lcp,
+      cls: scan.cls,
+      fcp: scan.fcp,
+      // composite scores
+      maturityScore: calculateMaturityScore(scan),
+      commercialScore: calculateCommercialScore(company, scan),
+      paidTrafficScore: calculatePaidTrafficScore(scan),
+      // opportunity
+      ...opportunityData,
       enrichmentStatus: "done"
     });
 

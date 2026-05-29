@@ -1,4 +1,4 @@
-import { Company, OpportunityLevel } from "../types.js";
+import { Company, OpportunityLevel, WebsiteScan } from "../types.js";
 
 type ScoreInput = Partial<Company>;
 
@@ -78,4 +78,49 @@ export function calculateOpportunityScore(company: ScoreInput) {
 
 function dedupe(items: string[]) {
   return Array.from(new Set(items));
+}
+
+export function calculateMaturityScore(scan: Partial<WebsiteScan>): number {
+  let n = 0;
+  if (scan.hasSsl) n += 10;
+  if (scan.isResponsive) n += 10;
+  if (scan.hasTitle) n += 8;
+  if (scan.hasMetaDescription) n += 8;
+  if (scan.hasH1) n += 6;
+  if (scan.hasCanonical) n += 6;
+  if (scan.hasOpenGraph) n += 8;
+  if (scan.hasStructuredData) n += 8;
+  if (scan.hasSitemap) n += 6;
+  if ((scan.pageSpeed ?? 0) >= 70) n += 15;
+  else if ((scan.pageSpeed ?? 0) >= 50) n += 8;
+  const socials = [scan.instagram, scan.facebook, scan.linkedin, scan.youtube].filter(Boolean).length;
+  if (socials >= 2) n += 8;
+  else if (socials === 1) n += 4;
+  return Math.min(100, n);
+}
+
+export function calculateCommercialScore(company: Partial<Company>, scan?: Partial<WebsiteScan>): number {
+  let n = 0;
+  if (company.website) n += 12;
+  if (company.whatsapp) n += 12;
+  if (company.phone) n += 6;
+  if (scan?.hasSsl) n += 8;
+  if (scan?.isResponsive) n += 8;
+  if (scan?.hasMetaPixel) n += 20;
+  if (scan?.hasConversionEvents) n += 16;
+  if (scan?.hasGA4) n += 16;
+  if (scan?.hasGTM) n += 10;
+  if (scan?.hasOpenGraph) n += 8;
+  return Math.min(100, n);
+}
+
+export function calculatePaidTrafficScore(scan?: Partial<WebsiteScan>): number {
+  let n = 0;
+  if (scan?.hasMetaPixel) n += 28;
+  if (scan?.hasConversionEvents) n += 22;
+  if (scan?.hasGA4) n += 22;
+  if (scan?.hasGTM) n += 16;
+  if ((scan?.pageSpeed ?? 0) >= 60) n += 8;
+  if (scan?.isResponsive) n += 4;
+  return Math.min(100, n);
 }

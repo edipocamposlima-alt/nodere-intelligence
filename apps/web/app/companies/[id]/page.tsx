@@ -1,15 +1,15 @@
-import { ExternalLink, Globe2, Instagram, Linkedin, MessageCircle, Phone, Star, Youtube } from "lucide-react";
-import { Facebook } from "lucide-react";
+import { ExternalLink, Facebook, Globe2, Instagram, Linkedin, MessageCircle, Phone, ShieldCheck, Star, Youtube } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
-import { getCompany } from "@/lib/api";
+import { getCompany, getCompanyAudit } from "@/lib/api";
 import { EnrichTrigger } from "./EnrichTrigger";
+import { AuditPanel } from "./AuditPanel";
 
 const whatsappMessage =
   "Ola, tudo bem? Estive analisando a presenca digital da sua empresa no Google e identifiquei algumas oportunidades que podem ajudar voces a gerar mais contatos e melhorar o posicionamento online. Posso te mostrar rapidamente?";
 
 export default async function CompanyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const company = await getCompany(id);
+  const [company, audit] = await Promise.all([getCompany(id), getCompanyAudit(id).catch(() => null)]);
 
   const checks: [string, boolean][] = [
     ["Site", Boolean(company.website)],
@@ -17,13 +17,14 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
     ["Responsivo", Boolean(company.isResponsive)],
     ["Google Ads", Boolean(company.hasGoogleAds)],
     ["Meta Pixel", Boolean(company.metaPixel)],
-    ["GTM", Boolean(company.googleTagManager)],
-    ["Analytics", Boolean(company.googleAnalytics)],
-    ["SEO básico", Boolean(company.seoBasics)]
+    ["GTM", Boolean(company.googleTagManager || company.gtmContainerId)],
+    ["GA4", Boolean(company.hasGA4)],
+    ["SEO básico", Boolean(company.seoBasics || (company.hasH1 && company.hasCanonical))]
   ];
 
   return (
     <div className="space-y-6 p-4 md:p-8">
+      {/* Header */}
       <section className="rounded-lg border border-line bg-panel/90 p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
@@ -79,17 +80,32 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
               )}
             </div>
           </div>
-          <div className="flex flex-col gap-3">
-            <div className="rounded-lg border border-electric/30 bg-electric/10 p-5 text-center">
-              <p className="text-sm text-slate-400">Score comercial</p>
-              <p className="mt-2 text-6xl font-semibold text-white">{company.score}</p>
+
+          {/* Score cards */}
+          <div className="flex flex-wrap gap-3 lg:flex-col">
+            <div className="rounded-lg border border-electric/30 bg-electric/10 px-5 py-4 text-center">
+              <p className="text-xs text-slate-400">Oportunidade</p>
+              <p className="mt-1 text-5xl font-semibold text-white">{company.score}</p>
             </div>
+            {company.maturityScore !== undefined && (
+              <div className="rounded-lg border border-line bg-panel/60 px-4 py-3 text-center">
+                <p className="text-xs text-slate-400">Maturidade</p>
+                <p className="mt-1 text-3xl font-semibold text-white">{company.maturityScore}</p>
+              </div>
+            )}
+            {company.paidTrafficScore !== undefined && (
+              <div className="rounded-lg border border-line bg-panel/60 px-4 py-3 text-center">
+                <p className="text-xs text-slate-400">Tráfego pago</p>
+                <p className="mt-1 text-3xl font-semibold text-white">{company.paidTrafficScore}</p>
+              </div>
+            )}
             <EnrichTrigger companyId={company.id} enrichmentStatus={company.enrichmentStatus} hasWebsite={Boolean(company.website)} />
           </div>
         </div>
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+      <div className="grid gap-5 xl:grid-cols-[1fr_1.2fr]">
+        {/* Left column */}
         <div className="space-y-5">
           <div className="rounded-lg border border-line bg-panel/90 p-5">
             <h3 className="font-semibold text-white">Informações gerais</h3>
@@ -103,12 +119,12 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                 {company.phone ?? "Telefone não detectado"}
               </p>
               <p>Status CRM: {company.status}</p>
-              <p>PageSpeed mobile: {company.pageSpeed || "não analisado"}</p>
+              <p>PageSpeed mobile: {company.pageSpeed ? `${company.pageSpeed}/100` : "não analisado"}</p>
             </div>
           </div>
 
           <div className="rounded-lg border border-line bg-panel/90 p-5">
-            <h3 className="font-semibold text-white">Performance digital</h3>
+            <h3 className="font-semibold text-white">Sinais digitais</h3>
             <div className="mt-4 grid grid-cols-2 gap-2">
               {checks.map(([label, ok]) => (
                 <div key={label} className="rounded-md border border-line bg-ink px-3 py-2 text-sm">
@@ -118,28 +134,30 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
               ))}
             </div>
           </div>
-        </div>
 
-        <div className="space-y-5">
           <div className="rounded-lg border border-line bg-panel/90 p-5">
             <h3 className="font-semibold text-white">Oportunidades detectadas</h3>
-            <div className="mt-4 space-y-3">
-              {company.detectedOpportunities.map((item) => (
-                <p key={item} className="rounded-md border border-danger/20 bg-danger/10 px-3 py-2 text-sm text-red-100">
-                  {item}
-                </p>
-              ))}
+            <div className="mt-4 space-y-2">
+              {company.detectedOpportunities.length === 0
+                ? <p className="text-sm text-slate-500">Nenhuma oportunidade detectada.</p>
+                : company.detectedOpportunities.map((item) => (
+                  <p key={item} className="rounded-md border border-danger/20 bg-danger/10 px-3 py-2 text-sm text-red-100">
+                    {item}
+                  </p>
+                ))}
             </div>
           </div>
 
           <div className="rounded-lg border border-line bg-panel/90 p-5">
             <h3 className="font-semibold text-white">Sugestões comerciais</h3>
-            <div className="mt-4 space-y-3">
-              {company.suggestions.map((item) => (
-                <p key={item} className="rounded-md border border-electric/20 bg-electric/10 px-3 py-2 text-sm text-blue-100">
-                  {item}
-                </p>
-              ))}
+            <div className="mt-4 space-y-2">
+              {company.suggestions.length === 0
+                ? <p className="text-sm text-slate-500">Sem sugestões no momento.</p>
+                : company.suggestions.map((item) => (
+                  <p key={item} className="rounded-md border border-electric/20 bg-electric/10 px-3 py-2 text-sm text-blue-100">
+                    {item}
+                  </p>
+                ))}
             </div>
           </div>
 
@@ -155,7 +173,22 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
         </div>
-      </section>
+
+        {/* Right column — Digital Audit */}
+        <div className="space-y-5">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-cyan" />
+            <h3 className="font-semibold text-white">Auditoria digital</h3>
+          </div>
+          {audit
+            ? <AuditPanel audit={audit} />
+            : (
+              <div className="rounded-lg border border-line bg-panel/90 p-8 text-center">
+                <p className="text-sm text-slate-400">API não disponível. Execute a API local para ver auditoria completa.</p>
+              </div>
+            )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Company, CreditAccount, DashboardMetrics, EnrichmentJob, QueueStatus, SavedSearch } from "./types";
+import { Company, CreditAccount, DashboardMetrics, DigitalAudit, EnrichmentJob, QueueStatus, SavedSearch } from "./types";
 import { mockCompanies, mockDashboard } from "./mock";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
@@ -71,6 +71,10 @@ export function getEnrichmentQueue() {
 
 export function triggerEnrichment(companyId: string) {
   return api<EnrichmentJob>(`/companies/${companyId}/analyze`, { method: "POST" });
+}
+
+export function getCompanyAudit(companyId: string) {
+  return api<DigitalAudit>(`/companies/${companyId}/audit`);
 }
 
 export function getCredits() {

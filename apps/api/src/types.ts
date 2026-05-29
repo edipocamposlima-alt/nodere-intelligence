@@ -35,6 +35,7 @@ export interface Company {
   hasRecentPhotos?: boolean;
   hasRecentPosts?: boolean;
   respondsReviews?: boolean;
+  // website signals (basic)
   hasSsl?: boolean;
   isResponsive?: boolean;
   pageSpeed?: number;
@@ -42,6 +43,25 @@ export interface Company {
   googleTagManager?: boolean;
   googleAnalytics?: boolean;
   seoBasics?: boolean;
+  // Phase 3 — deep scan signals
+  hasGA4?: boolean;
+  ga4MeasurementId?: string;
+  gtmContainerId?: string;
+  metaPixelId?: string;
+  hasConversionEvents?: boolean;
+  conversionEvents?: string[];
+  hasH1?: boolean;
+  hasCanonical?: boolean;
+  hasOpenGraph?: boolean;
+  hasStructuredData?: boolean;
+  hasSitemap?: boolean;
+  lcp?: number;
+  cls?: number;
+  fcp?: number;
+  // composite scores
+  maturityScore?: number;
+  commercialScore?: number;
+  paidTrafficScore?: number;
   enrichmentStatus?: EnrichmentStatus;
   status: CrmStatus;
   score: number;
@@ -96,4 +116,64 @@ export interface CreditAccount {
   used: number;
   plan: string;
   resetAt: string;
+}
+
+export interface WebsiteScan {
+  url: string;
+  scannedAt: string;
+  hasSsl: boolean;
+  isResponsive: boolean;
+  hasGA4: boolean;
+  ga4MeasurementId?: string;
+  hasGTM: boolean;
+  gtmContainerId?: string;
+  hasMetaPixel: boolean;
+  metaPixelId?: string;
+  hasConversionEvents: boolean;
+  conversionEvents: string[];
+  hasTitle: boolean;
+  titleText?: string;
+  hasMetaDescription: boolean;
+  hasH1: boolean;
+  h1Text?: string;
+  hasCanonical: boolean;
+  hasRobotsMeta: boolean;
+  hasOpenGraph: boolean;
+  hasStructuredData: boolean;
+  hasSitemap: boolean;
+  pageSpeed: number;
+  lcp?: number;
+  cls?: number;
+  fcp?: number;
+  instagram?: string;
+  facebook?: string;
+  linkedin?: string;
+  youtube?: string;
+  maturityScore: number;
+  commercialScore: number;
+  paidTrafficScore: number;
+}
+
+export interface GbpProfile {
+  status: "not_configured" | "configured" | "authorized";
+  message: string;
+  data?: {
+    reviewCount?: number;
+    averageRating?: number;
+    hasPhotos?: boolean;
+    hasPosts?: boolean;
+    hasQA?: boolean;
+  };
+}
+
+export interface DigitalAudit {
+  companyId: string;
+  companyName: string;
+  website?: string;
+  scan?: WebsiteScan;
+  maturityScore: number;
+  commercialScore: number;
+  paidTrafficScore: number;
+  opportunityScore: number;
+  gbp: GbpProfile;
 }
