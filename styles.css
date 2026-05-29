@@ -1023,3 +1023,57 @@ dialog {
     overflow-wrap: anywhere;
   }
 }
+
+/* ── Social chips ─────────────────────────────── */
+.social-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.social-chip {
+  display: inline-flex; align-items: center; padding: 3px 10px;
+  border-radius: 14px; font-size: 12px; font-weight: 600;
+  text-decoration: none; color: #fff; white-space: nowrap;
+}
+.social-chip.site { background: var(--blue); }
+.social-chip.ig { background: #e1306c; }
+.social-chip.fb { background: #1877f2; }
+.social-chip.li { background: #0a66c2; }
+.social-chip.yt { background: #ff0000; }
+.social-chip.maps { background: #34a853; }
+
+/* ── Decisor card ─────────────────────────────── */
+.decisor-card {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 14px; border-radius: 10px;
+  background: rgba(20, 125, 255, 0.08); border: 1px solid rgba(20, 125, 255, 0.2);
+  margin: 8px 0;
+}
+.decisor-card.missing { background: rgba(255, 180, 0, 0.07); border-color: rgba(255, 180, 0, 0.2); }
+.decisor-card strong { font-size: 14px; }
+.decisor-card small { color: var(--muted); font-size: 12px; }
+
+/* ── Report breakdowns ───────────────────────── */
+.report-breakdowns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 20px; }
+.report-group { padding: 14px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); }
+.report-group > strong { display: block; font-size: 13px; margin-bottom: 10px; color: var(--muted); }
+.report-bar-row { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 5px; }
+.report-bar-row span { width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.report-bar-row b { display: block; height: 8px; background: var(--accent); border-radius: 4px; min-width: 4px; flex: 0 0 auto; }
+.report-bar-row strong { width: 28px; text-align: right; color: var(--muted); font-size: 11px; }
+
+/* ── Inline editor panel ─────────────────────── */
+.inline-editor-panel {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7); z-index: 500;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.inline-editor-panel .panel {
+  display: flex; flex-direction: column; gap: 12px;
+  width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto;
+}
+.inline-editor-panel label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+.inline-editor-panel input, .inline-editor-panel textarea, .inline-editor-panel select {
+  padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line);
+  background: rgba(0,0,0,0.3); color: var(--text); font-size: 14px;
+}
+
+@media (max-width: 1100px) {
+  .report-breakdowns { grid-template-columns: 1fr; }
+}

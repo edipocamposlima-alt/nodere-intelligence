@@ -252,6 +252,17 @@ function normalizeLead(raw = {}) {
     reviews: raw.reviews || raw.googleReviews || raw.google_reviews || 0,
     mapsUrl: raw.mapsUrl || raw.googleMapsUrl || raw.google_maps_url || "",
     openingHours: raw.openingHours || "",
+    instagram: raw.instagram || "",
+    facebook: raw.facebook || "",
+    linkedin: raw.linkedin || "",
+    youtube: raw.youtube || "",
+    cnpj: raw.cnpj || "",
+    decisionMaker: raw.decisionMaker || "",
+    decisionMakerRole: raw.decisionMakerRole || "",
+    decisionMakerLinkedin: raw.decisionMakerLinkedin || "",
+    decisionMakerEmail: raw.decisionMakerEmail || "",
+    mainPain: raw.mainPain || "",
+    googleAdsChecklist: raw.googleAdsChecklist || {},
     owner: raw.owner || settings.defaultOwner || "Agencia Digital",
     temperature: raw.temperature || inferTemperature(raw),
     potential: raw.potential || scoreLead(raw),
@@ -679,15 +690,75 @@ function renderReports() {
   const lost = leads.filter((lead) => ["Perdido", "Sem interesse"].includes(lead.status)).length;
   const proposals = leads.filter((lead) => lead.status === "Proposta enviada").length;
   const potential = leads.reduce((sum, lead) => sum + Number(String(lead.estimatedValue || "0").replace(/\D/g, "")), 0);
+  const hot = leads.filter((lead) => lead.temperature === "Quente" || scoreLead(lead) >= 75).length;
+
   $("#reportsGrid").innerHTML = [
+    ["Total de leads", leads.length],
+    ["Leads quentes", hot],
     ["Conversao", `${leads.length ? Math.round((won / leads.length) * 100) : 0}%`],
-    ["Propostas", proposals],
+    ["Propostas abertas", proposals],
     ["Ganhos", won],
     ["Perdas", lost],
     ["Valor potencial", potential ? potential.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "R$ 0"],
-    ["Produtividade", `${leads.flatMap((lead) => lead.notes || []).length} obs.`]
+    ["Observacoes", `${leads.flatMap((lead) => lead.notes || []).length}`],
+    ["Sem follow-up", leads.filter((lead) => !nextTask(lead)).length],
+    ["Com site ruim", leads.filter((lead) => lead.pageSpeed && lead.pageSpeed.performance < 60).length],
+    ["Sem site", leads.filter((lead) => !lead.website).length],
+    ["Sem WhatsApp", leads.filter((lead) => !lead.whatsapp && !lead.phone).length]
   ].map(([label, value]) => `<article class="metric-card compact"><div><p>${label}</p><strong>${value}</strong></div></article>`).join("");
+
   renderMiniChart();
+
+  const bySegment = groupCount(leads, "segment");
+  const byCity = groupCount(leads, "city");
+  const byProblem = leads.map(leadProblem).reduce((acc, p) => { acc[p] = (acc[p] || 0) + 1; return acc; }, {});
+
+  const reportBreakdowns = document.getElementById("reportBreakdowns");
+  if (reportBreakdowns) {
+    reportBreakdowns.innerHTML = `
+      <div class="report-group">
+        <strong>Por segmento</strong>
+        ${topEntries(bySegment, 8).map(([key, count]) => { const max = Math.max(1,...Object.values(bySegment)); return `<div class="report-bar-row"><span>${escapeHtml(key || "Sem segmento")}</span><b style="width:${Math.max(4,(count/max)*100)}%"></b><strong>${count}</strong></div>`; }).join("") || "<div class='empty-state'>Sem dados</div>"}
+      </div>
+      <div class="report-group">
+        <strong>Por cidade</strong>
+        ${topEntries(byCity, 8).map(([key, count]) => { const max = Math.max(1,...Object.values(byCity)); return `<div class="report-bar-row"><span>${escapeHtml(key || "Sem cidade")}</span><b style="width:${Math.max(4,(count/max)*100)}%"></b><strong>${count}</strong></div>`; }).join("") || "<div class='empty-state'>Sem dados</div>"}
+      </div>
+      <div class="report-group">
+        <strong>Por problema detectado</strong>
+        ${topEntries(byProblem, 8).map(([key, count]) => { const max = Math.max(1,...Object.values(byProblem)); return `<div class="report-bar-row"><span>${escapeHtml(key)}</span><b style="width:${Math.max(4,(count/max)*100)}%"></b><strong>${count}</strong></div>`; }).join("") || "<div class='empty-state'>Sem dados</div>"}
+      </div>`;
+  }
+}
+
+function exportLeadsCsv() {
+  const rows = getFilteredCrm();
+  if (!rows.length) return alert("Nenhum lead para exportar.");
+  const headers = ["Empresa","CNPJ","Contato","Cargo","Telefone","WhatsApp","Email","Site","Cidade","Estado","Segmento","Status","Temperatura","Score","Origem","Avaliacao","Avaliacoes","Proximo passo","Criado em"];
+  const lines = [headers, ...rows.map((lead) => [
+    lead.company, lead.cnpj, lead.contactName, lead.role, lead.phone, lead.whatsapp, lead.email, lead.website,
+    lead.city, lead.state, lead.segment, lead.status, lead.temperature, scoreLead(lead), lead.source,
+    lead.rating, lead.reviews, nextTask(lead)?.title || "", lead.createdAt
+  ])].map((row) => row.map((cell) => `"${String(cell || "").replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob(["﻿" + lines], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `nodere-leads-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function groupCount(rows, field) {
+  return rows.reduce((acc, item) => {
+    const key = String(item[field] || "").trim();
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function topEntries(obj, n = 8) {
+  return Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, n);
 }
 
 window.addEventListener("hashchange", () => {
@@ -824,7 +895,7 @@ function openLeadDialog(lead = {}) {
   const form = $("#leadForm");
   form.reset();
   $("#leadDialogTitle").textContent = normalized.id && leads.some((item) => item.id === normalized.id) ? "Ficha operacional do lead" : "Novo lead";
-  const fields = ["id", "company", "contactName", "role", "phone", "whatsapp", "email", "website", "city", "state", "segment", "address", "rating", "reviews", "owner", "temperature", "potential", "estimatedValue", "serviceInterest", "source", "status", "internalNotes"];
+  const fields = ["id", "company", "cnpj", "contactName", "role", "phone", "whatsapp", "email", "website", "city", "state", "segment", "address", "rating", "reviews", "owner", "temperature", "potential", "estimatedValue", "serviceInterest", "source", "status", "internalNotes", "instagram", "facebook", "linkedin", "youtube", "decisionMaker", "decisionMakerRole", "decisionMakerLinkedin", "decisionMakerEmail", "mainPain"];
   fields.forEach((field) => {
     if (form.elements[field]) form.elements[field].value = normalized[field] || "";
   });
@@ -874,6 +945,7 @@ function renderLeadTabs(lead) {
   renderLeadAi(safeLead);
   renderLeadPageSpeed(safeLead);
   renderLeadFiles(safeLead);
+  renderLeadServicos(safeLead);
 }
 
 function activateLeadTab(tabName) {
@@ -882,22 +954,50 @@ function activateLeadTab(tabName) {
 }
 
 function renderLeadOverview(lead) {
+  const score = scoreLead(lead);
+  const scoreClass = score >= 75 ? "high" : score >= 45 ? "mid" : "";
+  const socialLinks = [
+    lead.website && `<a class="social-chip site" target="_blank" rel="noreferrer" href="${escapeHtml(lead.website)}">Site</a>`,
+    lead.instagram && `<a class="social-chip ig" target="_blank" rel="noreferrer" href="${lead.instagram.startsWith("http") ? escapeHtml(lead.instagram) : `https://instagram.com/${escapeHtml(lead.instagram.replace("@", ""))}`}">Instagram</a>`,
+    lead.facebook && `<a class="social-chip fb" target="_blank" rel="noreferrer" href="${lead.facebook.startsWith("http") ? escapeHtml(lead.facebook) : `https://facebook.com/${escapeHtml(lead.facebook)}`}">Facebook</a>`,
+    lead.linkedin && `<a class="social-chip li" target="_blank" rel="noreferrer" href="${lead.linkedin.startsWith("http") ? escapeHtml(lead.linkedin) : `https://linkedin.com/company/${escapeHtml(lead.linkedin)}`}">LinkedIn</a>`,
+    lead.youtube && `<a class="social-chip yt" target="_blank" rel="noreferrer" href="${lead.youtube.startsWith("http") ? escapeHtml(lead.youtube) : `https://youtube.com/@${escapeHtml(lead.youtube)}`}">YouTube</a>`,
+    lead.mapsUrl && `<a class="social-chip maps" target="_blank" rel="noreferrer" href="${escapeHtml(lead.mapsUrl)}">Google Maps</a>`
+  ].filter(Boolean).join("");
+
+  const gbOpps = [];
+  if (!lead.website) gbOpps.push("Sem site");
+  if (Number(lead.rating) && Number(lead.rating) < 4.2) gbOpps.push(`Nota ${lead.rating} no Google`);
+  if (Number(lead.reviews || 0) < 50) gbOpps.push(`Apenas ${lead.reviews || 0} avaliacoes`);
+  if (!lead.phone && !lead.whatsapp) gbOpps.push("Sem telefone");
+  if (!lead.openingHours) gbOpps.push("Sem horario cadastrado");
+
+  const decisorHtml = lead.decisionMaker
+    ? `<div class="decisor-card"><span class="badge">Decisor</span><strong>${escapeHtml(lead.decisionMaker)}</strong>${lead.decisionMakerRole ? `<small>${escapeHtml(lead.decisionMakerRole)}</small>` : ""}${lead.decisionMakerLinkedin ? `<a class="social-chip li" target="_blank" rel="noreferrer" href="${lead.decisionMakerLinkedin.startsWith("http") ? escapeHtml(lead.decisionMakerLinkedin) : `https://linkedin.com/in/${escapeHtml(lead.decisionMakerLinkedin)}`}">LinkedIn</a>` : ""}${lead.decisionMakerEmail ? `<small>${escapeHtml(lead.decisionMakerEmail)}</small>` : ""}</div>`
+    : `<div class="decisor-card missing"><span class="badge">Decisor</span><small>Nenhum decisor identificado. Preencha na ficha do lead.</small></div>`;
+
   $("#leadOverview").innerHTML = `
     <div class="client-site-card ${lead.website ? "" : "missing"}">
       <span>Site do cliente</span>
       <strong>${lead.website ? `<a target="_blank" rel="noreferrer" href="${escapeHtml(lead.website)}">${escapeHtml(lead.website)}</a>` : "Este lead nao possui site cadastrado"}</strong>
+      ${socialLinks ? `<div class="social-links">${socialLinks}</div>` : ""}
       <div class="settings-actions">
         <button class="primary-button xl" type="button" data-tab="pagespeed">Analisar PageSpeed</button>
         <button class="secondary-button xl" type="button" data-tab="ia">Analisar com IA</button>
+        <button class="secondary-button xl" type="button" data-tab="servicos">Servicos</button>
       </div>
     </div>
     <div class="insight-grid">
-      <div><small>Score oportunidade</small><strong>${scoreLead(lead)}/100</strong></div>
+      <div><small>Score oportunidade</small><strong class="score ${scoreClass}">${score}/100</strong></div>
       <div><small>Temperatura</small><strong>${escapeHtml(lead.temperature)}</strong></div>
       <div><small>Ultimo contato</small><strong>${formatDate(lastContactDate(lead))}</strong></div>
       <div><small>Proximo passo</small><strong>${nextTask(lead)?.title ? escapeHtml(nextTask(lead).title) : "Nao definido"}</strong></div>
+      ${lead.cnpj ? `<div><small>CNPJ</small><strong>${escapeHtml(lead.cnpj)}</strong></div>` : ""}
+      ${lead.mainPain ? `<div><small>Dor principal</small><strong>${escapeHtml(lead.mainPain)}</strong></div>` : ""}
     </div>
-    <div class="result-box"><strong>Alertas IA locais</strong><ul>${leadAlerts(lead).map((alert) => `<li>${escapeHtml(alert)}</li>`).join("") || "<li>Nenhum alerta critico.</li>"}</ul></div>`;
+    ${decisorHtml}
+    ${gbOpps.length ? `<div class="result-box"><strong>Oportunidades Google Meu Negocio detectadas</strong><ul>${gbOpps.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>` : ""}
+    <div class="result-box"><strong>Alertas IA</strong><ul>${leadAlerts(lead).map((alert) => `<li>${escapeHtml(alert)}</li>`).join("") || "<li>Nenhum alerta critico.</li>"}</ul></div>`;
 }
 
 function renderLeadNotes(lead) {
@@ -959,6 +1059,46 @@ function renderLeadFiles(lead) {
         <button class="row-button danger" type="button" data-delete-template="${tpl.id}">Excluir</button>
       </div>
     </article>`).join("") || `<div class="empty-state">Nenhum modelo WhatsApp salvo para este lead.</div>`}</div>`;
+}
+
+function renderLeadServicos(lead) {
+  const container = document.getElementById("leadTab-servicos");
+  if (!container) return;
+  const serviceOptions = services.map((s) => `<option value="${s.id}">${escapeHtml(s.name)} — ${currency(s.suggestedPrice)}</option>`).join("");
+  const negs = lead.negotiations || [];
+  const total = negs.reduce((sum, item) => sum + Number(String(item.price || "0").replace(/\D/g, "")), 0);
+  container.innerHTML = `
+    <div class="entry-form compact">
+      <strong>Adicionar servico a negociacao</strong>
+      <select id="leadServiceSelect">${serviceOptions || "<option value=''>Nenhum servico cadastrado</option>"}</select>
+      <input id="leadServicePrice" type="number" placeholder="Valor (R$)" min="0" />
+      <input id="leadServiceDiscount" placeholder="Desconto opcional" />
+      <input id="leadServicePayment" placeholder="Forma de pagamento" />
+      <button class="primary-button" type="button" id="addServiceButton">Adicionar</button>
+    </div>
+    ${negs.length ? `<div class="table-header"><strong>Servicos em negociacao</strong><strong>${currency(total)} total</strong></div>` : ""}
+    <div class="mini-list">
+      ${negs.map((item) => `<article class="timeline-item">
+        <div><strong>${escapeHtml(item.serviceName)}</strong><small>${currency(item.price)} | ${escapeHtml(item.payment || "Forma nao definida")} | ${escapeHtml(item.status)}</small></div>
+        ${item.discount ? `<small>Desconto: ${escapeHtml(item.discount)}</small>` : ""}
+        <div class="settings-actions">
+          <button class="row-button danger" type="button" data-remove-neg="${item.id}">Remover</button>
+        </div>
+      </article>`).join("") || `<div class="empty-state">Nenhum servico em negociacao.</div>`}
+    </div>
+    ${negs.length ? `<div class="settings-actions"><button class="primary-button" type="button" id="createProposalButton">Gerar proposta PDF</button><button class="secondary-button" type="button" id="createContractButton">Gerar contrato</button></div>` : ""}`;
+  document.getElementById("addServiceButton")?.addEventListener("click", addServiceToLead);
+  document.getElementById("createProposalButton")?.addEventListener("click", () => { if (currentLeadId) createProposal(currentLeadId, true); });
+  document.getElementById("createContractButton")?.addEventListener("click", () => { if (currentLeadId) createContract(currentLeadId); });
+  container.querySelectorAll("[data-remove-neg]").forEach((btn) => btn.addEventListener("click", () => {
+    const lead = currentLead();
+    if (!lead) return;
+    lead.negotiations = (lead.negotiations || []).filter((item) => item.id !== btn.dataset.removeNeg);
+    addTimeline(lead, "Servico", "Servico removido da negociacao.");
+    persistAll();
+    openLeadDialog(lead);
+    activateLeadTab("servicos");
+  }));
 }
 
 function attachAutomaticAi(lead, reason = "Atualizacao automatica") {
@@ -1046,27 +1186,67 @@ function deleteNote(noteId) {
 }
 
 function editService(id = "") {
-  const existing = services.find((item) => item.id === id) || normalizeService({});
-  const name = prompt("Nome do servico:", existing.name);
-  if (!name) return;
-  const category = prompt("Categoria:", existing.category) || existing.category;
-  const shortDescription = prompt("Descricao curta:", existing.shortDescription) || existing.shortDescription;
-  const suggestedPrice = prompt("Preco sugerido:", existing.suggestedPrice) || existing.suggestedPrice;
-  const deliverables = prompt("Entregaveis (um por linha):", existing.deliverables) || existing.deliverables;
-  const updated = normalizeService({ ...existing, name, category, shortDescription, suggestedPrice, deliverables, updatedAt: nowIso() });
-  services = services.some((item) => item.id === updated.id) ? services.map((item) => item.id === updated.id ? updated : item) : [updated, ...services];
-  persistAll();
+  const existing = id ? (services.find((item) => item.id === id) || normalizeService({})) : normalizeService({});
+  const panel = document.getElementById("serviceEditorPanel");
+  if (!panel) {
+    const name = prompt("Nome do servico:", existing.name);
+    if (!name) return;
+    const suggestedPrice = prompt("Preco sugerido (R$):", existing.suggestedPrice) || existing.suggestedPrice;
+    const updated = normalizeService({ ...existing, name, suggestedPrice, updatedAt: nowIso() });
+    services = services.some((item) => item.id === updated.id) ? services.map((item) => item.id === updated.id ? updated : item) : [updated, ...services];
+    persistAll();
+    return;
+  }
+  document.getElementById("svcEditId").value = existing.id || "";
+  document.getElementById("svcEditName").value = existing.name;
+  document.getElementById("svcEditCategory").value = existing.category;
+  document.getElementById("svcEditDescription").value = existing.shortDescription;
+  document.getElementById("svcEditPrice").value = existing.suggestedPrice;
+  document.getElementById("svcEditDeliverables").value = existing.deliverables;
+  panel.style.display = "block";
+  panel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function editTemplate(id = "") {
-  const existing = templates.find((item) => item.id === id) || normalizeTemplate({});
-  const name = prompt("Nome do template:", existing.name);
-  if (!name) return;
-  const category = prompt("Categoria:", existing.category) || existing.category;
-  const body = prompt("Texto do template:", existing.body) || existing.body;
-  const updated = normalizeTemplate({ ...existing, name, category, body, updatedAt: nowIso() });
+function openTemplateEditor(id = "") {
+  const existing = id ? (templates.find((item) => item.id === id) || normalizeTemplate({})) : normalizeTemplate({});
+  const panel = document.getElementById("templateEditorPanel");
+  if (!panel) return;
+  document.getElementById("tplEditId").value = existing.id || "";
+  document.getElementById("tplEditName").value = existing.name;
+  document.getElementById("tplEditCategory").value = existing.category;
+  document.getElementById("tplEditBody").value = existing.body;
+  panel.style.display = "block";
+  panel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function saveServiceFromEditor() {
+  const id = document.getElementById("svcEditId")?.value;
+  const name = document.getElementById("svcEditName")?.value.trim();
+  const category = document.getElementById("svcEditCategory")?.value.trim();
+  const shortDescription = document.getElementById("svcEditDescription")?.value.trim();
+  const suggestedPrice = document.getElementById("svcEditPrice")?.value;
+  const deliverables = document.getElementById("svcEditDeliverables")?.value.trim();
+  if (!name) return alert("Digite o nome do servico.");
+  const existing = id ? (services.find((item) => item.id === id) || normalizeService({})) : normalizeService({});
+  const updated = normalizeService({ ...existing, name, category: category || existing.category, shortDescription, suggestedPrice, deliverables, updatedAt: nowIso() });
+  services = services.some((item) => item.id === updated.id) ? services.map((item) => item.id === updated.id ? updated : item) : [updated, ...services];
+  persistAll();
+  document.getElementById("serviceEditorPanel").style.display = "none";
+}
+
+function saveTemplateFromEditor() {
+  const id = document.getElementById("tplEditId")?.value;
+  const name = document.getElementById("tplEditName")?.value.trim();
+  const category = document.getElementById("tplEditCategory")?.value.trim();
+  const body = document.getElementById("tplEditBody")?.value.trim();
+  if (!name) return alert("Digite o nome do template.");
+  if (!body) return alert("Digite o conteudo do template.");
+  const existing = id ? (templates.find((item) => item.id === id) || normalizeTemplate({})) : normalizeTemplate({});
+  const updated = normalizeTemplate({ ...existing, name, category: category || existing.category, body, updatedAt: nowIso() });
   templates = templates.some((item) => item.id === updated.id) ? templates.map((item) => item.id === updated.id ? updated : item) : [updated, ...templates];
   persistAll();
+  renderTemplates();
+  document.getElementById("templateEditorPanel").style.display = "none";
 }
 
 function addServiceToLead() {
@@ -1266,9 +1446,12 @@ const leadAiTypes = {
   whatsapp: "Mensagem WhatsApp",
   email: "E-mail comercial",
   proposal: "Proposta comercial",
-  diagnosis: "Diagnostico",
+  diagnosis: "Diagnostico completo",
   objections: "Objecoes e respostas",
-  contract: "Contrato simples"
+  contract: "Contrato simples",
+  googleads: "Plano Google Ads",
+  gmb: "Plano Google Meu Negocio",
+  call: "Script de ligacao"
 };
 
 function aiToEditableText(ai = {}, type = "summary") {
@@ -1283,6 +1466,9 @@ function aiToEditableText(ai = {}, type = "summary") {
   if (type === "objections") return `Objecoes provaveis:\n${(ai.objections || []).map((item) => `- ${item}`).join("\n")}\n\nResposta sugerida:\n${ai.followUp || ai.callScript || ""}`;
   if (type === "approach") return `${ai.followUp || ""}\n\n${(ai.nextSteps || []).map((item) => `- ${item}`).join("\n")}`;
   if (type === "diagnosis") return `${ai.diagnosis || ""}\n\nGoogle Ads:\n${ai.googleAdsStrategy || ""}`;
+  if (type === "googleads") return `PLANO GOOGLE ADS\n\nEmpresa: ${ai.summary || ""}\n\nEstrategia:\n${ai.googleAdsStrategy || ""}\n\nProximos passos:\n${(ai.nextSteps || []).map((item) => `- ${item}`).join("\n")}`;
+  if (type === "gmb") return `PLANO GOOGLE MEU NEGOCIO\n\nEmpresa: ${ai.summary || ""}\n\nDiagnostico:\n${ai.diagnosis || ""}\n\nProximos passos:\n${(ai.nextSteps || []).map((item) => `- ${item}`).join("\n")}`;
+  if (type === "call") return ai.callScript || `Oi, aqui e da NODERE. Tenho um diagnostico rapido sobre a presenca digital de voces no Google. Tem 2 minutos?`;
   return `${ai.summary || ""}\n\n${ai.diagnosis || ""}\n\nPotencial: ${ai.leadPotential || ""}\nPrioridade: ${ai.priority || ""}\n\nProximos passos:\n${(ai.nextSteps || []).map((item) => `- ${item}`).join("\n")}`;
 }
 
@@ -1692,7 +1878,12 @@ function bindEvents() {
       const lead = searchResults.find((item) => item.tempId === preview.dataset.aiPreview);
       if (lead) {
         const ai = localAi("analyze", lead, buildSystemContext());
-        alert(`${ai.summary}\n\n${ai.diagnosis}\n\nProximo passo: ${ai.nextSteps?.[0] || ""}`);
+        const panel = document.getElementById("aiPreviewPanel");
+        if (panel) {
+          panel.innerHTML = `<div class="result-box"><strong>${escapeHtml(ai.summary)}</strong><p>${escapeHtml(ai.diagnosis)}</p><p><b>Potencial:</b> ${escapeHtml(ai.leadPotential)}</p><ul>${(ai.nextSteps || []).map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul><p><b>WhatsApp:</b> ${escapeHtml(ai.whatsappMessage || "")}</p><button class="row-button" id="aiPreviewClose">Fechar</button></div>`;
+          panel.style.display = "block";
+          document.getElementById("aiPreviewClose")?.addEventListener("click", () => { panel.style.display = "none"; });
+        }
       }
     }
     if (copy) copyText(copy.dataset.copy);
@@ -1871,7 +2062,7 @@ function bindEvents() {
   $("#testAllIntegrations")?.addEventListener("click", async () => {
     if (!apiConfigured()) return alert("Configure a URL HTTPS do backend seguro primeiro.");
     try {
-      const payload = await apiFetch("/api/v1/integrations/status?live=1", { method: "POST", body: JSON.stringify({}), timeoutMs: 60000 });
+      const payload = await apiFetch("/api/v1/integrations/status?live=1", { method: "GET", timeoutMs: 60000 });
       $("#integrationGrid").innerHTML = renderIntegrationStatusList(payload.integrations || []);
     } catch (error) {
       alert(error.message);
@@ -1881,11 +2072,16 @@ function bindEvents() {
     const edit = event.target.closest("[data-template-edit]");
     const duplicate = event.target.closest("[data-template-duplicate]");
     const remove = event.target.closest("[data-template-delete]");
-    if (event.target.closest("[data-template-new]")) editTemplate();
-    if (edit) editTemplate(edit.dataset.templateEdit);
-    if (duplicate) { const source = templates.find((item) => item.id === duplicate.dataset.templateDuplicate); if (source) { templates.unshift(normalizeTemplate({ ...source, id: uid("tpl"), name: `${source.name} copia`, createdAt: nowIso(), updatedAt: nowIso() })); persistAll(); } }
-    if (remove && confirm("Excluir template?")) { templates = templates.filter((item) => item.id !== remove.dataset.templateDelete); persistAll(); }
+    if (event.target.closest("[data-template-new]")) openTemplateEditor();
+    if (edit) openTemplateEditor(edit.dataset.templateEdit);
+    if (duplicate) { const source = templates.find((item) => item.id === duplicate.dataset.templateDuplicate); if (source) { templates.unshift(normalizeTemplate({ ...source, id: uid("tpl"), name: `${source.name} copia`, createdAt: nowIso(), updatedAt: nowIso() })); persistAll(); renderTemplates(); } }
+    if (remove && confirm("Excluir template?")) { templates = templates.filter((item) => item.id !== remove.dataset.templateDelete); persistAll(); renderTemplates(); }
   });
+  document.getElementById("templateEditorSave")?.addEventListener("click", saveTemplateFromEditor);
+  document.getElementById("templateEditorCancel")?.addEventListener("click", () => { const el = document.getElementById("templateEditorPanel"); if (el) el.style.display = "none"; });
+  document.getElementById("serviceEditorSave")?.addEventListener("click", saveServiceFromEditor);
+  document.getElementById("serviceEditorCancel")?.addEventListener("click", () => { const el = document.getElementById("serviceEditorPanel"); if (el) el.style.display = "none"; });
+  $("#exportCsvButton")?.addEventListener("click", exportLeadsCsv);
   $("#globalSearch")?.addEventListener("input", (event) => {
     $("#crmSearch").value = event.target.value;
     showView("crm");
