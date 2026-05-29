@@ -1,4 +1,4 @@
-import { CommercialDiagnosis, Company, CreditAccount, DashboardMetrics, DigitalAudit, EmailSequenceTemplate, EnrichmentJob, GoogleIntelligence, InboxConversation, KeywordSuggestion, QueueStatus, SavedSearch, SequenceInstance } from "./types";
+import { AuditLogEvent, BillingStatus, CommercialDiagnosis, Company, CreditAccount, DashboardMetrics, DigitalAudit, EmailSequenceTemplate, EnrichmentJob, ForecastReport, GoogleIntelligence, InboxConversation, KeywordSuggestion, MonthlyTrend, Operator, OperatorGoal, OperatorMetrics, PipelineReport, Plan, QueueStatus, SavedSearch, SequenceInstance, UsageEvent } from "./types";
 import { mockCompanies, mockDashboard } from "./mock";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
@@ -131,6 +131,63 @@ export function cancelSequence(instanceId: string) {
 
 export function getCompanySequences(companyId: string) {
   return api<SequenceInstance[]>(`/companies/${companyId}/sequences`, undefined, []);
+}
+
+// Phase 6 — Revenue Operations
+
+export function getBillingStatus() {
+  return api<BillingStatus>("/billing", undefined, {
+    plan: { id: "demo", name: "Demo", monthlyCredits: 200, priceMonthly: 0, features: [] },
+    balance: 200, used: 0, resetAt: "", gated: false
+  });
+}
+
+export function getBillingPlans() {
+  return api<Plan[]>("/billing/plans", undefined, []);
+}
+
+export function getUsageLog(limit = 100) {
+  return api<UsageEvent[]>(`/billing/usage?limit=${limit}`, undefined, []);
+}
+
+export function createCheckoutSession(planId: string) {
+  return api<{ url: string }>("/billing/checkout", { method: "POST", body: JSON.stringify({ planId }) });
+}
+
+export function createPortalSession(customerId: string) {
+  return api<{ url: string }>("/billing/portal", { method: "POST", body: JSON.stringify({ customerId }) });
+}
+
+export function getOperators() {
+  return api<Operator[]>("/operators", undefined, []);
+}
+
+export function getOperatorRanking() {
+  return api<OperatorMetrics[]>("/operators/ranking", undefined, []);
+}
+
+export function getOperatorGoals(operatorId: string) {
+  return api<OperatorGoal | null>(`/operators/${operatorId}/goals`, undefined, null);
+}
+
+export function setOperatorGoals(operatorId: string, goals: Omit<OperatorGoal, "operatorId" | "month">) {
+  return api<OperatorGoal>(`/operators/${operatorId}/goals`, { method: "PUT", body: JSON.stringify(goals) });
+}
+
+export function getPipelineReport() {
+  return api<PipelineReport>("/reports/pipeline");
+}
+
+export function getForecastReport() {
+  return api<ForecastReport>("/reports/forecast");
+}
+
+export function getMonthlyTrends() {
+  return api<MonthlyTrend[]>("/reports/trends", undefined, []);
+}
+
+export function getAuditLog(limit = 100) {
+  return api<AuditLogEvent[]>(`/audit?limit=${limit}`, undefined, []);
 }
 
 export function getIntegrations() {

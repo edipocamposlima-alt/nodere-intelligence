@@ -208,6 +208,120 @@ export interface GbpInsights {
   error?: string;
 }
 
+// Phase 6 — Revenue Operations
+
+export type PlanId = "demo" | "starter" | "pro" | "agency";
+
+export interface Plan {
+  id: PlanId;
+  name: string;
+  monthlyCredits: number;
+  priceMonthly: number;
+  features: string[];
+  stripePriceId?: string;
+}
+
+export type UsageEventType = "search" | "enrichment" | "diagnosis" | "pdf_export" | "whatsapp_send" | "email_send";
+
+export interface UsageEvent {
+  id: string;
+  type: UsageEventType;
+  amount: number;
+  description: string;
+  operatorId?: string;
+  at: string;
+}
+
+export interface BillingStatus {
+  plan: Plan;
+  balance: number;
+  used: number;
+  resetAt: string;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  subscriptionStatus?: string;
+  gated: boolean;
+}
+
+export interface Operator {
+  id: string;
+  name: string;
+  email?: string;
+  role: "admin" | "operator";
+  createdAt: string;
+}
+
+export interface OperatorMetrics {
+  operatorId: string;
+  operatorName: string;
+  searchesDone: number;
+  leadsEnriched: number;
+  contactsMade: number;
+  meetingsScheduled: number;
+  proposalsSent: number;
+  dealsClosed: number;
+  dealsLost: number;
+  totalPipelineValue: number;
+  totalRevenueClosedBRL: number;
+  conversionRate: number;
+}
+
+export interface OperatorGoal {
+  operatorId: string;
+  month: string;
+  targetSearches: number;
+  targetContacts: number;
+  targetDeals: number;
+  targetRevenueBRL: number;
+}
+
+export interface PipelineStageSummary {
+  status: string;
+  count: number;
+  estimatedValueBRL: number;
+  conversionProbability: number;
+}
+
+export interface PipelineReport {
+  stages: PipelineStageSummary[];
+  totalLeads: number;
+  totalPipelineValueBRL: number;
+  avgScore: number;
+  generatedAt: string;
+}
+
+export interface ForecastReport {
+  expectedRevenueBRL: number;
+  conservativeBRL: number;
+  optimisticBRL: number;
+  closedThisMonthBRL: number;
+  openOpportunitiesBRL: number;
+  avgDealValueBRL: number;
+  conversionRate: number;
+  generatedAt: string;
+}
+
+export interface MonthlyTrend {
+  month: string;
+  searches: number;
+  enrichments: number;
+  contacts: number;
+  dealsClosed: number;
+  revenueBRL: number;
+}
+
+export type AuditCategory = "billing" | "permission" | "user" | "data" | "system";
+
+export interface AuditLogEvent {
+  id: string;
+  category: AuditCategory;
+  action: string;
+  description: string;
+  operatorId?: string;
+  metadata?: Record<string, unknown>;
+  at: string;
+}
+
 // Phase 5 — Commercial Automation
 
 export interface CommercialDiagnosis {

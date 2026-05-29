@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BarChart3, Building2, History, Inbox, KanbanSquare, Plug, Settings, ShieldCheck, Workflow, Zap } from "lucide-react";
-import { getCredits } from "@/lib/api";
+import { BarChart3, Building2, CreditCard, History, Inbox, KanbanSquare, LineChart, Plug, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
+import { getBillingStatus } from "@/lib/api";
 
 const items = [
   { href: "/", label: "Dashboard", icon: BarChart3 },
@@ -11,12 +11,15 @@ const items = [
   { href: "/crm", label: "CRM", icon: KanbanSquare },
   { href: "/inbox", label: "Caixa de entrada", icon: Inbox },
   { href: "/automations", label: "Automações", icon: Workflow },
+  { href: "/operators", label: "Operadores", icon: Users },
+  { href: "/reports", label: "Relatórios", icon: LineChart },
+  { href: "/billing", label: "Faturamento", icon: CreditCard },
   { href: "/integrations", label: "Integrações", icon: Plug },
   { href: "/settings", label: "Configurações", icon: Settings }
 ];
 
 export async function Sidebar() {
-  const credits = await getCredits().catch(() => null);
+  const billing = await getBillingStatus().catch(() => null);
 
   return (
     <aside className="hidden min-h-screen w-72 border-r border-line bg-ink/90 p-5 lg:block">
@@ -41,19 +44,19 @@ export async function Sidebar() {
         ))}
       </nav>
 
-      {credits && (
+      {billing && (
         <div className="mt-6 rounded-lg border border-line bg-white/[0.03] p-4">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>Créditos — {credits.plan}</span>
-            <span className="font-medium text-white">{credits.balance}</span>
+            <span>Créditos — {billing.plan.name}</span>
+            <span className="font-medium text-white">{billing.balance.toLocaleString("pt-BR")}</span>
           </div>
           <div className="mt-2 h-1.5 rounded-full bg-white/10">
             <div
               className="h-1.5 rounded-full bg-cyan transition-all"
-              style={{ width: `${Math.min(100, (credits.balance / (credits.balance + credits.used)) * 100)}%` }}
+              style={{ width: `${Math.min(100, (billing.balance / billing.plan.monthlyCredits) * 100)}%` }}
             />
           </div>
-          <p className="mt-1.5 text-[11px] text-slate-600">{credits.used} usados este mês</p>
+          <p className="mt-1.5 text-[11px] text-slate-600">{billing.used} usados este mês</p>
         </div>
       )}
 

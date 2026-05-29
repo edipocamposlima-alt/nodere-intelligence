@@ -1,4 +1,4 @@
-import pg from "pg";
+import pg, { QueryResultRow } from "pg";
 import { config } from "../config.js";
 
 export const pool = config.databaseUrl
@@ -7,7 +7,7 @@ export const pool = config.databaseUrl
     })
   : null;
 
-export async function query<T>(sql: string, params: unknown[] = []) {
+export async function query<T extends QueryResultRow>(sql: string, params: unknown[] = []) {
   if (!pool) {
     throw new Error("DATABASE_URL is not configured.");
   }

@@ -215,7 +215,10 @@
 
         <section class="view" id="relatorios">
           <article class="panel">
-            <div class="panel-title"><span>BI</span><h2>Relatorios comerciais</h2></div>
+            <div class="table-header">
+              <div class="panel-title compact"><span>BI</span><h2>Relatorios comerciais</h2></div>
+              <button class="secondary-button" type="button" id="exportReportsCsvButton">Exportar CSV</button>
+            </div>
             <div class="filters">
               <label>Tema dos relatórios<select id="reportThemeSelect"><option value="nodere-dark">Nodere Azul</option><option value="light">Modo claro</option><option value="green-performance">Verde performance</option><option value="purple-saas">Roxo SaaS</option><option value="executive-dark">Executivo escuro</option></select></label>
             </div>
@@ -407,6 +410,7 @@
               <button class="secondary-button" type="button" id="leadAiSaveWhatsapp">Salvar como modelo WhatsApp</button>
               <button class="secondary-button" type="button" id="leadAiSavePdf">Salvar como proposta PDF</button>
               <button class="secondary-button" type="button" id="leadAiCopy">Copiar texto</button>
+              <button class="secondary-button green" type="button" id="leadAiSendWhatsapp">Enviar via WhatsApp API</button>
               <button class="secondary-button danger" type="button" id="leadAiClear">Limpar</button>
             </div>
             <p class="table-message" id="leadAiStatus">Escolha o tipo de geracao e clique em Gerar com IA.</p>
@@ -452,6 +456,7 @@
       </div>
     </div>
 
-    <script src="./app.js?v=lean-crm-2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="./app.js?v=lean-crm-3"></script>
   </body>
 </html>

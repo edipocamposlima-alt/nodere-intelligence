@@ -38,5 +38,16 @@ export const config = {
     pass: process.env.SMTP_PASS,
     from: process.env.SMTP_FROM ?? process.env.SMTP_USER
   },
-  webhookSecret: process.env.WHATSAPP_WEBHOOK_SECRET ?? "nodere-webhook-secret"
+  webhookSecret: process.env.WHATSAPP_WEBHOOK_SECRET ?? "nodere-webhook-secret",
+  stripe: {
+    secretKey: process.env.STRIPE_SECRET_KEY,
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    successUrl: process.env.STRIPE_SUCCESS_URL ?? "http://localhost:3000/billing?success=1",
+    cancelUrl: process.env.STRIPE_CANCEL_URL ?? "http://localhost:3000/billing?cancel=1",
+    prices: {
+      starter: process.env.STRIPE_PRICE_STARTER,
+      pro: process.env.STRIPE_PRICE_PRO,
+      agency: process.env.STRIPE_PRICE_AGENCY
+    }
+  }
 };
