@@ -1,9 +1,12 @@
-import { ExternalLink, Facebook, Globe2, Instagram, Linkedin, MessageCircle, Phone, ShieldCheck, Star, Youtube, Zap } from "lucide-react";
+import { ExternalLink, Facebook, FileText, Globe2, Instagram, Linkedin, MessageCircle, Phone, ShieldCheck, Star, Youtube, Zap } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getCompany, getCompanyAudit, getCompanyIntelligence } from "@/lib/api";
 import { EnrichTrigger } from "./EnrichTrigger";
 import { AuditPanel } from "./AuditPanel";
 import { IntelligencePanel } from "./IntelligencePanel";
+import { DiagnosisPanel } from "./DiagnosisPanel";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 const whatsappMessage =
   "Ola, tudo bem? Estive analisando a presenca digital da sua empresa no Google e identifiquei algumas oportunidades que podem ajudar voces a gerar mais contatos e melhorar o posicionamento online. Posso te mostrar rapidamente?";
@@ -47,6 +50,10 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                   Chamar no WhatsApp
                 </a>
               )}
+              <a href={`${API_URL}/companies/${company.id}/export-pdf`} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
+                <FileText className="h-4 w-4" />
+                Exportar PDF
+              </a>
               {company.website && (
                 <a href={company.website} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
                   <Globe2 className="h-4 w-4" />
@@ -165,6 +172,8 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                 ))}
             </div>
           </div>
+
+          <DiagnosisPanel companyId={company.id} />
 
           <div className="rounded-lg border border-line bg-panel/90 p-5">
             <h3 className="font-semibold text-white">Histórico CRM</h3>

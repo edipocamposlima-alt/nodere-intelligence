@@ -10,7 +10,9 @@ import { getAdsConnectionStatus, assessAdsReadiness, buildOfflineConversion, off
 import { generateKeywords } from "../services/keywords.js";
 import { getGbpInsightsForCompany } from "../services/gbp.js";
 import { generateCommercialDiagnosis } from "../services/openai.js";
+import { cacheDiagnosis, getCachedDiagnosis } from "../services/diagnosisStore.js";
 import { defaultProspectingMessage, sendWhatsappMessage } from "../services/whatsapp.js";
+import { activateSequence, getInstancesByCompany } from "../services/emailSequences.js";
 
 const router = Router();
 
@@ -147,15 +149,144 @@ router.post("/:id/offline-conversion", (req, res) => {
   return res.json(conversion);
 });
 
+router.get("/:id/diagnosis", (req, res) => {
+  const cached = getCachedDiagnosis(req.params.id);
+  if (!cached) return res.status(404).json({ message: "No diagnosis yet. POST to generate one." });
+  return res.json(cached);
+});
+
 router.post("/:id/diagnosis", async (req, res, next) => {
   try {
     const company = getCompany(req.params.id);
     if (!company) return res.status(404).json({ message: "Company not found" });
     const result = await generateCommercialDiagnosis(company);
+    cacheDiagnosis(result);
     return res.json(result);
   } catch (error) {
     return next(error);
   }
+});
+
+router.get("/:id/export-pdf", (req, res) => {
+  const company = getCompany(req.params.id);
+  if (!company) return res.status(404).json({ message: "Company not found" });
+
+  const diagnosis = getCachedDiagnosis(req.params.id);
+  const scan = getAudit(req.params.id);
+
+  const checks = [
+    { label: "Site", ok: Boolean(company.website) },
+    { label: "SSL", ok: Boolean(company.hasSsl) },
+    { label: "Responsivo", ok: Boolean(company.isResponsive) },
+    { label: "Google Ads", ok: Boolean(company.hasGoogleAds) },
+    { label: "Meta Pixel", ok: Boolean(company.metaPixel) },
+    { label: "GTM", ok: Boolean(company.googleTagManager || company.gtmContainerId) },
+    { label: "GA4", ok: Boolean(company.hasGA4) },
+    { label: "SEO básico", ok: Boolean(company.seoBasics || (company.hasH1 && company.hasCanonical)) }
+  ];
+
+  const checksHtml = checks
+    .map((c) => `<li class="${c.ok ? "ok" : "missing"}">${c.ok ? "✓" : "✗"} ${c.label}</li>`)
+    .join("");
+
+  const opportunitiesHtml = company.detectedOpportunities
+    .map((o) => `<li>${o}</li>`)
+    .join("") || "<li>Nenhuma oportunidade detectada.</li>";
+
+  const suggestionsHtml = company.suggestions
+    .map((s) => `<li>${s}</li>`)
+    .join("") || "<li>Sem sugestões no momento.</li>";
+
+  const diagHtml = diagnosis
+    ? `
+    <section>
+      <h2>Diagnóstico IA</h2>
+      <p>${diagnosis.summary}</p>
+      <h3>Serviços sugeridos</h3>
+      <ul>${diagnosis.suggestedServices.map((s) => `<li>${s}</li>`).join("")}</ul>
+    </section>
+    <section>
+      <h2>Mensagem WhatsApp</h2>
+      <p class="copy-box">${diagnosis.whatsappCopy}</p>
+    </section>
+    <section>
+      <h2>Email comercial</h2>
+      <p><strong>Assunto:</strong> ${diagnosis.emailSubject}</p>
+      <pre class="copy-box">${diagnosis.emailBody}</pre>
+    </section>`
+    : `<section><p class="note">Gere o diagnóstico IA para incluir cópias comerciais neste relatório.</p></section>`;
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Relatório — ${company.name}</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 24px; color: #1e293b; }
+  h1 { font-size: 22px; color: #0f172a; border-bottom: 2px solid #0ea5e9; padding-bottom: 8px; }
+  h2 { font-size: 16px; color: #0f172a; margin-top: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+  h3 { font-size: 14px; color: #334155; }
+  section { margin-bottom: 24px; }
+  .score { font-size: 48px; font-weight: bold; color: #0ea5e9; }
+  .meta { color: #64748b; font-size: 13px; }
+  ul { padding-left: 18px; }
+  li { margin-bottom: 4px; font-size: 13px; }
+  li.ok { color: #15803d; }
+  li.missing { color: #dc2626; }
+  .copy-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; font-size: 13px; white-space: pre-wrap; }
+  .note { color: #94a3b8; font-style: italic; }
+  @media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+  <h1>Relatório Comercial — ${company.name}</h1>
+  <p class="meta">${company.category} · ${company.address} · Gerado em ${new Date().toLocaleDateString("pt-BR")}</p>
+
+  <section>
+    <h2>Score de Oportunidade</h2>
+    <p class="score">${company.score}<span style="font-size:18px;color:#94a3b8">/100</span></p>
+    <p>Nível: <strong>${company.opportunityLevel}</strong> · Rating Google: ${company.rating ?? "—"} (${company.reviewCount ?? 0} avaliações)</p>
+  </section>
+
+  <section>
+    <h2>Sinais digitais</h2>
+    <ul>${checksHtml}</ul>
+  </section>
+
+  <section>
+    <h2>Oportunidades detectadas</h2>
+    <ul>${opportunitiesHtml}</ul>
+  </section>
+
+  <section>
+    <h2>Sugestões comerciais</h2>
+    <ul>${suggestionsHtml}</ul>
+  </section>
+
+  ${diagHtml}
+
+  <p class="meta" style="margin-top:40px;border-top:1px solid #e2e8f0;padding-top:12px;">
+    Relatório gerado por NODERE Intelligence · ${new Date().toISOString()}
+  </p>
+</body>
+</html>`;
+
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  return res.send(html);
+});
+
+router.get("/:id/sequences", (req, res) => {
+  const company = getCompany(req.params.id);
+  if (!company) return res.status(404).json({ message: "Company not found" });
+  return res.json(getInstancesByCompany(req.params.id));
+});
+
+router.post("/:id/sequences", (req, res) => {
+  const body = z.object({ templateId: z.string() }).parse(req.body);
+  const company = getCompany(req.params.id);
+  if (!company) return res.status(404).json({ message: "Company not found" });
+  const instance = activateSequence(company.id, company.name, body.templateId);
+  return res.status(201).json(instance);
 });
 
 export default router;

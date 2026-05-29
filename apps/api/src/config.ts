@@ -30,5 +30,13 @@ export const config = {
     clientSecret: process.env.GOOGLE_ADS_CLIENT_SECRET ?? process.env.GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET,
     refreshToken: process.env.GOOGLE_ADS_REFRESH_TOKEN,
     customerId: process.env.GOOGLE_ADS_CUSTOMER_ID
-  }
+  },
+  smtp: {
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT ?? 587),
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+    from: process.env.SMTP_FROM ?? process.env.SMTP_USER
+  },
+  webhookSecret: process.env.WHATSAPP_WEBHOOK_SECRET ?? "nodere-webhook-secret"
 };

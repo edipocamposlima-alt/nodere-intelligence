@@ -208,6 +208,76 @@ export interface GbpInsights {
   error?: string;
 }
 
+// Phase 5 — Commercial Automation
+
+export interface CommercialDiagnosis {
+  companyId: string;
+  mode: "openai" | "template";
+  summary: string;
+  whatsappCopy: string;
+  emailSubject: string;
+  emailBody: string;
+  pitch: string;
+  callScript: string;
+  suggestedServices: string[];
+  generatedAt: string;
+}
+
+export type MessageDirection = "inbound" | "outbound";
+export type MessageStatus = "sent" | "delivered" | "read" | "failed";
+export type ConversationStatus = "open" | "resolved" | "pending";
+
+export interface InboxMessage {
+  id: string;
+  conversationPhone: string;
+  direction: MessageDirection;
+  body: string;
+  status: MessageStatus;
+  providerMessageId?: string;
+  createdAt: string;
+}
+
+export interface InboxConversation {
+  phone: string;
+  companyId?: string;
+  companyName?: string;
+  status: ConversationStatus;
+  slaDeadline: string;
+  assignedTo?: string;
+  lastMessageAt: string;
+  messages: InboxMessage[];
+}
+
+export type SequenceStepChannel = "whatsapp" | "email";
+
+export interface SequenceStep {
+  stepIndex: number;
+  delayDays: number;
+  channel: SequenceStepChannel;
+  subject?: string;
+  body: string;
+}
+
+export interface EmailSequenceTemplate {
+  id: string;
+  name: string;
+  description: string;
+  steps: SequenceStep[];
+}
+
+export interface SequenceInstance {
+  id: string;
+  companyId: string;
+  companyName: string;
+  templateId: string;
+  templateName: string;
+  activatedAt: string;
+  currentStep: number;
+  nextStepAt: string | null;
+  completedSteps: number[];
+  status: "active" | "completed" | "cancelled";
+}
+
 export interface OfflineConversion {
   googleClickId: string;
   conversionName: string;

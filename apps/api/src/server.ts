@@ -9,6 +9,9 @@ import enrichmentRouter from "./routes/enrichment.js";
 import creditsRouter from "./routes/credits.js";
 import integrationsRouter from "./routes/integrations.js";
 import searchesRouter from "./routes/searches.js";
+import inboxRouter from "./routes/inbox.js";
+import sequencesRouter from "./routes/sequences.js";
+import { processDueSteps } from "./services/emailSequences.js";
 
 const app = express();
 
@@ -26,6 +29,8 @@ app.use("/api/searches", searchesRouter);
 app.use("/api/enrichment", enrichmentRouter);
 app.use("/api/credits", creditsRouter);
 app.use("/api/integrations", integrationsRouter);
+app.use("/api/inbox", inboxRouter);
+app.use("/api/sequences", sequencesRouter);
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   if (error instanceof ZodError) {
@@ -35,6 +40,9 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
   const message = error instanceof Error ? error.message : "Unexpected error";
   return res.status(500).json({ message });
 });
+
+// Process email sequences every 5 minutes
+setInterval(() => { processDueSteps().catch(console.error); }, 5 * 60 * 1000);
 
 app.listen(config.port, () => {
   console.log(`NODERE Intelligence API running on http://localhost:${config.port}`);

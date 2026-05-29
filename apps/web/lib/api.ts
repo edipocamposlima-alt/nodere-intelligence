@@ -1,4 +1,4 @@
-import { Company, CreditAccount, DashboardMetrics, DigitalAudit, EnrichmentJob, GoogleIntelligence, KeywordSuggestion, QueueStatus, SavedSearch } from "./types";
+import { CommercialDiagnosis, Company, CreditAccount, DashboardMetrics, DigitalAudit, EmailSequenceTemplate, EnrichmentJob, GoogleIntelligence, InboxConversation, KeywordSuggestion, QueueStatus, SavedSearch, SequenceInstance } from "./types";
 import { mockCompanies, mockDashboard } from "./mock";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
@@ -87,6 +87,50 @@ export function getCompanyKeywords(companyId: string) {
 
 export function getCredits() {
   return api<CreditAccount>("/credits", undefined, { balance: 200, used: 0, plan: "Demo", resetAt: "" });
+}
+
+export function generateDiagnosis(companyId: string) {
+  return api<CommercialDiagnosis>(`/companies/${companyId}/diagnosis`, { method: "POST" });
+}
+
+export function getDiagnosis(companyId: string) {
+  return api<CommercialDiagnosis>(`/companies/${companyId}/diagnosis`);
+}
+
+export function getInbox() {
+  return api<InboxConversation[]>("/inbox", undefined, []);
+}
+
+export function getConversation(phone: string) {
+  return api<InboxConversation>(`/inbox/${phone}`);
+}
+
+export function replyToConversation(phone: string, message: string, companyId?: string) {
+  return api(`/inbox/${phone}/reply`, { method: "POST", body: JSON.stringify({ message, companyId }) });
+}
+
+export function resolveConversation(phone: string) {
+  return api(`/inbox/${phone}/resolve`, { method: "PATCH" });
+}
+
+export function getSequenceTemplates() {
+  return api<EmailSequenceTemplate[]>("/sequences", undefined, []);
+}
+
+export function getSequenceInstances() {
+  return api<SequenceInstance[]>("/sequences/instances", undefined, []);
+}
+
+export function activateSequence(companyId: string, templateId: string) {
+  return api<SequenceInstance>(`/companies/${companyId}/sequences`, { method: "POST", body: JSON.stringify({ templateId }) });
+}
+
+export function cancelSequence(instanceId: string) {
+  return api(`/sequences/instances/${instanceId}`, { method: "DELETE" });
+}
+
+export function getCompanySequences(companyId: string) {
+  return api<SequenceInstance[]>(`/companies/${companyId}/sequences`, undefined, []);
 }
 
 export function getIntegrations() {

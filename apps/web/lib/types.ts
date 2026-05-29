@@ -219,6 +219,77 @@ export interface CreditAccount {
   resetAt: string;
 }
 
+// Phase 5 — Commercial Automation
+
+export interface CommercialDiagnosis {
+  companyId: string;
+  mode: "openai" | "template";
+  summary: string;
+  whatsappCopy: string;
+  emailSubject: string;
+  emailBody: string;
+  pitch: string;
+  callScript: string;
+  suggestedServices: string[];
+  generatedAt: string;
+}
+
+export type MessageDirection = "inbound" | "outbound";
+export type MessageStatus = "sent" | "delivered" | "read" | "failed";
+export type ConversationStatus = "open" | "resolved" | "pending";
+
+export interface InboxMessage {
+  id: string;
+  conversationPhone: string;
+  direction: MessageDirection;
+  body: string;
+  status: MessageStatus;
+  providerMessageId?: string;
+  createdAt: string;
+}
+
+export interface InboxConversation {
+  phone: string;
+  companyId?: string;
+  companyName?: string;
+  status: ConversationStatus;
+  slaDeadline: string;
+  slaStatus?: "ok" | "urgent" | "overdue";
+  assignedTo?: string;
+  lastMessageAt: string;
+  messageCount: number;
+  lastMessage: InboxMessage | null;
+  messages: InboxMessage[];
+}
+
+export interface SequenceStep {
+  stepIndex: number;
+  delayDays: number;
+  channel: "whatsapp" | "email";
+  subject?: string;
+  body: string;
+}
+
+export interface EmailSequenceTemplate {
+  id: string;
+  name: string;
+  description: string;
+  steps: SequenceStep[];
+}
+
+export interface SequenceInstance {
+  id: string;
+  companyId: string;
+  companyName: string;
+  templateId: string;
+  templateName: string;
+  activatedAt: string;
+  currentStep: number;
+  nextStepAt: string | null;
+  completedSteps: number[];
+  status: "active" | "completed" | "cancelled";
+}
+
 export interface DashboardMetrics {
   totalCompanies: number;
   lowRating: number;
