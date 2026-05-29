@@ -1,6 +1,6 @@
 import { companies } from "../db/mockData.js";
 import { Company, CrmStatus, SearchRequest } from "../types.js";
-import { GoogleApiError, analyzeWebsite, searchGooglePlaces } from "./google.js";
+import { GoogleApiError, searchGooglePlaces } from "./google.js";
 import { calculateOpportunityScore } from "./scoring.js";
 import { config } from "../config.js";
 import { randomUUID } from "node:crypto";
@@ -31,10 +31,12 @@ export async function searchCompaniesWithMeta(input: SearchRequest) {
 
   try {
     const generated = await searchGooglePlaces(input);
-    upsertCompanies(generated);
+    const withStatus = generated.map((c) => ({ ...c, enrichmentStatus: "pending" as const }));
+    upsertCompanies(withStatus);
+    queueEnrichmentForAll(withStatus);
     return {
       source: "google" as const,
-      companies: generated
+      companies: withStatus
     };
   } catch (error) {
     if (error instanceof GoogleApiError) {
@@ -59,6 +61,15 @@ export async function searchCompaniesWithMeta(input: SearchRequest) {
   }
 }
 
+function queueEnrichmentForAll(items: Company[]) {
+  // dynamic import to avoid circular dep at module init time
+  import("./enrichmentQueue.js").then(({ queueEnrichment }) => {
+    for (const company of items) {
+      if (company.website) queueEnrichment(company.id, company.name);
+    }
+  });
+}
+
 function upsertCompanies(items: Company[]) {
   for (const company of items) {
     const existingIndex = companies.findIndex((item) => item.id === company.id);
@@ -67,14 +78,11 @@ function upsertCompanies(items: Company[]) {
   }
 }
 
-export async function enrichCompany(id: string) {
+
+export function updateCompany(id: string, updates: Partial<Company>) {
   const company = getCompany(id);
   if (!company) return undefined;
-
-  const digital = await analyzeWebsite(company.website);
-  Object.assign(company, digital, calculateOpportunityScore({ ...company, ...digital }), {
-    updatedAt: new Date().toISOString()
-  });
+  Object.assign(company, updates, { updatedAt: new Date().toISOString() });
   return company;
 }
 

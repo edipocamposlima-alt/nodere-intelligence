@@ -1,4 +1,4 @@
-import { Company, DashboardMetrics } from "./types";
+import { Company, CreditAccount, DashboardMetrics, EnrichmentJob, QueueStatus, SavedSearch } from "./types";
 import { mockCompanies, mockDashboard } from "./mock";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
@@ -55,6 +55,26 @@ export function updateCompanyStatus(id: string, status: string) {
 
 export function addCompanyNote(id: string, body: string) {
   return api(`/companies/${id}/notes`, { method: "POST", body: JSON.stringify({ body }) });
+}
+
+export function getSearchHistory() {
+  return api<SavedSearch[]>("/searches", undefined, []);
+}
+
+export function rerunSearch(id: string) {
+  return api<{ search: SavedSearch; companies: Company[] }>(`/searches/${id}/rerun`, { method: "POST" });
+}
+
+export function getEnrichmentQueue() {
+  return api<QueueStatus>("/enrichment", undefined, { total: 0, pending: 0, running: 0, done: 0, error: 0, jobs: [] });
+}
+
+export function triggerEnrichment(companyId: string) {
+  return api<EnrichmentJob>(`/companies/${companyId}/analyze`, { method: "POST" });
+}
+
+export function getCredits() {
+  return api<CreditAccount>("/credits", undefined, { balance: 200, used: 0, plan: "Demo", resetAt: "" });
 }
 
 export function getIntegrations() {

@@ -53,8 +53,7 @@ export async function searchGooglePlaces(input: SearchRequest): Promise<Company[
   }
 
   const payload = (await response.json()) as { places?: GooglePlace[] };
-  const places = (payload.places ?? []).map((place) => normalizePlace(place, input));
-  return Promise.all(places.map(enrichPlaceWithDigitalSignals));
+  return (payload.places ?? []).map((place) => normalizePlace(place, input));
 }
 
 export async function analyzeWebsite(url?: string) {
@@ -66,7 +65,11 @@ export async function analyzeWebsite(url?: string) {
       metaPixel: false,
       googleTagManager: false,
       googleAnalytics: false,
-      seoBasics: false
+      seoBasics: false,
+      instagram: undefined as string | undefined,
+      facebook: undefined as string | undefined,
+      linkedin: undefined as string | undefined,
+      youtube: undefined as string | undefined
     };
   }
 
@@ -78,7 +81,11 @@ export async function analyzeWebsite(url?: string) {
     metaPixel: false,
     googleTagManager: false,
     googleAnalytics: false,
-    seoBasics: false
+    seoBasics: false,
+    instagram: undefined as string | undefined,
+    facebook: undefined as string | undefined,
+    linkedin: undefined as string | undefined,
+    youtube: undefined as string | undefined
   };
 
   try {
@@ -89,6 +96,10 @@ export async function analyzeWebsite(url?: string) {
     result.googleAnalytics = /google-analytics\.com|gtag\(|G-/i.test(html);
     result.seoBasics = /<title>.+<\/title>/i.test(html) && /name=["']description["']/i.test(html);
     result.isResponsive = /name=["']viewport["']/i.test(html);
+    result.instagram = extractSocialUrl(html, "instagram.com", ["p", "explore", "reel", "tv"]);
+    result.facebook = extractSocialUrl(html, "facebook.com", ["share", "sharer", "login", "signup", "plugins"]);
+    result.linkedin = extractSocialUrl(html, "linkedin.com", ["share", "shareArticle", "authwall"]);
+    result.youtube = extractSocialUrl(html, "youtube.com", ["watch", "embed", "shorts"]);
   } catch {
     return result;
   }
@@ -109,6 +120,18 @@ export async function analyzeWebsite(url?: string) {
   }
 
   return result;
+}
+
+function extractSocialUrl(html: string, domain: string, blocklist: string[]): string | undefined {
+  const pattern = new RegExp(`href=["']https?://(?:www\\.)?${domain.replace(".", "\\.")}/([^/"'\\s?#]+)`, "gi");
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(html)) !== null) {
+    const handle = match[1].toLowerCase();
+    if (!blocklist.some((blocked) => handle.startsWith(blocked))) {
+      return `https://${domain}/${match[1]}`;
+    }
+  }
+  return undefined;
 }
 
 function normalizePlace(place: GooglePlace, input: SearchRequest): Company {

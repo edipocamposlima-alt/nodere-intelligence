@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
-import { addNote, enrichCompany, getCompany, listCompanies, updateStatus } from "../services/companyStore.js";
+import { addNote, getCompany, listCompanies, updateStatus } from "../services/companyStore.js";
+import { queueEnrichment, getJobByCompany } from "../services/enrichmentQueue.js";
+import { consumeEnrichment } from "../services/credits.js";
 import { generateCommercialDiagnosis } from "../services/openai.js";
 import { defaultProspectingMessage, sendWhatsappMessage } from "../services/whatsapp.js";
 
@@ -16,14 +18,19 @@ router.get("/:id", (req, res) => {
   return res.json(company);
 });
 
-router.post("/:id/analyze", async (req, res, next) => {
-  try {
-    const company = await enrichCompany(req.params.id);
-    if (!company) return res.status(404).json({ message: "Company not found" });
-    return res.json(company);
-  } catch (error) {
-    return next(error);
-  }
+router.post("/:id/analyze", (req, res) => {
+  const company = getCompany(req.params.id);
+  if (!company) return res.status(404).json({ message: "Company not found" });
+  if (!company.website) return res.status(422).json({ message: "Company has no website to analyze" });
+  consumeEnrichment(company.name);
+  const job = queueEnrichment(company.id, company.name);
+  return res.status(202).json({ message: "Enrichment queued", job });
+});
+
+router.get("/:id/enrichment", (req, res) => {
+  const job = getJobByCompany(req.params.id);
+  if (!job) return res.status(404).json({ message: "No enrichment job found" });
+  return res.json(job);
 });
 
 router.patch("/:id/status", (req, res) => {

@@ -1,6 +1,8 @@
-import { ExternalLink, Globe2, MessageCircle, Phone, Star } from "lucide-react";
+import { ExternalLink, Globe2, Instagram, Linkedin, MessageCircle, Phone, Star, Youtube } from "lucide-react";
+import { Facebook } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getCompany } from "@/lib/api";
+import { EnrichTrigger } from "./EnrichTrigger";
 
 const whatsappMessage =
   "Ola, tudo bem? Estive analisando a presenca digital da sua empresa no Google e identifiquei algumas oportunidades que podem ajudar voces a gerar mais contatos e melhorar o posicionamento online. Posso te mostrar rapidamente?";
@@ -9,7 +11,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const company = await getCompany(id);
 
-  const checks = [
+  const checks: [string, boolean][] = [
     ["Site", Boolean(company.website)],
     ["SSL", Boolean(company.hasSsl)],
     ["Responsivo", Boolean(company.isResponsive)],
@@ -51,11 +53,38 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                   Google Maps
                 </a>
               )}
+              {company.instagram && (
+                <a href={company.instagram} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
+                  <Instagram className="h-4 w-4" />
+                  Instagram
+                </a>
+              )}
+              {company.facebook && (
+                <a href={company.facebook} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
+                  <Facebook className="h-4 w-4" />
+                  Facebook
+                </a>
+              )}
+              {company.linkedin && (
+                <a href={company.linkedin} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
+                  <Linkedin className="h-4 w-4" />
+                  LinkedIn
+                </a>
+              )}
+              {company.youtube && (
+                <a href={company.youtube} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
+                  <Youtube className="h-4 w-4" />
+                  YouTube
+                </a>
+              )}
             </div>
           </div>
-          <div className="rounded-lg border border-electric/30 bg-electric/10 p-5 text-center">
-            <p className="text-sm text-slate-400">Score comercial</p>
-            <p className="mt-2 text-6xl font-semibold text-white">{company.score}</p>
+          <div className="flex flex-col gap-3">
+            <div className="rounded-lg border border-electric/30 bg-electric/10 p-5 text-center">
+              <p className="text-sm text-slate-400">Score comercial</p>
+              <p className="mt-2 text-6xl font-semibold text-white">{company.score}</p>
+            </div>
+            <EnrichTrigger companyId={company.id} enrichmentStatus={company.enrichmentStatus} hasWebsite={Boolean(company.website)} />
           </div>
         </div>
       </section>

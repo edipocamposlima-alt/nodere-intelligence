@@ -9,6 +9,8 @@ export type CrmStatus =
 
 export type OpportunityLevel = "Alta" | "Media" | "Baixa";
 
+export type EnrichmentStatus = "none" | "pending" | "running" | "done" | "error";
+
 export interface Company {
   id: string;
   name: string;
@@ -19,6 +21,10 @@ export interface Company {
   phone?: string;
   whatsapp?: string;
   website?: string;
+  instagram?: string;
+  facebook?: string;
+  linkedin?: string;
+  youtube?: string;
   rating?: number;
   reviewCount?: number;
   mapsUrl?: string;
@@ -36,6 +42,7 @@ export interface Company {
   googleTagManager?: boolean;
   googleAnalytics?: boolean;
   seoBasics?: boolean;
+  enrichmentStatus?: EnrichmentStatus;
   status: CrmStatus;
   score: number;
   opportunityLevel: OpportunityLevel;
@@ -59,4 +66,34 @@ export interface SearchRequest {
   state?: string;
   segment: string;
   keyword?: string;
+}
+
+export interface SavedSearch {
+  id: string;
+  city: string;
+  state?: string;
+  segment: string;
+  keyword?: string;
+  resultCount: number;
+  source: "google" | "mock" | "fallback";
+  companyIds: string[];
+  createdAt: string;
+  lastRanAt: string;
+}
+
+export interface EnrichmentJob {
+  id: string;
+  companyId: string;
+  companyName: string;
+  status: EnrichmentStatus;
+  createdAt: string;
+  completedAt?: string;
+  error?: string;
+}
+
+export interface CreditAccount {
+  balance: number;
+  used: number;
+  plan: string;
+  resetAt: string;
 }

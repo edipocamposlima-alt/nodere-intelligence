@@ -5,6 +5,8 @@ import { ZodError } from "zod";
 import { config } from "./config.js";
 import companiesRouter from "./routes/companies.js";
 import dashboardRouter from "./routes/dashboard.js";
+import enrichmentRouter from "./routes/enrichment.js";
+import creditsRouter from "./routes/credits.js";
 import integrationsRouter from "./routes/integrations.js";
 import searchesRouter from "./routes/searches.js";
 
@@ -21,6 +23,8 @@ app.get("/health", (_req, res) => {
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/companies", companiesRouter);
 app.use("/api/searches", searchesRouter);
+app.use("/api/enrichment", enrichmentRouter);
+app.use("/api/credits", creditsRouter);
 app.use("/api/integrations", integrationsRouter);
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
