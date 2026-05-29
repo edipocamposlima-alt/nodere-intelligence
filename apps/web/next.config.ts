@@ -5,6 +5,16 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "2mb"
     }
+  },
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.nodere.com.br" }],
+        destination: "https://nodere.com.br/:path*",
+        permanent: true
+      }
+    ];
   }
 };
 
