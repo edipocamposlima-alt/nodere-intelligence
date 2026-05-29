@@ -1,12 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BarChart3, Building2, History, KanbanSquare, Plug, Settings, ShieldCheck } from "lucide-react";
+import { BarChart3, Building2, History, KanbanSquare, Plug, Settings, ShieldCheck, Zap } from "lucide-react";
 import { getCredits } from "@/lib/api";
 
 const items = [
   { href: "/", label: "Dashboard", icon: BarChart3 },
   { href: "/companies", label: "Empresas", icon: Building2 },
   { href: "/searches", label: "Buscas", icon: History },
+  { href: "/intelligence", label: "Inteligência", icon: Zap },
   { href: "/crm", label: "CRM", icon: KanbanSquare },
   { href: "/integrations", label: "Integrações", icon: Plug },
   { href: "/settings", label: "Configurações", icon: Settings }

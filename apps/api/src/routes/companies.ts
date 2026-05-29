@@ -6,6 +6,9 @@ import { consumeEnrichment } from "../services/credits.js";
 import { getAudit } from "../db/auditStore.js";
 import { calculateCommercialScore, calculateMaturityScore, calculatePaidTrafficScore } from "../services/scoring.js";
 import { config } from "../config.js";
+import { getAdsConnectionStatus, assessAdsReadiness, buildOfflineConversion, offlineConversionsToCsv } from "../services/googleAds.js";
+import { generateKeywords } from "../services/keywords.js";
+import { getGbpInsightsForCompany } from "../services/gbp.js";
 import { generateCommercialDiagnosis } from "../services/openai.js";
 import { defaultProspectingMessage, sendWhatsappMessage } from "../services/whatsapp.js";
 
@@ -90,6 +93,58 @@ router.get("/:id/audit", (req, res) => {
     opportunityScore: company.score,
     gbp
   });
+});
+
+router.get("/:id/intelligence", async (req, res, next) => {
+  try {
+    const company = getCompany(req.params.id);
+    if (!company) return res.status(404).json({ message: "Company not found" });
+
+    const scan = getAudit(req.params.id);
+    const [adsReadiness, keywords, gbp] = await Promise.all([
+      Promise.resolve(assessAdsReadiness(company, scan ?? null)),
+      Promise.resolve(generateKeywords(company.category, company.city, company.state)),
+      getGbpInsightsForCompany(company.name, company.city)
+    ]);
+
+    return res.json({
+      companyId: company.id,
+      companyName: company.name,
+      adsConnectionStatus: getAdsConnectionStatus(),
+      adsCustomerId: config.googleAds.customerId,
+      adsReadiness,
+      keywords,
+      gbp
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/:id/keywords", (req, res) => {
+  const company = getCompany(req.params.id);
+  if (!company) return res.status(404).json({ message: "Company not found" });
+  return res.json(generateKeywords(company.category, company.city, company.state));
+});
+
+router.post("/:id/offline-conversion", (req, res) => {
+  const company = getCompany(req.params.id);
+  if (!company) return res.status(404).json({ message: "Company not found" });
+
+  const schema = z.object({
+    conversionName: z.string().default("Lead CRM"),
+    value: z.number().min(0).default(0)
+  });
+  const body = schema.parse(req.body);
+  const conversion = buildOfflineConversion(company.name, body.conversionName, body.value);
+
+  const format = (req.query.format as string) ?? "json";
+  if (format === "csv") {
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="conversion-${company.id}.csv"`);
+    return res.send(offlineConversionsToCsv([conversion]));
+  }
+  return res.json(conversion);
 });
 
 router.post("/:id/diagnosis", async (req, res, next) => {

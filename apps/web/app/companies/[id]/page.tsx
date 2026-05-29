@@ -1,15 +1,20 @@
-import { ExternalLink, Facebook, Globe2, Instagram, Linkedin, MessageCircle, Phone, ShieldCheck, Star, Youtube } from "lucide-react";
+import { ExternalLink, Facebook, Globe2, Instagram, Linkedin, MessageCircle, Phone, ShieldCheck, Star, Youtube, Zap } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
-import { getCompany, getCompanyAudit } from "@/lib/api";
+import { getCompany, getCompanyAudit, getCompanyIntelligence } from "@/lib/api";
 import { EnrichTrigger } from "./EnrichTrigger";
 import { AuditPanel } from "./AuditPanel";
+import { IntelligencePanel } from "./IntelligencePanel";
 
 const whatsappMessage =
   "Ola, tudo bem? Estive analisando a presenca digital da sua empresa no Google e identifiquei algumas oportunidades que podem ajudar voces a gerar mais contatos e melhorar o posicionamento online. Posso te mostrar rapidamente?";
 
 export default async function CompanyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [company, audit] = await Promise.all([getCompany(id), getCompanyAudit(id).catch(() => null)]);
+  const [company, audit, intel] = await Promise.all([
+    getCompany(id),
+    getCompanyAudit(id).catch(() => null),
+    getCompanyIntelligence(id).catch(() => null)
+  ]);
 
   const checks: [string, boolean][] = [
     ["Site", Boolean(company.website)],
@@ -174,19 +179,35 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
 
-        {/* Right column — Digital Audit */}
-        <div className="space-y-5">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-cyan" />
-            <h3 className="font-semibold text-white">Auditoria digital</h3>
+        {/* Right column — Digital Audit + Intelligence */}
+        <div className="space-y-8">
+          <div className="space-y-5">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-cyan" />
+              <h3 className="font-semibold text-white">Auditoria digital</h3>
+            </div>
+            {audit
+              ? <AuditPanel audit={audit} />
+              : (
+                <div className="rounded-lg border border-line bg-panel/90 p-8 text-center">
+                  <p className="text-sm text-slate-400">API não disponível. Execute a API local para ver auditoria completa.</p>
+                </div>
+              )}
           </div>
-          {audit
-            ? <AuditPanel audit={audit} />
-            : (
-              <div className="rounded-lg border border-line bg-panel/90 p-8 text-center">
-                <p className="text-sm text-slate-400">API não disponível. Execute a API local para ver auditoria completa.</p>
-              </div>
-            )}
+
+          <div className="space-y-5">
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-cyan" />
+              <h3 className="font-semibold text-white">Google Intelligence</h3>
+            </div>
+            {intel
+              ? <IntelligencePanel intel={intel} />
+              : (
+                <div className="rounded-lg border border-line bg-panel/90 p-8 text-center">
+                  <p className="text-sm text-slate-400">API não disponível. Execute a API local para ver inteligência Google.</p>
+                </div>
+              )}
+          </div>
         </div>
       </div>
     </div>

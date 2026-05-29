@@ -1,4 +1,4 @@
-import { Company, CreditAccount, DashboardMetrics, DigitalAudit, EnrichmentJob, QueueStatus, SavedSearch } from "./types";
+import { Company, CreditAccount, DashboardMetrics, DigitalAudit, EnrichmentJob, GoogleIntelligence, KeywordSuggestion, QueueStatus, SavedSearch } from "./types";
 import { mockCompanies, mockDashboard } from "./mock";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
@@ -75,6 +75,14 @@ export function triggerEnrichment(companyId: string) {
 
 export function getCompanyAudit(companyId: string) {
   return api<DigitalAudit>(`/companies/${companyId}/audit`);
+}
+
+export function getCompanyIntelligence(companyId: string) {
+  return api<GoogleIntelligence>(`/companies/${companyId}/intelligence`);
+}
+
+export function getCompanyKeywords(companyId: string) {
+  return api<KeywordSuggestion[]>(`/companies/${companyId}/keywords`, undefined, []);
 }
 
 export function getCredits() {

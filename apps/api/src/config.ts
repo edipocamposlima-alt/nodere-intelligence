@@ -23,5 +23,12 @@ export const config = {
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
     model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini"
+  },
+  googleAds: {
+    developerToken: process.env.GOOGLE_ADS_DEVELOPER_TOKEN,
+    clientId: process.env.GOOGLE_ADS_CLIENT_ID ?? process.env.GOOGLE_BUSINESS_PROFILE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_ADS_CLIENT_SECRET ?? process.env.GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET,
+    refreshToken: process.env.GOOGLE_ADS_REFRESH_TOKEN,
+    customerId: process.env.GOOGLE_ADS_CUSTOMER_ID
   }
 };

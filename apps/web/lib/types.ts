@@ -148,6 +148,58 @@ export interface GbpProfile {
   message: string;
 }
 
+export interface MissingAsset {
+  type: string;
+  label: string;
+  priority: "high" | "medium" | "low";
+  description: string;
+}
+
+export interface AdsReadiness {
+  score: number;
+  hasPixel: boolean;
+  hasConversionTracking: boolean;
+  hasGA4: boolean;
+  hasGTM: boolean;
+  hasLandingPage: boolean;
+  isLandingPageFast: boolean;
+  isResponsive: boolean;
+  missingAssets: MissingAsset[];
+  recommendations: string[];
+}
+
+export interface KeywordSuggestion {
+  keyword: string;
+  intent: "local" | "service" | "competitor" | "informational" | "urgent";
+  competition: "low" | "medium" | "high";
+  estimatedMonthlySearches: string;
+  suggestedBidBRL?: string;
+}
+
+export interface GbpInsights {
+  status: "not_configured" | "configured" | "authorized" | "error";
+  message: string;
+  data?: {
+    accountName?: string;
+    locationCount?: number;
+    reviewCount?: number;
+    averageRating?: number;
+    hasPhotos?: boolean;
+    hasRecentPosts?: boolean;
+  };
+  error?: string;
+}
+
+export interface GoogleIntelligence {
+  companyId: string;
+  companyName: string;
+  adsConnectionStatus: "not_configured" | "configured" | "connected";
+  adsCustomerId?: string;
+  adsReadiness: AdsReadiness;
+  keywords: KeywordSuggestion[];
+  gbp: GbpInsights;
+}
+
 export interface DigitalAudit {
   companyId: string;
   companyName: string;
