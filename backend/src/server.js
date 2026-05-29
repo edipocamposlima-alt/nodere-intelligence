@@ -15,7 +15,10 @@ const allowedOrigins = new Set([
   config.frontendOrigin,
   config.productionFrontendOrigin,
   "https://edipocamposlima-alt.github.io",
+  "https://nodere.com.br",
+  "https://www.nodere.com.br",
   "http://localhost:4173",
+  "http://localhost:3000",
   "http://127.0.0.1:4173",
   "null"
 ]);
