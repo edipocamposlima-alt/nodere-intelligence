@@ -19,9 +19,14 @@ router.get("/usage", (req, res) => {
 router.post("/checkout", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { planId, customerId } = req.body;
+    if (!planId) return res.status(400).json({ message: "planId obrigatório" });
     const url = await createCheckoutSession(planId, customerId);
     res.json({ url });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg === "Plano não disponível para checkout" || msg === "Stripe não configurado") {
+      return res.status(400).json({ message: msg });
+    }
     next(err);
   }
 });
