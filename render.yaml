@@ -11,9 +11,9 @@ services:
       - key: NODE_ENV
         value: production
       - key: FRONTEND_ORIGIN
-        value: https://edipocamposlima-alt.github.io
+        value: https://nodere.com.br
       - key: PRODUCTION_FRONTEND_ORIGIN
-        value: https://edipocamposlima-alt.github.io
+        value: https://nodere.com.br
       - key: GOOGLE_PLACES_API_KEY
         sync: false
       - key: GOOGLE_MAPS_API_KEY
@@ -23,4 +23,24 @@ services:
       - key: OPENAI_API_KEY
         sync: false
       - key: MVP_OWNER_TOKEN
+        sync: false
+
+  - type: web
+    name: nodere-ts-api
+    runtime: node
+    rootDir: apps/api
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: WEB_ORIGIN
+        value: https://nodere.com.br
+      - key: USE_MOCK_DATA
+        value: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
         sync: false
