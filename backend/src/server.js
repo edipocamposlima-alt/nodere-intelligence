@@ -266,7 +266,7 @@ app.post("/api/openai", async (request, response, next) => {
 app.post("/api/v1/pagespeed", async (request, response, next) => {
   try {
     const message = await validatePageSpeed(request.body.url || "https://www.wikipedia.org");
-    response.json({ status: "connected", message });
+    response.json({ status: message === null ? "not_configured" : "connected", message });
   } catch (error) {
     next(error);
   }
