@@ -2,6 +2,8 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const _googleApiKey = process.env.GOOGLE_API_KEY;
+
 export const config = {
   port: Number(process.env.PORT ?? process.env.API_PORT ?? 4000),
   webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:3000",
@@ -9,9 +11,9 @@ export const config = {
   databaseUrl: process.env.DATABASE_URL,
   useMockData: process.env.USE_MOCK_DATA !== "false",
   google: {
-    mapsKey: process.env.GOOGLE_MAPS_API_KEY,
-    placesKey: process.env.GOOGLE_PLACES_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY,
-    pageSpeedKey: process.env.GOOGLE_PAGESPEED_API_KEY,
+    mapsKey: process.env.GOOGLE_MAPS_API_KEY ?? _googleApiKey,
+    placesKey: process.env.GOOGLE_PLACES_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY ?? _googleApiKey,
+    pageSpeedKey: process.env.GOOGLE_PAGESPEED_API_KEY ?? _googleApiKey,
     businessProfileClientId: process.env.GOOGLE_BUSINESS_PROFILE_CLIENT_ID,
     businessProfileClientSecret: process.env.GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET,
     businessProfileRefreshToken: process.env.GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN

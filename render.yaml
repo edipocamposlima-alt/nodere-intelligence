@@ -40,7 +40,66 @@ services:
         value: https://nodere.com.br
       - key: USE_MOCK_DATA
         value: false
+      # Autenticação Bearer Token — deve coincidir com NEXT_PUBLIC_API_KEY na Vercel
+      - key: API_KEY
+        sync: false
+      # Banco de dados (Supabase connection string)
+      - key: DATABASE_URL
+        sync: false
+      # Google APIs — GOOGLE_API_KEY serve como chave universal (fallback)
       - key: GOOGLE_API_KEY
         sync: false
+      - key: GOOGLE_PLACES_API_KEY
+        sync: false
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: GOOGLE_PAGESPEED_API_KEY
+        sync: false
+      # Google Business Profile (OAuth)
+      - key: GOOGLE_BUSINESS_PROFILE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN
+        sync: false
+      # Google Ads
+      - key: GOOGLE_ADS_DEVELOPER_TOKEN
+        sync: false
+      - key: GOOGLE_ADS_CUSTOMER_ID
+        sync: false
+      - key: GOOGLE_ADS_REFRESH_TOKEN
+        sync: false
+      # OpenAI
       - key: OPENAI_API_KEY
         sync: false
+      # WhatsApp Cloud API
+      - key: WHATSAPP_CLOUD_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_WEBHOOK_SECRET
+        sync: false
+      # SMTP (sequências de e-mail)
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      # Stripe (faturamento)
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_STARTER
+        sync: false
+      - key: STRIPE_PRICE_PRO
+        sync: false
+      - key: STRIPE_PRICE_AGENCY
+        sync: false
+      - key: STRIPE_SUCCESS_URL
+        value: https://nodere.com.br/billing?success=1
+      - key: STRIPE_CANCEL_URL
+        value: https://nodere.com.br/billing?cancel=1

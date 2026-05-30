@@ -6,11 +6,14 @@ export default function LoginPage() {
   return (
     <div className="grid min-h-screen place-items-center bg-ink p-4">
       <div className="w-full max-w-md rounded-lg border border-line bg-panel p-6 shadow-glow">
-        <div className="flex items-center gap-3">
-          <Image src="/nodere-logo.png" alt="NODERE" width={56} height={56} className="rounded-xl object-cover" />
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="rounded-2xl border border-electric/30 bg-electric/10 p-3 shadow-glow">
+            <Image src="/nodere-logo.png" alt="NODERE" width={72} height={72} className="rounded-xl object-cover" />
+          </div>
           <div>
-            <h1 className="text-xl font-semibold text-white">NODERE Intelligence</h1>
-            <p className="text-sm text-slate-400">Acesso ao scanner comercial</p>
+            <h1 className="text-2xl font-bold tracking-wide text-white">NODERE</h1>
+            <p className="text-sm uppercase tracking-[0.2em] text-cyan">Intelligence</p>
+            <p className="mt-2 text-sm text-slate-400">Scanner comercial de oportunidades Google</p>
           </div>
         </div>
 

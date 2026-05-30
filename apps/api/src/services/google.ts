@@ -34,7 +34,11 @@ export class GoogleApiError extends Error {
 
 export async function searchGooglePlaces(input: SearchRequest): Promise<Company[]> {
   if (!config.google.placesKey) {
-    throw new Error("GOOGLE_PLACES_API_KEY is not configured.");
+    throw new GoogleApiError("Chave Google Places não configurada. Defina GOOGLE_API_KEY ou GOOGLE_PLACES_API_KEY no Render.", {
+      status: 0,
+      code: "KEY_NOT_CONFIGURED",
+      reason: "missingKey"
+    });
   }
 
   const query = [input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" ");
