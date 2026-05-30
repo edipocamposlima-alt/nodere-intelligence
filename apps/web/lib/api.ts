@@ -2,6 +2,7 @@ import { AuditLogEvent, BillingStatus, CommercialDiagnosis, Company, CreditAccou
 import { mockCompanies, mockDashboard } from "./mock";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 
 async function api<T>(path: string, options?: RequestInit, fallback?: T): Promise<T> {
   try {
@@ -9,6 +10,7 @@ async function api<T>(path: string, options?: RequestInit, fallback?: T): Promis
       ...options,
       headers: {
         "Content-Type": "application/json",
+        ...(API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}),
         ...(options?.headers ?? {})
       },
       cache: "no-store"

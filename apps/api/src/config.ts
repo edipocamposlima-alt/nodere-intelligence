@@ -5,6 +5,7 @@ dotenv.config();
 export const config = {
   port: Number(process.env.PORT ?? process.env.API_PORT ?? 4000),
   webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:3000",
+  apiKey: process.env.API_KEY,
   databaseUrl: process.env.DATABASE_URL,
   useMockData: process.env.USE_MOCK_DATA !== "false",
   google: {

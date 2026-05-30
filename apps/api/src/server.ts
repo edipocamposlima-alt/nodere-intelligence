@@ -16,6 +16,7 @@ import operatorsRouter from "./routes/operators.js";
 import reportsRouter from "./routes/reports.js";
 import auditRouter from "./routes/audit.js";
 import { processDueSteps } from "./services/emailSequences.js";
+import { requireAuth } from "./middleware/auth.js";
 
 const app = express();
 
@@ -30,6 +31,8 @@ app.use(express.json());
 app.get("/health", (_req, res) => {
   res.json({ ok: true, name: "NODERE Intelligence API" });
 });
+
+app.use("/api", requireAuth);
 
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/companies", companiesRouter);
