@@ -112,6 +112,115 @@ function normalizeOpenAILead(input = {}) {
   };
 }
 
+const compatibilityCompanies = new Map();
+
+function calculateCompatScore(company = {}) {
+  let score = 35;
+  if (!company.website) score += 20;
+  if (!company.phone && !company.whatsapp) score += 12;
+  if (Number(company.googleRating || company.rating || 5) < 4.2) score += 15;
+  if (Number(company.googleReviews || company.reviewCount || 0) < 50) score += 12;
+  return Math.max(0, Math.min(100, score));
+}
+
+function normalizeCompatCompany(input = {}) {
+  const score = calculateCompatScore(input);
+  const rating = input.googleRating ?? input.rating ?? null;
+  const reviewCount = input.googleReviews ?? input.reviewCount ?? 0;
+  const id = input.id || input.googlePlaceId || input.placeId || `lead-${Buffer.from(String(input.companyName || input.name || Date.now())).toString("base64url").slice(0, 18)}`;
+  const detectedOpportunities = [
+    !input.website ? "Empresa sem site detectado." : "",
+    rating && Number(rating) < 4.2 ? `Nota Google abaixo de 4.2 (${rating}).` : "",
+    Number(reviewCount || 0) < 50 ? "Poucas avaliações no Google." : "",
+    !input.phone && !input.whatsapp ? "Telefone/WhatsApp não encontrado." : ""
+  ].filter(Boolean);
+
+  return {
+    id,
+    name: input.companyName || input.name || "Empresa sem nome",
+    category: input.segment || input.category || "Empresa",
+    city: input.city || "",
+    state: input.state || "",
+    address: input.address || "",
+    phone: input.phone || "",
+    whatsapp: input.whatsapp || input.phone || "",
+    website: input.website || "",
+    rating,
+    reviewCount,
+    mapsUrl: input.googleMapsUrl || input.mapsUrl || "",
+    status: input.status || "Novo Lead",
+    score,
+    opportunityLevel: score >= 70 ? "Alta" : score >= 45 ? "Media" : "Baixa",
+    detectedOpportunities,
+    suggestions: [
+      "Validar presença digital e estrutura de conversão.",
+      "Preparar abordagem consultiva com diagnóstico objetivo.",
+      "Priorizar Google Ads somente após página e mensuração estarem adequadas."
+    ],
+    notes: input.notes || [],
+    createdAt: input.createdAt || new Date().toISOString(),
+    updatedAt: input.updatedAt || new Date().toISOString()
+  };
+}
+
+async function listCompatCompanies() {
+  try {
+    if (config.supabaseUrl && config.supabaseServiceRoleKey) {
+      const supabase = getSupabase();
+      const { data, error } = await supabase
+        .from("mvp_leads")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(250);
+      if (!error && Array.isArray(data)) {
+        return data.map((lead) => normalizeCompatCompany({
+          id: lead.id,
+          companyName: lead.company_name,
+          googlePlaceId: lead.google_place_id,
+          phone: lead.phone,
+          whatsapp: lead.whatsapp,
+          website: lead.website,
+          address: lead.address,
+          city: lead.city,
+          state: lead.state,
+          segment: lead.segment,
+          googleRating: lead.google_rating,
+          googleReviews: lead.google_reviews,
+          googleMapsUrl: lead.google_maps_url,
+          status: lead.status,
+          createdAt: lead.created_at,
+          updatedAt: lead.updated_at
+        }));
+      }
+    }
+  } catch (_error) {
+    // Keep production pages usable when Supabase is not provisioned yet.
+  }
+  return Array.from(compatibilityCompanies.values());
+}
+
+function buildCompatDashboard(companies = []) {
+  const total = companies.length;
+  const pipeline = companies.reduce((acc, company) => {
+    acc[company.status] = (acc[company.status] || 0) + 1;
+    return acc;
+  }, {});
+
+  return {
+    totalCompanies: total,
+    lowRating: companies.filter((company) => Number(company.rating || 5) < 4.2).length,
+    withoutWebsite: companies.filter((company) => !company.website).length,
+    withoutGoogleAds: companies.filter((company) => !company.hasGoogleAds).length,
+    withoutWhatsapp: companies.filter((company) => !company.whatsapp).length,
+    withoutDescription: companies.filter((company) => !company.hasDescription).length,
+    withoutRecentPhotos: companies.filter((company) => !company.hasRecentPhotos).length,
+    averageScore: total ? Math.round(companies.reduce((sum, company) => sum + Number(company.score || 0), 0) / total) : 0,
+    hotLeads: companies.filter((company) => company.opportunityLevel === "Alta").length,
+    pipeline,
+    topOpportunities: [...companies].sort((a, b) => Number(b.score || 0) - Number(a.score || 0)).slice(0, 5)
+  };
+}
+
 function openAIErrorMessage(error) {
   if (error.code === "OPENAI_INVALID_API_KEY") return "Chave OpenAI invalida ou rejeitada. Atualize OPENAI_API_KEY no Render.";
   if (error.code === "OPENAI_BILLING_OR_QUOTA") return "Billing, creditos ou limite da OpenAI indisponivel para este projeto.";
@@ -227,6 +336,135 @@ app.get("/api/debug/google-places-test", async (_request, response) => {
       requestEndpoint: PLACES_ENDPOINT_USED
     });
   }
+});
+
+app.get("/api/dashboard", async (_request, response, next) => {
+  try {
+    response.json(buildCompatDashboard(await listCompatCompanies()));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/companies", async (_request, response, next) => {
+  try {
+    response.json(await listCompatCompanies());
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/companies/:id", async (request, response, next) => {
+  try {
+    const company = (await listCompatCompanies()).find((item) => item.id === request.params.id);
+    if (!company) return response.status(404).json({ message: "Empresa não encontrada." });
+    return response.json(company);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.patch("/api/companies/:id/status", async (request, response, next) => {
+  try {
+    const status = request.body.status || "Novo Lead";
+    if (config.supabaseUrl && config.supabaseServiceRoleKey) {
+      try {
+        const supabase = getSupabase();
+        await supabase.from("mvp_leads").update({ status, updated_at: new Date().toISOString() }).eq("id", request.params.id);
+      } catch (_error) {
+        // Memory fallback below keeps UI responsive.
+      }
+    }
+    const local = compatibilityCompanies.get(request.params.id);
+    if (local) compatibilityCompanies.set(request.params.id, { ...local, status, updatedAt: new Date().toISOString() });
+    const updated = compatibilityCompanies.get(request.params.id) || (await listCompatCompanies()).find((item) => item.id === request.params.id);
+    if (!updated) return response.status(404).json({ message: "Empresa não encontrada." });
+    return response.json(updated);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.post("/api/companies/:id/notes", async (request, response, next) => {
+  try {
+    const note = {
+      id: `note-${Date.now()}`,
+      companyId: request.params.id,
+      body: String(request.body.body || "").trim(),
+      createdAt: new Date().toISOString()
+    };
+    if (!note.body) return response.status(400).json({ message: "Informe a observação." });
+
+    if (config.supabaseUrl && config.supabaseServiceRoleKey) {
+      try {
+        const supabase = getSupabase();
+        await supabase.from("mvp_crm_events").insert({
+          lead_id: request.params.id,
+          event_type: "note",
+          body: note.body
+        });
+      } catch (_error) {
+        // Memory fallback below keeps UI responsive.
+      }
+    }
+    const local = compatibilityCompanies.get(request.params.id);
+    if (local) {
+      const notes = [note, ...(local.notes || [])];
+      compatibilityCompanies.set(request.params.id, { ...local, notes, updatedAt: note.createdAt });
+    }
+    return response.status(201).json(note);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.post("/api/searches", async (request, response, next) => {
+  try {
+    const search = await searchGooglePlaces({
+      companyName: request.body.companyName || "",
+      segment: request.body.segment || "",
+      city: request.body.city || "",
+      state: request.body.state || "",
+      keyword: request.body.keyword || "",
+      limit: request.body.limit || 20
+    });
+    const companies = search.results.map(normalizeCompatCompany);
+    for (const company of companies) compatibilityCompanies.set(company.id, company);
+
+    response.status(201).json({
+      search: {
+        id: `search-${Date.now()}`,
+        city: request.body.city || "",
+        state: request.body.state || "",
+        segment: request.body.segment || request.body.companyName || request.body.keyword || "Busca livre",
+        keyword: request.body.keyword || request.body.companyName || "",
+        resultCount: companies.length,
+        source: "google",
+        companyIds: companies.map((company) => company.id),
+        createdAt: new Date().toISOString(),
+        lastRanAt: new Date().toISOString()
+      },
+      companies
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/searches", (_request, response) => {
+  response.json([]);
+});
+
+app.get("/api/enrichment", (_request, response) => {
+  response.json({ total: 0, pending: 0, running: 0, done: 0, error: 0, jobs: [] });
+});
+
+app.get("/api/credits", (_request, response) => {
+  response.json({ balance: 0, used: 0, plan: "Produção", resetAt: "" });
+});
+
+app.get("/api/integrations", (_request, response) => {
+  response.json(getStaticIntegrationStatus());
 });
 
 app.get("/api/v1/integrations/status", async (request, response, next) => {
