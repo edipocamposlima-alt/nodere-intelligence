@@ -41,6 +41,11 @@ export const config = {
     pass: process.env.SMTP_PASS,
     from: process.env.SMTP_FROM ?? process.env.SMTP_USER
   },
+  supabase: {
+    url: process.env.SUPABASE_URL,
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    anonKey: process.env.SUPABASE_ANON_KEY
+  },
   webhookSecret: process.env.WHATSAPP_WEBHOOK_SECRET ?? "nodere-webhook-secret",
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY,

@@ -13,14 +13,18 @@ const searchSchema = z.object({
   keyword: z.string().optional()
 });
 
-router.get("/", (_req, res) => {
-  res.json(listSearchHistory());
+router.get("/", async (_req, res, next) => {
+  try {
+    res.json(await listSearchHistory());
+  } catch (err) { next(err); }
 });
 
-router.get("/:id", (req, res) => {
-  const search = getSearch(req.params.id);
-  if (!search) return res.status(404).json({ message: "Search not found" });
-  return res.json(search);
+router.get("/:id", async (req, res, next) => {
+  try {
+    const search = await getSearch(req.params.id);
+    if (!search) return res.status(404).json({ message: "Search not found" });
+    return res.json(search);
+  } catch (err) { return next(err); }
 });
 
 router.post("/", async (req, res, next) => {
@@ -31,7 +35,7 @@ router.post("/", async (req, res, next) => {
 
     consumeSearch(`${input.segment} em ${input.city}`);
 
-    const saved = saveSearch(input, result.companies.length, result.source, companyIds);
+    const saved = await saveSearch(input, result.companies.length, result.source, companyIds);
 
     res.status(201).json({
       search: {
@@ -52,7 +56,7 @@ router.post("/", async (req, res, next) => {
 
 router.post("/:id/rerun", async (req, res, next) => {
   try {
-    const saved = getSearch(req.params.id);
+    const saved = await getSearch(req.params.id);
     if (!saved) return res.status(404).json({ message: "Search not found" });
 
     const result = await searchCompaniesWithMeta({
@@ -64,7 +68,7 @@ router.post("/:id/rerun", async (req, res, next) => {
 
     const companyIds = result.companies.map((c) => c.id);
     consumeSearch(`${saved.segment} em ${saved.city} (rerun)`);
-    touchSearch(saved.id, result.companies.length, result.source, companyIds);
+    await touchSearch(saved.id, result.companies.length, result.source, companyIds);
 
     return res.json({
       search: {

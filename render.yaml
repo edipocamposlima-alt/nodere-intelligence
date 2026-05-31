@@ -43,7 +43,12 @@ services:
       # Autenticação Bearer Token — deve coincidir com NEXT_PUBLIC_API_KEY na Vercel
       - key: API_KEY
         sync: false
-      # Banco de dados (Supabase connection string)
+      # Banco de dados — Supabase (preferir JS client)
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # Alternativa: conexão PostgreSQL direta (usar %23 no lugar de # na senha)
       - key: DATABASE_URL
         sync: false
       # Google APIs — GOOGLE_API_KEY serve como chave universal (fallback)

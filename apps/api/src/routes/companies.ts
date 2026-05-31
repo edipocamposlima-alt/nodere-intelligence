@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { addNote, getCompany, listCompanies, updateStatus } from "../services/companyStore.js";
+import { addNote, getCompany, getCompanyAsync, listCompaniesAsync, updateStatus } from "../services/companyStore.js";
 import { queueEnrichment, getJobByCompany } from "../services/enrichmentQueue.js";
 import { consumeEnrichment } from "../services/credits.js";
 import { getAudit } from "../db/auditStore.js";
@@ -16,14 +16,18 @@ import { activateSequence, getInstancesByCompany } from "../services/emailSequen
 
 const router = Router();
 
-router.get("/", (_req, res) => {
-  res.json(listCompanies());
+router.get("/", async (_req, res, next) => {
+  try {
+    res.json(await listCompaniesAsync());
+  } catch (err) { next(err); }
 });
 
-router.get("/:id", (req, res) => {
-  const company = getCompany(req.params.id);
-  if (!company) return res.status(404).json({ message: "Company not found" });
-  return res.json(company);
+router.get("/:id", async (req, res, next) => {
+  try {
+    const company = await getCompanyAsync(req.params.id);
+    if (!company) return res.status(404).json({ message: "Company not found" });
+    return res.json(company);
+  } catch (err) { return next(err); }
 });
 
 router.post("/:id/analyze", (req, res) => {
@@ -41,18 +45,22 @@ router.get("/:id/enrichment", (req, res) => {
   return res.json(job);
 });
 
-router.patch("/:id/status", (req, res) => {
-  const body = z.object({ status: z.string() }).parse(req.body);
-  const company = updateStatus(req.params.id, body.status as never);
-  if (!company) return res.status(404).json({ message: "Company not found" });
-  return res.json(company);
+router.patch("/:id/status", async (req, res, next) => {
+  try {
+    const body = z.object({ status: z.string() }).parse(req.body);
+    const company = await updateStatus(req.params.id, body.status as never);
+    if (!company) return res.status(404).json({ message: "Company not found" });
+    return res.json(company);
+  } catch (err) { return next(err); }
 });
 
-router.post("/:id/notes", (req, res) => {
-  const body = z.object({ body: z.string().min(2) }).parse(req.body);
-  const note = addNote(req.params.id, body.body);
-  if (!note) return res.status(404).json({ message: "Company not found" });
-  return res.status(201).json(note);
+router.post("/:id/notes", async (req, res, next) => {
+  try {
+    const body = z.object({ body: z.string().min(2) }).parse(req.body);
+    const note = await addNote(req.params.id, body.body);
+    if (!note) return res.status(404).json({ message: "Company not found" });
+    return res.status(201).json(note);
+  } catch (err) { return next(err); }
 });
 
 router.post("/:id/whatsapp", async (req, res, next) => {

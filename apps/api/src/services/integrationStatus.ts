@@ -1,7 +1,15 @@
 import { config } from "../config.js";
+import { hasSupabase } from "../db/supabase.js";
 
 export function getIntegrationStatus() {
   return [
+    {
+      key: "supabase",
+      name: "Supabase (Banco de dados)",
+      configured: hasSupabase(),
+      required: false,
+      capability: "Persistência de empresas, buscas e notas CRM entre reinícios do servidor."
+    },
     {
       key: "google_places",
       name: "Google Places API",
