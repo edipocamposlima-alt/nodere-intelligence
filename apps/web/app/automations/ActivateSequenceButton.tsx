@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { Loader2, Play } from "lucide-react";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://nodere-api.onrender.com/api";
+const API_URL = getApiBaseUrl();
 
 export function ActivateSequenceButton({ templateId, templateName }: { templateId: string; templateName: string }) {
   const [companyId, setCompanyId] = useState("");

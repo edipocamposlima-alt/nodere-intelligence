@@ -2,9 +2,11 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { CheckCircle2, Palette, Save, Server, Smartphone } from "lucide-react";
+import { getApiBaseUrl, getBackendRootUrl } from "@/lib/apiBase";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://nodere-api.onrender.com/api";
 const STORAGE_KEY = "nodere_settings";
+const API_URL = getApiBaseUrl();
+const BACKEND_ROOT_URL = getBackendRootUrl();
 
 type Settings = {
   theme: string;
@@ -23,7 +25,7 @@ const defaults: Settings = {
   fontFamily: "Inter",
   layoutDensity: "compact",
   cardStyle: "cards",
-  backendUrl: API_URL.replace(/\/api$/, "")
+  backendUrl: BACKEND_ROOT_URL
 };
 
 function applySettings(settings: Settings) {

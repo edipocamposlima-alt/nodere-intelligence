@@ -3,8 +3,9 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CalendarClock, Copy, Download, FileText, MessageCircle, Pencil, Plus, Save, Sparkles, Trash2 } from "lucide-react";
 import { Company } from "@/lib/types";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://nodere-api.onrender.com/api";
+const API_URL = getApiBaseUrl();
 
 type Note = { id: string; companyId: string; body: string; type?: string; owner?: string; createdAt: string; updatedAt?: string };
 type Task = { id: string; companyId: string; title: string; description?: string; dueAt?: string; priority?: string; channel?: string; status: string; createdAt: string };

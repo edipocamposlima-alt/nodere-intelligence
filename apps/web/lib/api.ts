@@ -1,6 +1,7 @@
 import { AuditLogEvent, BillingStatus, CommercialDiagnosis, Company, CreditAccount, DashboardMetrics, DigitalAudit, EmailSequenceTemplate, EnrichmentJob, ForecastReport, GoogleIntelligence, InboxConversation, KeywordSuggestion, MonthlyTrend, Operator, OperatorGoal, OperatorMetrics, PipelineReport, Plan, QueueStatus, SavedSearch, SequenceInstance, UsageEvent } from "./types";
+import { getApiBaseUrl } from "./apiBase";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://nodere-api.onrender.com/api";
+const API_URL = getApiBaseUrl();
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 
 export class ApiRequestError extends Error {

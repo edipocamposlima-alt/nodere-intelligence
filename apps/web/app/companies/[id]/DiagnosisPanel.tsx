@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Bot, Check, ChevronRight, ClipboardCopy, Loader2, Mail, MessageCircle, Phone, Sparkles } from "lucide-react";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface CommercialDiagnosis {
   mode: "openai" | "template";
@@ -15,7 +16,7 @@ interface CommercialDiagnosis {
   generatedAt: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://nodere-api.onrender.com/api";
+const API_URL = getApiBaseUrl();
 
 type Tab = "whatsapp" | "email" | "pitch" | "script";
 

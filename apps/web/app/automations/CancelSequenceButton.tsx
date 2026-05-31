@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { Loader2, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://nodere-api.onrender.com/api";
+const API_URL = getApiBaseUrl();
 
 export function CancelSequenceButton({ instanceId }: { instanceId: string }) {
   const [loading, setLoading] = useState(false);
