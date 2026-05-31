@@ -1,8 +1,31 @@
 import { AuditLogEvent, BillingStatus, CommercialDiagnosis, Company, CreditAccount, DashboardMetrics, DigitalAudit, EmailSequenceTemplate, EnrichmentJob, ForecastReport, GoogleIntelligence, InboxConversation, KeywordSuggestion, MonthlyTrend, Operator, OperatorGoal, OperatorMetrics, PipelineReport, Plan, QueueStatus, SavedSearch, SequenceInstance, UsageEvent } from "./types";
-import { mockCompanies, mockDashboard } from "./mock";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://nodere-api.onrender.com/api";
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
+
+export class ApiRequestError extends Error {
+  status?: number;
+
+  constructor(message: string, status?: number) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.status = status;
+  }
+}
+
+export const emptyDashboard: DashboardMetrics = {
+  totalCompanies: 0,
+  lowRating: 0,
+  withoutWebsite: 0,
+  withoutGoogleAds: 0,
+  withoutWhatsapp: 0,
+  withoutDescription: 0,
+  withoutRecentPhotos: 0,
+  averageScore: 0,
+  hotLeads: 0,
+  pipeline: {},
+  topOpportunities: []
+};
 
 async function api<T>(path: string, options?: RequestInit, fallback?: T): Promise<T> {
   try {
@@ -16,27 +39,39 @@ async function api<T>(path: string, options?: RequestInit, fallback?: T): Promis
       cache: "no-store"
     });
 
-    if (!response.ok) throw new Error(`API ${response.status}`);
+    if (!response.ok) {
+      let detail = "";
+      try {
+        const payload = await response.json();
+        detail = payload?.message || payload?.error || "";
+      } catch {
+        detail = "";
+      }
+      throw new ApiRequestError(detail || `API retornou HTTP ${response.status}`, response.status);
+    }
     return (await response.json()) as T;
-  } catch {
+  } catch (error) {
     if (fallback !== undefined) return fallback;
-    throw new Error("API unavailable");
+    if (error instanceof ApiRequestError) throw error;
+    throw new ApiRequestError(
+      `Nao foi possivel conectar ao backend em ${API_URL}${path}. Verifique NEXT_PUBLIC_API_URL/Vercel e CORS no Render.`
+    );
   }
 }
 
 export function getDashboard() {
-  return api<DashboardMetrics>("/dashboard", undefined, mockDashboard);
+  return api<DashboardMetrics>("/dashboard", undefined, emptyDashboard);
 }
 
 export function getCompanies() {
-  return api<Company[]>("/companies", undefined, mockCompanies);
+  return api<Company[]>("/companies", undefined, []);
 }
 
 export function getCompany(id: string) {
-  return api<Company>(`/companies/${id}`, undefined, mockCompanies.find((company) => company.id === id) ?? mockCompanies[0]);
+  return api<Company>(`/companies/${id}`);
 }
 
-export function searchCompanies(payload: { city: string; state?: string; segment: string; keyword?: string }) {
+export function searchCompanies(payload: { city?: string; state?: string; segment?: string; keyword?: string; companyName?: string }) {
   return api<{
     companies: Company[];
     search: {
@@ -44,11 +79,7 @@ export function searchCompanies(payload: { city: string; state?: string; segment
       warning?: string;
       error?: { message?: string; activationUrl?: string; reason?: string; code?: string; status?: number };
     };
-  }>(
-    "/searches",
-    { method: "POST", body: JSON.stringify(payload) },
-    { companies: mockCompanies, search: { source: "fallback", warning: "API local indisponivel. Exibindo dados demonstrativos." } }
-  );
+  }>("/searches", { method: "POST", body: JSON.stringify(payload) });
 }
 
 export function updateCompanyStatus(id: string, status: string) {
@@ -88,7 +119,7 @@ export function getCompanyKeywords(companyId: string) {
 }
 
 export function getCredits() {
-  return api<CreditAccount>("/credits", undefined, { balance: 200, used: 0, plan: "Demo", resetAt: "" });
+  return api<CreditAccount>("/credits", undefined, { balance: 0, used: 0, plan: "Sem plano ativo", resetAt: "" });
 }
 
 export function generateDiagnosis(companyId: string) {
@@ -139,8 +170,8 @@ export function getCompanySequences(companyId: string) {
 
 export function getBillingStatus() {
   return api<BillingStatus>("/billing", undefined, {
-    plan: { id: "demo", name: "Demo", monthlyCredits: 200, priceMonthly: 0, features: [] },
-    balance: 200, used: 0, resetAt: "", gated: false
+    plan: { id: "demo", name: "Sem plano ativo", monthlyCredits: 0, priceMonthly: 0, features: [] },
+    balance: 0, used: 0, resetAt: "", gated: true
   });
 }
 
@@ -193,12 +224,5 @@ export function getAuditLog(limit = 100) {
 }
 
 export function getIntegrations() {
-  return api<Array<{ key?: string; name: string; configured: boolean; required: boolean; capability?: string }>>("/integrations", undefined, [
-    { key: "google_places", name: "Google Places API", configured: false, required: true, capability: "Busca empresas no Google." },
-    { key: "google_maps", name: "Google Maps API", configured: false, required: true, capability: "Mapas, links e coordenadas." },
-    { key: "google_business_profile", name: "Google Business Profile API", configured: false, required: false, capability: "OAuth preparado para perfis autorizados." },
-    { key: "pagespeed", name: "Google PageSpeed Insights API", configured: false, required: false, capability: "Performance mobile para score." },
-    { key: "whatsapp", name: "WhatsApp Cloud API", configured: false, required: false, capability: "Envio Cloud ou link wa.me." },
-    { key: "openai", name: "OpenAI API", configured: false, required: false, capability: "Diagnosticos comerciais com IA." }
-  ]);
+  return api<Array<{ key?: string; name: string; configured: boolean; required: boolean; capability?: string }>>("/integrations", undefined, []);
 }

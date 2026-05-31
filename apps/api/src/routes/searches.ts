@@ -7,11 +7,15 @@ import { listSearchHistory, saveSearch, getSearch, touchSearch } from "../db/sea
 const router = Router();
 
 const searchSchema = z.object({
-  city: z.string().min(2),
+  companyName: z.string().optional(),
+  city: z.string().optional(),
   state: z.string().optional(),
-  segment: z.string().min(2),
+  segment: z.string().optional(),
   keyword: z.string().optional()
-});
+}).refine(
+  (input) => [input.companyName, input.city, input.state, input.segment, input.keyword].some((value) => value && value.trim().length >= 2),
+  { message: "Informe nome da empresa, segmento, cidade, estado ou palavra-chave." }
+);
 
 router.get("/", async (_req, res, next) => {
   try {
@@ -33,9 +37,19 @@ router.post("/", async (req, res, next) => {
     const result = await searchCompaniesWithMeta(input);
     const companyIds = result.companies.map((c) => c.id);
 
-    consumeSearch(`${input.segment} em ${input.city}`);
+    consumeSearch([input.companyName, input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" "));
 
-    const saved = await saveSearch(input, result.companies.length, result.source, companyIds);
+    const saved = await saveSearch(
+      {
+        city: input.city || "",
+        state: input.state,
+        segment: input.segment || input.companyName || input.keyword || "Busca livre",
+        keyword: input.keyword || input.companyName
+      },
+      result.companies.length,
+      result.source,
+      companyIds
+    );
 
     res.status(201).json({
       search: {

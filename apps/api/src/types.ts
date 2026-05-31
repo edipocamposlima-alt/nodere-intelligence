@@ -82,9 +82,10 @@ export interface CrmNote {
 }
 
 export interface SearchRequest {
-  city: string;
+  companyName?: string;
+  city?: string;
   state?: string;
-  segment: string;
+  segment?: string;
   keyword?: string;
 }
 

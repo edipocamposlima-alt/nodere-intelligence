@@ -9,7 +9,7 @@ export const config = {
   webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:3000",
   apiKey: process.env.API_KEY,
   databaseUrl: process.env.DATABASE_URL,
-  useMockData: process.env.USE_MOCK_DATA !== "false",
+  useMockData: process.env.USE_MOCK_DATA === "true",
   google: {
     mapsKey: process.env.GOOGLE_MAPS_API_KEY ?? _googleApiKey,
     placesKey: process.env.GOOGLE_PLACES_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY ?? _googleApiKey,

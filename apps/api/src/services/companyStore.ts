@@ -1,4 +1,3 @@
-import { companies as seedData } from "../db/mockData.js";
 import { Company, CrmStatus, SearchRequest } from "../types.js";
 import { GoogleApiError, searchGooglePlaces } from "./google.js";
 import { calculateOpportunityScore } from "./scoring.js";
@@ -6,8 +5,9 @@ import { config } from "../config.js";
 import { getSupabase, hasSupabase } from "../db/supabase.js";
 import { randomUUID } from "node:crypto";
 
-// In-memory store (used when Supabase is not configured)
-const memStore: Company[] = [...seedData];
+// In-memory store (used when Supabase is not configured). It starts empty in
+// production so the UI never presents demonstrative leads as real records.
+const memStore: Company[] = [];
 
 // ─── Supabase helpers ────────────────────────────────────────────────────────
 
@@ -169,24 +169,7 @@ export async function searchCompaniesWithMeta(input: SearchRequest) {
     queueEnrichmentForAll(withStatus);
     return { source: "google" as const, companies: withStatus };
   } catch (error) {
-    if (error instanceof GoogleApiError) {
-      const generated = generateMockSearch(input);
-      syncToMem(generated);
-      if (hasSupabase()) dbUpsert(generated).catch(() => {});
-      return {
-        source: "fallback" as const,
-        companies: generated,
-        warning: "Google Places indisponível. Exibindo dados demonstrativos.",
-        error: {
-          service: "Google Places",
-          status: error.status,
-          code: error.code,
-          reason: error.reason,
-          message: error.message,
-          activationUrl: error.activationUrl
-        }
-      };
-    }
+    if (error instanceof GoogleApiError) throw error;
     throw error;
   }
 }
@@ -282,23 +265,25 @@ function queueEnrichmentForAll(items: Company[]) {
 }
 
 function generateMockSearch(input: SearchRequest): Company[] {
-  const seed = `${input.segment}-${input.city}-${input.state ?? ""}`.toLowerCase().replace(/\s+/g, "-");
+  const segment = input.segment || input.companyName || input.keyword || "Empresa";
+  const city = input.city || "Brasil";
+  const seed = `${segment}-${city}-${input.state ?? ""}`.toLowerCase().replace(/\s+/g, "-");
   return Array.from({ length: 4 }).map((_, i) => {
     const rating = [3.7, 4.0, 4.3, 4.6][i];
     const reviewCount = [12, 35, 64, 118][i];
     const base: Company = {
       id: `mock-${seed}-${i + 1}`,
-      name: `${input.segment} ${["Prime", "Central", "Norte", "Sul"][i]}`,
-      category: input.segment,
-      city: input.city,
+      name: `${segment} ${["Prime", "Central", "Norte", "Sul"][i]}`,
+      category: segment,
+      city,
       state: input.state ?? "",
-      address: `${input.city}, ${input.state ?? "BR"}`,
+      address: `${city}, ${input.state ?? "BR"}`,
       phone: i === 2 ? undefined : `+55${i + 1}19999888${i}`,
       whatsapp: i === 1 ? undefined : `+55${i + 1}19999888${i}`,
       website: i < 2 ? undefined : "https://example.com",
       rating,
       reviewCount,
-      mapsUrl: `https://maps.google.com/?q=${encodeURIComponent(`${input.segment} ${input.city}`)}`,
+      mapsUrl: `https://maps.google.com/?q=${encodeURIComponent(`${segment} ${city}`)}`,
       hasGoogleAds: i === 3,
       hasDescription: i > 1,
       hasRecentPhotos: i > 1,

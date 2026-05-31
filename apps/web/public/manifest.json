@@ -1,0 +1,25 @@
+{
+  "name": "NODERE Intelligence",
+  "short_name": "NODERE",
+  "description": "CRM SaaS de prospeccao, Google Ads e inteligencia comercial.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0A0F1E",
+  "theme_color": "#1E6FDB",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/nodere-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/nodere-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

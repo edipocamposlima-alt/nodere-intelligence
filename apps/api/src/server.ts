@@ -51,6 +51,17 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true, name: "NODERE Intelligence API" });
 });
 
+app.get("/api/health", (_req, res) => {
+  res.json({
+    ok: true,
+    name: "NODERE Intelligence API",
+    googlePlacesConfigured: Boolean(config.google.placesKey),
+    pageSpeedConfigured: Boolean(config.google.pageSpeedKey),
+    openaiConfigured: Boolean(config.openai.apiKey),
+    supabaseConfigured: Boolean(config.supabase.url && config.supabase.serviceRoleKey)
+  });
+});
+
 app.use("/api", requireAuth);
 
 app.use("/api/dashboard", dashboardRouter);
@@ -71,7 +82,13 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
     return res.status(400).json({ message: "Invalid request", issues: error.issues });
   }
   const message = error instanceof Error ? error.message : "Unexpected error";
-  return res.status(500).json({ message });
+  const status = typeof (error as { status?: unknown }).status === "number" ? (error as { status: number }).status : 500;
+  return res.status(status).json({
+    message,
+    code: (error as { code?: string }).code,
+    reason: (error as { reason?: string }).reason,
+    activationUrl: (error as { activationUrl?: string }).activationUrl
+  });
 });
 
 setInterval(() => { processDueSteps().catch(console.error); }, 5 * 60 * 1000);

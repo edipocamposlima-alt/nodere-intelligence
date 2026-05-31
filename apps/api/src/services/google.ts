@@ -41,7 +41,14 @@ export async function searchGooglePlaces(input: SearchRequest): Promise<Company[
     });
   }
 
-  const query = [input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" ");
+  const query = [input.companyName, input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" ");
+  if (!query.trim()) {
+    throw new GoogleApiError("Informe pelo menos um criterio de busca.", {
+      status: 400,
+      code: "EMPTY_QUERY",
+      reason: "emptyQuery"
+    });
+  }
   const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
     method: "POST",
     headers: {
@@ -73,8 +80,8 @@ function normalizePlace(place: GooglePlace, input: SearchRequest): Company {
   const base: Company = {
     id: place.id,
     name: place.displayName?.text ?? "Empresa sem nome",
-    category: place.primaryTypeDisplayName?.text ?? input.segment,
-    city: input.city,
+    category: place.primaryTypeDisplayName?.text ?? input.segment ?? "Empresa",
+    city: input.city ?? "",
     state: input.state ?? "",
     address: place.formattedAddress ?? "",
     phone: place.nationalPhoneNumber,

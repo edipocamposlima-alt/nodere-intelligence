@@ -15,22 +15,35 @@ export function SearchPanel() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
+    setWarning(null);
     const form = new FormData(event.currentTarget);
     const payload = {
+      companyName: String(form.get("companyName") ?? "").trim(),
       city: String(form.get("city") ?? ""),
       state: String(form.get("state") ?? ""),
       segment: String(form.get("segment") ?? ""),
       keyword: String(form.get("keyword") ?? "")
     };
-    const response = await searchCompanies(payload);
-    setResults(response.companies);
-    setWarning(response.search.warning ?? null);
-    setMessage(
-      response.search.source === "google"
-        ? `${response.companies.length} empresas reais analisadas com Google Places e sinais digitais.`
-        : `${response.companies.length} empresas demonstrativas ranqueadas enquanto a API Google for liberada.`
-    );
-    setLoading(false);
+
+    try {
+      if (!Object.values(payload).some(Boolean)) {
+        setResults([]);
+        setWarning("Informe pelo menos nome da empresa, segmento, cidade, estado ou palavra-chave.");
+        setMessage("Busca nao executada.");
+        return;
+      }
+
+      const response = await searchCompanies(payload);
+      setResults(response.companies);
+      setWarning(response.search.warning ?? response.search.error?.message ?? null);
+      setMessage(`${response.companies.length} empresas reais retornadas pela API configurada.`);
+    } catch (error) {
+      setResults([]);
+      setWarning(error instanceof Error ? error.message : "Falha ao buscar empresas.");
+      setMessage("Nao foi possivel concluir a busca.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -40,10 +53,11 @@ export function SearchPanel() {
           <Sparkles className="h-4 w-4 text-cyan" />
           Busca inteligente
         </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-5">
-          <input name="segment" required placeholder="Segmento" defaultValue="Concreteira" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
-          <input name="city" required placeholder="Cidade" defaultValue="Porto Alegre" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
-          <input name="state" placeholder="Estado" defaultValue="RS" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
+        <div className="mt-4 grid gap-3 md:grid-cols-6">
+          <input name="companyName" placeholder="Nome da empresa" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
+          <input name="segment" placeholder="Segmento" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
+          <input name="city" placeholder="Cidade" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
+          <input name="state" placeholder="Estado" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
           <input name="keyword" placeholder="Palavra-chave" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
           <button disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-60">
             <Search className="h-4 w-4" />
