@@ -1,5 +1,6 @@
 import cors from "cors";
 import express from "express";
+import { randomUUID } from "node:crypto";
 import { config } from "./config.js";
 import { getSupabase } from "./supabase.js";
 import { PLACES_ENDPOINT_USED, searchGooglePlaces } from "./services/googlePlaces.js";
@@ -138,7 +139,7 @@ function upsertMemory(store, item) {
 }
 
 function createId(prefix) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return randomUUID();
 }
 
 function calculateCompatScore(company = {}) {
@@ -547,13 +548,39 @@ app.delete("/api/companies/:id/notes/:noteId", async (request, response, next) =
 });
 
 app.get("/api/companies/:id/tasks", async (request, response) => {
-  response.json(listByCompany(compatibilityTasks, request.params.id));
+  if (config.supabaseUrl && config.supabaseServiceRoleKey) {
+    try {
+      const supabase = getSupabase();
+      const { data, error } = await supabase
+        .from("mvp_tasks")
+        .select("*")
+        .eq("lead_id", request.params.id)
+        .order("created_at", { ascending: false });
+      if (!error && Array.isArray(data)) {
+        return response.json(data.map((task) => ({
+          id: task.id,
+          companyId: task.lead_id,
+          title: task.title,
+          description: task.description,
+          dueAt: task.due_at,
+          priority: task.priority,
+          status: task.status,
+          channel: task.channel,
+          createdAt: task.created_at,
+          updatedAt: task.updated_at
+        })));
+      }
+    } catch (_error) {
+      // Memory fallback below.
+    }
+  }
+  return response.json(listByCompany(compatibilityTasks, request.params.id));
 });
 
 app.post("/api/companies/:id/tasks", async (request, response) => {
   const title = String(request.body.title || "").trim();
   if (!title) return response.status(400).json({ message: "Informe o título da tarefa." });
-  const task = upsertMemory(compatibilityTasks, {
+  const task = {
     id: createId("task"),
     companyId: request.params.id,
     title,
@@ -564,31 +591,110 @@ app.post("/api/companies/:id/tasks", async (request, response) => {
     channel: request.body.channel || "WhatsApp",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
-  });
-  response.status(201).json(task);
+  };
+
+  if (config.supabaseUrl && config.supabaseServiceRoleKey) {
+    try {
+      const supabase = getSupabase();
+      const { data, error } = await supabase
+        .from("mvp_tasks")
+        .insert({
+          id: task.id,
+          lead_id: task.companyId,
+          title: task.title,
+          description: task.description,
+          due_at: task.dueAt,
+          priority: task.priority,
+          status: task.status,
+          channel: task.channel,
+          created_at: task.createdAt,
+          updated_at: task.updatedAt
+        })
+        .select()
+        .single();
+      if (!error && data) return response.status(201).json(task);
+    } catch (_error) {
+      // Memory fallback below.
+    }
+  }
+
+  response.status(201).json(upsertMemory(compatibilityTasks, task));
 });
 
-app.patch("/api/companies/:id/tasks/:taskId", (request, response) => {
+app.patch("/api/companies/:id/tasks/:taskId", async (request, response) => {
   const current = compatibilityTasks.get(request.params.taskId);
-  if (!current) return response.status(404).json({ message: "Tarefa não encontrada." });
-  const task = upsertMemory(compatibilityTasks, { ...current, ...request.body, updatedAt: new Date().toISOString() });
+  const task = { ...(current || { id: request.params.taskId, companyId: request.params.id }), ...request.body, updatedAt: new Date().toISOString() };
+  if (config.supabaseUrl && config.supabaseServiceRoleKey) {
+    try {
+      const supabase = getSupabase();
+      await supabase
+        .from("mvp_tasks")
+        .update({
+          title: task.title,
+          description: task.description,
+          due_at: task.dueAt,
+          priority: task.priority,
+          status: task.status,
+          channel: task.channel,
+          updated_at: task.updatedAt
+        })
+        .eq("id", request.params.taskId);
+    } catch (_error) {
+      // Memory fallback below.
+    }
+  }
+  if (!current && !config.supabaseUrl) return response.status(404).json({ message: "Tarefa não encontrada." });
+  upsertMemory(compatibilityTasks, task);
   response.json(task);
 });
 
-app.delete("/api/companies/:id/tasks/:taskId", (request, response) => {
+app.delete("/api/companies/:id/tasks/:taskId", async (request, response) => {
+  if (config.supabaseUrl && config.supabaseServiceRoleKey) {
+    try {
+      const supabase = getSupabase();
+      await supabase.from("mvp_tasks").delete().eq("id", request.params.taskId);
+    } catch (_error) {
+      // Memory fallback below.
+    }
+  }
   compatibilityTasks.delete(request.params.taskId);
   response.status(204).send();
 });
 
 app.get("/api/companies/:id/documents", async (request, response) => {
-  response.json(listByCompany(compatibilityDocuments, request.params.id));
+  if (config.supabaseUrl && config.supabaseServiceRoleKey) {
+    try {
+      const supabase = getSupabase();
+      const { data, error } = await supabase
+        .from("mvp_documents")
+        .select("*")
+        .eq("lead_id", request.params.id)
+        .order("created_at", { ascending: false });
+      if (!error && Array.isArray(data)) {
+        return response.json(data.map((document) => ({
+          id: document.id,
+          companyId: document.lead_id,
+          type: document.document_type,
+          title: document.title,
+          content: document.content,
+          fileName: document.file_name,
+          mimeType: document.mime_type,
+          createdAt: document.created_at,
+          updatedAt: document.updated_at
+        })));
+      }
+    } catch (_error) {
+      // Memory fallback below.
+    }
+  }
+  return response.json(listByCompany(compatibilityDocuments, request.params.id));
 });
 
 app.post("/api/companies/:id/documents", async (request, response) => {
   const title = String(request.body.title || "").trim();
   const content = String(request.body.content || "").trim();
   if (!title || !content) return response.status(400).json({ message: "Informe título e conteúdo." });
-  const document = upsertMemory(compatibilityDocuments, {
+  const document = {
     id: createId("doc"),
     companyId: request.params.id,
     type: request.body.type || "proposta",
@@ -598,18 +704,63 @@ app.post("/api/companies/:id/documents", async (request, response) => {
     mimeType: request.body.mimeType || "application/pdf",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
-  });
-  response.status(201).json(document);
+  };
+
+  if (config.supabaseUrl && config.supabaseServiceRoleKey) {
+    try {
+      const supabase = getSupabase();
+      await supabase.from("mvp_documents").insert({
+        id: document.id,
+        lead_id: document.companyId,
+        document_type: document.type,
+        title: document.title,
+        content: document.content,
+        file_name: document.fileName,
+        mime_type: document.mimeType,
+        created_at: document.createdAt,
+        updated_at: document.updatedAt
+      });
+    } catch (_error) {
+      // Memory fallback below.
+    }
+  }
+  response.status(201).json(upsertMemory(compatibilityDocuments, document));
 });
 
-app.patch("/api/companies/:id/documents/:documentId", (request, response) => {
+app.patch("/api/companies/:id/documents/:documentId", async (request, response) => {
   const current = compatibilityDocuments.get(request.params.documentId);
-  if (!current) return response.status(404).json({ message: "Documento não encontrado." });
-  const document = upsertMemory(compatibilityDocuments, { ...current, ...request.body, updatedAt: new Date().toISOString() });
+  const document = { ...(current || { id: request.params.documentId, companyId: request.params.id }), ...request.body, updatedAt: new Date().toISOString() };
+  if (config.supabaseUrl && config.supabaseServiceRoleKey) {
+    try {
+      const supabase = getSupabase();
+      await supabase
+        .from("mvp_documents")
+        .update({
+          document_type: document.type,
+          title: document.title,
+          content: document.content,
+          file_name: document.fileName,
+          mime_type: document.mimeType,
+          updated_at: document.updatedAt
+        })
+        .eq("id", request.params.documentId);
+    } catch (_error) {
+      // Memory fallback below.
+    }
+  }
+  upsertMemory(compatibilityDocuments, document);
   response.json(document);
 });
 
-app.delete("/api/companies/:id/documents/:documentId", (request, response) => {
+app.delete("/api/companies/:id/documents/:documentId", async (request, response) => {
+  if (config.supabaseUrl && config.supabaseServiceRoleKey) {
+    try {
+      const supabase = getSupabase();
+      await supabase.from("mvp_documents").delete().eq("id", request.params.documentId);
+    } catch (_error) {
+      // Memory fallback below.
+    }
+  }
   compatibilityDocuments.delete(request.params.documentId);
   response.status(204).send();
 });
@@ -664,7 +815,26 @@ app.get("/api/integrations", (_request, response) => {
 });
 
 app.get("/api/settings", async (_request, response) => {
-  response.json(compatibilitySettings);
+  if (config.supabaseUrl && config.supabaseServiceRoleKey) {
+    try {
+      const supabase = getSupabase();
+      const { data, error } = await supabase.from("mvp_settings").select("*").eq("id", "default").maybeSingle();
+      if (!error && data) {
+        return response.json({
+          theme: data.theme,
+          colorPrimary: data.color_primary,
+          mode: data.mode,
+          fontFamily: data.font_family,
+          layoutDensity: data.layout_density,
+          cardStyle: data.card_style,
+          updatedAt: data.updated_at
+        });
+      }
+    } catch (_error) {
+      // Memory fallback below.
+    }
+  }
+  return response.json(compatibilitySettings);
 });
 
 app.patch("/api/settings", async (request, response) => {
@@ -678,6 +848,23 @@ app.patch("/api/settings", async (request, response) => {
     cardStyle: request.body.cardStyle || compatibilitySettings.cardStyle,
     updatedAt: new Date().toISOString()
   };
+  if (config.supabaseUrl && config.supabaseServiceRoleKey) {
+    try {
+      const supabase = getSupabase();
+      await supabase.from("mvp_settings").upsert({
+        id: "default",
+        theme: compatibilitySettings.theme,
+        color_primary: compatibilitySettings.colorPrimary,
+        mode: compatibilitySettings.mode,
+        font_family: compatibilitySettings.fontFamily,
+        layout_density: compatibilitySettings.layoutDensity,
+        card_style: compatibilitySettings.cardStyle,
+        updated_at: compatibilitySettings.updatedAt
+      });
+    } catch (_error) {
+      // Memory fallback is still returned.
+    }
+  }
   response.json(compatibilitySettings);
 });
 
@@ -738,6 +925,25 @@ app.post("/api/v1/pagespeed", async (request, response, next) => {
   }
 });
 
+app.get("/api/pagespeed", async (request, response, next) => {
+  try {
+    const url = request.query.url || "https://www.wikipedia.org";
+    const message = await validatePageSpeed(url);
+    response.json({ status: message === null ? "not_configured" : "connected", message });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/pagespeed", async (request, response, next) => {
+  try {
+    const message = await validatePageSpeed(request.body.url || "https://www.wikipedia.org");
+    response.json({ status: message === null ? "not_configured" : "connected", message });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post("/api/v1/pagespeed/analyze", async (request, response, next) => {
   try {
     if (!config.googlePageSpeedApiKey) {
@@ -787,6 +993,60 @@ app.post("/api/v1/pagespeed/analyze", async (request, response, next) => {
     };
 
     response.json({ result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/pagespeed/analyze", async (request, response, next) => {
+  try {
+    if (!config.googlePageSpeedApiKey) {
+      const error = new Error("GOOGLE_PAGESPEED_API_KEY is not configured in the backend.");
+      error.status = 503;
+      throw error;
+    }
+
+    let url = String(request.body.url || "").trim();
+    if (!url) {
+      const error = new Error("Informe a URL do site.");
+      error.status = 400;
+      throw error;
+    }
+    if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+
+    const endpoint = new URL("https://www.googleapis.com/pagespeedonline/v5/runPagespeed");
+    endpoint.searchParams.set("url", url);
+    endpoint.searchParams.set("strategy", "mobile");
+    endpoint.searchParams.set("key", config.googlePageSpeedApiKey);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 40000);
+    const pageSpeedResponse = await fetch(endpoint, { signal: controller.signal }).finally(() => clearTimeout(timeout));
+    const payload = await pageSpeedResponse.json().catch(() => ({}));
+
+    if (!pageSpeedResponse.ok) {
+      const error = new Error(payload?.error?.message || "PageSpeed request failed.");
+      error.status = pageSpeedResponse.status;
+      throw error;
+    }
+
+    const categories = payload.lighthouseResult?.categories || {};
+    response.json({
+      result: {
+        url,
+        performance: Math.round((categories.performance?.score || 0) * 100),
+        seo: Math.round((categories.seo?.score || 0) * 100),
+        accessibility: Math.round((categories.accessibility?.score || 0) * 100),
+        bestPractices: Math.round((categories["best-practices"]?.score || 0) * 100),
+        diagnosis: "Analise PageSpeed executada pelo backend seguro.",
+        recommendations: [
+          "Otimizar imagens, cache e scripts que bloqueiam renderizacao.",
+          "Revisar SEO tecnico, headings e metadados.",
+          "Monitorar paginas de conversao antes de escalar Google Ads."
+        ],
+        createdAt: new Date().toISOString()
+      }
+    });
   } catch (error) {
     next(error);
   }

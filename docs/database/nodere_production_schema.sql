@@ -177,6 +177,30 @@ create table if not exists audit_logs (
   created_at timestamptz not null default now()
 );
 
+-- Compatibilidade com backend MVP atualmente publicado no Render.
+create table if not exists mvp_documents (
+  id uuid primary key default gen_random_uuid(),
+  lead_id uuid not null references mvp_leads(id) on delete cascade,
+  document_type text not null default 'proposta',
+  title text not null,
+  content text not null,
+  file_name text,
+  mime_type text not null default 'application/pdf',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists mvp_settings (
+  id text primary key default 'default',
+  theme text not null default 'Nodere Azul',
+  color_primary text not null default '#1E6FDB',
+  mode text not null default 'dark',
+  font_family text not null default 'Inter',
+  layout_density text not null default 'compact',
+  card_style text not null default 'cards',
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists idx_companies_status on companies(status);
 create index if not exists idx_companies_city_segment on companies(city, segment);
 create index if not exists idx_notes_company_created on notes(company_id, created_at desc);
@@ -184,3 +208,4 @@ create index if not exists idx_activities_company_due on activities(company_id, 
 create index if not exists idx_proposals_company on proposals(company_id, created_at desc);
 create index if not exists idx_contracts_company on contracts(company_id, created_at desc);
 create index if not exists idx_files_company on files(company_id, created_at desc);
+create index if not exists idx_mvp_documents_lead on mvp_documents(lead_id, created_at desc);
