@@ -4,6 +4,7 @@
 
 :root {
   color-scheme: dark;
+  --nodere-primary: #1e6fdb;
 }
 
 * {
@@ -14,6 +15,19 @@ body {
   margin: 0;
   background: #050914;
   color: #e8eefc;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="light"] body {
+  background: #f6f8fc;
+  color: #0a0f1e;
+}
+
+:root[data-density="comfortable"] .rounded-lg {
+  border-radius: 0.75rem;
 }
 
 button,

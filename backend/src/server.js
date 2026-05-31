@@ -116,6 +116,15 @@ const compatibilityCompanies = new Map();
 const compatibilityNotes = new Map();
 const compatibilityTasks = new Map();
 const compatibilityDocuments = new Map();
+let compatibilitySettings = {
+  theme: "Nodere Azul",
+  colorPrimary: "#1E6FDB",
+  mode: "dark",
+  fontFamily: "Inter",
+  layoutDensity: "compact",
+  cardStyle: "cards",
+  updatedAt: new Date().toISOString()
+};
 
 function listByCompany(store, companyId) {
   return Array.from(store.values())
@@ -652,6 +661,24 @@ app.get("/api/credits", (_request, response) => {
 
 app.get("/api/integrations", (_request, response) => {
   response.json(getStaticIntegrationStatus());
+});
+
+app.get("/api/settings", async (_request, response) => {
+  response.json(compatibilitySettings);
+});
+
+app.patch("/api/settings", async (request, response) => {
+  compatibilitySettings = {
+    ...compatibilitySettings,
+    theme: request.body.theme || compatibilitySettings.theme,
+    colorPrimary: request.body.colorPrimary || compatibilitySettings.colorPrimary,
+    mode: request.body.mode || compatibilitySettings.mode,
+    fontFamily: request.body.fontFamily || compatibilitySettings.fontFamily,
+    layoutDensity: request.body.layoutDensity || compatibilitySettings.layoutDensity,
+    cardStyle: request.body.cardStyle || compatibilitySettings.cardStyle,
+    updatedAt: new Date().toISOString()
+  };
+  response.json(compatibilitySettings);
 });
 
 app.get("/api/v1/integrations/status", async (request, response, next) => {
