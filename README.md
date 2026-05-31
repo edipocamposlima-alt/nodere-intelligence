@@ -54,6 +54,7 @@ PORT=3333
 FRONTEND_ORIGIN=http://localhost:4173
 PRODUCTION_FRONTEND_ORIGIN=https://edipocamposlima-alt.github.io
 MVP_OWNER_TOKEN=
+REQUIRE_OWNER_TOKEN=false
 
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
@@ -77,7 +78,7 @@ WHATSAPP_PHONE_NUMBER_ID=
 WHATSAPP_DEFAULT_COUNTRY_CODE=55
 ```
 
-Nunca coloque chaves no frontend, no GitHub Pages ou no codigo.
+Nunca coloque chaves no frontend, no GitHub Pages, na Vercel ou no codigo. Se quiser exigir token operacional nas chamadas do frontend, defina `REQUIRE_OWNER_TOKEN=true` no backend e informe o token manualmente em `Configuracoes`.
 
 ## Banco de Dados
 
@@ -137,8 +138,11 @@ http://localhost:3333
 
 Frontend:
 
-- GitHub Pages publica automaticamente a branch `main`.
-- URL: `https://edipocamposlima-alt.github.io/nodere-intelligence/`
+- GitHub Pages pode publicar a branch `gh-pages`.
+- Vercel deve usar o projeto raiz, framework preset `Other`, build command `npm run build` e output directory `dist`.
+- O frontend usa por padrao o backend `https://nodere-api.onrender.com` e tambem permite trocar a URL em `Configuracoes`.
+- Configure `VITE_API_BASE_URL=https://nodere-api.onrender.com` na Vercel apenas como referencia operacional; segredos Google/OpenAI ficam somente no Render.
+- URLs: `https://edipocamposlima-alt.github.io/nodere-intelligence/` ou a URL publicada pela Vercel.
 - Guia completo: `DEPLOY.md`
 
 Backend:
@@ -152,7 +156,7 @@ Backend:
 
 Depois do deploy:
 
-1. Abra `https://edipocamposlima-alt.github.io/nodere-intelligence/#configuracoes`.
+1. Abra a URL publicada (`GitHub Pages` ou `Vercel`) em `#configuracoes`.
 2. Informe a URL publica do backend.
 3. Informe o token operacional, se `MVP_OWNER_TOKEN` estiver ativo no backend.
 4. Clique em `Salvar configuracoes`.

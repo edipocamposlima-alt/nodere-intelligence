@@ -14,6 +14,8 @@ services:
         value: https://nodere.com.br
       - key: PRODUCTION_FRONTEND_ORIGIN
         value: https://nodere.com.br
+      - key: CORS_ORIGINS
+        value: https://edipocamposlima-alt.github.io,https://nodere.com.br,https://www.nodere.com.br
       - key: GOOGLE_PLACES_API_KEY
         sync: false
       - key: GOOGLE_MAPS_API_KEY
@@ -24,6 +26,8 @@ services:
         sync: false
       - key: MVP_OWNER_TOKEN
         sync: false
+      - key: REQUIRE_OWNER_TOKEN
+        value: "false"
 
   - type: web
     name: nodere-ts-api
@@ -40,18 +44,16 @@ services:
         value: https://nodere.com.br
       - key: USE_MOCK_DATA
         value: false
-      # Autenticação Bearer Token — deve coincidir com NEXT_PUBLIC_API_KEY na Vercel
       - key: API_KEY
         sync: false
-      # Banco de dados — Supabase (preferir JS client)
+      # Banco de dados - Supabase (preferir JS client)
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      # Alternativa: conexão PostgreSQL direta (usar %23 no lugar de # na senha)
+      # Alternativa: conexao PostgreSQL direta (usar %23 no lugar de # na senha)
       - key: DATABASE_URL
         sync: false
-      # Google APIs — GOOGLE_API_KEY serve como chave universal (fallback)
       - key: GOOGLE_API_KEY
         sync: false
       - key: GOOGLE_PLACES_API_KEY
@@ -60,31 +62,26 @@ services:
         sync: false
       - key: GOOGLE_PAGESPEED_API_KEY
         sync: false
-      # Google Business Profile (OAuth)
       - key: GOOGLE_BUSINESS_PROFILE_CLIENT_ID
         sync: false
       - key: GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET
         sync: false
       - key: GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN
         sync: false
-      # Google Ads
       - key: GOOGLE_ADS_DEVELOPER_TOKEN
         sync: false
       - key: GOOGLE_ADS_CUSTOMER_ID
         sync: false
       - key: GOOGLE_ADS_REFRESH_TOKEN
         sync: false
-      # OpenAI
       - key: OPENAI_API_KEY
         sync: false
-      # WhatsApp Cloud API
       - key: WHATSAPP_CLOUD_TOKEN
         sync: false
       - key: WHATSAPP_PHONE_NUMBER_ID
         sync: false
       - key: WHATSAPP_WEBHOOK_SECRET
         sync: false
-      # SMTP (sequências de e-mail)
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
@@ -93,7 +90,6 @@ services:
         sync: false
       - key: SMTP_PASS
         sync: false
-      # Stripe (faturamento)
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET

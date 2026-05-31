@@ -7,11 +7,20 @@ function env(name, fallback = "") {
   return String(process.env[name] || fallback || "").trim();
 }
 
+function envList(name) {
+  return env(name)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 export const config = {
   port: Number(process.env.PORT || 3333),
   frontendOrigin: env("FRONTEND_ORIGIN", "http://localhost:4173"),
   productionFrontendOrigin: env("PRODUCTION_FRONTEND_ORIGIN", "https://edipocamposlima-alt.github.io"),
+  corsOrigins: envList("CORS_ORIGINS"),
   ownerToken: env("MVP_OWNER_TOKEN"),
+  requireOwnerToken: env("REQUIRE_OWNER_TOKEN", "false").toLowerCase() === "true",
   supabaseUrl: env("SUPABASE_URL"),
   supabaseServiceRoleKey: env("SUPABASE_SERVICE_ROLE_KEY"),
   googleApiKey: env("GOOGLE_API_KEY"),

@@ -20,13 +20,24 @@ const allowedOrigins = new Set([
   "http://localhost:4173",
   "http://localhost:3000",
   "http://127.0.0.1:4173",
-  "null"
+  "null",
+  ...config.corsOrigins
 ]);
+
+function isAllowedOrigin(origin = "") {
+  if (!origin || allowedOrigins.has(origin)) return true;
+  try {
+    const { protocol, hostname } = new URL(origin);
+    return protocol === "https:" && hostname.endsWith(".vercel.app");
+  } catch {
+    return false;
+  }
+}
 
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+      if (isAllowedOrigin(origin)) return callback(null, true);
       return callback(new Error(`Origin not allowed: ${origin}`));
     },
     credentials: true
@@ -55,7 +66,7 @@ app.use((request, response, next) => {
 });
 
 app.use((request, response, next) => {
-  if (!config.ownerToken) return next();
+  if (!config.requireOwnerToken || !config.ownerToken) return next();
 
   const token = request.headers.authorization?.replace("Bearer ", "");
   if (token !== config.ownerToken) {
