@@ -113,6 +113,24 @@ function normalizeOpenAILead(input = {}) {
 }
 
 const compatibilityCompanies = new Map();
+const compatibilityNotes = new Map();
+const compatibilityTasks = new Map();
+const compatibilityDocuments = new Map();
+
+function listByCompany(store, companyId) {
+  return Array.from(store.values())
+    .filter((item) => item.companyId === companyId)
+    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+}
+
+function upsertMemory(store, item) {
+  store.set(item.id, item);
+  return item;
+}
+
+function createId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
 
 function calculateCompatScore(company = {}) {
   let score = 35;
@@ -391,6 +409,8 @@ app.post("/api/companies/:id/notes", async (request, response, next) => {
       id: `note-${Date.now()}`,
       companyId: request.params.id,
       body: String(request.body.body || "").trim(),
+      type: request.body.type || "Observação",
+      owner: request.body.owner || "NODERE",
       createdAt: new Date().toISOString()
     };
     if (!note.body) return response.status(400).json({ message: "Informe a observação." });
@@ -398,6 +418,15 @@ app.post("/api/companies/:id/notes", async (request, response, next) => {
     if (config.supabaseUrl && config.supabaseServiceRoleKey) {
       try {
         const supabase = getSupabase();
+        await supabase.from("mvp_notes").insert({
+          id: note.id,
+          lead_id: request.params.id,
+          note_type: note.type,
+          body: note.body,
+          owner: note.owner,
+          created_at: note.createdAt,
+          updated_at: note.createdAt
+        });
         await supabase.from("mvp_crm_events").insert({
           lead_id: request.params.id,
           event_type: "note",
@@ -412,10 +441,168 @@ app.post("/api/companies/:id/notes", async (request, response, next) => {
       const notes = [note, ...(local.notes || [])];
       compatibilityCompanies.set(request.params.id, { ...local, notes, updatedAt: note.createdAt });
     }
+    upsertMemory(compatibilityNotes, note);
     return response.status(201).json(note);
   } catch (error) {
     return next(error);
   }
+});
+
+app.get("/api/companies/:id/notes", async (request, response, next) => {
+  try {
+    if (config.supabaseUrl && config.supabaseServiceRoleKey) {
+      try {
+        const supabase = getSupabase();
+        const { data, error } = await supabase
+          .from("mvp_notes")
+          .select("*")
+          .eq("lead_id", request.params.id)
+          .order("created_at", { ascending: false });
+        if (!error && Array.isArray(data)) {
+          return response.json(data.map((note) => ({
+            id: note.id,
+            companyId: note.lead_id,
+            body: note.body,
+            type: note.note_type,
+            owner: note.owner,
+            createdAt: note.created_at,
+            updatedAt: note.updated_at
+          })));
+        }
+      } catch (_error) {
+        // Memory fallback below.
+      }
+    }
+    return response.json(listByCompany(compatibilityNotes, request.params.id));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.patch("/api/companies/:id/notes/:noteId", async (request, response, next) => {
+  try {
+    const body = String(request.body.body || "").trim();
+    if (!body) return response.status(400).json({ message: "Informe a observação." });
+    const updatedAt = new Date().toISOString();
+
+    if (config.supabaseUrl && config.supabaseServiceRoleKey) {
+      try {
+        const supabase = getSupabase();
+        const { data, error } = await supabase
+          .from("mvp_notes")
+          .update({ body, note_type: request.body.type || "Observação", updated_at: updatedAt })
+          .eq("id", request.params.noteId)
+          .select()
+          .single();
+        if (!error && data) {
+          return response.json({
+            id: data.id,
+            companyId: data.lead_id,
+            body: data.body,
+            type: data.note_type,
+            owner: data.owner,
+            createdAt: data.created_at,
+            updatedAt: data.updated_at
+          });
+        }
+      } catch (_error) {
+        // Memory fallback below.
+      }
+    }
+
+    const current = compatibilityNotes.get(request.params.noteId);
+    if (!current) return response.status(404).json({ message: "Observação não encontrada." });
+    const nextNote = { ...current, body, type: request.body.type || current.type, updatedAt };
+    upsertMemory(compatibilityNotes, nextNote);
+    return response.json(nextNote);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.delete("/api/companies/:id/notes/:noteId", async (request, response, next) => {
+  try {
+    if (config.supabaseUrl && config.supabaseServiceRoleKey) {
+      try {
+        const supabase = getSupabase();
+        await supabase.from("mvp_notes").delete().eq("id", request.params.noteId);
+      } catch (_error) {
+        // Memory fallback below.
+      }
+    }
+    compatibilityNotes.delete(request.params.noteId);
+    return response.status(204).send();
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.get("/api/companies/:id/tasks", async (request, response) => {
+  response.json(listByCompany(compatibilityTasks, request.params.id));
+});
+
+app.post("/api/companies/:id/tasks", async (request, response) => {
+  const title = String(request.body.title || "").trim();
+  if (!title) return response.status(400).json({ message: "Informe o título da tarefa." });
+  const task = upsertMemory(compatibilityTasks, {
+    id: createId("task"),
+    companyId: request.params.id,
+    title,
+    description: request.body.description || "",
+    dueAt: request.body.dueAt || null,
+    priority: request.body.priority || "Média",
+    status: request.body.status || "open",
+    channel: request.body.channel || "WhatsApp",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+  response.status(201).json(task);
+});
+
+app.patch("/api/companies/:id/tasks/:taskId", (request, response) => {
+  const current = compatibilityTasks.get(request.params.taskId);
+  if (!current) return response.status(404).json({ message: "Tarefa não encontrada." });
+  const task = upsertMemory(compatibilityTasks, { ...current, ...request.body, updatedAt: new Date().toISOString() });
+  response.json(task);
+});
+
+app.delete("/api/companies/:id/tasks/:taskId", (request, response) => {
+  compatibilityTasks.delete(request.params.taskId);
+  response.status(204).send();
+});
+
+app.get("/api/companies/:id/documents", async (request, response) => {
+  response.json(listByCompany(compatibilityDocuments, request.params.id));
+});
+
+app.post("/api/companies/:id/documents", async (request, response) => {
+  const title = String(request.body.title || "").trim();
+  const content = String(request.body.content || "").trim();
+  if (!title || !content) return response.status(400).json({ message: "Informe título e conteúdo." });
+  const document = upsertMemory(compatibilityDocuments, {
+    id: createId("doc"),
+    companyId: request.params.id,
+    type: request.body.type || "proposta",
+    title,
+    content,
+    fileName: request.body.fileName || "",
+    mimeType: request.body.mimeType || "application/pdf",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+  response.status(201).json(document);
+});
+
+app.patch("/api/companies/:id/documents/:documentId", (request, response) => {
+  const current = compatibilityDocuments.get(request.params.documentId);
+  if (!current) return response.status(404).json({ message: "Documento não encontrado." });
+  const document = upsertMemory(compatibilityDocuments, { ...current, ...request.body, updatedAt: new Date().toISOString() });
+  response.json(document);
+});
+
+app.delete("/api/companies/:id/documents/:documentId", (request, response) => {
+  compatibilityDocuments.delete(request.params.documentId);
+  response.status(204).send();
 });
 
 app.post("/api/searches", async (request, response, next) => {

@@ -5,6 +5,7 @@ import { EnrichTrigger } from "./EnrichTrigger";
 import { AuditPanel } from "./AuditPanel";
 import { IntelligencePanel } from "./IntelligencePanel";
 import { DiagnosisPanel } from "./DiagnosisPanel";
+import { LeadOperations } from "./LeadOperations";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://nodere-api.onrender.com/api";
 
@@ -115,6 +116,8 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
       </section>
+
+      <LeadOperations company={company} />
 
       <div className="grid gap-5 xl:grid-cols-[1fr_1.2fr]">
         {/* Left column */}
