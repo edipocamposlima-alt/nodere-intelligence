@@ -6,7 +6,7 @@ import { AuditPanel } from "./AuditPanel";
 import { IntelligencePanel } from "./IntelligencePanel";
 import { DiagnosisPanel } from "./DiagnosisPanel";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://nodere-api.onrender.com/api";
 
 const whatsappMessage =
   "Ola, tudo bem? Estive analisando a presenca digital da sua empresa no Google e identifiquei algumas oportunidades que podem ajudar voces a gerar mais contatos e melhorar o posicionamento online. Posso te mostrar rapidamente?";
