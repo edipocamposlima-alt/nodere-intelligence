@@ -11,7 +11,8 @@ const searchSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   segment: z.string().optional(),
-  keyword: z.string().optional()
+  keyword: z.string().optional(),
+  limit: z.coerce.number().min(1).max(100).optional()
 }).refine(
   (input) => [input.companyName, input.city, input.state, input.segment, input.keyword].some((value) => value && value.trim().length >= 2),
   { message: "Informe nome da empresa, segmento, cidade, estado ou palavra-chave." }

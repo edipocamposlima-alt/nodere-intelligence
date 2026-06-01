@@ -49,15 +49,33 @@ export async function searchGooglePlaces(input: SearchRequest): Promise<Company[
       reason: "emptyQuery"
     });
   }
+  const requestedLimit = Math.min(Math.max(input.limit ?? 60, 1), 100);
+  const variants = buildQueryVariants(input, query).slice(0, Math.ceil(requestedLimit / 20) + 1);
+  const found = new Map<string, Company>();
+
+  for (const variant of variants) {
+    const companies = await searchGooglePlacesBatch(variant, input, Math.min(20, requestedLimit - found.size));
+    for (const company of companies) found.set(company.id, company);
+    if (found.size >= requestedLimit) break;
+  }
+
+  return Array.from(found.values()).slice(0, requestedLimit);
+}
+
+async function searchGooglePlacesBatch(query: string, input: SearchRequest, maxResultCount: number): Promise<Company[]> {
+  if (maxResultCount <= 0) return [];
+  const placesKey = config.google.placesKey;
+  if (!placesKey) return [];
+
   const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Goog-Api-Key": config.google.placesKey,
+      "X-Goog-Api-Key": placesKey,
       "X-Goog-FieldMask":
         "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.googleMapsUri,places.primaryTypeDisplayName,places.location"
     },
-    body: JSON.stringify({ textQuery: query, languageCode: "pt-BR", maxResultCount: 20 })
+    body: JSON.stringify({ textQuery: query, languageCode: "pt-BR", maxResultCount })
   });
 
   if (!response.ok) {
@@ -66,6 +84,19 @@ export async function searchGooglePlaces(input: SearchRequest): Promise<Company[
 
   const payload = (await response.json()) as { places?: GooglePlace[] };
   return (payload.places ?? []).map((place) => normalizePlace(place, input));
+}
+
+function buildQueryVariants(input: SearchRequest, query: string) {
+  const segment = input.segment || input.keyword || input.companyName || "empresa";
+  const cityState = [input.city, input.state].filter(Boolean).join(" ");
+  return Array.from(new Set([
+    query,
+    `${segment} em ${cityState}`,
+    `${segment} perto de ${cityState}`,
+    `${segment} ${cityState} telefone`,
+    `${segment} ${cityState} centro`,
+    `${input.keyword || segment} ${cityState}`
+  ].map((item) => item.trim()).filter(Boolean)));
 }
 
 function normalizePlace(place: GooglePlace, input: SearchRequest): Company {

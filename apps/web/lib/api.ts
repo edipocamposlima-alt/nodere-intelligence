@@ -72,7 +72,7 @@ export function getCompany(id: string) {
   return api<Company>(`/companies/${id}`);
 }
 
-export function searchCompanies(payload: { city?: string; state?: string; segment?: string; keyword?: string; companyName?: string }) {
+export function searchCompanies(payload: { city?: string; state?: string; segment?: string; keyword?: string; companyName?: string; limit?: number }) {
   return api<{
     companies: Company[];
     search: {

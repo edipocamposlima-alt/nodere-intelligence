@@ -32,6 +32,10 @@ export const config = {
     apiKey: process.env.OPENAI_API_KEY,
     model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini"
   },
+  enrichment: {
+    econodataApiKey: process.env.ECONODATA_API_KEY,
+    apolloApiKey: process.env.APOLLO_API_KEY
+  },
   googleAds: {
     developerToken: process.env.GOOGLE_ADS_DEVELOPER_TOKEN,
     clientId: process.env.GOOGLE_ADS_CLIENT_ID ?? process.env.GOOGLE_BUSINESS_PROFILE_CLIENT_ID,

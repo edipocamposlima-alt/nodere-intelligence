@@ -1,7 +1,52 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { Bell, Search, ShieldCheck } from "lucide-react";
+import { getApiBaseUrl } from "@/lib/apiBase";
+
+type CompanyListItem = { id: string; name: string };
+type TaskItem = { id: string; title: string; dueAt?: string; status: string; companyId: string; companyName: string };
+
+const API_URL = getApiBaseUrl();
 
 export function Header() {
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadTasks() {
+      try {
+        const companies = (await fetch(`${API_URL}/companies`, { cache: "no-store" }).then((res) => res.json())) as CompanyListItem[];
+        const taskGroups = await Promise.all(
+          companies.slice(0, 80).map(async (company) => {
+            const companyTasks = await fetch(`${API_URL}/companies/${company.id}/tasks`, { cache: "no-store" }).then((res) => res.ok ? res.json() : []);
+            return (companyTasks as TaskItem[]).map((task) => ({ ...task, companyName: company.name }));
+          })
+        );
+        if (!cancelled) setTasks(taskGroups.flat().filter((task) => task.status !== "done"));
+      } catch {
+        if (!cancelled) setTasks([]);
+      }
+    }
+    void loadTasks();
+    const timer = window.setInterval(loadTasks, 1000 * 60 * 5);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  const alerts = useMemo(() => {
+    const now = new Date();
+    const endToday = new Date(now);
+    endToday.setHours(23, 59, 59, 999);
+    return tasks
+      .filter((task) => task.dueAt && new Date(task.dueAt) <= endToday)
+      .sort((a, b) => new Date(a.dueAt || 0).getTime() - new Date(b.dueAt || 0).getTime());
+  }, [tasks]);
+
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-ink/90 px-4 py-3 backdrop-blur md:px-8">
       <div className="flex items-center justify-between gap-4">
@@ -23,12 +68,37 @@ export function Header() {
             <ShieldCheck className="h-4 w-4" />
             Admin
           </Link>
-          <button
-            className="rounded-lg border border-line bg-white/5 p-2 text-slate-300 hover:text-white"
-            aria-label="Notificações"
-          >
-            <Bell className="h-5 w-5" />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setOpen((value) => !value)}
+              className="relative rounded-lg border border-line bg-white/5 p-2 text-slate-300 hover:text-white"
+              aria-label="Notificações"
+            >
+              <Bell className="h-5 w-5" />
+              {alerts.length > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-warning px-1 text-[10px] font-bold text-ink">
+                  {alerts.length}
+                </span>
+              )}
+            </button>
+            {open && (
+              <div className="absolute right-0 mt-2 w-80 rounded-lg border border-line bg-panel p-3 shadow-glow">
+                <p className="text-sm font-semibold text-white">Lembretes e follow-ups</p>
+                {alerts.length === 0 ? (
+                  <p className="mt-3 text-sm text-slate-400">Nenhum lembrete vencido ou para hoje.</p>
+                ) : (
+                  <div className="mt-3 max-h-80 space-y-2 overflow-y-auto">
+                    {alerts.slice(0, 8).map((task) => (
+                      <Link key={task.id} href={`/companies/${task.companyId}`} className="block rounded-md border border-line bg-ink px-3 py-2 hover:border-electric/60">
+                        <p className="truncate text-sm font-medium text-white">{task.title}</p>
+                        <p className="mt-1 truncate text-xs text-slate-400">{task.companyName} · {new Date(task.dueAt || "").toLocaleString("pt-BR")}</p>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

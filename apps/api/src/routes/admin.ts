@@ -12,6 +12,8 @@ const apiKeyFields = [
   "OPENAI_API_KEY",
   "WHATSAPP_CLOUD_TOKEN",
   "WHATSAPP_PHONE_NUMBER_ID",
+  "ECONODATA_API_KEY",
+  "APOLLO_API_KEY",
   "SUPABASE_URL",
   "SUPABASE_SERVICE_ROLE_KEY"
 ] as const;
@@ -72,6 +74,8 @@ function configuredFromEnv(field: ApiKeyField) {
     OPENAI_API_KEY: config.openai.apiKey,
     WHATSAPP_CLOUD_TOKEN: config.whatsapp.token,
     WHATSAPP_PHONE_NUMBER_ID: config.whatsapp.phoneNumberId,
+    ECONODATA_API_KEY: config.enrichment.econodataApiKey,
+    APOLLO_API_KEY: config.enrichment.apolloApiKey,
     SUPABASE_URL: config.supabase.url,
     SUPABASE_SERVICE_ROLE_KEY: config.supabase.serviceRoleKey
   };

@@ -1,23 +1,24 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BarChart3, Building2, CircleHelp, CreditCard, History, Inbox, KanbanSquare, LineChart, Plug, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
+import { BarChart3, Building2, CalendarClock, CircleHelp, CreditCard, History, Inbox, KanbanSquare, LineChart, Plug, Search, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
 import { getBillingStatus } from "@/lib/api";
 
 const items = [
-  { href: "/", label: "Dashboard", icon: BarChart3 },
-  { href: "/companies", label: "Empresas", icon: Building2 },
-  { href: "/searches", label: "Buscas", icon: History },
-  { href: "/intelligence", label: "Inteligência", icon: Zap },
-  { href: "/crm", label: "CRM", icon: KanbanSquare },
-  { href: "/inbox", label: "Caixa de entrada", icon: Inbox },
-  { href: "/automations", label: "Automações", icon: Workflow },
-  { href: "/operators", label: "Operadores", icon: Users },
-  { href: "/reports", label: "Relatórios", icon: LineChart },
-  { href: "/billing", label: "Faturamento", icon: CreditCard },
-  { href: "/integrations", label: "Integrações", icon: Plug },
-  { href: "/settings", label: "Configurações", icon: Settings },
-  { href: "/manual", label: "Ajuda / Manual", icon: CircleHelp },
-  { href: "/admin", label: "Administrador", icon: ShieldCheck }
+  { href: "/", label: "Dashboard", icon: BarChart3, color: "text-sky-300", bg: "bg-sky-500/10" },
+  { href: "/searches", label: "Busca de empresas", icon: Search, color: "text-cyan", bg: "bg-cyan/10" },
+  { href: "/companies", label: "Empresas", icon: Building2, color: "text-blue-300", bg: "bg-blue-500/10" },
+  { href: "/crm", label: "CRM / Funil", icon: KanbanSquare, color: "text-violet-300", bg: "bg-violet-500/10" },
+  { href: "/crm#agenda", label: "Agenda", icon: CalendarClock, color: "text-amber-300", bg: "bg-amber-500/10" },
+  { href: "/intelligence", label: "Inteligência", icon: Zap, color: "text-yellow-300", bg: "bg-yellow-500/10" },
+  { href: "/inbox", label: "Caixa de entrada", icon: Inbox, color: "text-emerald-300", bg: "bg-emerald-500/10" },
+  { href: "/automations", label: "Automações", icon: Workflow, color: "text-fuchsia-300", bg: "bg-fuchsia-500/10" },
+  { href: "/operators", label: "Operadores", icon: Users, color: "text-indigo-300", bg: "bg-indigo-500/10" },
+  { href: "/reports", label: "Relatórios", icon: LineChart, color: "text-lime-300", bg: "bg-lime-500/10" },
+  { href: "/billing", label: "Faturamento", icon: CreditCard, color: "text-orange-300", bg: "bg-orange-500/10" },
+  { href: "/integrations", label: "Integrações", icon: Plug, color: "text-teal-300", bg: "bg-teal-500/10" },
+  { href: "/settings", label: "Configurações", icon: Settings, color: "text-slate-200", bg: "bg-slate-500/10" },
+  { href: "/manual", label: "Ajuda / Manual", icon: CircleHelp, color: "text-rose-300", bg: "bg-rose-500/10" },
+  { href: "/admin", label: "Administrador", icon: ShieldCheck, color: "text-blue-200", bg: "bg-blue-500/10" }
 ];
 
 export async function Sidebar() {
@@ -38,9 +39,11 @@ export async function Sidebar() {
           <Link
             key={item.href}
             href={item.href}
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 transition hover:bg-white/[0.06] hover:text-white"
+            className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 transition hover:bg-white/[0.06] hover:text-white"
           >
-            <item.icon className="h-4 w-4 text-cyan" />
+            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${item.bg}`}>
+              <item.icon className={`h-4 w-4 ${item.color}`} />
+            </span>
             {item.label}
           </Link>
         ))}

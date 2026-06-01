@@ -22,7 +22,8 @@ export function SearchPanel() {
       city: String(form.get("city") ?? ""),
       state: String(form.get("state") ?? ""),
       segment: String(form.get("segment") ?? ""),
-      keyword: String(form.get("keyword") ?? "")
+      keyword: String(form.get("keyword") ?? ""),
+      limit: 60
     };
 
     try {
@@ -39,7 +40,7 @@ export function SearchPanel() {
       const filtered = response.companies.filter((company) => !savedSet.has(company.id));
       setResults(filtered);
       setWarning(response.search.warning ?? response.search.error?.message ?? null);
-      setMessage(`${filtered.length} empresas exibidas. ${response.companies.length - filtered.length} já salva(s) foram ocultadas.`);
+      setMessage(`${filtered.length} resultado(s) visíveis. ${response.companies.length - filtered.length} já salvo(s) foram ocultado(s). A busca ampla consulta lotes do Google e deduplica por Place ID.`);
     } catch (error) {
       setResults([]);
       setWarning(error instanceof Error ? error.message : "Falha ao buscar empresas.");

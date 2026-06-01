@@ -21,14 +21,23 @@ function buildSimplePdf(title: string, body: string) {
     return clean.match(/.{1,86}(\s|$)/g)?.map((chunk) => chunk.trim()) ?? [clean];
   }).slice(0, 58);
 
-  const text = lines.map((line, index) => `BT /F1 10 Tf 50 ${780 - index * 13} Td (${pdfEscape(line)}) Tj ET`).join("\n");
-  const stream = `q\n${text}\nQ`;
+  const logo = [
+    "0.04 0.09 0.18 rg 0 0 595 842 re f",
+    "0.12 0.44 0.86 rg 50 785 44 44 re f",
+    "1 1 1 rg BT /F2 24 Tf 63 798 Td (N) Tj ET",
+    "1 1 1 rg BT /F2 24 Tf 108 806 Td (NODERE) Tj ET",
+    "0.25 0.84 1 rg BT /F1 8 Tf 110 792 Td (INTELLIGENCE) Tj ET",
+    "0.12 0.44 0.86 rg 50 770 495 1 re f"
+  ].join("\n");
+  const text = lines.map((line, index) => `BT /F1 10 Tf 50 ${735 - index * 13} Td (${pdfEscape(line)}) Tj ET`).join("\n");
+  const stream = `q\n${logo}\n0.9 0.94 1 rg\n${text}\nQ`;
   const objects = [
     "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
     "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
-    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj",
+    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >> endobj",
     "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
-    `5 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj`
+    "5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> endobj",
+    `6 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj`
   ];
   let pdf = "%PDF-1.4\n";
   const offsets = [0];
@@ -136,7 +145,7 @@ export function CompanyTable({ companies }: { companies: Company[] }) {
     <div className="overflow-hidden rounded-lg border border-line bg-panel/90">
       <div className="flex flex-col gap-3 border-b border-line p-3 md:flex-row md:items-center md:justify-between">
         <div className="text-sm text-slate-400">
-          {selectedCompanies.length ? `${selectedCompanies.length} selecionada(s)` : `${visibleCompanies.length} empresa(s) na lista`}
+          {selectedCompanies.length ? `${selectedCompanies.length} selecionada(s)` : `${visibleCompanies.length} resultado(s) visível(is) nesta busca`}
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={saveSelected} disabled={selectedCompanies.length === 0} className="inline-flex items-center gap-2 rounded-lg bg-electric px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">

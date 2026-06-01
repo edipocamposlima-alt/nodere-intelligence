@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { MobileNav } from "@/components/MobileNav";
 import { PwaRegister } from "@/components/PwaRegister";
 import { Sidebar } from "@/components/Sidebar";
+import { ThemeRuntime } from "@/components/ThemeRuntime";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://nodere.com.br"),
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
           </main>
           <MobileNav />
           <PwaRegister />
+          <ThemeRuntime />
         </div>
       </body>
     </html>

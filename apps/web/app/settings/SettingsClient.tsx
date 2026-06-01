@@ -8,6 +8,13 @@ const STORAGE_KEY = "nodere_settings";
 const API_URL = getApiBaseUrl();
 const BACKEND_ROOT_URL = getBackendRootUrl();
 
+const themePresets: Record<string, { primary: string; mode: Settings["mode"]; cyan: string; panel: string; ink: string; line: string }> = {
+  "Nodere Azul": { primary: "#1E6FDB", mode: "dark", cyan: "#42D7FF", panel: "#0B1220", ink: "#050914", line: "#18243A" },
+  "Executivo Escuro": { primary: "#2DD4BF", mode: "dark", cyan: "#38BDF8", panel: "#0D1624", ink: "#040812", line: "#223047" },
+  "Verde Performance": { primary: "#16C784", mode: "dark", cyan: "#22D3EE", panel: "#071B18", ink: "#04100E", line: "#174239" },
+  "Roxo SaaS": { primary: "#8B5CF6", mode: "dark", cyan: "#38BDF8", panel: "#111029", ink: "#070716", line: "#2B2852" }
+};
+
 type Settings = {
   theme: string;
   colorPrimary: string;
@@ -29,9 +36,15 @@ const defaults: Settings = {
 };
 
 function applySettings(settings: Settings) {
+  const preset = themePresets[settings.theme] || themePresets["Nodere Azul"];
   document.documentElement.style.setProperty("--nodere-primary", settings.colorPrimary);
+  document.documentElement.style.setProperty("--color-cyan", preset.cyan);
+  document.documentElement.style.setProperty("--color-panel", settings.mode === "light" ? "#FFFFFF" : preset.panel);
+  document.documentElement.style.setProperty("--color-ink", settings.mode === "light" ? "#F6F8FC" : preset.ink);
+  document.documentElement.style.setProperty("--color-line", settings.mode === "light" ? "#D9E2EF" : preset.line);
   document.documentElement.dataset.theme = settings.mode;
   document.documentElement.dataset.density = settings.layoutDensity;
+  document.documentElement.dataset.cardStyle = settings.cardStyle;
   document.body.style.fontFamily = `${settings.fontFamily}, Inter, system-ui, sans-serif`;
 }
 
@@ -48,7 +61,11 @@ export function SettingsClient() {
   }, []);
 
   function update<K extends keyof Settings>(key: K, value: Settings[K]) {
-    const next = { ...settings, [key]: value };
+    let next = { ...settings, [key]: value };
+    if (key === "theme") {
+      const preset = themePresets[String(value)];
+      if (preset) next = { ...next, colorPrimary: preset.primary, mode: preset.mode };
+    }
     setSettings(next);
     applySettings(next);
   }
@@ -56,6 +73,7 @@ export function SettingsClient() {
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    window.dispatchEvent(new Event("nodere:theme-change"));
     setStatus("Configurações salvas neste navegador.");
 
     try {

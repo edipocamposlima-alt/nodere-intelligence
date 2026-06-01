@@ -90,6 +90,7 @@ export interface SearchRequest {
   state?: string;
   segment?: string;
   keyword?: string;
+  limit?: number;
 }
 
 export interface SavedSearch {

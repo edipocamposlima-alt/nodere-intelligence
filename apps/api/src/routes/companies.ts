@@ -353,6 +353,10 @@ router.get("/:id/export-pdf", (req, res) => {
 <title>Relatório — ${company.name}</title>
 <style>
   body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 24px; color: #1e293b; }
+  .brand { display:flex; align-items:center; gap:16px; background:#0A0F1E; border-radius:12px; padding:18px; margin-bottom:20px; color:#fff; }
+  .brand img { width:76px; height:auto; object-fit:contain; }
+  .brand-title { font-size:24px; font-weight:800; letter-spacing:0.02em; }
+  .brand-sub { color:#42D7FF; font-size:11px; text-transform:uppercase; letter-spacing:0.22em; margin-top:3px; }
   h1 { font-size: 22px; color: #0f172a; border-bottom: 2px solid #0ea5e9; padding-bottom: 8px; }
   h2 { font-size: 16px; color: #0f172a; margin-top: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
   h3 { font-size: 14px; color: #334155; }
@@ -369,6 +373,13 @@ router.get("/:id/export-pdf", (req, res) => {
 </style>
 </head>
 <body>
+  <div class="brand">
+    <img src="https://nodere.com.br/nodere-logo.png" alt="NODERE">
+    <div>
+      <div class="brand-title">NODERE</div>
+      <div class="brand-sub">Intelligence</div>
+    </div>
+  </div>
   <h1>Relatório Comercial — ${company.name}</h1>
   <p class="meta">${company.category} · ${company.address} · Gerado em ${new Date().toLocaleDateString("pt-BR")}</p>
 

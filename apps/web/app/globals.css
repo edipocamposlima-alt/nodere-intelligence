@@ -66,6 +66,24 @@ body {
   border-radius: 0.75rem;
 }
 
+:root[data-density="comfortable"] main > div {
+  padding-block: 2.25rem;
+}
+
+:root[data-density="compact"] main > div {
+  padding-block: 1.25rem;
+}
+
+:root[data-card-style="list"] .bg-panel\/90,
+:root[data-card-style="list"] .bg-panel\/95,
+:root[data-card-style="list"] .bg-panel\/70 {
+  box-shadow: none;
+}
+
+:root[data-card-style="list"] .rounded-lg {
+  border-radius: 0.45rem;
+}
+
 button,
 input,
 select,

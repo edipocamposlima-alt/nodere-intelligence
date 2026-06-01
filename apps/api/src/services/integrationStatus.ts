@@ -55,6 +55,20 @@ export function getIntegrationStatus() {
       configured: Boolean(config.openai.apiKey),
       required: false,
       capability: "Gera diagnosticos comerciais personalizados para cada empresa."
+    },
+    {
+      key: "econodata",
+      name: "Econodata",
+      configured: Boolean(config.enrichment.econodataApiKey),
+      required: false,
+      capability: "Integração preparada para enriquecer CNPJ, razão social e dados cadastrais quando houver chave oficial."
+    },
+    {
+      key: "apollo",
+      name: "Apollo.io",
+      configured: Boolean(config.enrichment.apolloApiKey),
+      required: false,
+      capability: "Integração preparada para enriquecer decisores, cargos e contatos B2B quando houver chave oficial."
     }
   ];
 }

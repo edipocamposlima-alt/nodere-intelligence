@@ -23,14 +23,23 @@ function buildSimplePdf(title: string, body: string) {
     return clean.match(/.{1,86}(\s|$)/g)?.map((chunk) => chunk.trim()) ?? [clean];
   }).slice(0, 48);
 
-  const text = lines.map((line, index) => `BT /F1 10 Tf 50 ${780 - index * 14} Td (${pdfEscape(line)}) Tj ET`).join("\n");
-  const stream = `q\n${text}\nQ`;
+  const logo = [
+    "0.04 0.09 0.18 rg 0 0 595 842 re f",
+    "0.12 0.44 0.86 rg 50 785 44 44 re f",
+    "1 1 1 rg BT /F2 24 Tf 63 798 Td (N) Tj ET",
+    "1 1 1 rg BT /F2 24 Tf 108 806 Td (NODERE) Tj ET",
+    "0.25 0.84 1 rg BT /F1 8 Tf 110 792 Td (INTELLIGENCE) Tj ET",
+    "0.12 0.44 0.86 rg 50 770 495 1 re f"
+  ].join("\n");
+  const text = lines.map((line, index) => `BT /F1 10 Tf 50 ${735 - index * 14} Td (${pdfEscape(line)}) Tj ET`).join("\n");
+  const stream = `q\n${logo}\n0.9 0.94 1 rg\n${text}\nQ`;
   const objects = [
     "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
     "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
-    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj",
+    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >> endobj",
     "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
-    `5 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj`
+    "5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> endobj",
+    `6 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj`
   ];
   let pdf = "%PDF-1.4\n";
   const offsets = [0];
@@ -65,6 +74,7 @@ export function LeadOperations({ company }: { company: Company }) {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editor, setEditor] = useState("");
+  const [instruction, setInstruction] = useState("");
   const [generationType, setGenerationType] = useState("Proposta comercial");
   const [loading, setLoading] = useState(false);
 
@@ -133,6 +143,11 @@ export function LeadOperations({ company }: { company: Company }) {
         })
       });
       setTasks((items) => [task, ...items]);
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("Follow-up criado no NODERE", { body: `${task.title} · ${company.name}` });
+      } else if ("Notification" in window && Notification.permission === "default") {
+        void Notification.requestPermission();
+      }
       target?.reset();
       showSuccess("Tarefa criada.");
     } catch (err) {
@@ -162,7 +177,7 @@ export function LeadOperations({ company }: { company: Company }) {
           method: "POST",
           body: JSON.stringify({
             lead: company,
-            prompt: `Gere ${generationType} para este lead. Use tom consultivo, comercial e objetivo.`
+            prompt: `Gere ${generationType} para este lead. Use tom consultivo, comercial e objetivo.${instruction ? ` Instrução adicional: ${instruction}` : ""}`
           })
         }
       );
@@ -268,9 +283,18 @@ export function LeadOperations({ company }: { company: Company }) {
             <input name="title" required placeholder="Título da tarefa" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
             <textarea name="description" rows={4} placeholder="Descrição" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
             <div className="grid gap-3 sm:grid-cols-3">
-              <input name="dueAt" type="datetime-local" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <select name="priority" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm"><option>Média</option><option>Alta</option><option>Urgente</option><option>Baixa</option></select>
-              <select name="channel" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm"><option>WhatsApp</option><option>Ligação</option><option>Email</option><option>Reunião</option></select>
+              <label className="space-y-1 text-xs text-slate-400 sm:col-span-3 xl:col-span-1">
+                Data e hora do lembrete
+                <input name="dueAt" type="datetime-local" className="h-12 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              </label>
+              <label className="space-y-1 text-xs text-slate-400">
+                Prioridade
+                <select name="priority" className="h-12 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm"><option>Média</option><option>Alta</option><option>Urgente</option><option>Baixa</option></select>
+              </label>
+              <label className="space-y-1 text-xs text-slate-400">
+                Canal
+                <select name="channel" className="h-12 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm"><option>WhatsApp</option><option>Ligação</option><option>Email</option><option>Reunião</option></select>
+              </label>
             </div>
             <button className="inline-flex items-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white"><CalendarClock className="h-4 w-4" />Criar follow-up</button>
           </form>
@@ -292,7 +316,7 @@ export function LeadOperations({ company }: { company: Company }) {
             <select value={generationType} onChange={(event) => setGenerationType(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm">
               {["Resumo comercial", "Mensagem WhatsApp", "E-mail comercial", "Proposta comercial", "Contrato simples", "Objeções e respostas", "Diagnóstico"].map((item) => <option key={item}>{item}</option>)}
             </select>
-            <input placeholder="Instrução adicional para a IA" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" onChange={(event) => setEditor(event.target.value ? `${editor}\n\nInstrução: ${event.target.value}` : editor)} />
+            <input value={instruction} placeholder="Instrução adicional para a IA" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" onChange={(event) => setInstruction(event.target.value)} />
             <button onClick={generateWithAi} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"><Sparkles className="h-4 w-4" />{loading ? "Gerando" : "Gerar com IA"}</button>
           </div>
           <textarea value={editor} onChange={(event) => setEditor(event.target.value)} rows={14} placeholder="O texto gerado ou editado aparece aqui. Você pode alterar antes de salvar, copiar, virar PDF ou usar no WhatsApp." className="w-full rounded-lg border border-line bg-ink px-4 py-3 text-sm leading-6 outline-none focus:border-electric" />
