@@ -154,6 +154,15 @@ Backend:
 - Start command: `npm start`.
 - Configure todas as variaveis de ambiente no painel da plataforma.
 
+Deploy forçado:
+
+- Workflow: `.github/workflows/production-deploy.yml`.
+- GitHub Secrets para frontend: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
+- GitHub Secret para backend: `RENDER_DEPLOY_HOOK_URL`.
+- Variavel publica na Vercel: `NEXT_PUBLIC_API_URL=https://nodere-api.onrender.com`.
+- Variaveis privadas no Render: `DATABASE_URL`, `GOOGLE_PLACES_API_KEY`, `GOOGLE_MAPS_API_KEY`, `GOOGLE_PAGESPEED_API_KEY`, `OPENAI_API_KEY`, `CORS_ORIGINS=https://nodere.com.br,https://www.nodere.com.br,http://localhost:3000`, `NODE_ENV=production`.
+- `GET /api/settings` deve retornar apenas configuracoes publicas seguras e nunca secrets.
+
 Depois do deploy:
 
 1. Abra a URL publicada (`GitHub Pages` ou `Vercel`) em `#configuracoes`.
