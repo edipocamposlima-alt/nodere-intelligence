@@ -8,6 +8,35 @@ import { randomUUID } from "node:crypto";
 // In-memory store (used when Supabase is not configured). It starts empty in
 // production so the UI never presents demonstrative leads as real records.
 const memStore: Company[] = [];
+const taskStore = new Map<string, OperationTask[]>();
+const documentStore = new Map<string, OperationDocument[]>();
+
+const TASK_PREFIX = "__NODERE_TASK__";
+const DOCUMENT_PREFIX = "__NODERE_DOCUMENT__";
+
+export interface OperationTask {
+  id: string;
+  companyId: string;
+  title: string;
+  description?: string;
+  dueAt?: string;
+  priority?: string;
+  channel?: string;
+  status: "open" | "done" | "cancelled";
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface OperationDocument {
+  id: string;
+  companyId: string;
+  type: string;
+  title: string;
+  content: string;
+  fileName?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
 
 // ─── Supabase helpers ────────────────────────────────────────────────────────
 
@@ -78,12 +107,7 @@ async function dbList(): Promise<Company[]> {
   if (error) throw error;
   return (data ?? []).map((row: Record<string, unknown>) => {
     const c = fromRow(row);
-    c.notes = ((row.nodere_company_notes as Record<string, unknown>[] | undefined) ?? []).map((n) => ({
-      id: n.id as string,
-      companyId: n.company_id as string,
-      body: n.body as string,
-      createdAt: n.created_at as string
-    }));
+    c.notes = mapPublicNotes((row.nodere_company_notes as Record<string, unknown>[] | undefined) ?? []);
     return c;
   });
 }
@@ -98,12 +122,7 @@ async function dbGet(id: string): Promise<Company | undefined> {
   if (error) throw error;
   if (!data) return undefined;
   const c = fromRow(data);
-  c.notes = ((data.nodere_company_notes as Record<string, unknown>[]) ?? []).map((n) => ({
-    id: n.id as string,
-    companyId: n.company_id as string,
-    body: n.body as string,
-    createdAt: n.created_at as string
-  }));
+  c.notes = mapPublicNotes((data.nodere_company_notes as Record<string, unknown>[]) ?? []);
   return c;
 }
 
@@ -127,6 +146,67 @@ async function dbAddNote(companyId: string, body: string) {
   const { error } = await sb.from("nodere_company_notes").insert(note);
   if (error) throw error;
   return { id: note.id, companyId, body, createdAt: note.created_at };
+}
+
+async function dbListNotes(companyId: string) {
+  const sb = getSupabase()!;
+  const { data, error } = await sb
+    .from("nodere_company_notes")
+    .select("id, company_id, body, created_at")
+    .eq("company_id", companyId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return mapPublicNotes((data ?? []) as Record<string, unknown>[]);
+}
+
+async function dbDeleteNote(companyId: string, noteId: string) {
+  const sb = getSupabase()!;
+  const { error } = await sb
+    .from("nodere_company_notes")
+    .delete()
+    .eq("company_id", companyId)
+    .eq("id", noteId);
+  if (error) throw error;
+}
+
+async function dbListSystemItems<T>(companyId: string, prefix: string): Promise<T[]> {
+  const sb = getSupabase()!;
+  const { data, error } = await sb
+    .from("nodere_company_notes")
+    .select("id, company_id, body, created_at")
+    .eq("company_id", companyId)
+    .like("body", `${prefix}%`)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return ((data ?? []) as Record<string, unknown>[]).map((row) => parseSystemItem<T>(row, prefix)).filter(Boolean) as T[];
+}
+
+async function dbAddSystemItem(companyId: string, prefix: string, value: Record<string, unknown>) {
+  const sb = getSupabase()!;
+  const id = randomUUID();
+  const createdAt = new Date().toISOString();
+  const item = { ...value, id, companyId, createdAt };
+  const { error } = await sb.from("nodere_company_notes").insert({
+    id,
+    company_id: companyId,
+    body: `${prefix}${JSON.stringify(item)}`,
+    created_at: createdAt
+  });
+  if (error) throw error;
+  return item;
+}
+
+async function dbReplaceSystemItem(companyId: string, noteId: string, prefix: string, value: Record<string, unknown>) {
+  const sb = getSupabase()!;
+  const updatedAt = new Date().toISOString();
+  const item = { ...value, id: noteId, companyId, updatedAt };
+  const { error } = await sb
+    .from("nodere_company_notes")
+    .update({ body: `${prefix}${JSON.stringify(item)}` })
+    .eq("company_id", companyId)
+    .eq("id", noteId);
+  if (error) throw error;
+  return item;
 }
 
 // ─── Public API ──────────────────────────────────────────────────────────────
@@ -215,6 +295,100 @@ export async function addNote(id: string, body: string) {
   return note;
 }
 
+export async function listNotes(id: string) {
+  if (hasSupabase()) {
+    return dbListNotes(id).catch(() => {
+      const company = memStore.find((c) => c.id === id);
+      return company?.notes ?? [];
+    });
+  }
+  const company = memStore.find((c) => c.id === id);
+  return company?.notes ?? [];
+}
+
+export async function removeNote(companyId: string, noteId: string) {
+  if (hasSupabase()) await dbDeleteNote(companyId, noteId).catch(() => {});
+  const company = memStore.find((c) => c.id === companyId);
+  if (company) company.notes = company.notes.filter((note) => note.id !== noteId);
+  return { ok: true };
+}
+
+export async function listTasks(companyId: string): Promise<OperationTask[]> {
+  if (hasSupabase()) {
+    return dbListSystemItems<OperationTask>(companyId, TASK_PREFIX).catch(() => taskStore.get(companyId) ?? []);
+  }
+  return taskStore.get(companyId) ?? [];
+}
+
+export async function createTask(companyId: string, input: Partial<OperationTask>): Promise<OperationTask> {
+  const task: Omit<OperationTask, "id" | "companyId" | "createdAt"> = {
+    title: input.title || "Follow-up",
+    description: input.description,
+    dueAt: input.dueAt,
+    priority: input.priority || "Média",
+    channel: input.channel || "WhatsApp",
+    status: "open"
+  };
+
+  if (hasSupabase()) {
+    return dbAddSystemItem(companyId, TASK_PREFIX, task as unknown as Record<string, unknown>)
+      .then((item) => item as unknown as OperationTask)
+      .catch(() => createMemoryTask(companyId, task));
+  }
+  return createMemoryTask(companyId, task);
+}
+
+export async function updateTask(companyId: string, taskId: string, input: Partial<OperationTask>): Promise<OperationTask | undefined> {
+  const existing = (await listTasks(companyId)).find((task) => task.id === taskId);
+  if (!existing) return undefined;
+  const updated: OperationTask = { ...existing, ...input, updatedAt: new Date().toISOString() };
+  if (hasSupabase()) {
+    await dbReplaceSystemItem(companyId, taskId, TASK_PREFIX, updated as unknown as Record<string, unknown>).catch(() => {});
+  }
+  taskStore.set(companyId, (taskStore.get(companyId) ?? []).map((task) => task.id === taskId ? updated : task));
+  return updated;
+}
+
+export async function listDocuments(companyId: string): Promise<OperationDocument[]> {
+  if (hasSupabase()) {
+    return dbListSystemItems<OperationDocument>(companyId, DOCUMENT_PREFIX).catch(() => documentStore.get(companyId) ?? []);
+  }
+  return documentStore.get(companyId) ?? [];
+}
+
+export async function createDocument(companyId: string, input: Partial<OperationDocument>): Promise<OperationDocument> {
+  const document: Omit<OperationDocument, "id" | "companyId" | "createdAt"> = {
+    type: input.type || "documento",
+    title: input.title || "Documento NODERE",
+    content: input.content || "",
+    fileName: input.fileName
+  };
+
+  if (hasSupabase()) {
+    return dbAddSystemItem(companyId, DOCUMENT_PREFIX, document as unknown as Record<string, unknown>)
+      .then((item) => item as unknown as OperationDocument)
+      .catch(() => createMemoryDocument(companyId, document));
+  }
+  return createMemoryDocument(companyId, document);
+}
+
+export async function updateDocument(companyId: string, documentId: string, input: Partial<OperationDocument>): Promise<OperationDocument | undefined> {
+  const existing = (await listDocuments(companyId)).find((document) => document.id === documentId);
+  if (!existing) return undefined;
+  const updated: OperationDocument = { ...existing, ...input, updatedAt: new Date().toISOString() };
+  if (hasSupabase()) {
+    await dbReplaceSystemItem(companyId, documentId, DOCUMENT_PREFIX, updated as unknown as Record<string, unknown>).catch(() => {});
+  }
+  documentStore.set(companyId, (documentStore.get(companyId) ?? []).map((document) => document.id === documentId ? updated : document));
+  return updated;
+}
+
+export async function removeDocument(companyId: string, documentId: string) {
+  if (hasSupabase()) await dbDeleteNote(companyId, documentId).catch(() => {});
+  documentStore.set(companyId, (documentStore.get(companyId) ?? []).filter((document) => document.id !== documentId));
+  return { ok: true };
+}
+
 export async function updateCompany(id: string, updates: Partial<Company>): Promise<Company | undefined> {
   const now = new Date().toISOString();
   if (hasSupabase()) {
@@ -230,6 +404,14 @@ export async function updateCompany(id: string, updates: Partial<Company>): Prom
 
 export function getDashboardMetrics() {
   const all = memStore;
+  return buildDashboardMetrics(all);
+}
+
+export async function getDashboardMetricsAsync() {
+  return buildDashboardMetrics(await listCompaniesAsync());
+}
+
+function buildDashboardMetrics(all: Company[]) {
   const total = all.length;
   return {
     totalCompanies: total,
@@ -254,6 +436,58 @@ function syncToMem(items: Company[]) {
     if (idx === -1) memStore.push(c);
     else memStore[idx] = { ...memStore[idx], ...c };
   }
+}
+
+function mapPublicNotes(rows: Record<string, unknown>[]) {
+  return rows
+    .filter((n) => {
+      const body = String(n.body ?? "");
+      return !body.startsWith(TASK_PREFIX) && !body.startsWith(DOCUMENT_PREFIX);
+    })
+    .map((n) => ({
+      id: n.id as string,
+      companyId: n.company_id as string,
+      body: n.body as string,
+      createdAt: n.created_at as string
+    }));
+}
+
+function parseSystemItem<T>(row: Record<string, unknown>, prefix: string): T | null {
+  const body = String(row.body ?? "");
+  if (!body.startsWith(prefix)) return null;
+  try {
+    const parsed = JSON.parse(body.slice(prefix.length)) as Record<string, unknown>;
+    return {
+      ...parsed,
+      id: row.id as string,
+      companyId: row.company_id as string,
+      createdAt: (parsed.createdAt as string) || (row.created_at as string)
+    } as T;
+  } catch {
+    return null;
+  }
+}
+
+function createMemoryTask(companyId: string, input: Omit<OperationTask, "id" | "companyId" | "createdAt">): OperationTask {
+  const task: OperationTask = {
+    ...input,
+    id: randomUUID(),
+    companyId,
+    createdAt: new Date().toISOString()
+  };
+  taskStore.set(companyId, [task, ...(taskStore.get(companyId) ?? [])]);
+  return task;
+}
+
+function createMemoryDocument(companyId: string, input: Omit<OperationDocument, "id" | "companyId" | "createdAt">): OperationDocument {
+  const document: OperationDocument = {
+    ...input,
+    id: randomUUID(),
+    companyId,
+    createdAt: new Date().toISOString()
+  };
+  documentStore.set(companyId, [document, ...(documentStore.get(companyId) ?? [])]);
+  return document;
 }
 
 function queueEnrichmentForAll(items: Company[]) {

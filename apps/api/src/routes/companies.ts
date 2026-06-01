@@ -1,6 +1,21 @@
 import { Router } from "express";
 import { z } from "zod";
-import { addNote, getCompany, getCompanyAsync, listCompaniesAsync, updateStatus } from "../services/companyStore.js";
+import {
+  addNote,
+  createDocument,
+  createTask,
+  getCompany,
+  getCompanyAsync,
+  listCompaniesAsync,
+  listDocuments,
+  listNotes,
+  listTasks,
+  removeDocument,
+  removeNote,
+  updateDocument,
+  updateStatus,
+  updateTask
+} from "../services/companyStore.js";
 import { queueEnrichment, getJobByCompany } from "../services/enrichmentQueue.js";
 import { consumeEnrichment } from "../services/credits.js";
 import { getAudit } from "../db/auditStore.js";
@@ -60,6 +75,113 @@ router.post("/:id/notes", async (req, res, next) => {
     const note = await addNote(req.params.id, body.body);
     if (!note) return res.status(404).json({ message: "Company not found" });
     return res.status(201).json(note);
+  } catch (err) { return next(err); }
+});
+
+router.get("/:id/notes", async (req, res, next) => {
+  try {
+    const company = await getCompanyAsync(req.params.id);
+    if (!company) return res.status(404).json({ message: "Company not found" });
+    return res.json(await listNotes(req.params.id));
+  } catch (err) { return next(err); }
+});
+
+router.delete("/:id/notes/:noteId", async (req, res, next) => {
+  try {
+    const company = await getCompanyAsync(req.params.id);
+    if (!company) return res.status(404).json({ message: "Company not found" });
+    return res.json(await removeNote(req.params.id, req.params.noteId));
+  } catch (err) { return next(err); }
+});
+
+router.get("/:id/tasks", async (req, res, next) => {
+  try {
+    const company = await getCompanyAsync(req.params.id);
+    if (!company) return res.status(404).json({ message: "Company not found" });
+    return res.json(await listTasks(req.params.id));
+  } catch (err) { return next(err); }
+});
+
+router.post("/:id/tasks", async (req, res, next) => {
+  try {
+    const body = z.object({
+      title: z.string().min(2),
+      description: z.string().optional().nullable(),
+      dueAt: z.string().optional().nullable(),
+      priority: z.string().optional().nullable(),
+      channel: z.string().optional().nullable()
+    }).parse(req.body);
+    const company = await getCompanyAsync(req.params.id);
+    if (!company) return res.status(404).json({ message: "Company not found" });
+    const task = await createTask(req.params.id, {
+      title: body.title,
+      description: body.description ?? undefined,
+      dueAt: body.dueAt ?? undefined,
+      priority: body.priority ?? undefined,
+      channel: body.channel ?? undefined
+    });
+    await addNote(req.params.id, `Tarefa criada: ${task.title}`);
+    return res.status(201).json(task);
+  } catch (err) { return next(err); }
+});
+
+router.patch("/:id/tasks/:taskId", async (req, res, next) => {
+  try {
+    const body = z.object({
+      title: z.string().optional(),
+      description: z.string().optional(),
+      dueAt: z.string().optional(),
+      priority: z.string().optional(),
+      channel: z.string().optional(),
+      status: z.enum(["open", "done", "cancelled"]).optional()
+    }).parse(req.body);
+    const task = await updateTask(req.params.id, req.params.taskId, body);
+    if (!task) return res.status(404).json({ message: "Task not found" });
+    return res.json(task);
+  } catch (err) { return next(err); }
+});
+
+router.get("/:id/documents", async (req, res, next) => {
+  try {
+    const company = await getCompanyAsync(req.params.id);
+    if (!company) return res.status(404).json({ message: "Company not found" });
+    return res.json(await listDocuments(req.params.id));
+  } catch (err) { return next(err); }
+});
+
+router.post("/:id/documents", async (req, res, next) => {
+  try {
+    const body = z.object({
+      type: z.string().min(2),
+      title: z.string().min(2),
+      content: z.string().min(1),
+      fileName: z.string().optional()
+    }).parse(req.body);
+    const company = await getCompanyAsync(req.params.id);
+    if (!company) return res.status(404).json({ message: "Company not found" });
+    const document = await createDocument(req.params.id, body);
+    await addNote(req.params.id, `Documento salvo: ${document.title}`);
+    return res.status(201).json(document);
+  } catch (err) { return next(err); }
+});
+
+router.patch("/:id/documents/:documentId", async (req, res, next) => {
+  try {
+    const body = z.object({
+      type: z.string().optional(),
+      title: z.string().optional(),
+      content: z.string().optional(),
+      fileName: z.string().optional()
+    }).parse(req.body);
+    const document = await updateDocument(req.params.id, req.params.documentId, body);
+    if (!document) return res.status(404).json({ message: "Document not found" });
+    return res.json(document);
+  } catch (err) { return next(err); }
+});
+
+router.delete("/:id/documents/:documentId", async (req, res, next) => {
+  try {
+    return res.json(await removeDocument(req.params.id, req.params.documentId));
   } catch (err) { return next(err); }
 });
 

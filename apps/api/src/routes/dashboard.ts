@@ -1,10 +1,14 @@
 import { Router } from "express";
-import { getDashboardMetrics } from "../services/companyStore.js";
+import { getDashboardMetricsAsync } from "../services/companyStore.js";
 
 const router = Router();
 
-router.get("/", (_req, res) => {
-  res.json(getDashboardMetrics());
+router.get("/", async (_req, res, next) => {
+  try {
+    res.json(await getDashboardMetricsAsync());
+  } catch (err) {
+    next(err);
+  }
 });
 
 export default router;

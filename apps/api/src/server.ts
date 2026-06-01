@@ -229,19 +229,19 @@ app.get("/api/places/search", async (req, res, next) => {
 
 app.use("/api/admin", adminRouter);
 app.use("/api/searches", searchesRouter);
+app.use("/api/companies", companiesRouter);
+app.use("/api/dashboard", dashboardRouter);
+app.use("/api/reports", reportsRouter);
+app.use("/api/inbox", inboxRouter);
+app.use("/api/sequences", sequencesRouter);
 
 app.use("/api", requireAuth);
 
-app.use("/api/dashboard", dashboardRouter);
-app.use("/api/companies", companiesRouter);
 app.use("/api/enrichment", enrichmentRouter);
 app.use("/api/credits", creditsRouter);
 app.use("/api/integrations", integrationsRouter);
-app.use("/api/inbox", inboxRouter);
-app.use("/api/sequences", sequencesRouter);
 app.use("/api/billing", billingRouter);
 app.use("/api/operators", operatorsRouter);
-app.use("/api/reports", reportsRouter);
 app.use("/api/audit", auditRouter);
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

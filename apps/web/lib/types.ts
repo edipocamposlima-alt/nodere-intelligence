@@ -1,9 +1,12 @@
 export type CrmStatus =
   | "Novo Lead"
+  | "Qualificado"
   | "Contatado"
+  | "Diagnóstico enviado"
   | "Em negociação"
   | "Reunião marcada"
   | "Proposta enviada"
+  | "Negociação"
   | "Fechado"
   | "Perdido";
 

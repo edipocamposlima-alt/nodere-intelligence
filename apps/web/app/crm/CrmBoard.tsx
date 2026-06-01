@@ -1,0 +1,119 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { GripVertical, Search } from "lucide-react";
+import { Company, CrmStatus } from "@/lib/types";
+import { updateCompanyStatus } from "@/lib/api";
+
+const columns: CrmStatus[] = [
+  "Novo Lead",
+  "Qualificado",
+  "Contatado",
+  "Diagnóstico enviado",
+  "Reunião marcada",
+  "Proposta enviada",
+  "Negociação",
+  "Fechado",
+  "Perdido"
+];
+
+export function CrmBoard({ companies }: { companies: Company[] }) {
+  const [items, setItems] = useState(companies);
+  const [query, setQuery] = useState("");
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((company) =>
+      [company.name, company.category, company.city, company.state, company.phone, company.website]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(q))
+    );
+  }, [items, query]);
+
+  async function moveLead(companyId: string, status: CrmStatus) {
+    const previous = items;
+    setItems((current) => current.map((company) => company.id === companyId ? { ...company, status } : company));
+    setMessage("Salvando etapa do funil...");
+    try {
+      await updateCompanyStatus(companyId, status);
+      setMessage("Etapa atualizada no CRM.");
+      setTimeout(() => setMessage(null), 2500);
+    } catch (error) {
+      setItems(previous);
+      setMessage(error instanceof Error ? error.message : "Não foi possível atualizar a etapa.");
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 rounded-lg border border-line bg-panel/90 p-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold text-white">CRM</h2>
+          <p className="mt-1 text-sm text-slate-400">Arraste os leads entre etapas para atualizar o funil comercial.</p>
+        </div>
+        <label className="flex items-center gap-2 rounded-lg border border-line bg-ink px-3 py-2 text-sm text-slate-300">
+          <Search className="h-4 w-4 text-cyan" />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Pesquisar lead..." className="bg-transparent outline-none" />
+        </label>
+      </div>
+
+      {message && <p className="rounded-lg border border-electric/30 bg-electric/10 px-3 py-2 text-sm text-blue-100">{message}</p>}
+
+      <div className="grid gap-4 overflow-x-auto pb-2 xl:grid-cols-9">
+        {columns.map((column) => {
+          const leads = filtered.filter((company) => company.status === column);
+          return (
+            <section
+              key={column}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => {
+                event.preventDefault();
+                const companyId = event.dataTransfer.getData("text/plain") || draggedId;
+                if (companyId) void moveLead(companyId, column);
+                setDraggedId(null);
+              }}
+              className="min-h-[420px] min-w-64 rounded-lg border border-line bg-panel/90 p-3"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-white">{column}</h3>
+                <span className="rounded-md bg-white/5 px-2 py-1 text-xs text-slate-400">{leads.length}</span>
+              </div>
+              <div className="mt-3 space-y-3">
+                {leads.length === 0 && <p className="rounded-lg border border-dashed border-line p-3 text-xs text-slate-500">Solte um lead aqui.</p>}
+                {leads.map((company) => (
+                  <article
+                    key={company.id}
+                    draggable
+                    onDragStart={(event) => {
+                      setDraggedId(company.id);
+                      event.dataTransfer.setData("text/plain", company.id);
+                    }}
+                    className="rounded-lg border border-line bg-ink p-3 hover:border-electric/60"
+                  >
+                    <div className="flex items-start gap-2">
+                      <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+                      <div className="min-w-0">
+                        <Link href={`/companies/${company.id}`} className="block truncate text-sm font-medium text-white hover:text-cyan">
+                          {company.name}
+                        </Link>
+                        <p className="mt-1 truncate text-xs text-slate-500">{company.category} · {company.city}/{company.state}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between text-xs">
+                      <span className="text-slate-400">Score</span>
+                      <span className="font-semibold text-cyan">{company.score}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
