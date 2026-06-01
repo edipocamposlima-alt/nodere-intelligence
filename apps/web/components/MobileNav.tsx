@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { BarChart3, Building2, KanbanSquare, LineChart, Users } from "lucide-react";
+import { BarChart3, Building2, CircleHelp, KanbanSquare, Settings } from "lucide-react";
 
 const items = [
   { href: "/", label: "Dashboard", icon: BarChart3 },
   { href: "/companies", label: "Empresas", icon: Building2 },
   { href: "/crm", label: "CRM", icon: KanbanSquare },
-  { href: "/operators", label: "Operadores", icon: Users },
-  { href: "/reports", label: "Relatórios", icon: LineChart }
+  { href: "/settings", label: "Config", icon: Settings },
+  { href: "/manual", label: "Manual", icon: CircleHelp }
 ];
 
 export function MobileNav() {

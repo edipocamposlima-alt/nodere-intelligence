@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { AlertTriangle, Building2, Camera, Globe2, MessageCircle, MousePointerClick, Star, TrendingUp } from "lucide-react";
 import { CompanyTable } from "@/components/CompanyTable";
 import { SearchPanel } from "@/components/SearchPanel";
@@ -19,6 +20,27 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8 p-4 md:p-8">
+      <section className="rounded-lg border border-electric/25 bg-panel/90 p-5 shadow-glow">
+        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+          <div>
+            <Image src="/nodere-wordmark.png" alt="NODERE Intelligence" width={360} height={120} priority className="h-auto w-full max-w-sm rounded-xl object-contain" />
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
+              Central comercial para busca de empresas, CRM, funil, WhatsApp, propostas e inteligencia operacional.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm md:min-w-72">
+            <div className="rounded-lg border border-line bg-ink p-3">
+              <p className="text-slate-400">CRM ativo</p>
+              <p className="mt-1 text-2xl font-semibold text-white">{metrics.totalCompanies}</p>
+            </div>
+            <div className="rounded-lg border border-line bg-ink p-3">
+              <p className="text-slate-400">Score medio</p>
+              <p className="mt-1 text-2xl font-semibold text-white">{metrics.averageScore}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
           <div key={card.label} className="rounded-lg border border-line bg-panel/90 p-4">

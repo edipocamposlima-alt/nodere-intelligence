@@ -83,6 +83,24 @@ app.get("/api/settings", (_req, res) => {
   });
 });
 
+app.patch("/api/settings", (req, res) => {
+  const safeSettings = {
+    theme: typeof req.body?.theme === "string" ? req.body.theme : undefined,
+    mode: req.body?.mode === "light" || req.body?.mode === "dark" ? req.body.mode : undefined,
+    colorPrimary: typeof req.body?.colorPrimary === "string" ? req.body.colorPrimary : undefined,
+    fontFamily: typeof req.body?.fontFamily === "string" ? req.body.fontFamily : undefined,
+    layoutDensity: typeof req.body?.layoutDensity === "string" ? req.body.layoutDensity : undefined,
+    cardStyle: typeof req.body?.cardStyle === "string" ? req.body.cardStyle : undefined
+  };
+
+  res.json({
+    ok: true,
+    message: "Preferencias recebidas. Secrets e chaves de API continuam somente no backend/Render.",
+    settings: safeSettings,
+    backendTime: new Date().toISOString()
+  });
+});
+
 app.get("/api/openai/health", (_req, res) => {
   res.json({
     openaiConfigured: Boolean(config.openai.apiKey),

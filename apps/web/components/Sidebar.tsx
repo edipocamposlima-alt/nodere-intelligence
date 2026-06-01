@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BarChart3, Building2, CreditCard, History, Inbox, KanbanSquare, LineChart, Plug, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
+import { BarChart3, Building2, CircleHelp, CreditCard, History, Inbox, KanbanSquare, LineChart, Plug, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
 import { getBillingStatus } from "@/lib/api";
 
 const items = [
@@ -16,6 +16,7 @@ const items = [
   { href: "/billing", label: "Faturamento", icon: CreditCard },
   { href: "/integrations", label: "Integrações", icon: Plug },
   { href: "/settings", label: "Configurações", icon: Settings },
+  { href: "/manual", label: "Ajuda / Manual", icon: CircleHelp },
   { href: "/admin", label: "Administrador", icon: ShieldCheck }
 ];
 
@@ -24,9 +25,12 @@ export async function Sidebar() {
 
   return (
     <aside className="hidden min-h-screen w-72 border-r border-line bg-ink/90 p-5 lg:block">
-      <Link href="/" className="block rounded-2xl border border-electric/30 bg-electric/10 p-3 shadow-glow transition hover:border-electric/60">
-        <Image src="/nodere-wordmark.png" alt="NODERE" width={260} height={96} priority className="h-auto w-full rounded-xl object-contain" />
-        <p className="mt-2 text-center text-[11px] uppercase tracking-[0.26em] text-cyan">Intelligence</p>
+      <Link href="/" className="flex items-center gap-3 rounded-xl border border-line bg-panel/70 p-3 transition hover:border-electric/60">
+        <Image src="/nodere-logo.png" alt="NODERE" width={42} height={42} priority className="h-10 w-10 rounded-lg object-contain" />
+        <div>
+          <p className="text-sm font-semibold text-white">NODERE</p>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-cyan">Intelligence</p>
+        </div>
       </Link>
 
       <nav className="mt-8 space-y-1">

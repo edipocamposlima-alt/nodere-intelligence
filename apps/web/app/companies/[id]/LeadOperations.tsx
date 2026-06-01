@@ -90,7 +90,8 @@ export function LeadOperations({ company }: { company: Company }) {
 
   async function addNote(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const target = event.currentTarget;
+    const form = new FormData(target);
     const body = String(form.get("body") || "").trim();
     if (!body) return;
     try {
@@ -99,7 +100,7 @@ export function LeadOperations({ company }: { company: Company }) {
         body: JSON.stringify({ body, type: form.get("type") || "Observação" })
       });
       setNotes((items) => [note, ...items]);
-      event.currentTarget.reset();
+      target?.reset();
       showSuccess("Observação salva.");
     } catch (err) {
       showError(err);
@@ -118,7 +119,8 @@ export function LeadOperations({ company }: { company: Company }) {
 
   async function addTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const target = event.currentTarget;
+    const form = new FormData(target);
     try {
       const task = await api<Task>(`/companies/${company.id}/tasks`, {
         method: "POST",
@@ -131,7 +133,7 @@ export function LeadOperations({ company }: { company: Company }) {
         })
       });
       setTasks((items) => [task, ...items]);
-      event.currentTarget.reset();
+      target?.reset();
       showSuccess("Tarefa criada.");
     } catch (err) {
       showError(err);

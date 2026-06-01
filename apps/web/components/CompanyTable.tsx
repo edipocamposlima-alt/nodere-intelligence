@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle2, ExternalLink, FileText, MessageCircle, Save } from "lucide-react";
 import { Company } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
@@ -11,8 +11,13 @@ const whatsappMessage =
   "Ola, tudo bem? Estive analisando a presenca digital da sua empresa no Google e identifiquei algumas oportunidades que podem ajudar voces a gerar mais contatos e melhorar o posicionamento online. Posso te mostrar rapidamente?";
 
 export function CompanyTable({ companies }: { companies: Company[] }) {
+  const [visibleCompanies, setVisibleCompanies] = useState(companies);
   const [saved, setSaved] = useState<Record<string, "saving" | "saved" | "error">>({});
   const [messages, setMessages] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setVisibleCompanies(companies);
+  }, [companies]);
 
   async function saveLead(company: Company) {
     setSaved((current) => ({ ...current, [company.id]: "saving" }));
@@ -20,6 +25,7 @@ export function CompanyTable({ companies }: { companies: Company[] }) {
       await addCompanyNote(company.id, `Lead salvo no CRM a partir da busca em ${new Date().toLocaleString("pt-BR")}.`);
       setSaved((current) => ({ ...current, [company.id]: "saved" }));
       setMessages((current) => ({ ...current, [company.id]: "Lead salvo com sucesso." }));
+      setVisibleCompanies((items) => items.filter((item) => item.id !== company.id));
     } catch (error) {
       setSaved((current) => ({ ...current, [company.id]: "error" }));
       setMessages((current) => ({
@@ -44,7 +50,7 @@ export function CompanyTable({ companies }: { companies: Company[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
-            {companies.map((company) => (
+            {visibleCompanies.map((company) => (
               <tr key={company.id} className="hover:bg-white/[0.03]">
                 <td className="px-4 py-4">
                   <Link href={`/companies/${company.id}`} className="font-medium text-white hover:text-cyan">

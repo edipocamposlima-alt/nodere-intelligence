@@ -5,6 +5,12 @@
 :root {
   color-scheme: dark;
   --nodere-primary: #1e6fdb;
+  --color-ink: #050914;
+  --color-panel: #0b1220;
+  --color-line: #18243a;
+  --color-cyan: #42d7ff;
+  --color-text: #e8eefc;
+  --color-muted: #94a3b8;
 }
 
 * {
@@ -13,17 +19,47 @@
 
 body {
   margin: 0;
-  background: #050914;
-  color: #e8eefc;
+  background: var(--color-ink);
+  color: var(--color-text);
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
+  --color-ink: #f6f8fc;
+  --color-panel: #ffffff;
+  --color-line: #d9e2ef;
+  --color-cyan: #0b83c5;
+  --color-text: #0a0f1e;
+  --color-muted: #475569;
 }
 
 :root[data-theme="light"] body {
-  background: #f6f8fc;
+  background: var(--color-ink);
+  color: var(--color-text);
+}
+
+:root[data-theme="light"] .text-white {
   color: #0a0f1e;
+}
+
+:root[data-theme="light"] .text-slate-300,
+:root[data-theme="light"] .text-slate-400 {
+  color: #475569;
+}
+
+:root[data-theme="light"] .text-slate-500,
+:root[data-theme="light"] .text-slate-600 {
+  color: #64748b;
+}
+
+:root[data-theme="light"] .bg-white\/5,
+:root[data-theme="light"] .bg-white\/\[0\.03\],
+:root[data-theme="light"] .bg-white\/\[0\.06\] {
+  background-color: rgba(15, 23, 42, 0.04);
+}
+
+:root[data-theme="light"] .border-line {
+  border-color: var(--color-line);
 }
 
 :root[data-density="comfortable"] .rounded-lg {
@@ -42,4 +78,10 @@ textarea {
     linear-gradient(rgba(66, 215, 255, 0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgba(66, 215, 255, 0.04) 1px, transparent 1px);
   background-size: 42px 42px;
+}
+
+:root[data-theme="light"] .nodere-grid {
+  background-image:
+    linear-gradient(rgba(30, 111, 219, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 111, 219, 0.045) 1px, transparent 1px);
 }

@@ -57,7 +57,7 @@ export async function searchGooglePlaces(input: SearchRequest): Promise<Company[
       "X-Goog-FieldMask":
         "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.googleMapsUri,places.primaryTypeDisplayName,places.location"
     },
-    body: JSON.stringify({ textQuery: query, languageCode: "pt-BR", maxResultCount: 12 })
+    body: JSON.stringify({ textQuery: query, languageCode: "pt-BR", maxResultCount: 20 })
   });
 
   if (!response.ok) {

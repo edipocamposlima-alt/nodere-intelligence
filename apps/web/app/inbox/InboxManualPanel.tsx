@@ -25,7 +25,8 @@ export function InboxManualPanel({ initialConversations }: { initialConversation
 
   async function createConversation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const target = event.currentTarget;
+    const form = new FormData(target);
     try {
       const conversation = await api<any>("/inbox", {
         method: "POST",
@@ -36,7 +37,7 @@ export function InboxManualPanel({ initialConversations }: { initialConversation
         })
       });
       setConversations((items) => [conversation, ...items.filter((item) => item.phone !== conversation.phone)]);
-      event.currentTarget.reset();
+      target?.reset();
       setMessage("Conversa manual criada.");
       setError(null);
     } catch (err) {
