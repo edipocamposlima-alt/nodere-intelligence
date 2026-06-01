@@ -149,12 +149,12 @@ app.get("/api/places/search", async (req, res, next) => {
 });
 
 app.use("/api/admin", adminRouter);
+app.use("/api/searches", searchesRouter);
 
 app.use("/api", requireAuth);
 
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/companies", companiesRouter);
-app.use("/api/searches", searchesRouter);
 app.use("/api/enrichment", enrichmentRouter);
 app.use("/api/credits", creditsRouter);
 app.use("/api/integrations", integrationsRouter);
