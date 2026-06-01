@@ -232,6 +232,7 @@ app.use("/api/searches", searchesRouter);
 app.use("/api/companies", companiesRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/reports", reportsRouter);
+app.use("/api/integrations", integrationsRouter);
 app.use("/api/inbox", inboxRouter);
 app.use("/api/sequences", sequencesRouter);
 
@@ -239,7 +240,6 @@ app.use("/api", requireAuth);
 
 app.use("/api/enrichment", enrichmentRouter);
 app.use("/api/credits", creditsRouter);
-app.use("/api/integrations", integrationsRouter);
 app.use("/api/billing", billingRouter);
 app.use("/api/operators", operatorsRouter);
 app.use("/api/audit", auditRouter);

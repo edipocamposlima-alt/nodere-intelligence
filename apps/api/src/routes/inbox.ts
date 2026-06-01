@@ -27,6 +27,32 @@ router.get("/", (_req, res) => {
   res.json(convs);
 });
 
+router.post("/", (req, res, next) => {
+  try {
+    const body = z.object({
+      phone: z.string().min(6),
+      message: z.string().min(1),
+      companyId: z.string().optional(),
+      companyName: z.string().optional()
+    }).parse(req.body);
+    const conv = getConversation(body.phone);
+    if (!conv && (body.companyId || body.companyName)) {
+      addInboundMessage(body.phone, body.message);
+      const created = getConversation(body.phone);
+      if (created) {
+        created.companyId = body.companyId;
+        created.companyName = body.companyName;
+      }
+    } else {
+      addInboundMessage(body.phone, body.message);
+    }
+    const updated = getConversation(body.phone);
+    return res.status(201).json(updated ? { ...updated, slaStatus: getSlaStatus(updated) } : null);
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.get("/:phone", (req, res) => {
   const conv = getConversation(req.params.phone);
   if (!conv) return res.status(404).json({ message: "Conversation not found" });
