@@ -91,6 +91,85 @@ app.get("/api/openai/health", (_req, res) => {
   });
 });
 
+app.post("/api/openai/analyze", async (req, res, next) => {
+  try {
+    if (!config.openai.apiKey) {
+      return res.status(503).json({
+        message: "OPENAI_API_KEY ausente no backend.",
+        openaiConfigured: false
+      });
+    }
+
+    const lead = req.body?.lead ?? {};
+    const prompt = typeof req.body?.prompt === "string" ? req.body.prompt : "Gere uma analise comercial objetiva para este lead.";
+    const context = req.body?.context ?? {};
+
+    const systemPrompt =
+      "Voce e o assistente operacional do NODERE Intelligence, especialista em prospeccao B2B, CRM, Google Ads, Google Meu Negocio, PageSpeed, WhatsApp comercial e vendas consultivas. " +
+      "Responda APENAS com JSON valido, sem markdown, em portugues do Brasil, com conteudo pratico e especifico para o lead informado.";
+
+    const userPrompt = JSON.stringify({
+      prompt,
+      lead,
+      context,
+      schema_resposta: {
+        commercialSummary: "Resumo comercial curto e especifico do lead.",
+        opportunity: "Principal oportunidade comercial detectada.",
+        likelyPains: ["Lista de dores provaveis."],
+        recommendedApproach: "Abordagem comercial recomendada.",
+        whatsappMessage: "Mensagem curta de WhatsApp pronta para envio.",
+        emailSubject: "Assunto de e-mail comercial.",
+        emailBody: "Corpo de e-mail comercial.",
+        nextSteps: ["Proximos passos comerciais."],
+        googleAdsStrategy: "Estrategia inicial de Google Ads recomendada."
+      }
+    });
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${config.openai.apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: config.openai.model,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        temperature: 0.7
+      })
+    }).finally(() => clearTimeout(timeout));
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const message = payload?.error?.message || "OpenAI retornou erro ao analisar o lead.";
+      return res.status(response.status).json({
+        message,
+        code: payload?.error?.code,
+        type: payload?.error?.type,
+        openaiConfigured: true
+      });
+    }
+
+    const raw = payload?.choices?.[0]?.message?.content ?? "{}";
+    const analysis = JSON.parse(raw);
+    return res.json({
+      ...analysis,
+      model: config.openai.model,
+      generatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.get("/api/pagespeed", async (req, res, next) => {
   try {
     const url = typeof req.query.url === "string" ? req.query.url.trim() : "";
