@@ -163,6 +163,14 @@ Deploy forçado:
 - Variaveis privadas no Render: `DATABASE_URL`, `GOOGLE_PLACES_API_KEY`, `GOOGLE_MAPS_API_KEY`, `GOOGLE_PAGESPEED_API_KEY`, `OPENAI_API_KEY`, `CORS_ORIGINS=https://nodere.com.br,https://www.nodere.com.br,http://localhost:3000`, `NODE_ENV=production`.
 - `GET /api/settings` deve retornar apenas configuracoes publicas seguras e nunca secrets.
 
+Admin:
+
+- Login: `https://nodere.com.br/login`.
+- Painel: `https://nodere.com.br/admin`.
+- Variaveis privadas no Render: `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`.
+- O painel admin mascara chaves e nao retorna valores completos ao frontend.
+- Para persistencia definitiva entre deploys, mantenha chaves sensiveis como variaveis de ambiente no Render.
+
 Depois do deploy:
 
 1. Abra a URL publicada (`GitHub Pages` ou `Vercel`) em `#configuracoes`.

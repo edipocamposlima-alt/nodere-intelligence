@@ -15,7 +15,8 @@ const items = [
   { href: "/reports", label: "Relatórios", icon: LineChart },
   { href: "/billing", label: "Faturamento", icon: CreditCard },
   { href: "/integrations", label: "Integrações", icon: Plug },
-  { href: "/settings", label: "Configurações", icon: Settings }
+  { href: "/settings", label: "Configurações", icon: Settings },
+  { href: "/admin", label: "Administrador", icon: ShieldCheck }
 ];
 
 export async function Sidebar() {
@@ -23,12 +24,9 @@ export async function Sidebar() {
 
   return (
     <aside className="hidden min-h-screen w-72 border-r border-line bg-ink/90 p-5 lg:block">
-      <Link href="/" className="flex items-center gap-3 rounded-xl border border-electric/20 bg-electric/5 p-3 transition hover:border-electric/40">
-        <Image src="/nodere-logo.png" alt="NODERE" width={44} height={44} className="rounded-lg object-cover shadow-glow" />
-        <div>
-          <p className="text-base font-bold tracking-wide text-white">NODERE</p>
-          <p className="text-[11px] uppercase tracking-[0.22em] text-cyan">Intelligence</p>
-        </div>
+      <Link href="/" className="block rounded-2xl border border-electric/30 bg-electric/10 p-3 shadow-glow transition hover:border-electric/60">
+        <Image src="/nodere-wordmark.png" alt="NODERE" width={260} height={96} priority className="h-auto w-full rounded-xl object-contain" />
+        <p className="mt-2 text-center text-[11px] uppercase tracking-[0.26em] text-cyan">Intelligence</p>
       </Link>
 
       <nav className="mt-8 space-y-1">

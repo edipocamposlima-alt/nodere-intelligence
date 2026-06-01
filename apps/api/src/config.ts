@@ -8,6 +8,11 @@ export const config = {
   port: Number(process.env.PORT ?? process.env.API_PORT ?? 4000),
   webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:3000",
   apiKey: process.env.API_KEY,
+  admin: {
+    email: process.env.ADMIN_EMAIL ?? "admin@nodere.com.br",
+    password: process.env.ADMIN_PASSWORD,
+    sessionSecret: process.env.ADMIN_SESSION_SECRET ?? process.env.API_KEY ?? "nodere-local-admin-secret"
+  },
   databaseUrl: process.env.DATABASE_URL,
   useMockData: process.env.USE_MOCK_DATA === "true",
   google: {

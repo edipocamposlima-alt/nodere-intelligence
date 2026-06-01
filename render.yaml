@@ -46,6 +46,12 @@ services:
         value: false
       - key: API_KEY
         sync: false
+      - key: ADMIN_EMAIL
+        value: admin@nodere.com.br
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_SESSION_SECRET
+        sync: false
       # Banco de dados - Supabase (preferir JS client)
       - key: SUPABASE_URL
         sync: false

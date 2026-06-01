@@ -15,6 +15,7 @@ import billingRouter, { stripeWebhookHandler } from "./routes/billing.js";
 import operatorsRouter from "./routes/operators.js";
 import reportsRouter from "./routes/reports.js";
 import auditRouter from "./routes/audit.js";
+import adminRouter from "./routes/admin.js";
 import { processDueSteps } from "./services/emailSequences.js";
 import { requireAuth } from "./middleware/auth.js";
 import { searchCompaniesWithMeta } from "./services/companyStore.js";
@@ -146,6 +147,8 @@ app.get("/api/places/search", async (req, res, next) => {
     return next(error);
   }
 });
+
+app.use("/api/admin", adminRouter);
 
 app.use("/api", requireAuth);
 

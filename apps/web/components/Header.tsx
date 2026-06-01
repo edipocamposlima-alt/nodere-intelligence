@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, ShieldCheck } from "lucide-react";
 
 export function Header() {
   return (
@@ -20,9 +20,12 @@ export function Header() {
           </div>
         </Link>
 
-        <div className="hidden lg:block">
-          <p className="text-xs uppercase tracking-[0.24em] text-cyan">NODERE Intelligence</p>
-          <h1 className="mt-0.5 text-xl font-semibold text-white">Prospecção inteligente Google</h1>
+        <div className="hidden items-center gap-4 lg:flex">
+          <Image src="/nodere-wordmark.png" alt="NODERE" width={240} height={86} priority className="h-12 w-auto rounded-lg object-contain" />
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-cyan">NODERE Intelligence</p>
+            <h1 className="mt-0.5 text-xl font-semibold text-white">Prospecção inteligente Google</h1>
+          </div>
         </div>
 
         <div className="hidden w-full max-w-md items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 md:flex">
@@ -33,12 +36,18 @@ export function Header() {
           />
         </div>
 
-        <button
-          className="rounded-lg border border-line bg-white/5 p-2 text-slate-300 hover:text-white"
-          aria-label="Notificações"
-        >
-          <Bell className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/admin" className="inline-flex items-center gap-2 rounded-lg border border-electric/40 bg-electric/10 px-3 py-2 text-sm font-semibold text-blue-200 hover:bg-electric/20">
+            <ShieldCheck className="h-4 w-4" />
+            Admin
+          </Link>
+          <button
+            className="rounded-lg border border-line bg-white/5 p-2 text-slate-300 hover:text-white"
+            aria-label="Notificações"
+          >
+            <Bell className="h-5 w-5" />
+          </button>
+        </div>
       </div>
     </header>
   );
