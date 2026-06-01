@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { GripVertical, Plus, Search, Trash2 } from "lucide-react";
+import { Check, GripVertical, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { Company, CrmStatus } from "@/lib/types";
 import { updateCompanyStatus } from "@/lib/api";
 
@@ -37,6 +37,8 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
   const [message, setMessage] = useState<string | null>(null);
   const [columns, setColumns] = useState<string[]>(defaultColumns);
   const [newStage, setNewStage] = useState("");
+  const [editingStage, setEditingStage] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState("");
 
   useEffect(() => {
     const saved = localStorage.getItem("nodere_pipeline_stages");
@@ -88,12 +90,40 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
   }
 
   function removeStage(stage: string) {
+    if (columns.length <= 1) {
+      setMessage("O funil precisa ter pelo menos uma etapa.");
+      return;
+    }
     if (items.some((company) => company.status === stage)) {
       setMessage("Não é possível remover uma etapa com leads. Mova os leads antes.");
       return;
     }
     persistStages(columns.filter((item) => item !== stage));
     setMessage("Etapa removida do funil.");
+  }
+
+  async function renameStage(stage: string) {
+    const label = editingValue.trim();
+    if (!label || label === stage) {
+      setEditingStage(null);
+      return;
+    }
+    if (columns.some((item) => item !== stage && item.toLowerCase() === label.toLowerCase())) {
+      setMessage("Já existe uma etapa com este nome.");
+      return;
+    }
+    const affected = items.filter((company) => company.status === stage);
+    persistStages(columns.map((item) => item === stage ? label : item));
+    setItems((current) => current.map((company) => company.status === stage ? { ...company, status: label as CrmStatus } : company));
+    setEditingStage(null);
+    setMessage("Renomeando etapa e atualizando leads...");
+    try {
+      await Promise.all(affected.map((company) => updateCompanyStatus(company.id, label)));
+      setMessage("Etapa renomeada no CRM.");
+      setTimeout(() => setMessage(null), 2500);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Etapa renomeada localmente, mas alguns leads não sincronizaram.");
+    }
   }
 
   return (
@@ -145,15 +175,46 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
               }}
               className={`min-h-[420px] rounded-lg border p-3 ${stageStyle[column] ?? "border-line bg-panel/90"}`}
             >
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-white">{column}</h3>
+              <div className="flex items-center justify-between gap-2">
+                {editingStage === column ? (
+                  <div className="flex min-w-0 flex-1 items-center gap-1">
+                    <input
+                      value={editingValue}
+                      onChange={(event) => setEditingValue(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") void renameStage(column);
+                        if (event.key === "Escape") setEditingStage(null);
+                      }}
+                      className="min-w-0 flex-1 rounded-md border border-line bg-ink px-2 py-1 text-xs text-white outline-none focus:border-electric"
+                      autoFocus
+                    />
+                    <button onClick={() => void renameStage(column)} className="rounded-md bg-success p-1 text-ink" aria-label="Salvar nome da etapa">
+                      <Check className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => setEditingStage(null)} className="rounded-md border border-line p-1 text-slate-300" aria-label="Cancelar edição">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <h3 className="min-w-0 truncate text-sm font-semibold text-white">{column}</h3>
+                )}
                 <div className="flex items-center gap-2">
                   <span className="rounded-md bg-white/5 px-2 py-1 text-xs text-slate-400">{leads.length}</span>
-                  {!defaultColumns.includes(column) && (
-                    <button onClick={() => removeStage(column)} className="rounded-md border border-line p-1 text-slate-400 hover:text-red-300" aria-label={`Remover etapa ${column}`}>
-                      <Trash2 className="h-3.5 w-3.5" />
+                  {editingStage !== column && (
+                    <button
+                      onClick={() => {
+                        setEditingStage(column);
+                        setEditingValue(column);
+                      }}
+                      className="rounded-md border border-line p-1 text-slate-300 hover:text-cyan"
+                      aria-label={`Renomear etapa ${column}`}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
                     </button>
                   )}
+                  <button onClick={() => removeStage(column)} className="rounded-md border border-line p-1 text-slate-300 hover:text-red-400" aria-label={`Remover etapa ${column}`}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </div>
               <div className="mt-3 space-y-3">

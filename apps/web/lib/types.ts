@@ -36,6 +36,12 @@ export interface Company {
   rating?: number;
   reviewCount?: number;
   mapsUrl?: string;
+  cnpj?: string;
+  legalName?: string;
+  companySize?: string;
+  revenueRange?: string;
+  decisionMakers?: DecisionMaker[];
+  enrichmentSources?: string[];
   hasGoogleAds?: boolean;
   hasDescription?: boolean;
   hasRecentPhotos?: boolean;
@@ -76,6 +82,15 @@ export interface Company {
   lastContactAt?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface DecisionMaker {
+  name?: string;
+  title?: string;
+  email?: string;
+  phone?: string;
+  linkedin?: string;
+  source?: "apollo" | "econodata" | "manual" | "website";
 }
 
 export interface SavedSearch {

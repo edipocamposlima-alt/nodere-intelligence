@@ -13,7 +13,9 @@ const apiKeyFields = [
   "WHATSAPP_CLOUD_TOKEN",
   "WHATSAPP_PHONE_NUMBER_ID",
   "ECONODATA_API_KEY",
+  "ECONODATA_API_URL",
   "APOLLO_API_KEY",
+  "APOLLO_API_URL",
   "SUPABASE_URL",
   "SUPABASE_SERVICE_ROLE_KEY"
 ] as const;
@@ -75,7 +77,9 @@ function configuredFromEnv(field: ApiKeyField) {
     WHATSAPP_CLOUD_TOKEN: config.whatsapp.token,
     WHATSAPP_PHONE_NUMBER_ID: config.whatsapp.phoneNumberId,
     ECONODATA_API_KEY: config.enrichment.econodataApiKey,
+    ECONODATA_API_URL: config.enrichment.econodataApiUrl,
     APOLLO_API_KEY: config.enrichment.apolloApiKey,
+    APOLLO_API_URL: config.enrichment.apolloApiUrl,
     SUPABASE_URL: config.supabase.url,
     SUPABASE_SERVICE_ROLE_KEY: config.supabase.serviceRoleKey
   };
@@ -94,6 +98,47 @@ function listApiSettings() {
       updatedAt: runtimeValue?.updatedAt || null
     };
   });
+}
+
+function applyRuntimeValue(field: ApiKeyField, value: string) {
+  switch (field) {
+    case "GOOGLE_PLACES_API_KEY":
+      config.google.placesKey = value;
+      break;
+    case "GOOGLE_MAPS_API_KEY":
+      config.google.mapsKey = value;
+      break;
+    case "GOOGLE_PAGESPEED_API_KEY":
+      config.google.pageSpeedKey = value;
+      break;
+    case "OPENAI_API_KEY":
+      config.openai.apiKey = value;
+      break;
+    case "WHATSAPP_CLOUD_TOKEN":
+      config.whatsapp.token = value;
+      break;
+    case "WHATSAPP_PHONE_NUMBER_ID":
+      config.whatsapp.phoneNumberId = value;
+      break;
+    case "ECONODATA_API_KEY":
+      config.enrichment.econodataApiKey = value;
+      break;
+    case "ECONODATA_API_URL":
+      config.enrichment.econodataApiUrl = value;
+      break;
+    case "APOLLO_API_KEY":
+      config.enrichment.apolloApiKey = value;
+      break;
+    case "APOLLO_API_URL":
+      config.enrichment.apolloApiUrl = value;
+      break;
+    case "SUPABASE_URL":
+      config.supabase.url = value;
+      break;
+    case "SUPABASE_SERVICE_ROLE_KEY":
+      config.supabase.serviceRoleKey = value;
+      break;
+  }
 }
 
 router.post("/login", (request, response) => {
@@ -139,6 +184,7 @@ router.patch("/api-keys", requireAdmin, (request, response) => {
     const value = String(body.values[field] || "").trim();
     if (value) {
       runtimeApiSettings.set(field, { masked: maskValue(value), updatedAt: new Date().toISOString() });
+      applyRuntimeValue(field, value);
     }
   }
 

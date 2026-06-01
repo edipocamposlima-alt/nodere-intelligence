@@ -107,6 +107,10 @@ export function triggerEnrichment(companyId: string) {
   return api<EnrichmentJob>(`/companies/${companyId}/analyze`, { method: "POST" });
 }
 
+export function enrichCompanyExternal(companyId: string) {
+  return api<{ company: Company; enrichment: { messages: string[]; enrichmentSources: string[] } }>(`/companies/${companyId}/enrich-external`, { method: "POST" });
+}
+
 export function getCompanyAudit(companyId: string) {
   return api<DigitalAudit>(`/companies/${companyId}/audit`);
 }

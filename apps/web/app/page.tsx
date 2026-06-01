@@ -8,14 +8,14 @@ export default async function DashboardPage() {
   const [metrics, companies] = await Promise.all([getDashboard(), getCompanies()]);
 
   const cards = [
-    { label: "Empresas encontradas", value: metrics.totalCompanies, icon: Building2 },
-    { label: "Baixa avaliação", value: metrics.lowRating, icon: Star },
-    { label: "Sem site", value: metrics.withoutWebsite, icon: Globe2 },
-    { label: "Sem Google Ads", value: metrics.withoutGoogleAds, icon: MousePointerClick },
-    { label: "Sem WhatsApp", value: metrics.withoutWhatsapp, icon: MessageCircle },
-    { label: "Sem descrição", value: metrics.withoutDescription, icon: AlertTriangle },
-    { label: "Sem fotos recentes", value: metrics.withoutRecentPhotos, icon: Camera },
-    { label: "Leads quentes", value: metrics.hotLeads, icon: TrendingUp }
+    { label: "Empresas encontradas", value: metrics.totalCompanies, icon: Building2, hex: "#0284C7", bg: "#E0F2FE" },
+    { label: "Baixa avaliação", value: metrics.lowRating, icon: Star, hex: "#F59E0B", bg: "#FEF3C7" },
+    { label: "Sem site", value: metrics.withoutWebsite, icon: Globe2, hex: "#7C3AED", bg: "#EDE9FE" },
+    { label: "Sem Google Ads", value: metrics.withoutGoogleAds, icon: MousePointerClick, hex: "#16A34A", bg: "#DCFCE7" },
+    { label: "Sem WhatsApp", value: metrics.withoutWhatsapp, icon: MessageCircle, hex: "#059669", bg: "#D1FAE5" },
+    { label: "Sem descrição", value: metrics.withoutDescription, icon: AlertTriangle, hex: "#DC2626", bg: "#FEE2E2" },
+    { label: "Sem fotos recentes", value: metrics.withoutRecentPhotos, icon: Camera, hex: "#DB2777", bg: "#FCE7F3" },
+    { label: "Leads quentes", value: metrics.hotLeads, icon: TrendingUp, hex: "#EA580C", bg: "#FFEDD5" }
   ];
 
   return (
@@ -43,10 +43,12 @@ export default async function DashboardPage() {
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
-          <div key={card.label} className="rounded-lg border border-line bg-panel/90 p-4">
+          <div key={card.label} className="metric-card rounded-lg border border-line bg-panel/90 p-4">
             <div className="flex items-center justify-between">
               <p className="text-sm text-slate-400">{card.label}</p>
-              <card.icon className="h-4 w-4 text-cyan" />
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: card.bg }}>
+                <card.icon className="h-5 w-5" style={{ color: card.hex, strokeWidth: 2.8 }} />
+              </span>
             </div>
             <p className="mt-3 text-3xl font-semibold text-white">{card.value}</p>
           </div>

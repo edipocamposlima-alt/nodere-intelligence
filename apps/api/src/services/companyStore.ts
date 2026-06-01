@@ -63,6 +63,48 @@ function toRow(c: Company): Record<string, unknown> {
   };
 }
 
+function toUpdateRow(updates: Partial<Company>): Record<string, unknown> {
+  const row: Record<string, unknown> = {};
+  const signals: Record<string, unknown> = {};
+  const direct: Array<[keyof Company, string]> = [
+    ["name", "name"],
+    ["category", "category"],
+    ["city", "city"],
+    ["state", "state"],
+    ["address", "address"],
+    ["phone", "phone"],
+    ["whatsapp", "whatsapp"],
+    ["website", "website"],
+    ["instagram", "instagram"],
+    ["facebook", "facebook"],
+    ["linkedin", "linkedin"],
+    ["youtube", "youtube"],
+    ["rating", "rating"],
+    ["reviewCount", "review_count"],
+    ["mapsUrl", "maps_url"],
+    ["latitude", "latitude"],
+    ["longitude", "longitude"],
+    ["status", "status"],
+    ["score", "score"],
+    ["opportunityLevel", "opportunity_level"],
+    ["enrichmentStatus", "enrichment_status"],
+    ["lastContactAt", "last_contact_at"],
+    ["detectedOpportunities", "detected_opportunities"],
+    ["suggestions", "suggestions"]
+  ];
+  for (const [key, column] of direct) {
+    if (updates[key] !== undefined) row[column] = updates[key];
+  }
+  for (const [key, value] of Object.entries(updates)) {
+    if (value !== undefined && !direct.some(([directKey]) => directKey === key) && key !== "notes") {
+      signals[key] = value;
+    }
+  }
+  if (Object.keys(signals).length) row.digital_signals = signals;
+  row.updated_at = new Date().toISOString();
+  return row;
+}
+
 function fromRow(row: Record<string, unknown>): Company {
   const signals = (row.digital_signals as Record<string, unknown>) ?? {};
   return {
@@ -392,13 +434,14 @@ export async function removeDocument(companyId: string, documentId: string) {
 export async function updateCompany(id: string, updates: Partial<Company>): Promise<Company | undefined> {
   const now = new Date().toISOString();
   if (hasSupabase()) {
-    await dbUpdateFields(id, { ...toRow({ ...updates, id, name: "", category: "", city: "", state: "", address: "", status: "Novo Lead", score: 0, opportunityLevel: "Baixa", detectedOpportunities: [], suggestions: [], notes: [], createdAt: now, updatedAt: now }), updated_at: now }).catch(() => {});
+    await dbUpdateFields(id, toUpdateRow({ ...updates, updatedAt: now })).catch(() => {});
   }
   const local = memStore.find((c) => c.id === id);
   if (local) {
     Object.assign(local, updates, { updatedAt: now });
     return local;
   }
+  if (hasSupabase()) return dbGet(id);
   return undefined;
 }
 

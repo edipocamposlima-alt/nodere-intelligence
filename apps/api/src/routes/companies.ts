@@ -16,6 +16,7 @@ import {
   updateStatus,
   updateTask
 } from "../services/companyStore.js";
+import { enrichCompanyExternal } from "../services/externalEnrichment.js";
 import { queueEnrichment, getJobByCompany } from "../services/enrichmentQueue.js";
 import { consumeEnrichment } from "../services/credits.js";
 import { getAudit } from "../db/auditStore.js";
@@ -76,6 +77,29 @@ router.post("/:id/notes", async (req, res, next) => {
     if (!note) return res.status(404).json({ message: "Company not found" });
     return res.status(201).json(note);
   } catch (err) { return next(err); }
+});
+
+router.post("/:id/enrich-external", async (req, res, next) => {
+  try {
+    const company = await getCompanyAsync(req.params.id);
+    if (!company) return res.status(404).json({ message: "Company not found" });
+    const enrichment = await enrichCompanyExternal(company);
+    const updated = await import("../services/companyStore.js").then(({ updateCompany }) =>
+      updateCompany(company.id, {
+        cnpj: enrichment.cnpj,
+        legalName: enrichment.legalName,
+        companySize: enrichment.companySize,
+        revenueRange: enrichment.revenueRange,
+        linkedin: enrichment.linkedin || company.linkedin,
+        decisionMakers: enrichment.decisionMakers,
+        enrichmentSources: enrichment.enrichmentSources,
+        enrichmentStatus: enrichment.enrichmentSources.length ? "done" : "error"
+      })
+    );
+    return res.json({ company: updated ?? company, enrichment });
+  } catch (err) {
+    return next(err);
+  }
 });
 
 router.get("/:id/notes", async (req, res, next) => {

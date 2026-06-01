@@ -59,16 +59,16 @@ export function getIntegrationStatus() {
     {
       key: "econodata",
       name: "Econodata",
-      configured: Boolean(config.enrichment.econodataApiKey),
+      configured: Boolean(config.enrichment.econodataApiKey && config.enrichment.econodataApiUrl),
       required: false,
-      capability: "Integração preparada para enriquecer CNPJ, razão social e dados cadastrais quando houver chave oficial."
+      capability: "Enriquecimento de CNPJ, razão social e dados cadastrais via endpoint oficial configurado."
     },
     {
       key: "apollo",
       name: "Apollo.io",
       configured: Boolean(config.enrichment.apolloApiKey),
       required: false,
-      capability: "Integração preparada para enriquecer decisores, cargos e contatos B2B quando houver chave oficial."
+      capability: "Enriquecimento automatizado de organização e decisores B2B por domínio/site."
     }
   ];
 }

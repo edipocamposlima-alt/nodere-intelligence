@@ -4,21 +4,21 @@ import { BarChart3, Building2, CalendarClock, CircleHelp, CreditCard, History, I
 import { getBillingStatus } from "@/lib/api";
 
 const items = [
-  { href: "/", label: "Dashboard", icon: BarChart3, color: "text-sky-300", bg: "bg-sky-500/10" },
-  { href: "/searches", label: "Busca de empresas", icon: Search, color: "text-cyan", bg: "bg-cyan/10" },
-  { href: "/companies", label: "Empresas", icon: Building2, color: "text-blue-300", bg: "bg-blue-500/10" },
-  { href: "/crm", label: "CRM / Funil", icon: KanbanSquare, color: "text-violet-300", bg: "bg-violet-500/10" },
-  { href: "/crm#agenda", label: "Agenda", icon: CalendarClock, color: "text-amber-300", bg: "bg-amber-500/10" },
-  { href: "/intelligence", label: "Inteligência", icon: Zap, color: "text-yellow-300", bg: "bg-yellow-500/10" },
-  { href: "/inbox", label: "Caixa de entrada", icon: Inbox, color: "text-emerald-300", bg: "bg-emerald-500/10" },
-  { href: "/automations", label: "Automações", icon: Workflow, color: "text-fuchsia-300", bg: "bg-fuchsia-500/10" },
-  { href: "/operators", label: "Operadores", icon: Users, color: "text-indigo-300", bg: "bg-indigo-500/10" },
-  { href: "/reports", label: "Relatórios", icon: LineChart, color: "text-lime-300", bg: "bg-lime-500/10" },
-  { href: "/billing", label: "Faturamento", icon: CreditCard, color: "text-orange-300", bg: "bg-orange-500/10" },
-  { href: "/integrations", label: "Integrações", icon: Plug, color: "text-teal-300", bg: "bg-teal-500/10" },
-  { href: "/settings", label: "Configurações", icon: Settings, color: "text-slate-200", bg: "bg-slate-500/10" },
-  { href: "/manual", label: "Ajuda / Manual", icon: CircleHelp, color: "text-rose-300", bg: "bg-rose-500/10" },
-  { href: "/admin", label: "Administrador", icon: ShieldCheck, color: "text-blue-200", bg: "bg-blue-500/10" }
+  { href: "/", label: "Dashboard", icon: BarChart3, hex: "#0284C7", bg: "#E0F2FE" },
+  { href: "/searches", label: "Busca de empresas", icon: Search, hex: "#0891B2", bg: "#CFFAFE" },
+  { href: "/companies", label: "Empresas", icon: Building2, hex: "#2563EB", bg: "#DBEAFE" },
+  { href: "/crm", label: "CRM / Funil", icon: KanbanSquare, hex: "#7C3AED", bg: "#EDE9FE" },
+  { href: "/crm#agenda", label: "Agenda", icon: CalendarClock, hex: "#D97706", bg: "#FEF3C7" },
+  { href: "/intelligence", label: "Inteligência", icon: Zap, hex: "#EAB308", bg: "#FEF9C3" },
+  { href: "/inbox", label: "Caixa de entrada", icon: Inbox, hex: "#059669", bg: "#D1FAE5" },
+  { href: "/automations", label: "Automações", icon: Workflow, hex: "#C026D3", bg: "#FAE8FF" },
+  { href: "/operators", label: "Operadores", icon: Users, hex: "#4F46E5", bg: "#E0E7FF" },
+  { href: "/reports", label: "Relatórios", icon: LineChart, hex: "#65A30D", bg: "#ECFCCB" },
+  { href: "/billing", label: "Faturamento", icon: CreditCard, hex: "#EA580C", bg: "#FFEDD5" },
+  { href: "/integrations", label: "Integrações", icon: Plug, hex: "#0D9488", bg: "#CCFBF1" },
+  { href: "/settings", label: "Configurações", icon: Settings, hex: "#475569", bg: "#E2E8F0" },
+  { href: "/manual", label: "Ajuda / Manual NODERE", icon: CircleHelp, hex: "#E11D48", bg: "#FFE4E6" },
+  { href: "/admin", label: "Administrador", icon: ShieldCheck, hex: "#1D4ED8", bg: "#DBEAFE" }
 ];
 
 export async function Sidebar() {
@@ -41,8 +41,8 @@ export async function Sidebar() {
             href={item.href}
             className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 transition hover:bg-white/[0.06] hover:text-white"
           >
-            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${item.bg}`}>
-              <item.icon className={`h-4 w-4 ${item.color}`} />
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm" style={{ backgroundColor: item.bg }}>
+              <item.icon className="h-4 w-4" style={{ color: item.hex, strokeWidth: 2.7 }} />
             </span>
             {item.label}
           </Link>

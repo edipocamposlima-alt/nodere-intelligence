@@ -123,10 +123,14 @@ O Dashboard mostra totais reais do CRM, pipeline e oportunidades. A busca fica s
 O NODERE exibe campos de enriquecimento público na ficha do cliente. Quando CNPJ, decisor, e-mail ou LinkedIn não forem encontrados por fonte pública/API autorizada, o sistema mostra “não localizado em fonte pública”. O usuário pode complementar manualmente quando tiver uma fonte confiável. Não invente decisores.
 
 Integrações preparadas:
-- `ECONODATA_API_KEY`: futura consulta de CNPJ, razão social e dados cadastrais.
-- `APOLLO_API_KEY`: futura consulta de decisores, cargos e contatos B2B.
+- `ECONODATA_API_KEY`: chave da Econodata.
+- `ECONODATA_API_URL`: endpoint oficial contratado para consulta automatizada.
+- `APOLLO_API_KEY`: chave da Apollo.
+- `APOLLO_API_URL`: padrão `https://api.apollo.io/api/v1`.
 
-Enquanto essas chaves não estiverem configuradas no backend/Render, os cards de integração aparecem como pendentes.
+A aba **Apollo/Econodata** na ficha do lead executa enriquecimento externo. Apollo consulta organização por domínio e tenta buscar decisores quando o plano/API permite. Econodata consulta CNPJ/razão social quando o endpoint oficial estiver configurado. Se Apollo retornar `API_INACCESSIBLE`, o plano atual não habilita a API necessária e precisa ser liberado na Apollo.
+
+Enquanto essas chaves não estiverem configuradas no backend/Render ou no Admin, os cards de integração aparecem como pendentes.
 
 ## Tema, fonte e layout
 Em **Configurações**, ajuste:
@@ -161,6 +165,8 @@ A área Automações lista sequências comerciais e pode ativar fluxos por empre
 - **Unauthorized**: rota protegida ou token ausente.
 - **OpenAI insufficient_quota**: falta crédito/billing na OpenAI.
 - **PageSpeed not_configured**: falta `GOOGLE_PAGESPEED_API_KEY`.
+- **Apollo API_INACCESSIBLE**: plano/token sem acesso à People API ou enrichment.
+- **Econodata pendente**: configure `ECONODATA_API_KEY` e `ECONODATA_API_URL`.
 - **Google sem resultados**: revise chave, billing e Places API.
 - **Respostas WhatsApp não aparecem**: wa.me não possui retorno automático; configure WhatsApp Cloud API/webhook ou registre manualmente.
 

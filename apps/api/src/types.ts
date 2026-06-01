@@ -31,6 +31,12 @@ export interface Company {
   rating?: number;
   reviewCount?: number;
   mapsUrl?: string;
+  cnpj?: string;
+  legalName?: string;
+  companySize?: string;
+  revenueRange?: string;
+  decisionMakers?: DecisionMaker[];
+  enrichmentSources?: string[];
   latitude?: number;
   longitude?: number;
   hasGoogleAds?: boolean;
@@ -91,6 +97,15 @@ export interface SearchRequest {
   segment?: string;
   keyword?: string;
   limit?: number;
+}
+
+export interface DecisionMaker {
+  name?: string;
+  title?: string;
+  email?: string;
+  phone?: string;
+  linkedin?: string;
+  source?: "apollo" | "econodata" | "manual" | "website";
 }
 
 export interface SavedSearch {

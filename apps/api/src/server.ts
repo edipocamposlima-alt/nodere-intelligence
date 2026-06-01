@@ -76,7 +76,9 @@ app.get("/api/settings", (_req, res) => {
       pageSpeed: Boolean(config.google.pageSpeedKey),
       openai: Boolean(config.openai.apiKey),
       supabase: Boolean(config.supabase.url && config.supabase.serviceRoleKey),
-      whatsappWeb: true
+      whatsappWeb: true,
+      econodata: Boolean(config.enrichment.econodataApiKey && config.enrichment.econodataApiUrl),
+      apollo: Boolean(config.enrichment.apolloApiKey)
     },
     status: "ok",
     backendTime: new Date().toISOString()

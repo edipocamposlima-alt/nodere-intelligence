@@ -10,7 +10,7 @@ const API_URL = getApiBaseUrl();
 type Note = { id: string; companyId: string; body: string; type?: string; owner?: string; createdAt: string; updatedAt?: string };
 type Task = { id: string; companyId: string; title: string; description?: string; dueAt?: string; priority?: string; channel?: string; status: string; createdAt: string };
 type DocumentItem = { id: string; companyId: string; type: string; title: string; content: string; fileName?: string; createdAt: string };
-type Tab = "observacoes" | "agenda" | "ia" | "documentos" | "whatsapp";
+type Tab = "observacoes" | "agenda" | "ia" | "documentos" | "whatsapp" | "enriquecimento";
 
 function pdfEscape(value: string) {
   return value.replace(/[\\()]/g, "\\$&").replace(/[^\x20-\x7EÀ-ÿ]/g, " ");
@@ -67,6 +67,7 @@ async function api<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export function LeadOperations({ company }: { company: Company }) {
+  const [lead, setLead] = useState(company);
   const [tab, setTab] = useState<Tab>("observacoes");
   const [notes, setNotes] = useState<Note[]>(company.notes || []);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -77,10 +78,12 @@ export function LeadOperations({ company }: { company: Company }) {
   const [instruction, setInstruction] = useState("");
   const [generationType, setGenerationType] = useState("Proposta comercial");
   const [loading, setLoading] = useState(false);
+  const [enriching, setEnriching] = useState(false);
+  const [enrichmentMessages, setEnrichmentMessages] = useState<string[]>([]);
 
   const whatsappText = useMemo(() => {
-    return editor || `Olá, tudo bem? Analisei a presença digital da ${company.name} e identifiquei oportunidades para gerar mais contatos pelo Google. Posso te mostrar um diagnóstico rápido?`;
-  }, [company.name, editor]);
+    return editor || `Olá, tudo bem? Analisei a presença digital da ${lead.name} e identifiquei oportunidades para gerar mais contatos pelo Google. Posso te mostrar um diagnóstico rápido?`;
+  }, [lead.name, editor]);
 
   useEffect(() => {
     api<Note[]>(`/companies/${company.id}/notes`).then(setNotes).catch(() => {});
@@ -176,7 +179,7 @@ export function LeadOperations({ company }: { company: Company }) {
         {
           method: "POST",
           body: JSON.stringify({
-            lead: company,
+            lead,
             prompt: `Gere ${generationType} para este lead. Use tom consultivo, comercial e objetivo.${instruction ? ` Instrução adicional: ${instruction}` : ""}`
           })
         }
@@ -190,6 +193,23 @@ export function LeadOperations({ company }: { company: Company }) {
       showError(err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function enrichExternal() {
+    setEnriching(true);
+    setError(null);
+    try {
+      const response = await api<{ company: Company; enrichment: { messages: string[]; enrichmentSources: string[] } }>(`/companies/${company.id}/enrich-external`, {
+        method: "POST"
+      });
+      setLead(response.company);
+      setEnrichmentMessages(response.enrichment.messages || []);
+      showSuccess(response.enrichment.enrichmentSources?.length ? "Enriquecimento executado." : "Enriquecimento verificado. Configure Apollo/Econodata para dados avançados.");
+    } catch (err) {
+      showError(err);
+    } finally {
+      setEnriching(false);
     }
   }
 
@@ -227,6 +247,7 @@ export function LeadOperations({ company }: { company: Company }) {
   const tabs: [Tab, string][] = [
     ["observacoes", "Observações"],
     ["agenda", "Agenda"],
+    ["enriquecimento", "Apollo/Econodata"],
     ["ia", "IA / Editor"],
     ["documentos", "Propostas e contratos"],
     ["whatsapp", "WhatsApp"]
@@ -329,6 +350,56 @@ export function LeadOperations({ company }: { company: Company }) {
         </div>
       )}
 
+      {tab === "enriquecimento" && (
+        <div className="mt-5 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-lg border border-line bg-ink p-4">
+            <h4 className="font-semibold text-white">Enriquecimento externo</h4>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Consulta Apollo.io para decisores e LinkedIn por domínio/site. Consulta Econodata quando `ECONODATA_API_URL` e `ECONODATA_API_KEY` estiverem configurados no backend. O sistema não inventa CNPJ nem decisores.
+            </p>
+            <button
+              onClick={enrichExternal}
+              disabled={enriching}
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              <Sparkles className="h-4 w-4" />
+              {enriching ? "Conectando..." : "Conectar Apollo, Econodata e LinkedIn"}
+            </button>
+            <div className="mt-4 space-y-2">
+              {(enrichmentMessages.length ? enrichmentMessages : ["Clique para executar o enriquecimento externo deste lead."]).map((item) => (
+                <p key={item} className="rounded-md border border-line bg-panel/80 px-3 py-2 text-xs text-slate-300">{item}</p>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-lg border border-line bg-ink p-4">
+            <h4 className="font-semibold text-white">Dados enriquecidos</h4>
+            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+              <Info label="Razão social" value={lead.legalName} />
+              <Info label="CNPJ" value={lead.cnpj} />
+              <Info label="Porte" value={lead.companySize} />
+              <Info label="Receita" value={lead.revenueRange} />
+              <Info label="LinkedIn" value={lead.linkedin} isLink />
+              <Info label="Fontes" value={lead.enrichmentSources?.join(", ")} />
+            </dl>
+            <div className="mt-5">
+              <p className="text-sm font-semibold text-white">Decisores</p>
+              <div className="mt-3 space-y-2">
+                {lead.decisionMakers?.length ? lead.decisionMakers.map((person, index) => (
+                  <div key={`${person.email || person.linkedin || person.name}-${index}`} className="rounded-lg border border-line bg-panel/80 p-3 text-sm">
+                    <p className="font-medium text-white">{person.name || "Decisor sem nome"}</p>
+                    <p className="mt-1 text-xs text-slate-400">{person.title || "Cargo não informado"} · {person.source || "fonte externa"}</p>
+                    {person.linkedin && <a href={person.linkedin} target="_blank" className="mt-2 block text-xs text-cyan hover:underline">Abrir LinkedIn</a>}
+                    {person.email && <p className="mt-1 text-xs text-slate-300">{person.email}</p>}
+                  </div>
+                )) : (
+                  <p className="rounded-lg border border-dashed border-line p-3 text-sm text-slate-500">Nenhum decisor retornado ainda.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {tab === "documentos" && (
         <div className="mt-5 space-y-3">
           {documents.length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhuma proposta, contrato ou anexo salvo ainda.</p>}
@@ -349,8 +420,8 @@ export function LeadOperations({ company }: { company: Company }) {
           <textarea value={whatsappText} onChange={(event) => setEditor(event.target.value)} rows={8} className="w-full rounded-lg border border-line bg-ink px-4 py-3 text-sm leading-6" />
           <div className="flex flex-wrap gap-2">
             <button onClick={() => copy(whatsappText)} className="inline-flex items-center gap-2 rounded-lg border border-line bg-ink px-4 py-2 text-sm text-white"><Copy className="h-4 w-4" />Copiar mensagem</button>
-            {company.whatsapp || company.phone ? (
-              <a target="_blank" href={`https://wa.me/${String(company.whatsapp || company.phone).replace(/\D/g, "")}?text=${encodeURIComponent(whatsappText)}`} className="inline-flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-ink"><MessageCircle className="h-4 w-4" />Abrir WhatsApp</a>
+            {lead.whatsapp || lead.phone ? (
+              <a target="_blank" href={`https://wa.me/${String(lead.whatsapp || lead.phone).replace(/\D/g, "")}?text=${encodeURIComponent(whatsappText)}`} className="inline-flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-ink"><MessageCircle className="h-4 w-4" />Abrir WhatsApp</a>
             ) : (
               <span className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-2 text-sm text-amber-100">Este lead não possui telefone/WhatsApp.</span>
             )}
@@ -359,5 +430,18 @@ export function LeadOperations({ company }: { company: Company }) {
         </div>
       )}
     </section>
+  );
+}
+
+function Info({ label, value, isLink }: { label: string; value?: string; isLink?: boolean }) {
+  return (
+    <div className="rounded-lg border border-line bg-panel/80 p-3">
+      <dt className="text-xs text-slate-500">{label}</dt>
+      <dd className="mt-1 break-words text-sm text-white">
+        {value ? (
+          isLink ? <a href={value} target="_blank" className="text-cyan hover:underline">{value}</a> : value
+        ) : "Não localizado"}
+      </dd>
+    </div>
   );
 }

@@ -34,7 +34,9 @@ export const config = {
   },
   enrichment: {
     econodataApiKey: process.env.ECONODATA_API_KEY,
-    apolloApiKey: process.env.APOLLO_API_KEY
+    econodataApiUrl: process.env.ECONODATA_API_URL,
+    apolloApiKey: process.env.APOLLO_API_KEY,
+    apolloApiUrl: process.env.APOLLO_API_URL ?? "https://api.apollo.io/api/v1"
   },
   googleAds: {
     developerToken: process.env.GOOGLE_ADS_DEVELOPER_TOKEN,
