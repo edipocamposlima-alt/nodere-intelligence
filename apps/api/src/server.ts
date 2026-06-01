@@ -17,6 +17,8 @@ import reportsRouter from "./routes/reports.js";
 import auditRouter from "./routes/audit.js";
 import { processDueSteps } from "./services/emailSequences.js";
 import { requireAuth } from "./middleware/auth.js";
+import { searchCompaniesWithMeta } from "./services/companyStore.js";
+import { scanWebsite } from "./services/websiteScanner.js";
 
 const app = express();
 
@@ -60,6 +62,89 @@ app.get("/api/health", (_req, res) => {
     openaiConfigured: Boolean(config.openai.apiKey),
     supabaseConfigured: Boolean(config.supabase.url && config.supabase.serviceRoleKey)
   });
+});
+
+app.get("/api/settings", (_req, res) => {
+  res.json({
+    appName: "NODERE Intelligence",
+    environment: process.env.NODE_ENV ?? "development",
+    apiUrl: "https://nodere-api.onrender.com",
+    enabledIntegrations: {
+      googlePlaces: Boolean(config.google.placesKey),
+      googleMaps: Boolean(config.google.mapsKey),
+      pageSpeed: Boolean(config.google.pageSpeedKey),
+      openai: Boolean(config.openai.apiKey),
+      supabase: Boolean(config.supabase.url && config.supabase.serviceRoleKey),
+      whatsappWeb: true
+    },
+    status: "ok",
+    backendTime: new Date().toISOString()
+  });
+});
+
+app.get("/api/openai/health", (_req, res) => {
+  res.json({
+    openaiConfigured: Boolean(config.openai.apiKey),
+    model: config.openai.model,
+    backendTime: new Date().toISOString()
+  });
+});
+
+app.get("/api/pagespeed", async (req, res, next) => {
+  try {
+    const url = typeof req.query.url === "string" ? req.query.url.trim() : "";
+    if (!config.google.pageSpeedKey) {
+      return res.json({
+        status: "not_configured",
+        message: "GOOGLE_PAGESPEED_API_KEY ausente no backend.",
+        pageSpeedConfigured: false
+      });
+    }
+    if (!url) {
+      return res.json({
+        status: "configured",
+        message: "Informe ?url=https://site.com para executar a analise.",
+        pageSpeedConfigured: true
+      });
+    }
+    const scan = await scanWebsite(url);
+    return res.json({
+      status: "connected",
+      pageSpeedConfigured: true,
+      result: {
+        url: scan.url,
+        performance: scan.pageSpeed,
+        seo: scan.maturityScore,
+        accessibility: scan.maturityScore,
+        bestPractices: scan.commercialScore,
+        diagnosis: "Analise PageSpeed executada pelo backend seguro.",
+        recommendations: [
+          "Otimizar carregamento, imagens e scripts de terceiros.",
+          "Revisar SEO tecnico, title, meta description e headings.",
+          "Garantir rastreamento antes de escalar campanhas."
+        ],
+        createdAt: scan.scannedAt
+      }
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.get("/api/places/search", async (req, res, next) => {
+  try {
+    const input = {
+      companyName: typeof req.query.companyName === "string" ? req.query.companyName : undefined,
+      segment: typeof req.query.segment === "string" ? req.query.segment : undefined,
+      city: typeof req.query.city === "string" ? req.query.city : undefined,
+      state: typeof req.query.state === "string" ? req.query.state : undefined,
+      keyword: typeof req.query.keyword === "string" ? req.query.keyword : undefined
+    };
+    const result = await searchCompaniesWithMeta(input);
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
 });
 
 app.use("/api", requireAuth);
