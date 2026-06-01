@@ -140,6 +140,25 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
           </div>
 
           <div className="rounded-lg border border-line bg-panel/90 p-5">
+            <h3 className="font-semibold text-white">Enriquecimento público</h3>
+            <div className="mt-4 grid gap-2 text-sm">
+              {[
+                ["CNPJ", "não localizado em fonte pública"],
+                ["Razão social", "não localizado em fonte pública"],
+                ["Decisor/responsável", "não localizado em fonte pública"],
+                ["E-mail público", "não localizado em fonte pública"],
+                ["LinkedIn", company.linkedin || "não localizado em fonte pública"]
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-md border border-line bg-ink px-3 py-2">
+                  <p className="text-xs text-slate-500">{label}</p>
+                  <p className="mt-1 break-words text-slate-300">{value}</p>
+                  <p className="mt-1 text-[11px] text-slate-600">Fonte: Google Places/site público quando disponível · Confiança: {value === "não localizado em fonte pública" ? "baixa" : "média"}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-line bg-panel/90 p-5">
             <h3 className="font-semibold text-white">Sinais digitais</h3>
             <div className="mt-4 grid grid-cols-2 gap-2">
               {checks.map(([label, ok]) => (

@@ -1,7 +1,7 @@
 import Image from "next/image";
-import { AlertTriangle, Building2, Camera, Globe2, MessageCircle, MousePointerClick, Star, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, Building2, Camera, Globe2, KanbanSquare, MessageCircle, MousePointerClick, Search, Star, TrendingUp } from "lucide-react";
 import { CompanyTable } from "@/components/CompanyTable";
-import { SearchPanel } from "@/components/SearchPanel";
 import { getCompanies, getDashboard } from "@/lib/api";
 
 export default async function DashboardPage() {
@@ -53,8 +53,17 @@ export default async function DashboardPage() {
         ))}
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
-        <SearchPanel />
+      <section className="grid gap-5 xl:grid-cols-[1fr_0.8fr_0.8fr]">
+        <Link href="/searches" className="rounded-lg border border-electric/30 bg-electric/10 p-5 transition hover:border-electric">
+          <Search className="h-5 w-5 text-cyan" />
+          <p className="mt-4 text-lg font-semibold text-white">Buscar empresas</p>
+          <p className="mt-2 text-sm leading-6 text-slate-400">Abra a busca dedicada para filtros, seleção em massa, CSV e PDF.</p>
+        </Link>
+        <Link href="/crm" className="rounded-lg border border-line bg-panel/90 p-5 transition hover:border-electric/60">
+          <KanbanSquare className="h-5 w-5 text-cyan" />
+          <p className="mt-4 text-lg font-semibold text-white">Abrir CRM</p>
+          <p className="mt-2 text-sm leading-6 text-slate-400">Gerencie leads no pipeline com etapas coloridas e drag and drop.</p>
+        </Link>
         <div className="rounded-lg border border-line bg-panel/90 p-5">
           <p className="text-sm font-medium text-white">Score médio de oportunidade</p>
           <div className="mt-6 flex items-end gap-3">

@@ -22,7 +22,18 @@ As chaves sensíveis ficam no Render/backend:
 Na tela **Configurações**, você pode testar a URL do backend, alterar tema, fonte, densidade e layout. Preferências locais são salvas no navegador e enviadas ao backend como configurações seguras, sem secrets.
 
 ## Busca de empresas
-Abra **Empresas** ou **Dashboard** e pesquise por nome da empresa, segmento, cidade, estado ou palavra-chave. O sistema consulta Google Places pelo backend seguro. Cada resultado mostra score, avaliação, falhas detectadas e ações.
+Abra **Buscas** no menu e pesquise por nome da empresa, segmento, cidade, estado ou palavra-chave. O sistema consulta Google Places pelo backend seguro. Cada resultado mostra score, avaliação, falhas detectadas e ações.
+
+### Seleção em massa
+Na tabela de resultados você pode:
+- marcar uma empresa individualmente;
+- selecionar todas as empresas visíveis;
+- salvar selecionadas no CRM;
+- ignorar selecionadas;
+- exportar CSV;
+- baixar relatório PDF.
+
+Depois que um lead é salvo, ele sai da lista visível da busca naquele navegador para evitar duplicidade operacional. A chave principal usada é o `place_id` do Google.
 
 ## Salvar lead
 Clique em **Salvar lead** no resultado. O sistema registra o lead no CRM, cria histórico automático e remove o item da lista visível da busca para evitar retrabalho.
@@ -83,7 +94,10 @@ Na aba **IA / Editor**, escolha o tipo, gere ou escreva o conteúdo e clique em 
 Como mínimo operacional, cole conversas na Caixa de Entrada ou salve conteúdos como documentos vinculados ao lead. Para upload real de arquivos, configure storage dedicado.
 
 ## Dashboard e relatórios
-O Dashboard mostra totais reais do CRM, pipeline e oportunidades. Relatórios leem os dados atuais do backend.
+O Dashboard mostra totais reais do CRM, pipeline e oportunidades. A busca fica separada em **Buscas** para manter a tela inicial limpa. Relatórios leem os dados atuais do backend.
+
+## Enriquecimento CNPJ, decisor e LinkedIn
+O NODERE exibe campos de enriquecimento público na ficha do cliente. Quando CNPJ, decisor, e-mail ou LinkedIn não forem encontrados por fonte pública/API autorizada, o sistema mostra “não localizado em fonte pública”. O usuário pode complementar manualmente quando tiver uma fonte confiável. Não invente decisores.
 
 ## Automações
 A área Automações lista sequências comerciais e pode ativar fluxos por empresa. Integrações oficiais de e-mail/WhatsApp exigem chaves específicas; sem elas, use modelos e tarefas manuais.

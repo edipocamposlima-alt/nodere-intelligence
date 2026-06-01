@@ -1,4 +1,5 @@
 import { Clock, Database, RefreshCw, Search } from "lucide-react";
+import { SearchPanel } from "@/components/SearchPanel";
 import { getSearchHistory, getEnrichmentQueue, getCredits } from "@/lib/api";
 import { RerunButton } from "./RerunButton";
 
@@ -26,6 +27,14 @@ export default async function SearchesPage() {
           </div>
         </div>
       </div>
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-lg font-semibold text-white">Busca de empresas</h2>
+          <p className="mt-1 text-sm text-slate-400">Pesquise, selecione empresas em massa, salve leads, exporte CSV ou baixe relatório PDF.</p>
+        </div>
+        <SearchPanel />
+      </section>
 
       {queue.running > 0 || queue.pending > 0 ? (
         <div className="rounded-lg border border-electric/30 bg-electric/10 px-4 py-3">

@@ -4,6 +4,7 @@ const sections = [
   ["Visão geral", "Use o NODERE para buscar empresas reais, salvar leads, acompanhar CRM, registrar observações, gerar mensagens e organizar propostas."],
   ["Instalar como app", "No Android/Chrome use Instalar app. No iPhone/Safari use Compartilhar e Adicionar à Tela de Início."],
   ["Busca de empresas", "Pesquise por nome, segmento, cidade, estado ou palavra-chave. Salve o lead e abra a ficha para continuar a operação."],
+  ["Seleção em massa", "Na busca, selecione empresas, salve várias no CRM, ignore resultados, exporte CSV ou baixe relatório PDF."],
   ["CRM", "Arraste leads entre etapas do funil. Cada mudança é salva no backend e aparece no dashboard."],
   ["Ficha do cliente", "Registre observações, tarefas, IA, propostas, contratos, templates WhatsApp e documentos vinculados ao lead."],
   ["WhatsApp", "wa.me abre a conversa. Sem WhatsApp Cloud API, respostas devem ser registradas manualmente na Caixa de Entrada."],

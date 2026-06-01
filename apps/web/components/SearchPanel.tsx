@@ -34,9 +34,12 @@ export function SearchPanel() {
       }
 
       const response = await searchCompanies(payload);
-      setResults(response.companies);
+      const savedIds = JSON.parse(localStorage.getItem("nodere_saved_leads") || "[]") as string[];
+      const savedSet = new Set(savedIds);
+      const filtered = response.companies.filter((company) => !savedSet.has(company.id));
+      setResults(filtered);
       setWarning(response.search.warning ?? response.search.error?.message ?? null);
-      setMessage(`${response.companies.length} empresas reais retornadas pela API configurada.`);
+      setMessage(`${filtered.length} empresas exibidas. ${response.companies.length - filtered.length} já salva(s) foram ocultadas.`);
     } catch (error) {
       setResults([]);
       setWarning(error instanceof Error ? error.message : "Falha ao buscar empresas.");

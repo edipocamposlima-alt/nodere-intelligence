@@ -18,6 +18,18 @@ const columns: CrmStatus[] = [
   "Perdido"
 ];
 
+const stageStyle: Record<string, string> = {
+  "Novo Lead": "border-blue-500/35 bg-blue-500/10",
+  "Qualificado": "border-cyan/35 bg-cyan/10",
+  "Contatado": "border-yellow-500/35 bg-yellow-500/10",
+  "Diagnóstico enviado": "border-purple-500/35 bg-purple-500/10",
+  "Reunião marcada": "border-indigo-500/35 bg-indigo-500/10",
+  "Proposta enviada": "border-orange-500/35 bg-orange-500/10",
+  "Negociação": "border-amber-500/35 bg-amber-500/10",
+  "Fechado": "border-success/35 bg-success/10",
+  "Perdido": "border-danger/35 bg-danger/10"
+};
+
 export function CrmBoard({ companies }: { companies: Company[] }) {
   const [items, setItems] = useState(companies);
   const [query, setQuery] = useState("");
@@ -63,7 +75,7 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
 
       {message && <p className="rounded-lg border border-electric/30 bg-electric/10 px-3 py-2 text-sm text-blue-100">{message}</p>}
 
-      <div className="grid gap-4 overflow-x-auto pb-2 xl:grid-cols-9">
+      <div className="grid auto-cols-[17rem] grid-flow-col gap-4 overflow-x-auto pb-2">
         {columns.map((column) => {
           const leads = filtered.filter((company) => company.status === column);
           return (
@@ -76,7 +88,7 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
                 if (companyId) void moveLead(companyId, column);
                 setDraggedId(null);
               }}
-              className="min-h-[420px] min-w-64 rounded-lg border border-line bg-panel/90 p-3"
+              className={`min-h-[420px] rounded-lg border p-3 ${stageStyle[column] ?? "border-line bg-panel/90"}`}
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-white">{column}</h3>
@@ -92,7 +104,7 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
                       setDraggedId(company.id);
                       event.dataTransfer.setData("text/plain", company.id);
                     }}
-                    className="rounded-lg border border-line bg-ink p-3 hover:border-electric/60"
+                    className="rounded-lg border border-line bg-panel/95 p-3 shadow-sm hover:border-electric/60"
                   >
                     <div className="flex items-start gap-2">
                       <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
