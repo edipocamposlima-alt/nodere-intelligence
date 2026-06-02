@@ -26,6 +26,12 @@ const memSettings: AppSettings = {
 };
 
 const memSettingsRecord = memSettings as unknown as Record<string, unknown>;
+let workspaceColumnAvailable = true;
+
+function isWorkspaceColumnMissing(error: unknown) {
+  const text = error instanceof Error ? error.message : JSON.stringify(error);
+  return text.includes("workspace_id") && (text.includes("does not exist") || text.includes("42703"));
+}
 
 function canUseVolatileFallback() {
   return !hasSupabase() || process.env.NODE_ENV !== "production";
@@ -87,12 +93,21 @@ async function writeSetting(key: keyof AppSettings, value: unknown, workspaceId 
     return;
   }
   const sb = getSupabase()!;
-  const { error } = await sb.from("nodere_app_settings").upsert({
+  let { error } = await sb.from("nodere_app_settings").upsert({
     key: scopedKey(key, workspaceId),
     workspace_id: workspaceId,
     value,
     updated_at: new Date().toISOString()
   }, { onConflict: "key" });
+  if (error && isWorkspaceColumnMissing(error)) {
+    workspaceColumnAvailable = false;
+    const retry = await sb.from("nodere_app_settings").upsert({
+      key: scopedKey(key, workspaceId),
+      value,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "key" });
+    error = retry.error;
+  }
   if (error) throw error;
 }
 

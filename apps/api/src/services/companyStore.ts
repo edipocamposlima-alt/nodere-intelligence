@@ -13,6 +13,20 @@ const documentStore = new Map<string, OperationDocument[]>();
 
 const TASK_PREFIX = "__NODERE_TASK__";
 const DOCUMENT_PREFIX = "__NODERE_DOCUMENT__";
+let workspaceColumnAvailable = true;
+
+function isWorkspaceColumnMissing(error: unknown) {
+  const text = error instanceof Error ? error.message : JSON.stringify(error);
+  return text.includes("workspace_id") && (text.includes("does not exist") || text.includes("42703"));
+}
+
+function markWorkspaceColumnMissing(error: unknown) {
+  if (isWorkspaceColumnMissing(error)) {
+    workspaceColumnAvailable = false;
+    return true;
+  }
+  return false;
+}
 
 function canUseVolatileFallback() {
   return !hasSupabase() || process.env.NODE_ENV !== "production";
@@ -74,14 +88,14 @@ export interface OperationDocument {
 
 // ─── Supabase helpers ────────────────────────────────────────────────────────
 
-function toRow(c: Company, workspaceId = "default"): Record<string, unknown> {
+function toRow(c: Company, workspaceId = "default", includeWorkspace = workspaceColumnAvailable): Record<string, unknown> {
   const { id, name, category, city, state, address, phone, whatsapp, website,
     instagram, facebook, linkedin, youtube, rating, reviewCount, mapsUrl,
     latitude, longitude, status, score, opportunityLevel, enrichmentStatus,
     lastContactAt, detectedOpportunities, suggestions, createdAt, updatedAt,
     notes, ...rest } = c;
-  return {
-    id, workspace_id: workspaceId, name, category, city, state, address, phone, whatsapp, website,
+  const row: Record<string, unknown> = {
+    id, name, category, city, state, address, phone, whatsapp, website,
     instagram, facebook, linkedin, youtube, rating,
     review_count: reviewCount,
     maps_url: mapsUrl,
@@ -95,6 +109,8 @@ function toRow(c: Company, workspaceId = "default"): Record<string, unknown> {
     created_at: createdAt,
     updated_at: updatedAt
   };
+  if (includeWorkspace) row.workspace_id = workspaceId;
+  return row;
 }
 
 function toUpdateRow(updates: Partial<Company>): Record<string, unknown> {
@@ -176,11 +192,19 @@ function fromRow(row: Record<string, unknown>): Company {
 
 async function dbList(workspaceId = "default"): Promise<Company[]> {
   const sb = getSupabase()!;
-  const { data, error } = await sb
+  let query = sb
     .from("nodere_companies")
-    .select("*, nodere_company_notes(id, company_id, body, created_at)")
-    .eq("workspace_id", workspaceId)
-    .order("score", { ascending: false });
+    .select("*, nodere_company_notes(id, company_id, body, created_at)");
+  if (workspaceColumnAvailable) query = query.eq("workspace_id", workspaceId);
+  let { data, error } = await query.order("score", { ascending: false });
+  if (error && markWorkspaceColumnMissing(error)) {
+    const retry = await sb
+      .from("nodere_companies")
+      .select("*, nodere_company_notes(id, company_id, body, created_at)")
+      .order("score", { ascending: false });
+    data = retry.data;
+    error = retry.error;
+  }
   if (error) throw error;
   return (data ?? []).map((row: Record<string, unknown>) => {
     const c = fromRow(row);
@@ -191,12 +215,21 @@ async function dbList(workspaceId = "default"): Promise<Company[]> {
 
 async function dbGet(id: string, workspaceId = "default"): Promise<Company | undefined> {
   const sb = getSupabase()!;
-  const { data, error } = await sb
+  let query = sb
     .from("nodere_companies")
     .select("*, nodere_company_notes(id, company_id, body, created_at)")
-    .eq("id", id)
-    .eq("workspace_id", workspaceId)
-    .maybeSingle();
+    .eq("id", id);
+  if (workspaceColumnAvailable) query = query.eq("workspace_id", workspaceId);
+  let { data, error } = await query.maybeSingle();
+  if (error && markWorkspaceColumnMissing(error)) {
+    const retry = await sb
+      .from("nodere_companies")
+      .select("*, nodere_company_notes(id, company_id, body, created_at)")
+      .eq("id", id)
+      .maybeSingle();
+    data = retry.data;
+    error = retry.error;
+  }
   if (error) throw error;
   if (!data) return undefined;
   const c = fromRow(data);
@@ -208,56 +241,99 @@ async function dbUpsert(items: Company[], workspaceId = "default"): Promise<void
   if (items.length === 0) return;
   const sb = getSupabase()!;
   const rows = items.map((item) => toRow(item, workspaceId));
-  const { error } = await sb.from("nodere_companies").upsert(rows, { onConflict: "id" });
+  let { error } = await sb.from("nodere_companies").upsert(rows, { onConflict: "id" });
+  if (error && markWorkspaceColumnMissing(error)) {
+    const retry = await sb.from("nodere_companies").upsert(items.map((item) => toRow(item, workspaceId, false)), { onConflict: "id" });
+    error = retry.error;
+  }
   if (error) throw error;
 }
 
 async function dbUpdateFields(id: string, fields: Record<string, unknown>, workspaceId = "default"): Promise<void> {
   const sb = getSupabase()!;
-  const { error } = await sb.from("nodere_companies").update(fields).eq("id", id).eq("workspace_id", workspaceId);
+  let query = sb.from("nodere_companies").update(fields).eq("id", id);
+  if (workspaceColumnAvailable) query = query.eq("workspace_id", workspaceId);
+  let { error } = await query;
+  if (error && markWorkspaceColumnMissing(error)) {
+    const retry = await sb.from("nodere_companies").update(fields).eq("id", id);
+    error = retry.error;
+  }
   if (error) throw error;
 }
 
 async function dbAddNote(companyId: string, body: string, workspaceId = "default") {
   const sb = getSupabase()!;
   const note = { id: randomUUID(), workspace_id: workspaceId, company_id: companyId, body, created_at: new Date().toISOString() };
-  const { error } = await sb.from("nodere_company_notes").insert(note);
+  const { workspace_id, ...legacyNote } = note;
+  let { error } = await sb.from("nodere_company_notes").insert(workspaceColumnAvailable ? note : legacyNote);
+  if (error && markWorkspaceColumnMissing(error)) {
+    const retry = await sb.from("nodere_company_notes").insert(legacyNote);
+    error = retry.error;
+  }
   if (error) throw error;
   return { id: note.id, companyId, body, createdAt: note.created_at };
 }
 
 async function dbListNotes(companyId: string, workspaceId = "default") {
   const sb = getSupabase()!;
-  const { data, error } = await sb
+  let query = sb
     .from("nodere_company_notes")
     .select("id, company_id, body, created_at")
-    .eq("company_id", companyId)
-    .eq("workspace_id", workspaceId)
-    .order("created_at", { ascending: false });
+    .eq("company_id", companyId);
+  if (workspaceColumnAvailable) query = query.eq("workspace_id", workspaceId);
+  let { data, error } = await query.order("created_at", { ascending: false });
+  if (error && markWorkspaceColumnMissing(error)) {
+    const retry = await sb
+      .from("nodere_company_notes")
+      .select("id, company_id, body, created_at")
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: false });
+    data = retry.data;
+    error = retry.error;
+  }
   if (error) throw error;
   return mapPublicNotes((data ?? []) as Record<string, unknown>[]);
 }
 
 async function dbDeleteNote(companyId: string, noteId: string, workspaceId = "default") {
   const sb = getSupabase()!;
-  const { error } = await sb
+  let query = sb
     .from("nodere_company_notes")
     .delete()
     .eq("company_id", companyId)
-    .eq("workspace_id", workspaceId)
     .eq("id", noteId);
+  if (workspaceColumnAvailable) query = query.eq("workspace_id", workspaceId);
+  let { error } = await query;
+  if (error && markWorkspaceColumnMissing(error)) {
+    const retry = await sb
+      .from("nodere_company_notes")
+      .delete()
+      .eq("company_id", companyId)
+      .eq("id", noteId);
+    error = retry.error;
+  }
   if (error) throw error;
 }
 
 async function dbListSystemItems<T>(companyId: string, prefix: string, workspaceId = "default"): Promise<T[]> {
   const sb = getSupabase()!;
-  const { data, error } = await sb
+  let query = sb
     .from("nodere_company_notes")
     .select("id, company_id, body, created_at")
     .eq("company_id", companyId)
-    .eq("workspace_id", workspaceId)
-    .like("body", `${prefix}%`)
-    .order("created_at", { ascending: false });
+    .like("body", `${prefix}%`);
+  if (workspaceColumnAvailable) query = query.eq("workspace_id", workspaceId);
+  let { data, error } = await query.order("created_at", { ascending: false });
+  if (error && markWorkspaceColumnMissing(error)) {
+    const retry = await sb
+      .from("nodere_company_notes")
+      .select("id, company_id, body, created_at")
+      .eq("company_id", companyId)
+      .like("body", `${prefix}%`)
+      .order("created_at", { ascending: false });
+    data = retry.data;
+    error = retry.error;
+  }
   if (error) throw error;
   return ((data ?? []) as Record<string, unknown>[]).map((row) => parseSystemItem<T>(row, prefix)).filter(Boolean) as T[];
 }
@@ -267,13 +343,19 @@ async function dbAddSystemItem(companyId: string, prefix: string, value: Record<
   const id = randomUUID();
   const createdAt = new Date().toISOString();
   const item = { ...value, id, companyId, createdAt };
-  const { error } = await sb.from("nodere_company_notes").insert({
+  const note = {
     id,
     workspace_id: workspaceId,
     company_id: companyId,
     body: `${prefix}${JSON.stringify(item)}`,
     created_at: createdAt
-  });
+  };
+  const { workspace_id, ...legacyNote } = note;
+  let { error } = await sb.from("nodere_company_notes").insert(workspaceColumnAvailable ? note : legacyNote);
+  if (error && markWorkspaceColumnMissing(error)) {
+    const retry = await sb.from("nodere_company_notes").insert(legacyNote);
+    error = retry.error;
+  }
   if (error) throw error;
   return item;
 }
@@ -282,12 +364,21 @@ async function dbReplaceSystemItem(companyId: string, noteId: string, prefix: st
   const sb = getSupabase()!;
   const updatedAt = new Date().toISOString();
   const item = { ...value, id: noteId, companyId, updatedAt };
-  const { error } = await sb
+  let query = sb
     .from("nodere_company_notes")
     .update({ body: `${prefix}${JSON.stringify(item)}` })
     .eq("company_id", companyId)
-    .eq("workspace_id", workspaceId)
     .eq("id", noteId);
+  if (workspaceColumnAvailable) query = query.eq("workspace_id", workspaceId);
+  let { error } = await query;
+  if (error && markWorkspaceColumnMissing(error)) {
+    const retry = await sb
+      .from("nodere_company_notes")
+      .update({ body: `${prefix}${JSON.stringify(item)}` })
+      .eq("company_id", companyId)
+      .eq("id", noteId);
+    error = retry.error;
+  }
   if (error) throw error;
   return item;
 }

@@ -27,6 +27,15 @@ interface PlatformUserRow {
 }
 
 const memoryUsers = new Map<string, PlatformUserRow>();
+let userSchemaAvailable = true;
+
+function isUserSchemaMissing(error: unknown) {
+  const text = error instanceof Error ? error.message : JSON.stringify(error);
+  return text.includes("nodere_workspaces") ||
+    text.includes("nodere_platform_users") ||
+    text.includes("Could not find the table") ||
+    text.includes("42P01");
+}
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -86,22 +95,31 @@ export async function ensureDefaultAdminUser() {
     updated_at: now
   };
 
-  if (!hasSupabase()) {
+  if (!hasSupabase() || !userSchemaAvailable) {
     if (!memoryUsers.has(email)) memoryUsers.set(email, fallback);
     return;
   }
 
-  await ensureWorkspace("default", email);
-  const sb = getSupabase()!;
-  const { data, error } = await sb
-    .from("nodere_platform_users")
-    .select("id")
-    .eq("email", email)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) {
-    const { error: insertError } = await sb.from("nodere_platform_users").insert(fallback);
-    if (insertError) throw insertError;
+  try {
+    await ensureWorkspace("default", email);
+    const sb = getSupabase()!;
+    const { data, error } = await sb
+      .from("nodere_platform_users")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) {
+      const { error: insertError } = await sb.from("nodere_platform_users").insert(fallback);
+      if (insertError) throw insertError;
+    }
+  } catch (error) {
+    if (isUserSchemaMissing(error)) {
+      userSchemaAvailable = false;
+      if (!memoryUsers.has(email)) memoryUsers.set(email, fallback);
+      return;
+    }
+    throw error;
   }
 }
 
@@ -109,17 +127,22 @@ export async function authenticateUser(emailInput: string, password: string) {
   await ensureDefaultAdminUser();
   const email = normalizeEmail(emailInput);
 
-  if (hasSupabase()) {
+  if (hasSupabase() && userSchemaAvailable) {
     const sb = getSupabase()!;
-    const { data, error } = await sb
-      .from("nodere_platform_users")
-      .select("*")
-      .eq("email", email)
-      .eq("active", true)
-      .maybeSingle();
-    if (error) throw error;
-    const row = data as PlatformUserRow | null;
-    if (row && verifyPassword(password, row.password_hash)) return toPublic(row);
+    try {
+      const { data, error } = await sb
+        .from("nodere_platform_users")
+        .select("*")
+        .eq("email", email)
+        .eq("active", true)
+        .maybeSingle();
+      if (error) throw error;
+      const row = data as PlatformUserRow | null;
+      if (row && verifyPassword(password, row.password_hash)) return toPublic(row);
+    } catch (error) {
+      if (!isUserSchemaMissing(error)) throw error;
+      userSchemaAvailable = false;
+    }
   }
 
   const row = memoryUsers.get(email);
@@ -129,14 +152,21 @@ export async function authenticateUser(emailInput: string, password: string) {
 
 export async function listWorkspaceUsers(workspaceId: string) {
   await ensureDefaultAdminUser();
-  if (hasSupabase()) {
+  if (hasSupabase() && userSchemaAvailable) {
     const sb = getSupabase()!;
     const { data, error } = await sb
       .from("nodere_platform_users")
       .select("id, workspace_id, name, email, role, active, created_at, updated_at")
       .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: true });
-    if (error) throw error;
+    if (error) {
+      if (isUserSchemaMissing(error)) {
+        userSchemaAvailable = false;
+      } else {
+        throw error;
+      }
+    }
+    if (!userSchemaAvailable) return [...memoryUsers.values()].filter((u) => u.workspace_id === workspaceId).map(toPublic);
     return ((data ?? []) as unknown as PlatformUserRow[]).map(toPublic);
   }
   return [...memoryUsers.values()].filter((u) => u.workspace_id === workspaceId).map(toPublic);
@@ -144,6 +174,12 @@ export async function listWorkspaceUsers(workspaceId: string) {
 
 export async function createWorkspaceUser(workspaceId: string, input: { name: string; email: string; password: string; role: SessionRole }) {
   await ensureDefaultAdminUser();
+  if (hasSupabase() && !userSchemaAvailable && process.env.NODE_ENV === "production") {
+    const error = new Error("Schema de usuários não aplicado no Supabase. Execute apps/api/src/db/schema.sql antes de criar usuários.") as Error & { status?: number; code?: string };
+    error.status = 503;
+    error.code = "USER_SCHEMA_UNAVAILABLE";
+    throw error;
+  }
   const now = new Date().toISOString();
   const row: PlatformUserRow = {
     id: randomUUID(),
@@ -157,10 +193,25 @@ export async function createWorkspaceUser(workspaceId: string, input: { name: st
     updated_at: now
   };
 
-  if (hasSupabase()) {
+  if (hasSupabase() && userSchemaAvailable) {
     const sb = getSupabase()!;
     const { error } = await sb.from("nodere_platform_users").insert(row);
-    if (error) throw error;
+    if (error) {
+      if (isUserSchemaMissing(error)) {
+        userSchemaAvailable = false;
+      } else {
+        throw error;
+      }
+    }
+    if (!userSchemaAvailable) {
+      if (process.env.NODE_ENV === "production") {
+        const unavailable = new Error("Schema de usuários não aplicado no Supabase. Execute apps/api/src/db/schema.sql antes de criar usuários.") as Error & { status?: number; code?: string };
+        unavailable.status = 503;
+        unavailable.code = "USER_SCHEMA_UNAVAILABLE";
+        throw unavailable;
+      }
+      memoryUsers.set(row.email, row);
+    }
   } else {
     if ([...memoryUsers.values()].some((u) => u.email === row.email)) {
       const error = new Error("Já existe usuário com este e-mail.") as Error & { status?: number };
@@ -180,7 +231,7 @@ export async function updateWorkspaceUser(workspaceId: string, userId: string, i
   if (input.active !== undefined) fields.active = Boolean(input.active);
   if (input.password) fields.password_hash = hashPassword(input.password);
 
-  if (hasSupabase()) {
+  if (hasSupabase() && userSchemaAvailable) {
     const sb = getSupabase()!;
     const { data, error } = await sb
       .from("nodere_platform_users")
@@ -198,4 +249,3 @@ export async function updateWorkspaceUser(workspaceId: string, userId: string, i
   Object.assign(row, fields);
   return toPublic(row);
 }
-
