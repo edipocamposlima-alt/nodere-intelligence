@@ -2,10 +2,10 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { CheckCircle2, Palette, Save, Server, Smartphone } from "lucide-react";
-import { getApiBaseUrl, getBackendRootUrl } from "@/lib/apiBase";
+import { getBackendRootUrl } from "@/lib/apiBase";
+import { getPublicSettings, savePublicSettings } from "@/lib/api";
 
 const STORAGE_KEY = "nodere_settings";
-const API_URL = getApiBaseUrl();
 const BACKEND_ROOT_URL = getBackendRootUrl();
 
 const themePresets: Record<string, { primary: string; mode: Settings["mode"]; cyan: string; panel: string; ink: string; line: string }> = {
@@ -76,6 +76,19 @@ export function SettingsClient() {
     const next = saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
     setSettings(next);
     applySettings(next);
+
+    getPublicSettings()
+      .then((payload) => {
+        const remote = payload.preferences ?? {};
+        const merged = { ...next, ...remote } as Settings;
+        setSettings(merged);
+        applySettings(merged);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        setStatus("Preferências carregadas do backend persistente.");
+      })
+      .catch((error) => {
+        setStatus(error instanceof Error ? error.message : "Não foi possível carregar preferências do backend.");
+      });
   }, []);
 
   function update<K extends keyof Settings>(key: K, value: Settings[K]) {
@@ -95,14 +108,10 @@ export function SettingsClient() {
     setStatus("Configurações salvas neste navegador.");
 
     try {
-      await fetch(`${settings.backendUrl.replace(/\/$/, "")}/api/settings`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings)
-      });
+      await savePublicSettings(settings as unknown as Record<string, unknown>);
       setStatus("Configurações salvas localmente e enviadas ao backend.");
-    } catch {
-      setStatus("Configurações salvas localmente. Backend indisponível para sincronizar.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Configurações salvas localmente. Backend indisponível para sincronizar.");
     }
   }
 

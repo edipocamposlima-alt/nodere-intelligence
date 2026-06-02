@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { getPublicSettings } from "@/lib/api";
 
 const STORAGE_KEY = "nodere_settings";
 
@@ -35,9 +36,7 @@ type StoredSettings = {
   cardStyle?: "cards" | "list" | "glass" | "solid" | "borderless" | "elevated";
 };
 
-function applyStoredTheme() {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  const settings = saved ? (JSON.parse(saved) as StoredSettings) : {};
+function applyTheme(settings: StoredSettings) {
   const preset = themePresets[settings.theme || "Nodere Azul"] || themePresets["Nodere Azul"];
   const root = document.documentElement;
 
@@ -53,10 +52,26 @@ function applyStoredTheme() {
   document.body.style.fontFamily = `${font}, Inter, system-ui, sans-serif`;
 }
 
+function readStoredSettings() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  return saved ? (JSON.parse(saved) as StoredSettings) : {};
+}
+
+function applyStoredTheme() {
+  applyTheme(readStoredSettings());
+}
+
 export function ThemeRuntime() {
   useEffect(() => {
     try {
       applyStoredTheme();
+      getPublicSettings()
+        .then((payload) => {
+          const settings = { ...readStoredSettings(), ...(payload.preferences ?? {}) } as StoredSettings;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+          applyTheme(settings);
+        })
+        .catch(() => undefined);
       window.addEventListener("storage", applyStoredTheme);
       window.addEventListener("nodere:theme-change", applyStoredTheme);
       return () => {

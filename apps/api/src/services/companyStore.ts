@@ -14,6 +14,40 @@ const documentStore = new Map<string, OperationDocument[]>();
 const TASK_PREFIX = "__NODERE_TASK__";
 const DOCUMENT_PREFIX = "__NODERE_DOCUMENT__";
 
+function canUseVolatileFallback() {
+  return !hasSupabase() || process.env.NODE_ENV !== "production";
+}
+
+function persistenceError(action: string, error: unknown) {
+  const detail = error instanceof Error ? error.message : JSON.stringify(error);
+  const err = new Error(
+    `Persistencia indisponivel: nao foi possivel ${action} no Supabase. ` +
+    "Para evitar perda de leads em atualizacoes/deploys, o NODERE bloqueou o fallback temporario em memoria."
+  ) as Error & { status?: number; code?: string; reason?: string };
+  err.status = 503;
+  err.code = "PERSISTENCE_UNAVAILABLE";
+  err.reason = detail;
+  return err;
+}
+
+async function withPersistentRead<T>(action: string, dbAction: () => Promise<T>, fallback: () => T): Promise<T> {
+  try {
+    return await dbAction();
+  } catch (error) {
+    if (canUseVolatileFallback()) return fallback();
+    throw persistenceError(action, error);
+  }
+}
+
+async function withPersistentWrite<T>(action: string, dbAction: () => Promise<T>, fallback: () => T | Promise<T>): Promise<T> {
+  try {
+    return await dbAction();
+  } catch (error) {
+    if (canUseVolatileFallback()) return fallback();
+    throw persistenceError(action, error);
+  }
+}
+
 export interface OperationTask {
   id: string;
   companyId: string;
@@ -255,7 +289,7 @@ async function dbReplaceSystemItem(companyId: string, noteId: string, prefix: st
 
 export async function listCompaniesAsync(): Promise<Company[]> {
   if (hasSupabase()) {
-    return dbList().catch(() => [...memStore].sort((a, b) => b.score - a.score));
+    return withPersistentRead("listar leads", dbList, () => [...memStore].sort((a, b) => b.score - a.score));
   }
   return [...memStore].sort((a, b) => b.score - a.score);
 }
@@ -266,7 +300,7 @@ export function listCompanies(): Company[] {
 
 export async function getCompanyAsync(id: string): Promise<Company | undefined> {
   if (hasSupabase()) {
-    return dbGet(id).catch(() => memStore.find((c) => c.id === id));
+    return withPersistentRead("carregar lead", () => dbGet(id), () => memStore.find((c) => c.id === id));
   }
   return memStore.find((c) => c.id === id);
 }
@@ -279,7 +313,7 @@ export async function searchCompaniesWithMeta(input: SearchRequest) {
   if (config.useMockData) {
     const generated = generateMockSearch(input);
     syncToMem(generated);
-    if (hasSupabase()) dbUpsert(generated).catch(() => {});
+    if (hasSupabase()) await withPersistentWrite("salvar resultados demonstrativos", () => dbUpsert(generated), () => undefined);
     return { source: "mock" as const, companies: generated, warning: "Modo demonstrativo ativo (USE_MOCK_DATA=true)." };
   }
 
@@ -287,7 +321,7 @@ export async function searchCompaniesWithMeta(input: SearchRequest) {
     const generated = await searchGooglePlaces(input);
     const withStatus = generated.map((c) => ({ ...c, enrichmentStatus: "pending" as const }));
     syncToMem(withStatus);
-    if (hasSupabase()) dbUpsert(withStatus).catch(() => {});
+    if (hasSupabase()) await withPersistentWrite("salvar resultados da busca", () => dbUpsert(withStatus), () => undefined);
     queueEnrichmentForAll(withStatus);
     return { source: "google" as const, companies: withStatus };
   } catch (error) {
@@ -306,7 +340,7 @@ export async function updateStatus(id: string, status: CrmStatus): Promise<Compa
   if (status === "Contatado") fields.last_contact_at = now;
 
   if (hasSupabase()) {
-    await dbUpdateFields(id, fields).catch(() => {});
+    await withPersistentWrite("atualizar etapa do lead", () => dbUpdateFields(id, fields), () => undefined);
   }
   const local = memStore.find((c) => c.id === id);
   if (local) {
@@ -324,7 +358,7 @@ export async function addNote(id: string, body: string) {
   if (!company) return undefined;
 
   if (hasSupabase()) {
-    return dbAddNote(id, body).catch(() => {
+    return withPersistentWrite("salvar observacao do lead", () => dbAddNote(id, body), () => {
       const note = { id: randomUUID(), companyId: id, body, createdAt: new Date().toISOString() };
       company.notes.unshift(note);
       return note;
@@ -339,7 +373,7 @@ export async function addNote(id: string, body: string) {
 
 export async function listNotes(id: string) {
   if (hasSupabase()) {
-    return dbListNotes(id).catch(() => {
+    return withPersistentRead("listar observacoes do lead", () => dbListNotes(id), () => {
       const company = memStore.find((c) => c.id === id);
       return company?.notes ?? [];
     });
@@ -349,7 +383,7 @@ export async function listNotes(id: string) {
 }
 
 export async function removeNote(companyId: string, noteId: string) {
-  if (hasSupabase()) await dbDeleteNote(companyId, noteId).catch(() => {});
+  if (hasSupabase()) await withPersistentWrite("remover observacao do lead", () => dbDeleteNote(companyId, noteId), () => undefined);
   const company = memStore.find((c) => c.id === companyId);
   if (company) company.notes = company.notes.filter((note) => note.id !== noteId);
   return { ok: true };
@@ -357,7 +391,7 @@ export async function removeNote(companyId: string, noteId: string) {
 
 export async function listTasks(companyId: string): Promise<OperationTask[]> {
   if (hasSupabase()) {
-    return dbListSystemItems<OperationTask>(companyId, TASK_PREFIX).catch(() => taskStore.get(companyId) ?? []);
+    return withPersistentRead("listar tarefas do lead", () => dbListSystemItems<OperationTask>(companyId, TASK_PREFIX), () => taskStore.get(companyId) ?? []);
   }
   return taskStore.get(companyId) ?? [];
 }
@@ -373,9 +407,11 @@ export async function createTask(companyId: string, input: Partial<OperationTask
   };
 
   if (hasSupabase()) {
-    return dbAddSystemItem(companyId, TASK_PREFIX, task as unknown as Record<string, unknown>)
-      .then((item) => item as unknown as OperationTask)
-      .catch(() => createMemoryTask(companyId, task));
+    return withPersistentWrite(
+      "criar tarefa do lead",
+      () => dbAddSystemItem(companyId, TASK_PREFIX, task as unknown as Record<string, unknown>).then((item) => item as unknown as OperationTask),
+      () => createMemoryTask(companyId, task)
+    );
   }
   return createMemoryTask(companyId, task);
 }
@@ -385,7 +421,7 @@ export async function updateTask(companyId: string, taskId: string, input: Parti
   if (!existing) return undefined;
   const updated: OperationTask = { ...existing, ...input, updatedAt: new Date().toISOString() };
   if (hasSupabase()) {
-    await dbReplaceSystemItem(companyId, taskId, TASK_PREFIX, updated as unknown as Record<string, unknown>).catch(() => {});
+    await withPersistentWrite("atualizar tarefa do lead", () => dbReplaceSystemItem(companyId, taskId, TASK_PREFIX, updated as unknown as Record<string, unknown>).then(() => undefined), () => undefined);
   }
   taskStore.set(companyId, (taskStore.get(companyId) ?? []).map((task) => task.id === taskId ? updated : task));
   return updated;
@@ -393,7 +429,7 @@ export async function updateTask(companyId: string, taskId: string, input: Parti
 
 export async function listDocuments(companyId: string): Promise<OperationDocument[]> {
   if (hasSupabase()) {
-    return dbListSystemItems<OperationDocument>(companyId, DOCUMENT_PREFIX).catch(() => documentStore.get(companyId) ?? []);
+    return withPersistentRead("listar arquivos do lead", () => dbListSystemItems<OperationDocument>(companyId, DOCUMENT_PREFIX), () => documentStore.get(companyId) ?? []);
   }
   return documentStore.get(companyId) ?? [];
 }
@@ -407,9 +443,11 @@ export async function createDocument(companyId: string, input: Partial<Operation
   };
 
   if (hasSupabase()) {
-    return dbAddSystemItem(companyId, DOCUMENT_PREFIX, document as unknown as Record<string, unknown>)
-      .then((item) => item as unknown as OperationDocument)
-      .catch(() => createMemoryDocument(companyId, document));
+    return withPersistentWrite(
+      "criar arquivo do lead",
+      () => dbAddSystemItem(companyId, DOCUMENT_PREFIX, document as unknown as Record<string, unknown>).then((item) => item as unknown as OperationDocument),
+      () => createMemoryDocument(companyId, document)
+    );
   }
   return createMemoryDocument(companyId, document);
 }
@@ -419,14 +457,14 @@ export async function updateDocument(companyId: string, documentId: string, inpu
   if (!existing) return undefined;
   const updated: OperationDocument = { ...existing, ...input, updatedAt: new Date().toISOString() };
   if (hasSupabase()) {
-    await dbReplaceSystemItem(companyId, documentId, DOCUMENT_PREFIX, updated as unknown as Record<string, unknown>).catch(() => {});
+    await withPersistentWrite("atualizar arquivo do lead", () => dbReplaceSystemItem(companyId, documentId, DOCUMENT_PREFIX, updated as unknown as Record<string, unknown>).then(() => undefined), () => undefined);
   }
   documentStore.set(companyId, (documentStore.get(companyId) ?? []).map((document) => document.id === documentId ? updated : document));
   return updated;
 }
 
 export async function removeDocument(companyId: string, documentId: string) {
-  if (hasSupabase()) await dbDeleteNote(companyId, documentId).catch(() => {});
+  if (hasSupabase()) await withPersistentWrite("remover arquivo do lead", () => dbDeleteNote(companyId, documentId), () => undefined);
   documentStore.set(companyId, (documentStore.get(companyId) ?? []).filter((document) => document.id !== documentId));
   return { ok: true };
 }
@@ -434,7 +472,7 @@ export async function removeDocument(companyId: string, documentId: string) {
 export async function updateCompany(id: string, updates: Partial<Company>): Promise<Company | undefined> {
   const now = new Date().toISOString();
   if (hasSupabase()) {
-    await dbUpdateFields(id, toUpdateRow({ ...updates, updatedAt: now })).catch(() => {});
+    await withPersistentWrite("atualizar dados do lead", () => dbUpdateFields(id, toUpdateRow({ ...updates, updatedAt: now })), () => undefined);
   }
   const local = memStore.find((c) => c.id === id);
   if (local) {

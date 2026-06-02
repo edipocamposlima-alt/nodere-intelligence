@@ -86,3 +86,12 @@ create table if not exists nodere_operator_goals (
 );
 
 create index if not exists idx_operator_goals_month on nodere_operator_goals(month desc);
+
+-- Configuracoes publicas e operacionais persistentes.
+-- Regra NODERE: tema/layout/funil nunca devem depender apenas de localStorage,
+-- porque atualizacoes, troca de navegador ou deploys nao podem apagar a operacao.
+create table if not exists nodere_app_settings (
+  key text primary key,
+  value jsonb not null default '{}',
+  updated_at timestamptz not null default now()
+);

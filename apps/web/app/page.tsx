@@ -4,8 +4,17 @@ import { AlertTriangle, Building2, Camera, Globe2, KanbanSquare, MessageCircle, 
 import { CompanyTable } from "@/components/CompanyTable";
 import { getCompanies, getDashboard } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
-  const [metrics, companies] = await Promise.all([getDashboard(), getCompanies()]);
+  const [metrics, companiesResult] = await Promise.all([
+    getDashboard(),
+    getCompanies().then((companies) => ({ companies, error: "" })).catch((error) => ({
+      companies: [],
+      error: error instanceof Error ? error.message : "Não foi possível carregar leads persistidos."
+    }))
+  ]);
+  const companies = companiesResult.companies;
 
   const cards = [
     { label: "Empresas encontradas", value: metrics.totalCompanies, icon: Building2, hex: "#0284C7", bg: "#E0F2FE" },
@@ -43,6 +52,11 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8 p-4 md:p-8">
+      {companiesResult.error && (
+        <div className="rounded-lg border border-amber-400/40 bg-amber-500/10 p-4 text-sm leading-6 text-amber-100">
+          <strong>Persistência precisa de atenção:</strong> {companiesResult.error}
+        </div>
+      )}
       <section className="rounded-lg border border-electric/25 bg-panel/90 p-5 shadow-glow">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div>

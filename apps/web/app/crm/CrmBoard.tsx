@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Check, GripVertical, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { Company, CrmStatus } from "@/lib/types";
-import { updateCompanyStatus } from "@/lib/api";
+import { getPublicSettings, savePipelineSettings, updateCompanyStatus } from "@/lib/api";
 
 const STAGES_STORAGE_KEY = "nodere_pipeline_stages";
 const STAGE_COLORS_STORAGE_KEY = "nodere_pipeline_stage_colors";
@@ -86,16 +86,43 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
       setColumns(defaultColumns);
       setStageColors(defaultStageColors);
     }
+
+    getPublicSettings()
+      .then((payload) => {
+        const remoteStages = payload.pipeline?.stages;
+        const remoteColors = payload.pipeline?.stageColors;
+        if (Array.isArray(remoteStages) && remoteStages.length > 0) {
+          setColumns(remoteStages);
+          localStorage.setItem(STAGES_STORAGE_KEY, JSON.stringify(remoteStages));
+        }
+        if (remoteColors && typeof remoteColors === "object") {
+          const merged = { ...defaultStageColors, ...remoteColors };
+          setStageColors(merged);
+          localStorage.setItem(STAGE_COLORS_STORAGE_KEY, JSON.stringify(merged));
+        }
+      })
+      .catch((error) => {
+        setMessage(error instanceof Error ? error.message : "Não foi possível carregar o funil persistido.");
+      });
   }, []);
 
-  function persistStages(next: string[]) {
-    setColumns(next);
-    localStorage.setItem(STAGES_STORAGE_KEY, JSON.stringify(next));
+  function persistPipeline(nextStages: string[], nextColors: Record<string, string>) {
+    setColumns(nextStages);
+    setStageColors(nextColors);
+    localStorage.setItem(STAGES_STORAGE_KEY, JSON.stringify(nextStages));
+    localStorage.setItem(STAGE_COLORS_STORAGE_KEY, JSON.stringify(nextColors));
+    savePipelineSettings({ stages: nextStages, stageColors: nextColors })
+      .then(() => {
+        setMessage("Funil salvo no backend persistente.");
+        setTimeout(() => setMessage(null), 2500);
+      })
+      .catch((error) => {
+        setMessage(error instanceof Error ? error.message : "Não foi possível persistir o funil no backend.");
+      });
   }
 
   function persistStageColors(next: Record<string, string>) {
-    setStageColors(next);
-    localStorage.setItem(STAGE_COLORS_STORAGE_KEY, JSON.stringify(next));
+    persistPipeline(columns, next);
   }
 
   function colorForStage(stage: string, index: number) {
@@ -133,8 +160,7 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
       setMessage("Esta etapa já existe.");
       return;
     }
-    persistStages([...columns, label]);
-    persistStageColors({ ...stageColors, [label]: newStageColor });
+    persistPipeline([...columns, label], { ...stageColors, [label]: newStageColor });
     setNewStage("");
     setNewStageColor(stagePalette[(columns.length + 1) % stagePalette.length]);
     setMessage("Etapa criada no funil.");
@@ -149,10 +175,10 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
       setMessage("Não é possível remover uma etapa com leads. Mova os leads antes.");
       return;
     }
-    persistStages(columns.filter((item) => item !== stage));
+    const nextColumns = columns.filter((item) => item !== stage);
     const nextColors = { ...stageColors };
     delete nextColors[stage];
-    persistStageColors(nextColors);
+    persistPipeline(nextColumns, nextColors);
     setMessage("Etapa removida do funil.");
   }
 
@@ -167,10 +193,10 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
       return;
     }
     const affected = items.filter((company) => company.status === stage);
-    persistStages(columns.map((item) => item === stage ? label : item));
+    const nextColumns = columns.map((item) => item === stage ? label : item);
     const nextColors = { ...stageColors, [label]: stageColors[stage] || newStageColor };
     delete nextColors[stage];
-    persistStageColors(nextColors);
+    persistPipeline(nextColumns, nextColors);
     setItems((current) => current.map((company) => company.status === stage ? { ...company, status: label as CrmStatus } : company));
     setEditingStage(null);
     setMessage("Renomeando etapa e atualizando leads...");

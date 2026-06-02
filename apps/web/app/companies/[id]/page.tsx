@@ -10,6 +10,8 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 
 const API_URL = getApiBaseUrl();
 
+export const dynamic = "force-dynamic";
+
 const whatsappMessage =
   "Ola, tudo bem? Estive analisando a presenca digital da sua empresa no Google e identifiquei algumas oportunidades que podem ajudar voces a gerar mais contatos e melhorar o posicionamento online. Posso te mostrar rapidamente?";
 

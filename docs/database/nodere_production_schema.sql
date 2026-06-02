@@ -201,6 +201,14 @@ create table if not exists mvp_settings (
   updated_at timestamptz not null default now()
 );
 
+-- Configuracoes usadas pelo backend atual (apps/api).
+-- Guarda preferencias publicas e etapas/cores do funil fora do navegador.
+create table if not exists nodere_app_settings (
+  key text primary key,
+  value jsonb not null default '{}',
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists idx_companies_status on companies(status);
 create index if not exists idx_companies_city_segment on companies(city, segment);
 create index if not exists idx_notes_company_created on notes(company_id, created_at desc);

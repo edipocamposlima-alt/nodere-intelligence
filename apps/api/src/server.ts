@@ -19,6 +19,7 @@ import adminRouter from "./routes/admin.js";
 import { processDueSteps } from "./services/emailSequences.js";
 import { requireAuth } from "./middleware/auth.js";
 import { searchCompaniesWithMeta } from "./services/companyStore.js";
+import { getAppSettings, savePipelineSettings, savePreferences } from "./services/settingsStore.js";
 import { scanWebsite } from "./services/websiteScanner.js";
 
 const app = express();
@@ -65,8 +66,8 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-app.get("/api/settings", (_req, res) => {
-  res.json({
+function publicIntegrationSettings() {
+  return {
     appName: "NODERE Intelligence",
     environment: process.env.NODE_ENV ?? "development",
     apiUrl: "https://nodere-api.onrender.com",
@@ -82,25 +83,47 @@ app.get("/api/settings", (_req, res) => {
     },
     status: "ok",
     backendTime: new Date().toISOString()
-  });
+  };
+}
+
+app.get("/api/settings", async (_req, res, next) => {
+  try {
+    const persisted = await getAppSettings();
+    res.json({
+      ...publicIntegrationSettings(),
+      ...persisted
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
-app.patch("/api/settings", (req, res) => {
-  const safeSettings = {
-    theme: typeof req.body?.theme === "string" ? req.body.theme : undefined,
-    mode: req.body?.mode === "light" || req.body?.mode === "dark" ? req.body.mode : undefined,
-    colorPrimary: typeof req.body?.colorPrimary === "string" ? req.body.colorPrimary : undefined,
-    fontFamily: typeof req.body?.fontFamily === "string" ? req.body.fontFamily : undefined,
-    layoutDensity: typeof req.body?.layoutDensity === "string" ? req.body.layoutDensity : undefined,
-    cardStyle: typeof req.body?.cardStyle === "string" ? req.body.cardStyle : undefined
-  };
+app.patch("/api/settings", async (req, res, next) => {
+  try {
+    const preferences = await savePreferences(req.body ?? {});
+    res.json({
+      ok: true,
+      message: "Preferencias salvas no backend persistente. Secrets e chaves de API continuam somente no backend/Render.",
+      settings: preferences,
+      backendTime: new Date().toISOString()
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
-  res.json({
-    ok: true,
-    message: "Preferencias recebidas. Secrets e chaves de API continuam somente no backend/Render.",
-    settings: safeSettings,
-    backendTime: new Date().toISOString()
-  });
+app.patch("/api/settings/pipeline", async (req, res, next) => {
+  try {
+    const pipeline = await savePipelineSettings(req.body ?? {});
+    res.json({
+      ok: true,
+      message: "Funil salvo no backend persistente.",
+      pipeline,
+      backendTime: new Date().toISOString()
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.get("/api/openai/health", (_req, res) => {

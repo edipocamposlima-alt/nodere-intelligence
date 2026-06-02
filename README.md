@@ -6,8 +6,8 @@ Sistema de prospeccao comercial para localizar empresas no Google, salvar leads 
 
 A versao publicada no GitHub Pages funciona como interface estatica. Para uso comercial real, publique o backend e configure a URL da API em `Configuracoes`.
 
-- CRM operacional persiste em `localStorage` no GitHub Pages e tem estrutura preparada para Supabase/PostgreSQL.
-- Configuracoes persistem em `localStorage`, mas guardam apenas URL do backend, token operacional opcional e preferencias.
+- CRM operacional deve persistir no Supabase/PostgreSQL em producao. `localStorage` e apenas cache/fallback local.
+- Configuracoes de tema/layout e etapas/cores do funil persistem no backend em `nodere_app_settings`; `localStorage` e apenas cache do navegador.
 - Busca Google Places usa somente o backend seguro.
 - PageSpeed usa somente o backend seguro.
 - WhatsApp abre `wa.me` com mensagem pronta.
@@ -29,7 +29,7 @@ GitHub Pages nao executa backend e nao pode guardar segredos. Portanto, chaves G
 
 - Busca de empresas via Google Places, com prevencao de duplicidade e filtro para ocultar empresas ja salvas no CRM.
 - Dados retornados: nome, telefone, site, endereco, categoria, avaliacao, total de avaliacoes e link Google Maps.
-- CRM persistido no Supabase/PostgreSQL.
+- CRM persistido no Supabase/PostgreSQL, com bloqueio de fallback temporario em memoria quando o banco falha em producao.
 - Pipeline profissional com drag and drop.
 - Observacoes longas por lead, com tipo, responsavel, data e historico.
 - Timeline operacional por lead com observacoes, status, tarefas, PageSpeed e IA.
@@ -169,7 +169,8 @@ Admin:
 - Painel: `https://nodere.com.br/admin`.
 - Variaveis privadas no Render: `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`.
 - O painel admin mascara chaves e nao retorna valores completos ao frontend.
-- Para persistencia definitiva entre deploys, mantenha chaves sensiveis como variaveis de ambiente no Render.
+- Para persistencia definitiva entre deploys, mantenha `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` no Render e execute o schema atualizado.
+- Regra de persistencia: `docs/DATA_PERSISTENCE_RULE.md`.
 
 Depois do deploy:
 
@@ -222,4 +223,4 @@ O script testa:
 - OpenAI exige chave valida e quota/billing ativo.
 - Google Business Profile exige `client_secret` e `refresh_token` gerado por OAuth com escopo `business.manage`.
 - Google Calendar, Gmail e Drive exigem OAuth offline com refresh token do backend.
-- A versao GitHub Pages usa `localStorage` para CRM e configuracoes. Para producao multiusuario, publique o backend e migre a persistencia para Supabase/PostgreSQL usando o schema atualizado.
+- Em producao, CRM e configuracoes criticas nao devem depender de `localStorage`. Se o Supabase estiver configurado e falhar, o backend retorna `PERSISTENCE_UNAVAILABLE` em vez de salvar em memoria temporaria.

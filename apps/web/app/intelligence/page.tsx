@@ -2,8 +2,15 @@ import { AlertTriangle, CheckCircle2, TrendingUp, Zap } from "lucide-react";
 import { getCompanies } from "@/lib/api";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function IntelligencePage() {
-  const companies = await getCompanies();
+  const { companies, error } = await getCompanies()
+    .then((companies) => ({ companies, error: "" }))
+    .catch((error) => ({
+      companies: [],
+      error: error instanceof Error ? error.message : "Não foi possível carregar leads persistidos."
+    }));
 
   const withWebsite = companies.filter((c) => c.website);
   const withGA4 = companies.filter((c) => c.hasGA4);
@@ -30,6 +37,11 @@ export default async function IntelligencePage() {
 
   return (
     <div className="space-y-8 p-4 md:p-8">
+      {error && (
+        <div className="rounded-lg border border-amber-400/40 bg-amber-500/10 p-4 text-sm leading-6 text-amber-100">
+          <strong>Persistência precisa de atenção:</strong> {error}
+        </div>
+      )}
       <div>
         <h1 className="text-xl font-semibold text-white">Google Intelligence</h1>
         <p className="mt-1 text-sm text-slate-400">Visão consolidada de prontidão para tráfego pago, keywords e Business Profile.</p>

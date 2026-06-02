@@ -65,7 +65,7 @@ export function getDashboard() {
 }
 
 export function getCompanies() {
-  return api<Company[]>("/companies", undefined, []);
+  return api<Company[]>("/companies");
 }
 
 export function getCompany(id: string) {
@@ -234,4 +234,27 @@ export function getAuditLog(limit = 100) {
 
 export function getIntegrations() {
   return api<Array<{ key?: string; name: string; configured: boolean; required: boolean; capability?: string }>>("/integrations", undefined, []);
+}
+
+export function getPublicSettings() {
+  return api<{
+    preferences?: Record<string, unknown>;
+    pipeline?: { stages?: string[]; stageColors?: Record<string, string> };
+    enabledIntegrations?: Record<string, boolean>;
+    status?: string;
+  }>("/settings");
+}
+
+export function savePublicSettings(settings: Record<string, unknown>) {
+  return api<{ ok: boolean; settings: Record<string, unknown>; message?: string }>("/settings", {
+    method: "PATCH",
+    body: JSON.stringify(settings)
+  });
+}
+
+export function savePipelineSettings(pipeline: { stages: string[]; stageColors: Record<string, string> }) {
+  return api<{ ok: boolean; pipeline: { stages?: string[]; stageColors?: Record<string, string> }; message?: string }>("/settings/pipeline", {
+    method: "PATCH",
+    body: JSON.stringify(pipeline)
+  });
 }
