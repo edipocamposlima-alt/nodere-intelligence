@@ -2,27 +2,39 @@ services:
   - type: web
     name: nodere-api
     runtime: node
-    rootDir: backend
+    rootDir: apps/api
     plan: free
-    buildCommand: npm install
+    buildCommand: npm install --include=dev
     startCommand: npm start
-    healthCheckPath: /api/health
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
-      - key: FRONTEND_ORIGIN
-        value: https://nodere.com.br
-      - key: PRODUCTION_FRONTEND_ORIGIN
+      - key: WEB_ORIGIN
         value: https://nodere.com.br
       - key: CORS_ORIGINS
         value: https://edipocamposlima-alt.github.io,https://nodere.com.br,https://www.nodere.com.br
       - key: GOOGLE_PLACES_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
         sync: false
       - key: GOOGLE_MAPS_API_KEY
         sync: false
       - key: GOOGLE_PAGESPEED_API_KEY
         sync: false
       - key: OPENAI_API_KEY
+        sync: false
+      - key: ADMIN_EMAIL
+        value: admin@nodere.com.br
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_SESSION_SECRET
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: DATABASE_URL
         sync: false
       - key: MVP_OWNER_TOKEN
         sync: false
