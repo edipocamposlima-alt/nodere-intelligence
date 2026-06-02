@@ -3,34 +3,46 @@ import { getOperators, getOperatorRanking, getGoals, setGoals, addOperator } fro
 
 const router = Router();
 
-router.get("/", (_req, res) => {
-  res.json(getOperators());
-});
-
-router.post("/", (req: Request, res: Response, next: NextFunction) => {
+router.get("/", async (_req, res, next) => {
   try {
-    const { name, email, role } = req.body;
-    if (!name) return res.status(400).json({ message: "name obrigatório" });
-    res.status(201).json(addOperator(name, email ?? "", role));
+    res.json(await getOperators());
   } catch (err) {
     next(err);
   }
 });
 
-router.get("/ranking", (_req, res) => {
-  res.json(getOperatorRanking());
+router.post("/", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { name, email, role } = req.body;
+    if (!name) return res.status(400).json({ message: "name obrigatorio" });
+    res.status(201).json(await addOperator(name, email ?? "", role));
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.get("/:id/goals", (req: Request, res: Response) => {
-  const goals = getGoals(String(req.params.id));
-  if (!goals) return res.status(404).json({ message: "Nenhuma meta definida para este operador" });
-  res.json(goals);
+router.get("/ranking", async (_req, res, next) => {
+  try {
+    res.json(await getOperatorRanking());
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.put("/:id/goals", (req: Request, res: Response, next: NextFunction) => {
+router.get("/:id/goals", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const goals = await getGoals(String(req.params.id));
+    if (!goals) return res.status(404).json({ message: "Nenhuma meta definida para este operador" });
+    res.json(goals);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put("/:id/goals", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { targetSearches, targetContacts, targetDeals, targetRevenueBRL } = req.body;
-    const goal = setGoals({
+    const goal = await setGoals({
       operatorId: String(req.params.id),
       targetSearches: Number(targetSearches ?? 20),
       targetContacts: Number(targetContacts ?? 15),

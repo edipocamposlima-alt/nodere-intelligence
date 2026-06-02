@@ -1,10 +1,12 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, UserPlus } from "lucide-react";
 import { createOperator } from "@/lib/api";
 
 export function OperatorCreateForm() {
+  const router = useRouter();
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -19,8 +21,9 @@ export function OperatorCreateForm() {
         email: String(form.get("email") || ""),
         role: String(form.get("role") || "operator") as "admin" | "operator"
       });
-      setMessage("Operador criado. Atualize a página para recalcular ranking/metas.");
+      setMessage("Operador criado. Ranking e metas foram recalculados.");
       event.currentTarget.reset();
+      router.refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Não foi possível criar operador.");
     } finally {
@@ -29,9 +32,11 @@ export function OperatorCreateForm() {
   }
 
   return (
-    <form onSubmit={submit} className="rounded-xl border border-line bg-panel/90 p-5">
+    <form onSubmit={submit} className="rounded-xl border border-cyan/30 bg-gradient-to-br from-cyan/15 via-panel to-indigo-500/10 p-5 shadow-[0_18px_50px_rgba(34,211,238,0.08)]">
       <div className="flex items-center gap-2">
-        <UserPlus className="h-5 w-5 text-cyan" />
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan to-blue-500 text-white shadow-[0_0_24px_rgba(34,211,238,0.28)]">
+          <UserPlus className="h-5 w-5" />
+        </span>
         <h3 className="font-semibold text-white">Cadastrar operador</h3>
       </div>
       <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_180px_auto]">
@@ -41,7 +46,7 @@ export function OperatorCreateForm() {
           <option value="operator">Operador</option>
           <option value="admin">Admin</option>
         </select>
-        <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+        <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-cyan to-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_30px_rgba(34,211,238,0.20)] disabled:opacity-60">
           <Plus className="h-4 w-4" />
           {saving ? "Salvando" : "Criar"}
         </button>

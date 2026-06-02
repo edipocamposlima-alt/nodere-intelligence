@@ -1,24 +1,23 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BarChart3, Building2, CalendarClock, CircleHelp, CreditCard, History, Inbox, KanbanSquare, LineChart, Plug, Search, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
+import { BarChart3, Building2, CircleHelp, CreditCard, Inbox, KanbanSquare, LineChart, Plug, Search, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
 import { getBillingStatus } from "@/lib/api";
 
 const items = [
-  { href: "/", label: "Dashboard", icon: BarChart3, hex: "#0284C7", bg: "#E0F2FE" },
-  { href: "/searches", label: "Busca de empresas", icon: Search, hex: "#0891B2", bg: "#CFFAFE" },
-  { href: "/companies", label: "Empresas", icon: Building2, hex: "#2563EB", bg: "#DBEAFE" },
-  { href: "/crm", label: "CRM / Funil", icon: KanbanSquare, hex: "#7C3AED", bg: "#EDE9FE" },
-  { href: "/crm#agenda", label: "Agenda", icon: CalendarClock, hex: "#D97706", bg: "#FEF3C7" },
-  { href: "/intelligence", label: "Inteligência", icon: Zap, hex: "#EAB308", bg: "#FEF9C3" },
-  { href: "/inbox", label: "Caixa de entrada", icon: Inbox, hex: "#059669", bg: "#D1FAE5" },
-  { href: "/automations", label: "Automações", icon: Workflow, hex: "#C026D3", bg: "#FAE8FF" },
-  { href: "/operators", label: "Operadores", icon: Users, hex: "#4F46E5", bg: "#E0E7FF" },
-  { href: "/reports", label: "Relatórios", icon: LineChart, hex: "#65A30D", bg: "#ECFCCB" },
-  { href: "/billing", label: "Faturamento", icon: CreditCard, hex: "#EA580C", bg: "#FFEDD5" },
-  { href: "/integrations", label: "Integrações", icon: Plug, hex: "#0D9488", bg: "#CCFBF1" },
-  { href: "/settings", label: "Configurações", icon: Settings, hex: "#475569", bg: "#E2E8F0" },
-  { href: "/manual", label: "Ajuda / Manual NODERE", icon: CircleHelp, hex: "#E11D48", bg: "#FFE4E6" },
-  { href: "/admin", label: "Administrador", icon: ShieldCheck, hex: "#1D4ED8", bg: "#DBEAFE" }
+  { href: "/", label: "Dashboard", icon: BarChart3, hex: "#0EA5E9", bg: "linear-gradient(135deg,#0284C7,#38BDF8)" },
+  { href: "/searches", label: "Busca de empresas", icon: Search, hex: "#06B6D4", bg: "linear-gradient(135deg,#0891B2,#22D3EE)" },
+  { href: "/companies", label: "Empresas", icon: Building2, hex: "#2563EB", bg: "linear-gradient(135deg,#1D4ED8,#60A5FA)" },
+  { href: "/crm", label: "CRM / Funil", icon: KanbanSquare, hex: "#A855F7", bg: "linear-gradient(135deg,#7C3AED,#C084FC)" },
+  { href: "/intelligence", label: "Inteligência", icon: Zap, hex: "#FACC15", bg: "linear-gradient(135deg,#EAB308,#F97316)" },
+  { href: "/inbox", label: "Caixa de entrada", icon: Inbox, hex: "#10B981", bg: "linear-gradient(135deg,#059669,#34D399)" },
+  { href: "/automations", label: "Automações", icon: Workflow, hex: "#E879F9", bg: "linear-gradient(135deg,#C026D3,#F0ABFC)" },
+  { href: "/operators", label: "Operadores", icon: Users, hex: "#6366F1", bg: "linear-gradient(135deg,#4F46E5,#818CF8)" },
+  { href: "/reports", label: "Relatórios", icon: LineChart, hex: "#84CC16", bg: "linear-gradient(135deg,#65A30D,#A3E635)" },
+  { href: "/billing", label: "Faturamento", icon: CreditCard, hex: "#F97316", bg: "linear-gradient(135deg,#EA580C,#FDBA74)" },
+  { href: "/integrations", label: "Integrações", icon: Plug, hex: "#14B8A6", bg: "linear-gradient(135deg,#0D9488,#5EEAD4)" },
+  { href: "/settings", label: "Configurações", icon: Settings, hex: "#3B82F6", bg: "linear-gradient(135deg,#2563EB,#93C5FD)" },
+  { href: "/manual", label: "Ajuda / Manual NODERE", icon: CircleHelp, hex: "#F43F5E", bg: "linear-gradient(135deg,#E11D48,#FDA4AF)" },
+  { href: "/admin", label: "Administrador", icon: ShieldCheck, hex: "#1D4ED8", bg: "linear-gradient(135deg,#1D4ED8,#22D3EE)" }
 ];
 
 export async function Sidebar() {
@@ -41,8 +40,8 @@ export async function Sidebar() {
             href={item.href}
             className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 transition hover:bg-white/[0.06] hover:text-white"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm" style={{ backgroundColor: item.bg }}>
-              <item.icon className="h-4 w-4" style={{ color: item.hex, strokeWidth: 2.7 }} />
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-[0_0_18px_rgba(56,189,248,0.22)]" style={{ background: item.bg }}>
+              <item.icon className="h-4 w-4 text-white drop-shadow" style={{ strokeWidth: 2.9 }} />
             </span>
             {item.label}
           </Link>

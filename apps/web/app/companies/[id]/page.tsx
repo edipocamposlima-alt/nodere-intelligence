@@ -13,6 +13,10 @@ const API_URL = getApiBaseUrl();
 const whatsappMessage =
   "Ola, tudo bem? Estive analisando a presenca digital da sua empresa no Google e identifiquei algumas oportunidades que podem ajudar voces a gerar mais contatos e melhorar o posicionamento online. Posso te mostrar rapidamente?";
 
+function linkedinSearchUrl(name: string) {
+  return `https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(name)}`;
+}
+
 export default async function CompanyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [company, audit, intel] = await Promise.all([
@@ -86,6 +90,12 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                   LinkedIn
                 </a>
               )}
+              {!company.linkedin && (
+                <a href={linkedinSearchUrl(company.name)} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-blue-400/40 bg-blue-500/15 px-4 py-2 text-sm text-blue-100">
+                  <Linkedin className="h-4 w-4" />
+                  Buscar LinkedIn
+                </a>
+              )}
               {company.youtube && (
                 <a href={company.youtube} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
                   <Youtube className="h-4 w-4" />
@@ -147,7 +157,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                 ["Razão social", "não localizado em fonte pública"],
                 ["Decisor/responsável", "não localizado em fonte pública"],
                 ["E-mail público", "não localizado em fonte pública"],
-                ["LinkedIn", company.linkedin || "não localizado em fonte pública"]
+                ["LinkedIn", company.linkedin || linkedinSearchUrl(company.name)]
               ].map(([label, value]) => (
                 <div key={label} className="rounded-md border border-line bg-ink px-3 py-2">
                   <p className="text-xs text-slate-500">{label}</p>

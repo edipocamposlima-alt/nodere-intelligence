@@ -64,3 +64,25 @@ create index if not exists idx_companies_status on nodere_companies(status);
 create index if not exists idx_companies_score on nodere_companies(score desc);
 create index if not exists idx_notes_company on nodere_company_notes(company_id);
 create index if not exists idx_searches_created on nodere_searches(created_at desc);
+
+-- Operadores comerciais e metas mensais
+create table if not exists nodere_operators (
+  id text primary key,
+  name text not null,
+  email text,
+  role text not null default 'operator',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists nodere_operator_goals (
+  operator_id text not null references nodere_operators(id) on delete cascade,
+  month text not null,
+  target_searches integer not null default 20,
+  target_contacts integer not null default 15,
+  target_deals integer not null default 3,
+  target_revenue_brl integer not null default 36000,
+  updated_at timestamptz not null default now(),
+  primary key (operator_id, month)
+);
+
+create index if not exists idx_operator_goals_month on nodere_operator_goals(month desc);

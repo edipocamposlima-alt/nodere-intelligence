@@ -71,12 +71,12 @@ async function enrichWithApollo(company: Company, domain?: string): Promise<Exte
       const payload = await orgResponse.json();
       const org = payload.organization ?? payload;
       output.legalName = pickString(org.name, org.organization_name, org.legal_name);
-      output.linkedin = pickString(org.linkedin_url, org.linkedin);
+      output.linkedin = normalizeLinkedInUrl(pickString(org.linkedin_url, org.linkedin));
       output.companySize = pickString(org.estimated_num_employees, org.employee_count, org.num_employees);
       output.revenueRange = pickString(org.annual_revenue_printed, org.revenue_range, org.estimated_annual_revenue);
       output.messages.push("Apollo.io: organização enriquecida por domínio.");
     } else {
-      output.messages.push(`Apollo.io organização: HTTP ${orgResponse.status}.`);
+      output.messages.push(await providerHttpMessage("Apollo.io organização", orgResponse));
     }
   } else {
     output.messages.push("Apollo.io: site/domínio ausente; busca limitada por nome.");
@@ -102,12 +102,12 @@ async function enrichWithApollo(company: Company, domain?: string): Promise<Exte
       name: pickString(person.name, [person.first_name, person.last_name].filter(Boolean).join(" ")),
       title: pickString(person.title, person.headline),
       email: pickString(person.email),
-      linkedin: pickString(person.linkedin_url),
+      linkedin: normalizeLinkedInUrl(pickString(person.linkedin_url)),
       source: "apollo"
     })).filter((person: DecisionMaker) => person.name || person.linkedin || person.email);
     output.messages.push(`Apollo.io: ${output.decisionMakers?.length ?? 0} decisor(es) localizado(s).`);
   } else {
-    output.messages.push(`Apollo.io pessoas: HTTP ${peopleResponse.status}.`);
+    output.messages.push(await providerHttpMessage("Apollo.io pessoas", peopleResponse));
   }
 
   return output;
@@ -136,7 +136,7 @@ async function enrichWithEconodata(company: Company): Promise<ExternalEnrichment
   });
 
   if (!response.ok) {
-    return { enrichmentSources: ["econodata"], messages: [`Econodata: HTTP ${response.status}. Verifique endpoint, contrato e permissões.`] };
+    return { enrichmentSources: ["econodata"], messages: [await providerHttpMessage("Econodata", response)] };
   }
 
   const payload = await response.json();
@@ -146,7 +146,7 @@ async function enrichWithEconodata(company: Company): Promise<ExternalEnrichment
     legalName: pickString(first?.razao_social, first?.legalName, first?.legal_name, first?.name),
     companySize: pickString(first?.porte, first?.companySize, first?.size),
     revenueRange: pickString(first?.faturamento, first?.revenueRange, first?.revenue_range),
-    linkedin: pickString(first?.linkedin, first?.linkedin_url),
+    linkedin: normalizeLinkedInUrl(pickString(first?.linkedin, first?.linkedin_url)),
     decisionMakers: normalizeDecisionMakers(first?.decisionMakers ?? first?.socios ?? first?.partners, "econodata"),
     enrichmentSources: ["econodata"],
     messages: ["Econodata: consulta executada pelo backend."]
@@ -178,7 +178,7 @@ function normalizeDecisionMakers(input: unknown, source: DecisionMaker["source"]
     title: pickString(item.title, item.cargo, item.role),
     email: pickString(item.email),
     phone: pickString(item.phone, item.telefone),
-    linkedin: pickString(item.linkedin, item.linkedin_url),
+    linkedin: normalizeLinkedInUrl(pickString(item.linkedin, item.linkedin_url)),
     source
   })).filter((person: DecisionMaker) => person.name || person.email || person.linkedin);
 }
@@ -191,6 +191,36 @@ function dedupeDecisionMakers(items: DecisionMaker[]) {
     seen.add(key);
     return true;
   });
+}
+
+async function providerHttpMessage(label: string, response: Response) {
+  const details = await response.text().catch(() => "");
+  const safeDetails = details.replace(/sk-[A-Za-z0-9_-]+|AIza[0-9A-Za-z_-]+/g, "[secret]").slice(0, 220);
+  if (response.status === 401) {
+    return `${label}: chave inválida ou ausente. Revise a credencial no Render/Admin.`;
+  }
+  if (response.status === 403) {
+    return `${label}: acesso negado. A chave pode estar sem permissão para este endpoint, sem plano/API habilitada ou bloqueada por política da conta. ${safeDetails ? `Detalhe seguro: ${safeDetails}` : ""}`.trim();
+  }
+  if (response.status === 429) {
+    return `${label}: limite de uso excedido. Aguarde a janela de quota ou revise o plano da integração.`;
+  }
+  return `${label}: HTTP ${response.status}. ${safeDetails ? `Detalhe seguro: ${safeDetails}` : "Verifique endpoint, contrato e permissões."}`.trim();
+}
+
+function normalizeLinkedInUrl(value?: string) {
+  if (!value) return undefined;
+  const clean = value.trim();
+  if (!clean) return undefined;
+  const withProtocol = clean.startsWith("http") ? clean : `https://${clean}`;
+  try {
+    const url = new URL(withProtocol);
+    if (!url.hostname.includes("linkedin.com")) return undefined;
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return undefined;
+  }
 }
 
 function mergeExternal(target: ExternalEnrichmentResult, value: ExternalEnrichmentResult) {

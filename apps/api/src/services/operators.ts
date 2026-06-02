@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Operator, OperatorMetrics, OperatorGoal } from "../types.js";
 import { listCompanies } from "./companyStore.js";
 import { appendAuditLog } from "./auditLog.js";
+import { getSupabase } from "../db/supabase.js";
 
 const operators: Operator[] = [
   { id: "op-1", name: "Admin", email: "admin@nodere.com", role: "admin", createdAt: new Date().toISOString() },
@@ -21,21 +22,40 @@ const STATUS_PIPELINE: Record<string, number> = {
   "Perdido": 0
 };
 
-export function getOperators() {
+export async function getOperators() {
+  const supabase = getSupabase();
+  if (supabase) {
+    const { data, error } = await supabase.from("nodere_operators").select("*").order("created_at", { ascending: true });
+    if (!error && Array.isArray(data) && data.length) {
+      return data.map(rowToOperator);
+    }
+  }
   return operators;
 }
 
-export function addOperator(name: string, email: string, role: "admin" | "operator" = "operator"): Operator {
+export async function addOperator(name: string, email: string, role: "admin" | "operator" = "operator"): Promise<Operator> {
   const op: Operator = { id: randomUUID(), name, email, role, createdAt: new Date().toISOString() };
+  const supabase = getSupabase();
+  if (supabase) {
+    await supabase.from("nodere_operators").upsert({
+      id: op.id,
+      name: op.name,
+      email: op.email,
+      role: op.role,
+      created_at: op.createdAt
+    });
+  }
   operators.push(op);
   appendAuditLog("user", "operator_created", `Operador ${name} criado`, { metadata: { email, role } });
   return op;
 }
 
-export function getOperatorRanking(): OperatorMetrics[] {
+export async function getOperatorRanking(): Promise<OperatorMetrics[]> {
   const companies = listCompanies();
-  return operators.map((op, i) => {
-    const slice = companies.filter((_, idx) => idx % operators.length === i);
+  const activeOperators = await getOperators();
+  const divisor = Math.max(activeOperators.length, 1);
+  return activeOperators.map((op, i) => {
+    const slice = companies.filter((_, idx) => idx % divisor === i);
     const contacted = slice.filter((c) => c.status !== "Novo Lead").length;
     const meetings = slice.filter((c) => c.status === "Reunião marcada").length;
     const proposals = slice.filter((c) => c.status === "Proposta enviada").length;
@@ -63,14 +83,35 @@ export function getOperatorRanking(): OperatorMetrics[] {
   });
 }
 
-export function getGoals(operatorId: string): OperatorGoal | null {
+export async function getGoals(operatorId: string): Promise<OperatorGoal | null> {
   const month = new Date().toISOString().slice(0, 7);
+  const supabase = getSupabase();
+  if (supabase) {
+    const { data, error } = await supabase
+      .from("nodere_operator_goals")
+      .select("*")
+      .eq("operator_id", operatorId)
+      .eq("month", month)
+      .maybeSingle();
+    if (!error && data) return rowToGoal(data);
+  }
   return goals.find((g) => g.operatorId === operatorId && g.month === month) ?? null;
 }
 
-export function setGoals(input: Omit<OperatorGoal, "month">): OperatorGoal {
+export async function setGoals(input: Omit<OperatorGoal, "month">): Promise<OperatorGoal> {
   const month = new Date().toISOString().slice(0, 7);
   const full: OperatorGoal = { ...input, month };
+  const supabase = getSupabase();
+  if (supabase) {
+    await supabase.from("nodere_operator_goals").upsert({
+      operator_id: input.operatorId,
+      month,
+      target_searches: input.targetSearches,
+      target_contacts: input.targetContacts,
+      target_deals: input.targetDeals,
+      target_revenue_brl: input.targetRevenueBRL
+    });
+  }
   const idx = goals.findIndex((g) => g.operatorId === input.operatorId && g.month === month);
   if (idx >= 0) goals[idx] = full;
   else goals.push(full);
@@ -79,4 +120,25 @@ export function setGoals(input: Omit<OperatorGoal, "month">): OperatorGoal {
     metadata: { ...input }
   });
   return full;
+}
+
+function rowToOperator(row: any): Operator {
+  return {
+    id: String(row.id),
+    name: String(row.name ?? "Operador"),
+    email: String(row.email ?? ""),
+    role: row.role === "admin" ? "admin" : "operator",
+    createdAt: String(row.created_at ?? row.createdAt ?? new Date().toISOString())
+  };
+}
+
+function rowToGoal(row: any): OperatorGoal {
+  return {
+    operatorId: String(row.operator_id ?? row.operatorId),
+    month: String(row.month),
+    targetSearches: Number(row.target_searches ?? row.targetSearches ?? 20),
+    targetContacts: Number(row.target_contacts ?? row.targetContacts ?? 15),
+    targetDeals: Number(row.target_deals ?? row.targetDeals ?? 3),
+    targetRevenueBRL: Number(row.target_revenue_brl ?? row.targetRevenueBRL ?? 36000)
+  };
 }

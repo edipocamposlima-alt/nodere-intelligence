@@ -17,6 +17,29 @@ export default async function DashboardPage() {
     { label: "Sem fotos recentes", value: metrics.withoutRecentPhotos, icon: Camera, hex: "#DB2777", bg: "#FCE7F3" },
     { label: "Leads quentes", value: metrics.hotLeads, icon: TrendingUp, hex: "#EA580C", bg: "#FFEDD5" }
   ];
+  const actionItems = [
+    {
+      title: "Atacar leads quentes",
+      value: metrics.hotLeads,
+      detail: "Priorize contato consultivo hoje",
+      href: "/crm",
+      color: "from-orange-500 to-rose-500"
+    },
+    {
+      title: "Recuperar empresas sem site",
+      value: metrics.withoutWebsite,
+      detail: "Oferta direta: landing page + Google Ads",
+      href: "/searches",
+      color: "from-violet-500 to-blue-500"
+    },
+    {
+      title: "Baixa avaliação no Google",
+      value: metrics.lowRating,
+      detail: "Abordagem: reputação + perfil otimizado",
+      href: "/companies",
+      color: "from-amber-400 to-orange-600"
+    }
+  ];
 
   return (
     <div className="space-y-8 p-4 md:p-8">
@@ -43,15 +66,30 @@ export default async function DashboardPage() {
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
-          <div key={card.label} className="metric-card rounded-lg border border-line bg-panel/90 p-4">
+          <div key={card.label} className="metric-card rounded-lg border border-line bg-panel/90 p-4 transition hover:-translate-y-0.5 hover:border-cyan/60 hover:shadow-[0_12px_32px_rgba(34,211,238,0.12)]">
             <div className="flex items-center justify-between">
               <p className="text-sm text-slate-400">{card.label}</p>
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: card.bg }}>
-                <card.icon className="h-5 w-5" style={{ color: card.hex, strokeWidth: 2.8 }} />
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl shadow-[0_0_22px_rgba(56,189,248,0.18)]" style={{ background: `linear-gradient(135deg, ${card.hex}, ${card.bg})` }}>
+                <card.icon className="h-5 w-5 text-white drop-shadow" style={{ strokeWidth: 2.9 }} />
               </span>
             </div>
             <p className="mt-3 text-3xl font-semibold text-white">{card.value}</p>
           </div>
+        ))}
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-3">
+        {actionItems.map((item) => (
+          <Link key={item.title} href={item.href} className={`rounded-xl border border-white/10 bg-gradient-to-br ${item.color} p-5 text-white shadow-[0_18px_45px_rgba(0,0,0,0.18)] transition hover:-translate-y-1`}>
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-white/75">Ação recomendada</p>
+            <div className="mt-4 flex items-end justify-between gap-4">
+              <div>
+                <p className="text-lg font-semibold">{item.title}</p>
+                <p className="mt-1 text-sm text-white/80">{item.detail}</p>
+              </div>
+              <span className="text-5xl font-black">{item.value}</span>
+            </div>
+          </Link>
         ))}
       </section>
 

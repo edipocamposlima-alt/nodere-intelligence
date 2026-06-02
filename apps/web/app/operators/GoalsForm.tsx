@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { setOperatorGoals } from "@/lib/api";
 import type { OperatorGoal, OperatorMetrics } from "@/lib/types";
 
 export function GoalsForm({ op, goal }: { op: OperatorMetrics; goal: OperatorGoal | null }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -19,6 +21,7 @@ export function GoalsForm({ op, goal }: { op: OperatorMetrics; goal: OperatorGoa
     try {
       await setOperatorGoals(op.operatorId, form);
       setOpen(false);
+      router.refresh();
     } finally {
       setSaving(false);
     }

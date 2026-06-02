@@ -16,6 +16,10 @@ function pdfEscape(value: string) {
   return value.replace(/[\\()]/g, "\\$&").replace(/[^\x20-\x7EÀ-ÿ]/g, " ");
 }
 
+function linkedinSearchUrl(name: string) {
+  return `https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(name)}`;
+}
+
 function buildSimplePdf(title: string, body: string) {
   const lines = [title, "", ...body.split(/\r?\n/)].flatMap((line) => {
     const clean = line.trim();
@@ -378,7 +382,7 @@ export function LeadOperations({ company }: { company: Company }) {
               <Info label="CNPJ" value={lead.cnpj} />
               <Info label="Porte" value={lead.companySize} />
               <Info label="Receita" value={lead.revenueRange} />
-              <Info label="LinkedIn" value={lead.linkedin} isLink />
+              <Info label={lead.linkedin ? "LinkedIn direto" : "LinkedIn sugerido"} value={lead.linkedin || linkedinSearchUrl(lead.name)} isLink hint={lead.linkedin ? "Fonte externa/site" : "Busca no LinkedIn. Confirme a empresa correta antes de usar."} />
               <Info label="Fontes" value={lead.enrichmentSources?.join(", ")} />
             </dl>
             <div className="mt-5">
@@ -433,7 +437,7 @@ export function LeadOperations({ company }: { company: Company }) {
   );
 }
 
-function Info({ label, value, isLink }: { label: string; value?: string; isLink?: boolean }) {
+function Info({ label, value, isLink, hint }: { label: string; value?: string; isLink?: boolean; hint?: string }) {
   return (
     <div className="rounded-lg border border-line bg-panel/80 p-3">
       <dt className="text-xs text-slate-500">{label}</dt>
@@ -442,6 +446,7 @@ function Info({ label, value, isLink }: { label: string; value?: string; isLink?
           isLink ? <a href={value} target="_blank" className="text-cyan hover:underline">{value}</a> : value
         ) : "Não localizado"}
       </dd>
+      {hint && <p className="mt-1 text-[11px] text-slate-500">{hint}</p>}
     </div>
   );
 }
