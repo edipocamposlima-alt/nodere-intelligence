@@ -88,7 +88,7 @@ export async function ensureDefaultAdminUser() {
     workspace_id: "default",
     name: "Administrador",
     email,
-    role: "admin",
+    role: "owner",
     active: true,
     password_hash: hashPassword(config.admin.password),
     created_at: now,
@@ -186,7 +186,7 @@ export async function createWorkspaceUser(workspaceId: string, input: { name: st
     workspace_id: workspaceId,
     name: input.name.trim(),
     email: normalizeEmail(input.email),
-    role: input.role === "admin" ? "admin" : "operator",
+    role: normalizeRole(input.role),
     active: true,
     password_hash: hashPassword(input.password),
     created_at: now,
@@ -227,7 +227,7 @@ export async function createWorkspaceUser(workspaceId: string, input: { name: st
 export async function updateWorkspaceUser(workspaceId: string, userId: string, input: { name?: string; role?: SessionRole; active?: boolean; password?: string }) {
   const fields: Partial<PlatformUserRow> = { updated_at: new Date().toISOString() };
   if (input.name !== undefined) fields.name = input.name.trim();
-  if (input.role !== undefined) fields.role = input.role === "admin" ? "admin" : "operator";
+  if (input.role !== undefined) fields.role = normalizeRole(input.role);
   if (input.active !== undefined) fields.active = Boolean(input.active);
   if (input.password) fields.password_hash = hashPassword(input.password);
 
@@ -247,5 +247,69 @@ export async function updateWorkspaceUser(workspaceId: string, userId: string, i
   const row = [...memoryUsers.values()].find((u) => u.workspace_id === workspaceId && u.id === userId);
   if (!row) return null;
   Object.assign(row, fields);
+  return toPublic(row);
+}
+
+function normalizeRole(role?: SessionRole): SessionRole {
+  if (role === "owner") return "owner";
+  if (role === "admin") return "admin";
+  return "operator";
+}
+
+export async function getPlatformUserByEmail(emailInput: string) {
+  await ensureDefaultAdminUser();
+  const email = normalizeEmail(emailInput);
+
+  if (hasSupabase() && userSchemaAvailable) {
+    const sb = getSupabase()!;
+    const { data, error } = await sb
+      .from("nodere_platform_users")
+      .select("id, workspace_id, name, email, role, active, created_at, updated_at")
+      .eq("email", email)
+      .eq("active", true)
+      .maybeSingle();
+    if (error) {
+      if (isUserSchemaMissing(error)) {
+        userSchemaAvailable = false;
+      } else {
+        throw error;
+      }
+    }
+    if (data) return toPublic(data as unknown as PlatformUserRow);
+  }
+
+  const memory = memoryUsers.get(email);
+  return memory?.active ? toPublic(memory) : null;
+}
+
+export async function ensureSupabaseAuthUser(input: { authUserId: string; email: string; name?: string; workspaceName?: string }) {
+  await ensureDefaultAdminUser();
+  const email = normalizeEmail(input.email);
+  const existing = await getPlatformUserByEmail(email);
+  if (existing) return existing;
+
+  const workspaceId = input.authUserId || randomUUID();
+  const now = new Date().toISOString();
+  const row: PlatformUserRow = {
+    id: input.authUserId,
+    workspace_id: workspaceId,
+    name: input.name?.trim() || email.split("@")[0] || "Usuário NODERE",
+    email,
+    role: "owner",
+    active: true,
+    password_hash: hashPassword(randomUUID()),
+    created_at: now,
+    updated_at: now
+  };
+
+  if (hasSupabase() && userSchemaAvailable) {
+    const sb = getSupabase()!;
+    await ensureWorkspace(workspaceId, email, input.workspaceName || "Workspace NODERE");
+    const { error } = await sb.from("nodere_platform_users").insert(row);
+    if (error) throw error;
+  } else {
+    memoryUsers.set(email, row);
+  }
+
   return toPublic(row);
 }

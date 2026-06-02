@@ -13,6 +13,7 @@ create table if not exists nodere_workspaces (
   plan text not null default 'trial',
   credits integer not null default 20,
   expires_at timestamptz default (now() + interval '30 days'),
+  onboarding_completed boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -22,7 +23,7 @@ create table if not exists nodere_platform_users (
   workspace_id text not null references nodere_workspaces(id) on delete cascade,
   name text not null,
   email text not null unique,
-  role text not null default 'operator' check (role in ('admin', 'operator')),
+  role text not null default 'operator' check (role in ('owner', 'admin', 'operator')),
   active boolean not null default true,
   password_hash text not null,
   created_at timestamptz not null default now(),
@@ -138,6 +139,40 @@ alter table nodere_searches add column if not exists workspace_id text not null 
 alter table nodere_operators add column if not exists workspace_id text not null default 'default';
 alter table nodere_operator_goals add column if not exists workspace_id text not null default 'default';
 alter table nodere_app_settings add column if not exists workspace_id text not null default 'default';
+alter table nodere_workspaces add column if not exists onboarding_completed boolean not null default false;
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.table_constraints
+    where table_name = 'nodere_platform_users' and constraint_name = 'nodere_platform_users_role_check'
+  ) then
+    alter table nodere_platform_users drop constraint nodere_platform_users_role_check;
+  end if;
+end $$;
+
+alter table nodere_platform_users
+  add constraint nodere_platform_users_role_check check (role in ('owner', 'admin', 'operator'));
+
+-- Compatibilidade opcional com Supabase Auth/RLS para a fase SaaS comercial.
+create table if not exists workspaces (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid,
+  name text not null,
+  plan text not null default 'trial',
+  credits integer not null default 20,
+  credits_expires_at timestamptz default (now() + interval '30 days'),
+  onboarding_completed boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists workspace_members (
+  workspace_id uuid not null references workspaces(id) on delete cascade,
+  user_id uuid not null,
+  role text not null default 'operator' check (role in ('owner','admin','operator')),
+  invited_at timestamptz not null default now(),
+  primary key (workspace_id, user_id)
+);
 
 create index if not exists idx_companies_workspace on nodere_companies(workspace_id);
 create index if not exists idx_notes_workspace on nodere_company_notes(workspace_id);

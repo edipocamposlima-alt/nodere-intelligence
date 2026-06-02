@@ -26,8 +26,8 @@ type ApiKeyField = (typeof apiKeyFields)[number];
 const runtimeApiSettings = new Map<ApiKeyField, { masked: string; updatedAt: string }>();
 
 function requireAdmin(request: any, response: any, next: any) {
-  const session = verifySessionToken(extractBearerToken(request.headers.authorization));
-  if (!session || session.role !== "admin") return response.status(401).json({ message: "Sessao administrativa invalida ou expirada." });
+  const session = request.session || verifySessionToken(extractBearerToken(request.headers.authorization));
+  if (!session || !["owner", "admin"].includes(session.role)) return response.status(401).json({ message: "Sessao administrativa invalida ou expirada." });
   request.admin = session;
   return next();
 }
@@ -144,8 +144,8 @@ router.post("/login", async (request, response, next) => {
     }
 
     return response.json({
-      token: issueSessionToken({ email: body.email, role: "admin", workspaceId: "default", userId: "admin-default" }),
-      user: { email: body.email, role: "admin", workspaceId: "default" }
+      token: issueSessionToken({ email: body.email, role: "owner", workspaceId: "default", userId: "admin-default" }),
+      user: { email: body.email, role: "owner", workspaceId: "default" }
     });
   } catch (error) {
     return next(error);
@@ -170,7 +170,7 @@ router.post("/users", requireAdmin, async (request: any, response, next) => {
       name: z.string().min(2),
       email: z.string().email(),
       password: z.string().min(8),
-      role: z.enum(["admin", "operator"]).default("operator")
+      role: z.enum(["owner", "admin", "operator"]).default("operator")
     }).parse(request.body);
     const user = await createWorkspaceUser(request.admin.workspaceId || "default", body);
     response.status(201).json({ user, message: "Usuário criado. Ele já pode acessar a plataforma pelo login." });
@@ -184,7 +184,7 @@ router.patch("/users/:id", requireAdmin, async (request: any, response, next) =>
     const body = z.object({
       name: z.string().min(2).optional(),
       password: z.string().min(8).optional(),
-      role: z.enum(["admin", "operator"]).optional(),
+      role: z.enum(["owner", "admin", "operator"]).optional(),
       active: z.boolean().optional()
     }).parse(request.body);
     const user = await updateWorkspaceUser(request.admin.workspaceId || "default", request.params.id, body);

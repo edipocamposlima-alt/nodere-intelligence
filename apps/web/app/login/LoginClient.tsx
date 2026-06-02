@@ -1,11 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { setAdminToken } from "@/lib/adminAuth";
+import { hasSupabaseAuthConfig, sendPasswordRecovery, signInWithPassword } from "@/lib/supabaseAuthRest";
 
 export function LoginClient() {
   const router = useRouter();
@@ -13,12 +15,22 @@ export function LoginClient() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError("");
+    setNotice("");
     try {
+      if (hasSupabaseAuthConfig()) {
+        const auth = await signInWithPassword(email, password);
+        if (!auth.access_token) throw new Error("Supabase não retornou token de sessão.");
+        setAdminToken(auth.access_token);
+        await fetch("/api/auth/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: auth.access_token }) });
+        router.push("/dashboard");
+        return;
+      }
       const response = await fetch(`${getApiBaseUrl()}/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -27,9 +39,27 @@ export function LoginClient() {
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.message || "Nao foi possivel entrar.");
       setAdminToken(payload.token);
-      router.push("/admin");
+      await fetch("/api/auth/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: payload.token }) });
+      router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao fazer login.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function recoverPassword() {
+    setLoading(true);
+    setError("");
+    setNotice("");
+    try {
+      if (!hasSupabaseAuthConfig()) {
+        throw new Error("Recuperação automática exige NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY.");
+      }
+      await sendPasswordRecovery(email);
+      setNotice("Enviamos o link de recuperação para o e-mail informado.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao enviar recuperação.");
     } finally {
       setLoading(false);
     }
@@ -55,8 +85,10 @@ export function LoginClient() {
         </section>
 
         <section className="rounded-xl border border-line bg-panel/95 p-6 shadow-glow">
-          <h2 className="text-xl font-semibold text-white">Login administrador</h2>
-          <p className="mt-1 text-sm text-slate-400">Use o e-mail e senha configurados no Render.</p>
+          <h2 className="text-xl font-semibold text-white">Entrar no NODERE</h2>
+          <p className="mt-1 text-sm text-slate-400">
+            {hasSupabaseAuthConfig() ? "Acesso seguro via Supabase Auth." : "Modo fallback: use o e-mail e senha configurados no Render."}
+          </p>
           <form onSubmit={submit} className="mt-6 space-y-4">
             <label className="block">
               <span className="text-sm text-slate-300">E-mail</span>
@@ -73,9 +105,21 @@ export function LoginClient() {
               </div>
             </label>
             {error && <p className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-red-300">{error}</p>}
+            {notice && <p className="rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm text-emerald-200">{notice}</p>}
             <button disabled={loading} className="w-full rounded-lg bg-electric px-4 py-3 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-60">
-              {loading ? "Entrando..." : "Entrar como administrador"}
+              {loading ? "Entrando..." : "Entrar"}
             </button>
+            <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+              <button type="button" onClick={recoverPassword} className="text-cyan hover:text-white">
+                Esqueci minha senha
+              </button>
+              <Link href="/register" className="text-slate-300 hover:text-white">
+                Criar conta
+              </Link>
+            </div>
+            <p className="text-xs leading-5 text-slate-500">
+              Ao entrar, você concorda com os <Link href="/terms" className="text-cyan">Termos</Link> e a <Link href="/privacy" className="text-cyan">Política de Privacidade</Link>.
+            </p>
           </form>
         </section>
       </div>

@@ -23,7 +23,7 @@ type AdminUser = {
   workspaceId: string;
   name: string;
   email: string;
-  role: "admin" | "operator";
+  role: "owner" | "admin" | "operator";
   active: boolean;
   createdAt: string;
 };
@@ -35,7 +35,7 @@ export function AdminClient() {
   const [message, setMessage] = useState("Carregando painel administrativo...");
   const [saving, setSaving] = useState(false);
   const [users, setUsers] = useState<AdminUser[]>([]);
-  const [userForm, setUserForm] = useState({ name: "", email: "", password: "", role: "operator" as "admin" | "operator" });
+  const [userForm, setUserForm] = useState({ name: "", email: "", password: "", role: "operator" as "owner" | "admin" | "operator" });
   const [savingUser, setSavingUser] = useState(false);
 
   async function load() {
@@ -82,6 +82,7 @@ export function AdminClient() {
 
   function logout() {
     clearAdminToken();
+    void fetch("/api/auth/session", { method: "DELETE" });
     location.href = "/login";
   }
 
@@ -224,9 +225,10 @@ export function AdminClient() {
             Perfil
             <select
               value={userForm.role}
-              onChange={(event) => setUserForm((current) => ({ ...current, role: event.target.value as "admin" | "operator" }))}
+              onChange={(event) => setUserForm((current) => ({ ...current, role: event.target.value as "owner" | "admin" | "operator" }))}
               className="w-full rounded-lg border border-line bg-panel px-3 py-3 text-sm outline-none focus:border-electric"
             >
+              <option value="owner">Owner</option>
               <option value="operator">Operador</option>
               <option value="admin">Administrador</option>
             </select>
@@ -243,7 +245,7 @@ export function AdminClient() {
               <div>
                 <p className="font-semibold text-white">{user.name}</p>
                 <p className="text-sm text-slate-400">{user.email}</p>
-                <p className="mt-1 text-xs text-slate-500">Perfil: {user.role === "admin" ? "Administrador" : "Operador"} · Conta: {user.workspaceId}</p>
+                <p className="mt-1 text-xs text-slate-500">Perfil: {user.role === "owner" ? "Owner" : user.role === "admin" ? "Administrador" : "Operador"} · Conta: {user.workspaceId}</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${user.active ? "bg-success/15 text-success" : "bg-rose-500/15 text-rose-300"}`}>

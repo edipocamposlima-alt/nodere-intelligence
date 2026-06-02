@@ -15,26 +15,29 @@ export const PLANS: Plan[] = [
   {
     id: "starter",
     name: "Starter",
-    monthlyCredits: 1000,
+    monthlyCredits: 200,
     priceMonthly: 9700,
     stripePriceId: config.stripe.prices.starter,
-    features: ["1.000 créditos/mês", "Diagnóstico IA", "Export PDF", "WhatsApp templates", "Suporte por email"]
+    paymentLinkUrl: config.stripe.paymentLinks.starter,
+    features: ["200 créditos/mês", "1 operador", "Diagnóstico IA", "Export PDF", "WhatsApp templates"]
   },
   {
     id: "pro",
     name: "Pro",
-    monthlyCredits: 5000,
-    priceMonthly: 29700,
+    monthlyCredits: 600,
+    priceMonthly: 19700,
     stripePriceId: config.stripe.prices.pro,
-    features: ["5.000 créditos/mês", "Sequências de email", "Caixa de entrada", "Google Ads Intelligence", "Relatórios de receita"]
+    paymentLinkUrl: config.stripe.paymentLinks.pro,
+    features: ["600 créditos/mês", "3 operadores", "Caixa de entrada", "Relatórios comerciais", "Suporte prioritário"]
   },
   {
     id: "agency",
     name: "Agency",
-    monthlyCredits: 20000,
-    priceMonthly: 79700,
+    monthlyCredits: 999999,
+    priceMonthly: 39700,
     stripePriceId: config.stripe.prices.agency,
-    features: ["20.000 créditos/mês", "Multi-operadores", "Ranking & metas", "Audit log completo", "Suporte dedicado"]
+    paymentLinkUrl: config.stripe.paymentLinks.agency,
+    features: ["Créditos ilimitados", "10 operadores", "White-label", "Audit log completo", "Suporte dedicado"]
   }
 ];
 
@@ -95,6 +98,7 @@ export function getUsageLog(limit = 200) {
 
 export async function createCheckoutSession(planId: PlanId, customerId?: string): Promise<string> {
   const plan = PLANS.find((p) => p.id === planId);
+  if (plan?.paymentLinkUrl) return plan.paymentLinkUrl;
   if (!plan?.stripePriceId) throw new Error("Plano não disponível para checkout");
   if (!config.stripe.secretKey) throw new Error("Stripe não configurado");
 

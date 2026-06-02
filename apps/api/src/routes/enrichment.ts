@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getQueueStatus, queueEnrichment, getJobByCompany } from "../services/enrichmentQueue.js";
 import { getCompany } from "../services/companyStore.js";
 import { consumeEnrichment } from "../services/credits.js";
+import { getRequestWorkspaceId } from "../middleware/session.js";
 
 const router = Router();
 
@@ -16,7 +17,8 @@ router.get("/company/:id", (req, res) => {
   return res.json(job);
 });
 
-router.post("/company/:id", (req, res) => {
+router.post("/company/:id", async (req, res, next) => {
+  try {
   const company = getCompany(req.params.id);
   if (!company) return res.status(404).json({ message: "Company not found" });
 
@@ -27,9 +29,12 @@ router.post("/company/:id", (req, res) => {
     return res.status(422).json({ message: "Company has no website to analyze" });
   }
 
-  consumeEnrichment(company.name);
+  await consumeEnrichment(company.name, getRequestWorkspaceId(req));
   const job = queueEnrichment(company.id, company.name);
   return res.status(202).json(job);
+  } catch (error) {
+    return next(error);
+  }
 });
 
 export default router;

@@ -16,6 +16,9 @@ import operatorsRouter from "./routes/operators.js";
 import reportsRouter from "./routes/reports.js";
 import auditRouter from "./routes/audit.js";
 import adminRouter from "./routes/admin.js";
+import workspaceRouter from "./routes/workspace.js";
+import legalRouter from "./routes/legal.js";
+import backupRouter from "./routes/backup.js";
 import { processDueSteps } from "./services/emailSequences.js";
 import { requireAuth } from "./middleware/auth.js";
 import { attachSession, getRequestWorkspaceId } from "./middleware/session.js";
@@ -245,6 +248,8 @@ app.get("/api/places/search", async (req, res, next) => {
 });
 
 app.use("/api/admin", adminRouter);
+app.use("/api/workspace", workspaceRouter);
+app.use("/api/legal", legalRouter);
 app.use("/api/searches", searchesRouter);
 app.use("/api/companies", companiesRouter);
 app.use("/api/dashboard", dashboardRouter);
@@ -254,11 +259,12 @@ app.use("/api/inbox", inboxRouter);
 app.use("/api/sequences", sequencesRouter);
 app.use("/api/operators", operatorsRouter);
 app.use("/api/credits", creditsRouter);
+app.use("/api/backup", backupRouter);
+app.use("/api/billing", billingRouter);
 
 app.use("/api", requireAuth);
 
 app.use("/api/enrichment", enrichmentRouter);
-app.use("/api/billing", billingRouter);
 app.use("/api/audit", auditRouter);
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

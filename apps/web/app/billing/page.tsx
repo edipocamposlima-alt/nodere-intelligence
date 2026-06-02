@@ -88,7 +88,7 @@ export default async function BillingPage() {
                 )}
                 <p className="text-lg font-bold text-white">{plan.name}</p>
                 <p className="mt-1 text-sm font-medium text-cyan">{formatBRL(plan.priceMonthly)}</p>
-                <p className="mt-0.5 text-xs text-slate-400">{plan.monthlyCredits.toLocaleString("pt-BR")} créditos/mês</p>
+                <p className="mt-0.5 text-xs text-slate-400">{plan.id === "agency" ? "Créditos ilimitados" : `${plan.monthlyCredits.toLocaleString("pt-BR")} créditos/mês`}</p>
 
                 <ul className="mt-4 space-y-2">
                   {plan.features.map((f) => (
@@ -100,7 +100,9 @@ export default async function BillingPage() {
                 </ul>
 
                 {!isCurrent && plan.id !== "demo" && (
-                  <CheckoutButton planId={plan.id} label={`Assinar ${plan.name}`} />
+                  plan.paymentLinkUrl || plan.stripePriceId
+                    ? <CheckoutButton planId={plan.id} label={`Assinar ${plan.name}`} paymentLinkUrl={plan.paymentLinkUrl} />
+                    : <button disabled className="mt-4 w-full rounded-lg border border-line bg-white/5 px-4 py-2 text-sm font-semibold text-slate-400">Em breve</button>
                 )}
               </div>
             );

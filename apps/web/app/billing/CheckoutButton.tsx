@@ -3,16 +3,20 @@
 import { useState } from "react";
 import { createCheckoutSession } from "@/lib/api";
 
-export function CheckoutButton({ planId, label }: { planId: string; label: string }) {
+export function CheckoutButton({ planId, label, paymentLinkUrl }: { planId: string; label: string; paymentLinkUrl?: string }) {
   const [loading, setLoading] = useState(false);
 
   async function handleClick() {
     setLoading(true);
+    if (paymentLinkUrl) {
+      window.location.href = paymentLinkUrl;
+      return;
+    }
     try {
       const { url } = await createCheckoutSession(planId);
       window.location.href = url;
     } catch {
-      alert("Stripe não está configurado neste ambiente. Configure STRIPE_SECRET_KEY e os IDs de preço para ativar o checkout.");
+      alert("Checkout ainda não configurado. Configure STRIPE_STARTER_URL, STRIPE_PRO_URL ou STRIPE_AGENCY_URL no Render.");
       setLoading(false);
     }
   }

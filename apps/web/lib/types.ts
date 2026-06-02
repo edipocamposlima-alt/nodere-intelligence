@@ -319,6 +319,7 @@ export interface Plan {
   priceMonthly: number;
   features: string[];
   stripePriceId?: string;
+  paymentLinkUrl?: string;
 }
 
 export interface BillingStatus {

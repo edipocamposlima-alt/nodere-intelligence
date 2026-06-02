@@ -239,6 +239,7 @@ export interface Plan {
   priceMonthly: number;
   features: string[];
   stripePriceId?: string;
+  paymentLinkUrl?: string;
 }
 
 export type UsageEventType = "search" | "enrichment" | "diagnosis" | "pdf_export" | "whatsapp_send" | "email_send";

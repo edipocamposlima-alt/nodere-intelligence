@@ -47,13 +47,17 @@ router.get("/:id", async (req, res, next) => {
   } catch (err) { return next(err); }
 });
 
-router.post("/:id/analyze", (req, res) => {
+router.post("/:id/analyze", async (req, res, next) => {
+  try {
   const company = getCompany(req.params.id);
   if (!company) return res.status(404).json({ message: "Company not found" });
   if (!company.website) return res.status(422).json({ message: "Company has no website to analyze" });
-  consumeEnrichment(company.name);
+  await consumeEnrichment(company.name, getRequestWorkspaceId(req));
   const job = queueEnrichment(company.id, company.name);
   return res.status(202).json({ message: "Enrichment queued", job });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 router.get("/:id/enrichment", (req, res) => {
