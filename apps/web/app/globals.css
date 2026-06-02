@@ -180,6 +180,8 @@ body {
 }
 
 .crm-stage-scroll {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.95) rgba(15, 23, 42, 0.22);
 }
