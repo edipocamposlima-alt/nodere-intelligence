@@ -17,6 +17,10 @@ const themePresets: Record<string, { primary: string; mode: Settings["mode"]; cy
   "Roxo SaaS": { primary: "#8B5CF6", mode: "dark", cyan: "#38BDF8", panel: "#111029", ink: "#070716", line: "#2B2852" },
   "Roxo tecnológico": { primary: "#A855F7", mode: "dark", cyan: "#60A5FA", panel: "#17102A", ink: "#080512", line: "#3B2463" },
   "Laranja performance": { primary: "#F97316", mode: "dark", cyan: "#22D3EE", panel: "#1F1307", ink: "#0F0803", line: "#7C2D12" },
+  "Vermelho conversão": { primary: "#EF4444", mode: "dark", cyan: "#F97316", panel: "#220A0A", ink: "#100303", line: "#7F1D1D" },
+  "Magenta premium": { primary: "#EC4899", mode: "dark", cyan: "#A78BFA", panel: "#201020", ink: "#100712", line: "#831843" },
+  "Ciano neon": { primary: "#06B6D4", mode: "dark", cyan: "#67E8F9", panel: "#061D24", ink: "#031014", line: "#155E75" },
+  "Grafite claro": { primary: "#334155", mode: "light", cyan: "#2563EB", panel: "#FFFFFF", ink: "#F1F5F9", line: "#CBD5E1" },
   "Alto contraste": { primary: "#FACC15", mode: "dark", cyan: "#00E5FF", panel: "#000000", ink: "#000000", line: "#FFFFFF" },
   "Claro": { primary: "#2563EB", mode: "light", cyan: "#0EA5E9", panel: "#FFFFFF", ink: "#F6F8FC", line: "#D9E2EF" },
   "Escuro": { primary: "#1E6FDB", mode: "dark", cyan: "#42D7FF", panel: "#0B1220", ink: "#050914", line: "#18243A" }
@@ -28,7 +32,7 @@ type Settings = {
   mode: "dark" | "light";
   fontFamily: string;
   layoutDensity: "compact" | "comfortable" | "executive" | "large";
-  cardStyle: "cards" | "list";
+  cardStyle: "cards" | "list" | "glass" | "solid";
   backendUrl: string;
 };
 
@@ -52,7 +56,8 @@ function applySettings(settings: Settings) {
   document.documentElement.dataset.theme = settings.mode;
   document.documentElement.dataset.density = settings.layoutDensity;
   document.documentElement.dataset.cardStyle = settings.cardStyle;
-  document.body.style.fontFamily = `${settings.fontFamily}, Inter, system-ui, sans-serif`;
+  const font = settings.fontFamily === "System default" ? "system-ui" : settings.fontFamily;
+  document.body.style.fontFamily = `${font}, Inter, system-ui, sans-serif`;
 }
 
 export function SettingsClient() {
@@ -130,7 +135,7 @@ export function SettingsClient() {
           <label className="space-y-2 text-sm text-slate-300">
             Tema
             <select value={settings.theme} onChange={(event) => update("theme", event.target.value)} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
-              {["Claro", "Escuro", "Azul executivo", "Nodere Azul", "Executivo Escuro", "Roxo tecnológico", "Roxo SaaS", "Verde comercial", "Verde Performance", "Laranja performance", "Alto contraste"].map((item) => <option key={item}>{item}</option>)}
+              {["Claro", "Grafite claro", "Escuro", "Azul executivo", "Nodere Azul", "Executivo Escuro", "Ciano neon", "Roxo tecnológico", "Roxo SaaS", "Magenta premium", "Verde comercial", "Verde Performance", "Laranja performance", "Vermelho conversão", "Alto contraste"].map((item) => <option key={item}>{item}</option>)}
             </select>
           </label>
           <label className="space-y-2 text-sm text-slate-300">
@@ -147,7 +152,7 @@ export function SettingsClient() {
           <label className="space-y-2 text-sm text-slate-300">
             Fonte
             <select value={settings.fontFamily} onChange={(event) => update("fontFamily", event.target.value)} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
-              {["Inter", "Roboto", "Poppins", "Montserrat", "System default", "Arial"].map((item) => <option key={item}>{item}</option>)}
+              {["Inter", "Roboto", "Poppins", "Montserrat", "Manrope", "Nunito Sans", "Lato", "Open Sans", "System default", "Arial"].map((item) => <option key={item}>{item}</option>)}
             </select>
           </label>
           <label className="space-y-2 text-sm text-slate-300">
@@ -164,6 +169,8 @@ export function SettingsClient() {
             <select value={settings.cardStyle} onChange={(event) => update("cardStyle", event.target.value as Settings["cardStyle"])} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
               <option value="cards">Cards</option>
               <option value="list">Listas</option>
+              <option value="glass">Glass premium</option>
+              <option value="solid">Sólido corporativo</option>
             </select>
           </label>
         </div>

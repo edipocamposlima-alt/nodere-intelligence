@@ -200,7 +200,7 @@ async function providerHttpMessage(label: string, response: Response) {
     return `${label}: chave inválida ou ausente. Revise a credencial no Render/Admin.`;
   }
   if (response.status === 403) {
-    return `${label}: acesso negado. A chave pode estar sem permissão para este endpoint, sem plano/API habilitada ou bloqueada por política da conta. ${safeDetails ? `Detalhe seguro: ${safeDetails}` : ""}`.trim();
+    return `${label}: integração conectada, mas a Apollo/Econodata recusou a consulta. Normalmente isso indica plano sem API, endpoint sem permissão ou política da conta. Corrija liberando o endpoint no provedor ou usando uma chave com acesso comercial. ${safeDetails ? `Detalhe seguro: ${safeDetails}` : ""}`.trim();
   }
   if (response.status === 429) {
     return `${label}: limite de uso excedido. Aguarde a janela de quota ou revise o plano da integração.`;
@@ -216,6 +216,10 @@ function normalizeLinkedInUrl(value?: string) {
   try {
     const url = new URL(withProtocol);
     if (!url.hostname.includes("linkedin.com")) return undefined;
+    const parts = url.pathname.split("/").filter(Boolean);
+    const isGenericCompany = parts.length === 1 && parts[0].toLowerCase() === "company";
+    const isGenericIn = parts.length === 1 && parts[0].toLowerCase() === "in";
+    if (!parts.length || isGenericCompany || isGenericIn) return undefined;
     url.hash = "";
     return url.toString();
   } catch {

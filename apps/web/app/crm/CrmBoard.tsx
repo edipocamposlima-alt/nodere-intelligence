@@ -19,15 +19,27 @@ const defaultColumns = [
 ] as string[];
 
 const stageStyle: Record<string, string> = {
-  "Novo Lead": "border-sky-400/70 bg-sky-500/20 shadow-[inset_0_3px_0_#38BDF8]",
-  "Qualificado": "border-cyan-300/70 bg-cyan-500/20 shadow-[inset_0_3px_0_#22D3EE]",
-  "Contatado": "border-yellow-300/70 bg-yellow-400/20 shadow-[inset_0_3px_0_#FACC15]",
-  "Diagnóstico enviado": "border-fuchsia-300/70 bg-fuchsia-500/20 shadow-[inset_0_3px_0_#E879F9]",
-  "Reunião marcada": "border-indigo-300/70 bg-indigo-500/20 shadow-[inset_0_3px_0_#818CF8]",
-  "Proposta enviada": "border-orange-300/70 bg-orange-500/20 shadow-[inset_0_3px_0_#FB923C]",
-  "Negociação": "border-amber-300/70 bg-amber-500/20 shadow-[inset_0_3px_0_#F59E0B]",
-  "Fechado": "border-emerald-300/70 bg-emerald-500/20 shadow-[inset_0_3px_0_#34D399]",
-  "Perdido": "border-rose-300/70 bg-rose-500/20 shadow-[inset_0_3px_0_#FB7185]"
+  "Novo Lead": "border-sky-400 bg-sky-500",
+  "Qualificado": "border-cyan-300 bg-cyan-500",
+  "Contatado": "border-yellow-300 bg-yellow-400",
+  "Diagnóstico enviado": "border-fuchsia-300 bg-fuchsia-500",
+  "Reunião marcada": "border-indigo-300 bg-indigo-500",
+  "Proposta enviada": "border-orange-300 bg-orange-500",
+  "Negociação": "border-amber-300 bg-amber-500",
+  "Fechado": "border-emerald-300 bg-emerald-500",
+  "Perdido": "border-rose-300 bg-rose-500"
+};
+
+const stagePanel: Record<string, string> = {
+  "Novo Lead": "border-sky-300/80 bg-sky-500/15",
+  "Qualificado": "border-cyan-300/80 bg-cyan-500/15",
+  "Contatado": "border-yellow-300/80 bg-yellow-400/15",
+  "Diagnóstico enviado": "border-fuchsia-300/80 bg-fuchsia-500/15",
+  "Reunião marcada": "border-indigo-300/80 bg-indigo-500/15",
+  "Proposta enviada": "border-orange-300/80 bg-orange-500/15",
+  "Negociação": "border-amber-300/80 bg-amber-500/15",
+  "Fechado": "border-emerald-300/80 bg-emerald-500/15",
+  "Perdido": "border-rose-300/80 bg-rose-500/15"
 };
 
 export function CrmBoard({ companies }: { companies: Company[] }) {
@@ -126,6 +138,17 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
     }
   }
 
+  function stageValue(leads: Company[]) {
+    return leads.reduce((sum, company) => {
+      if (company.status === "Fechado" || company.status === "Perdido") return sum;
+      return sum + Math.max(0, Number(company.score || 0) * 100);
+    }, 0);
+  }
+
+  function formatBRL(value: number) {
+    return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 rounded-lg border border-line bg-panel/90 p-4 md:flex-row md:items-center md:justify-between">
@@ -160,7 +183,7 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
 
       {message && <p className="rounded-lg border border-electric/30 bg-electric/10 px-3 py-2 text-sm text-blue-100">{message}</p>}
 
-      <div className="grid auto-cols-[17rem] grid-flow-col gap-4 overflow-x-auto pb-2">
+      <div className="grid auto-cols-[19rem] grid-flow-col gap-4 overflow-x-auto pb-2">
         {columns.map((column) => {
           const leads = filtered.filter((company) => company.status === column);
           return (
@@ -173,9 +196,10 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
                 if (companyId) void moveLead(companyId, column);
                 setDraggedId(null);
               }}
-              className={`min-h-[420px] rounded-lg border p-3 ${stageStyle[column] ?? "border-violet-300/60 bg-violet-500/15 shadow-[inset_0_3px_0_#A78BFA]"}`}
+              className={`flex h-[680px] flex-col overflow-hidden rounded-xl border shadow-[0_16px_48px_rgba(0,0,0,0.22)] ${stagePanel[column] ?? "border-violet-300/70 bg-violet-500/15"}`}
             >
-              <div className="flex items-center justify-between gap-2">
+              <div className={`rounded-t-xl border-b border-white/15 px-3 py-3 text-white shadow-[0_10px_28px_rgba(0,0,0,0.16)] ${stageStyle[column] ?? "border-violet-300 bg-violet-500"}`}>
+                <div className="flex items-center justify-between gap-2">
                 {editingStage === column ? (
                   <div className="flex min-w-0 flex-1 items-center gap-1">
                     <input
@@ -196,10 +220,10 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
                     </button>
                   </div>
                 ) : (
-                  <h3 className="min-w-0 truncate text-sm font-semibold text-white">{column}</h3>
+                  <h3 className="min-w-0 truncate text-sm font-black text-white">{column}</h3>
                 )}
                 <div className="flex items-center gap-2">
-                  <span className="rounded-md bg-white/15 px-2 py-1 text-xs font-bold text-white">{leads.length}</span>
+                  <span className="rounded-md bg-white/25 px-2 py-1 text-xs font-black text-white">{leads.length}</span>
                   {editingStage !== column && (
                     <button
                       onClick={() => {
@@ -217,7 +241,12 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
                   </button>
                 </div>
               </div>
-              <div className="mt-3 space-y-3">
+                <div className="mt-2 flex items-center justify-between text-xs text-white/90">
+                  <span>{leads.length} oportunidade(s)</span>
+                  <span className="font-black">{formatBRL(stageValue(leads))}</span>
+                </div>
+              </div>
+              <div className="crm-stage-scroll min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pr-2">
                 {leads.length === 0 && <p className="rounded-lg border border-dashed border-line p-3 text-xs text-slate-500">Solte um lead aqui.</p>}
                 {leads.map((company) => (
                   <article
