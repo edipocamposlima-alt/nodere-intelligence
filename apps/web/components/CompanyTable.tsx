@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Download, ExternalLink, FileText, MessageCircle, Save, Trash2 } from "lucide-react";
+import { CheckCircle2, Download, ExternalLink, FileText, MessageCircle, Save, Search, Trash2, X } from "lucide-react";
 import { Company } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
 import { addCompanyNote } from "@/lib/api";
@@ -52,16 +53,53 @@ function buildSimplePdf(title: string, body: string) {
   return new Blob([pdf], { type: "application/pdf" });
 }
 
-export function CompanyTable({ companies }: { companies: Company[] }) {
+function normalizeSearch(value: unknown) {
+  return String(value ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function companyMatchesQuery(company: Company, query: string) {
+  if (!query) return true;
+  const haystack = [
+    company.name,
+    company.category,
+    company.city,
+    company.state,
+    company.address,
+    company.phone,
+    company.whatsapp,
+    company.website,
+    company.linkedin,
+    company.instagram,
+    company.facebook,
+    company.status,
+    company.opportunityLevel,
+    ...(company.detectedOpportunities ?? []),
+    ...(company.suggestions ?? []),
+    ...(company.notes ?? []).map((note) => note.body)
+  ].map(normalizeSearch).join(" ");
+  return normalizeSearch(query).split(/\s+/).every((term) => haystack.includes(term));
+}
+
+export function CompanyTable({ companies, initialQuery = "" }: { companies: Company[]; initialQuery?: string }) {
+  const router = useRouter();
   const [visibleCompanies, setVisibleCompanies] = useState(companies);
+  const [query, setQuery] = useState(initialQuery);
   const [saved, setSaved] = useState<Record<string, "saving" | "saved" | "error">>({});
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    setVisibleCompanies(companies);
+    setVisibleCompanies(companies.filter((company) => companyMatchesQuery(company, query)));
     setSelected({});
-  }, [companies]);
+  }, [companies, query]);
+
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
 
   const selectedCompanies = visibleCompanies.filter((company) => selected[company.id]);
   const allSelected = visibleCompanies.length > 0 && selectedCompanies.length === visibleCompanies.length;
@@ -141,11 +179,32 @@ export function CompanyTable({ companies }: { companies: Company[] }) {
     URL.revokeObjectURL(url);
   }
 
+  function clearSearch() {
+    setQuery("");
+    router.push("/companies");
+  }
+
   return (
     <div className="overflow-hidden rounded-lg border border-line bg-panel/90">
-      <div className="flex flex-col gap-3 border-b border-line p-3 md:flex-row md:items-center md:justify-between">
-        <div className="text-sm text-slate-400">
-          {selectedCompanies.length ? `${selectedCompanies.length} selecionada(s)` : `${visibleCompanies.length} resultado(s) visível(is) nesta busca`}
+      <div className="flex flex-col gap-3 border-b border-line p-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-ink px-3 py-2">
+            <Search className="h-4 w-4 shrink-0 text-cyan" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Filtrar empresas salvas por nome, cidade, segmento, telefone, site ou observação..."
+              className="w-full bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-500"
+            />
+            {query && (
+              <button type="button" onClick={clearSearch} className="rounded-md p-1 text-slate-400 hover:bg-white/10 hover:text-white" aria-label="Limpar busca">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </label>
+          <div className="text-sm text-slate-400">
+            {selectedCompanies.length ? `${selectedCompanies.length} selecionada(s)` : `${visibleCompanies.length} de ${companies.length} empresa(s)`}
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={saveSelected} disabled={selectedCompanies.length === 0} className="inline-flex items-center gap-2 rounded-lg bg-electric px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">
@@ -163,6 +222,17 @@ export function CompanyTable({ companies }: { companies: Company[] }) {
         </div>
       </div>
       <div className="overflow-x-auto">
+        {visibleCompanies.length === 0 ? (
+          <div className="p-8 text-center">
+            <Search className="mx-auto h-9 w-9 text-slate-600" />
+            <p className="mt-3 text-sm font-medium text-white">
+              {query ? "Nenhuma empresa encontrada com esse filtro." : "Nenhuma empresa salva ainda."}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {query ? "Tente buscar por outro nome, cidade, telefone ou segmento." : "Use a aba Busca de empresas para consultar o Google e salvar leads no CRM."}
+            </p>
+          </div>
+        ) : (
         <table className="w-full min-w-[840px] border-collapse text-left text-sm">
           <thead className="border-b border-line text-xs uppercase tracking-wide text-slate-500">
             <tr>
@@ -255,6 +325,7 @@ export function CompanyTable({ companies }: { companies: Company[] }) {
             ))}
           </tbody>
         </table>
+        )}
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Bell, Search, ShieldCheck } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 
@@ -14,7 +14,9 @@ const API_URL = getApiBaseUrl();
 export function Header() {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [open, setOpen] = useState(false);
+  const [globalQuery, setGlobalQuery] = useState("");
   const pathname = usePathname();
+  const router = useRouter();
 
   const pageTitle = useMemo(() => {
     const path = pathname || "/";
@@ -31,6 +33,11 @@ export function Header() {
     if (path.startsWith("/inbox")) return "Caixa de entrada";
     if (path.startsWith("/billing")) return "Faturamento";
     return "Dashboard Executivo";
+  }, [pathname]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setGlobalQuery(new URLSearchParams(window.location.search).get("q") ?? "");
   }, [pathname]);
 
   useEffect(() => {
@@ -66,6 +73,16 @@ export function Header() {
       .sort((a, b) => new Date(a.dueAt || 0).getTime() - new Date(b.dueAt || 0).getTime());
   }, [tasks]);
 
+  function submitGlobalSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const query = globalQuery.trim();
+    if (!query) {
+      router.push("/companies");
+      return;
+    }
+    router.push(`/companies?q=${encodeURIComponent(query)}`);
+  }
+
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-ink/90 px-4 py-3 backdrop-blur md:px-8">
       <div className="flex items-center justify-between gap-4">
@@ -74,13 +91,16 @@ export function Header() {
           <span className="hidden text-xs text-slate-500 sm:block">Operação comercial e inteligência de prospecção</span>
         </Link>
 
-        <div className="hidden w-full max-w-md items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 md:flex">
+        <form onSubmit={submitGlobalSearch} className="hidden w-full max-w-md items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 md:flex">
           <Search className="h-4 w-4 text-slate-500" />
           <input
+            value={globalQuery}
+            onChange={(event) => setGlobalQuery(event.target.value)}
             className="w-full bg-transparent text-sm text-slate-200 outline-none"
             placeholder="Buscar empresa, cidade ou segmento"
+            aria-label="Buscar empresas salvas no CRM"
           />
-        </div>
+        </form>
 
         <div className="flex items-center gap-2">
           <Link href="/admin" className="inline-flex items-center gap-2 rounded-lg border border-electric/40 bg-electric/10 px-3 py-2 text-sm font-semibold text-blue-200 hover:bg-electric/20">

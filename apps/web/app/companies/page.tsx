@@ -3,7 +3,9 @@ import { getCompanies } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
-export default async function CompaniesPage() {
+export default async function CompaniesPage({ searchParams }: { searchParams?: Promise<{ q?: string }> }) {
+  const params = await searchParams;
+  const query = typeof params?.q === "string" ? params.q : "";
   const { companies, error } = await getCompanies()
     .then((companies) => ({ companies, error: "" }))
     .catch((error) => ({
@@ -22,7 +24,7 @@ export default async function CompaniesPage() {
         <h2 className="text-2xl font-semibold text-white">Empresas</h2>
         <p className="mt-1 text-sm text-slate-400">Leads encontrados, enriquecidos e priorizados por oportunidade comercial.</p>
       </div>
-      <CompanyTable companies={companies} />
+      <CompanyTable companies={companies} initialQuery={query} />
     </div>
   );
 }
