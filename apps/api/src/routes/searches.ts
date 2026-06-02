@@ -37,10 +37,9 @@ router.post("/", async (req, res, next) => {
   try {
     const input = searchSchema.parse(req.body);
     const workspaceId = getRequestWorkspaceId(req);
+    consumeSearch([input.companyName, input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" "), workspaceId);
     const result = await searchCompaniesWithMeta(input, workspaceId);
     const companyIds = result.companies.map((c) => c.id);
-
-    consumeSearch([input.companyName, input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" "));
 
     const saved = await saveSearch(
       {
@@ -86,7 +85,7 @@ router.post("/:id/rerun", async (req, res, next) => {
     }, workspaceId);
 
     const companyIds = result.companies.map((c) => c.id);
-    consumeSearch(`${saved.segment} em ${saved.city} (rerun)`);
+    consumeSearch(`${saved.segment} em ${saved.city} (rerun)`, workspaceId);
     await touchSearch(saved.id, result.companies.length, result.source, companyIds, workspaceId);
 
     return res.json({

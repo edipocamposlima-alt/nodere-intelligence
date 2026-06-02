@@ -22,6 +22,7 @@ import { attachSession, getRequestWorkspaceId } from "./middleware/session.js";
 import { searchCompaniesWithMeta } from "./services/companyStore.js";
 import { getAppSettings, savePipelineSettings, savePreferences } from "./services/settingsStore.js";
 import { scanWebsite } from "./services/websiteScanner.js";
+import { callAI, getAiProviderHealth } from "./services/ai.js";
 
 const app = express();
 
@@ -57,14 +58,16 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true, name: "NODERE Intelligence API" });
 });
 
-app.get("/api/health", (_req, res) => {
+app.get("/api/health", async (_req, res) => {
   res.json({
     ok: true,
+    status: "ok",
     name: "NODERE Intelligence API",
     googlePlacesConfigured: Boolean(config.google.placesKey),
     pageSpeedConfigured: Boolean(config.google.pageSpeedKey),
     openaiConfigured: Boolean(config.openai.apiKey),
-    supabaseConfigured: Boolean(config.supabase.url && config.supabase.serviceRoleKey)
+    supabaseConfigured: Boolean(config.supabase.url && config.supabase.serviceRoleKey),
+    providers: await getAiProviderHealth()
   });
 });
 
@@ -138,9 +141,9 @@ app.get("/api/openai/health", (_req, res) => {
 
 app.post("/api/openai/analyze", async (req, res, next) => {
   try {
-    if (!config.openai.apiKey) {
+    if (!config.openai.apiKey && !config.anthropic.apiKey) {
       return res.status(503).json({
-        message: "OPENAI_API_KEY ausente no backend.",
+        message: "Nenhum provedor de IA configurado no backend. Configure OPENAI_API_KEY ou ANTHROPIC_API_KEY no Render.",
         openaiConfigured: false
       });
     }
@@ -170,44 +173,13 @@ app.post("/api/openai/analyze", async (req, res, next) => {
       }
     });
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${config.openai.apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: config.openai.model,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        temperature: 0.7
-      })
-    }).finally(() => clearTimeout(timeout));
-
-    const payload = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      const message = payload?.error?.message || "OpenAI retornou erro ao analisar o lead.";
-      return res.status(response.status).json({
-        message,
-        code: payload?.error?.code,
-        type: payload?.error?.type,
-        openaiConfigured: true
-      });
-    }
-
-    const raw = payload?.choices?.[0]?.message?.content ?? "{}";
+    const ai = await callAI(systemPrompt, userPrompt);
+    const raw = ai.content;
     const analysis = JSON.parse(raw);
     return res.json({
       ...analysis,
       model: config.openai.model,
+      provider: ai.provider,
       generatedAt: new Date().toISOString()
     });
   } catch (error) {
@@ -294,7 +266,8 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
     return res.status(400).json({ message: "Invalid request", issues: error.issues });
   }
   const message = error instanceof Error ? error.message : "Unexpected error";
-  const status = typeof (error as { status?: unknown }).status === "number" ? (error as { status: number }).status : 500;
+  const rawStatus = (error as { status?: unknown }).status;
+  const status = typeof rawStatus === "number" && rawStatus >= 100 && rawStatus <= 599 ? rawStatus : 500;
   return res.status(status).json({
     message,
     code: (error as { code?: string }).code,

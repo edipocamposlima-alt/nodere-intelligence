@@ -1,14 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { Operator, OperatorMetrics, OperatorGoal } from "../types.js";
-import { listCompanies } from "./companyStore.js";
 import { appendAuditLog } from "./auditLog.js";
 import { getSupabase } from "../db/supabase.js";
 
-const operators: Operator[] = [
-  { id: "op-1", name: "Admin", email: "admin@nodere.com", role: "admin", createdAt: new Date().toISOString() },
-  { id: "op-2", name: "Operador 1", email: "op1@nodere.com", role: "operator", createdAt: new Date().toISOString() },
-  { id: "op-3", name: "Operador 2", email: "op2@nodere.com", role: "operator", createdAt: new Date().toISOString() }
-];
+const operators: Array<Operator & { workspaceId?: string }> = [];
 
 const goals: OperatorGoal[] = [];
 
@@ -22,23 +17,26 @@ const STATUS_PIPELINE: Record<string, number> = {
   "Perdido": 0
 };
 
-export async function getOperators() {
+export async function getOperators(workspaceId = "default") {
   const supabase = getSupabase();
   if (supabase) {
-    const { data, error } = await supabase.from("nodere_operators").select("*").order("created_at", { ascending: true });
+    let query = supabase.from("nodere_operators").select("*");
+    query = query.eq("workspace_id", workspaceId);
+    const { data, error } = await query.order("created_at", { ascending: true });
     if (!error && Array.isArray(data) && data.length) {
       return data.map(rowToOperator);
     }
   }
-  return operators;
+  return operators.filter((op) => (op.workspaceId ?? "default") === workspaceId);
 }
 
-export async function addOperator(name: string, email: string, role: "admin" | "operator" = "operator"): Promise<Operator> {
-  const op: Operator = { id: randomUUID(), name, email, role, createdAt: new Date().toISOString() };
+export async function addOperator(name: string, email: string, role: "admin" | "operator" = "operator", workspaceId = "default"): Promise<Operator> {
+  const op: Operator & { workspaceId?: string } = { id: randomUUID(), name, email, role, workspaceId, createdAt: new Date().toISOString() };
   const supabase = getSupabase();
   if (supabase) {
     await supabase.from("nodere_operators").upsert({
       id: op.id,
+      workspace_id: workspaceId,
       name: op.name,
       email: op.email,
       role: op.role,
@@ -50,12 +48,11 @@ export async function addOperator(name: string, email: string, role: "admin" | "
   return op;
 }
 
-export async function getOperatorRanking(): Promise<OperatorMetrics[]> {
-  const companies = listCompanies();
-  const activeOperators = await getOperators();
-  const divisor = Math.max(activeOperators.length, 1);
-  return activeOperators.map((op, i) => {
-    const slice = companies.filter((_, idx) => idx % divisor === i);
+export async function getOperatorRanking(workspaceId = "default"): Promise<OperatorMetrics[]> {
+  const companies = await import("./companyStore.js").then((m) => m.listCompaniesAsync(workspaceId));
+  const activeOperators = await getOperators(workspaceId);
+  return activeOperators.map((op) => {
+    const slice = companies.filter((company) => (company as any).operatorId === op.id || (company as any).ownerId === op.id);
     const contacted = slice.filter((c) => c.status !== "Novo Lead").length;
     const meetings = slice.filter((c) => c.status === "Reunião marcada").length;
     const proposals = slice.filter((c) => c.status === "Proposta enviada").length;
@@ -69,7 +66,7 @@ export async function getOperatorRanking(): Promise<OperatorMetrics[]> {
     return {
       operatorId: op.id,
       operatorName: op.name,
-      searchesDone: Math.max(0, Math.floor(slice.length / 4) + i * 2),
+      searchesDone: slice.length,
       leadsEnriched: Math.floor(slice.length * 0.7),
       contactsMade: contacted,
       meetingsScheduled: meetings,
@@ -83,7 +80,7 @@ export async function getOperatorRanking(): Promise<OperatorMetrics[]> {
   });
 }
 
-export async function getGoals(operatorId: string): Promise<OperatorGoal | null> {
+export async function getGoals(operatorId: string, workspaceId = "default"): Promise<OperatorGoal | null> {
   const month = new Date().toISOString().slice(0, 7);
   const supabase = getSupabase();
   if (supabase) {
@@ -91,19 +88,21 @@ export async function getGoals(operatorId: string): Promise<OperatorGoal | null>
       .from("nodere_operator_goals")
       .select("*")
       .eq("operator_id", operatorId)
+      .eq("workspace_id", workspaceId)
       .eq("month", month)
       .maybeSingle();
     if (!error && data) return rowToGoal(data);
   }
-  return goals.find((g) => g.operatorId === operatorId && g.month === month) ?? null;
+  return goals.find((g) => g.operatorId === operatorId && g.month === month && (g as any).workspaceId === workspaceId) ?? null;
 }
 
-export async function setGoals(input: Omit<OperatorGoal, "month">): Promise<OperatorGoal> {
+export async function setGoals(input: Omit<OperatorGoal, "month">, workspaceId = "default"): Promise<OperatorGoal> {
   const month = new Date().toISOString().slice(0, 7);
-  const full: OperatorGoal = { ...input, month };
+  const full: OperatorGoal & { workspaceId?: string } = { ...input, month, workspaceId };
   const supabase = getSupabase();
   if (supabase) {
     await supabase.from("nodere_operator_goals").upsert({
+      workspace_id: workspaceId,
       operator_id: input.operatorId,
       month,
       target_searches: input.targetSearches,
@@ -112,7 +111,7 @@ export async function setGoals(input: Omit<OperatorGoal, "month">): Promise<Oper
       target_revenue_brl: input.targetRevenueBRL
     });
   }
-  const idx = goals.findIndex((g) => g.operatorId === input.operatorId && g.month === month);
+  const idx = goals.findIndex((g) => g.operatorId === input.operatorId && g.month === month && (g as any).workspaceId === workspaceId);
   if (idx >= 0) goals[idx] = full;
   else goals.push(full);
   appendAuditLog("user", "goals_updated", `Metas atualizadas para operador ${input.operatorId}`, {

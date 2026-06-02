@@ -30,7 +30,14 @@ export const config = {
   },
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
-    model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini"
+    model: process.env.OPENAI_MODEL ?? "gpt-4o-mini"
+  },
+  anthropic: {
+    apiKey: process.env.ANTHROPIC_API_KEY,
+    model: process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5"
+  },
+  ai: {
+    providerPrimary: process.env.AI_PROVIDER_PRIMARY ?? "openai"
   },
   enrichment: {
     econodataApiKey: process.env.ECONODATA_API_KEY,
@@ -61,6 +68,11 @@ export const config = {
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY,
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    paymentLinks: {
+      starter: process.env.STRIPE_STARTER_URL,
+      pro: process.env.STRIPE_PRO_URL,
+      agency: process.env.STRIPE_AGENCY_URL
+    },
     successUrl: process.env.STRIPE_SUCCESS_URL ?? "http://localhost:3000/billing?success=1",
     cancelUrl: process.env.STRIPE_CANCEL_URL ?? "http://localhost:3000/billing?cancel=1",
     prices: {

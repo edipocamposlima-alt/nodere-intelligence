@@ -1,11 +1,12 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { getOperators, getOperatorRanking, getGoals, setGoals, addOperator } from "../services/operators.js";
+import { getRequestWorkspaceId } from "../middleware/session.js";
 
 const router = Router();
 
 router.get("/", async (_req, res, next) => {
   try {
-    res.json(await getOperators());
+    res.json(await getOperators(getRequestWorkspaceId(_req)));
   } catch (err) {
     next(err);
   }
@@ -15,7 +16,7 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, email, role } = req.body;
     if (!name) return res.status(400).json({ message: "name obrigatorio" });
-    res.status(201).json(await addOperator(name, email ?? "", role));
+    res.status(201).json(await addOperator(name, email ?? "", role, getRequestWorkspaceId(req)));
   } catch (err) {
     next(err);
   }
@@ -23,7 +24,7 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
 
 router.get("/ranking", async (_req, res, next) => {
   try {
-    res.json(await getOperatorRanking());
+    res.json(await getOperatorRanking(getRequestWorkspaceId(_req)));
   } catch (err) {
     next(err);
   }
@@ -31,7 +32,7 @@ router.get("/ranking", async (_req, res, next) => {
 
 router.get("/:id/goals", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const goals = await getGoals(String(req.params.id));
+    const goals = await getGoals(String(req.params.id), getRequestWorkspaceId(req));
     if (!goals) return res.status(404).json({ message: "Nenhuma meta definida para este operador" });
     res.json(goals);
   } catch (err) {
@@ -48,7 +49,7 @@ router.put("/:id/goals", async (req: Request, res: Response, next: NextFunction)
       targetContacts: Number(targetContacts ?? 15),
       targetDeals: Number(targetDeals ?? 3),
       targetRevenueBRL: Number(targetRevenueBRL ?? 36000)
-    });
+    }, getRequestWorkspaceId(req));
     res.json(goal);
   } catch (err) {
     next(err);

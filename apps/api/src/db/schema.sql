@@ -144,3 +144,99 @@ create index if not exists idx_notes_workspace on nodere_company_notes(workspace
 create index if not exists idx_searches_workspace on nodere_searches(workspace_id, created_at desc);
 create index if not exists idx_operators_workspace on nodere_operators(workspace_id);
 create index if not exists idx_app_settings_workspace on nodere_app_settings(workspace_id);
+
+-- Estruturas solicitadas no roadmap SaaS. Elas são seguras para aplicar
+-- incrementalmente: não removem dados existentes e permitem ativar as telas
+-- conforme as credenciais externas forem configuradas.
+create table if not exists push_subscriptions (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  user_id text not null,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists proposal_templates (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text,
+  service_type text not null,
+  name text not null,
+  content text not null,
+  variables text[] not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists proposal_versions (
+  id text primary key default gen_random_uuid()::text,
+  lead_id text not null,
+  workspace_id text not null default 'default',
+  version_number integer not null,
+  content text not null,
+  service_type text,
+  generated_by text not null default 'user' check (generated_by in ('user', 'ai')),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists inbox_messages (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  lead_id text,
+  direction text not null check (direction in ('inbound', 'outbound')),
+  channel text not null default 'whatsapp',
+  content text not null,
+  status text not null default 'unread',
+  phone_from text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists cadence_templates (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  name text not null,
+  steps jsonb not null default '[]',
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists cadence_enrollments (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  lead_id text not null,
+  cadence_id text not null references cadence_templates(id) on delete cascade,
+  current_step integer not null default 0,
+  enrolled_at timestamptz not null default now(),
+  next_action_at timestamptz,
+  status text not null default 'active' check (status in ('active', 'paused', 'completed', 'failed'))
+);
+
+create table if not exists api_keys (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  name text not null,
+  key_hash text not null,
+  scopes text[] not null default '{}',
+  last_used_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists vertical_prompts (
+  id text primary key default gen_random_uuid()::text,
+  segment_keywords text[] not null default '{}',
+  service_type text not null default 'generic',
+  system_prompt text not null,
+  score_weights jsonb not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_push_subscriptions_workspace on push_subscriptions(workspace_id);
+create index if not exists idx_proposal_templates_workspace on proposal_templates(workspace_id);
+create index if not exists idx_proposal_versions_lead on proposal_versions(workspace_id, lead_id, version_number desc);
+create index if not exists idx_inbox_messages_workspace on inbox_messages(workspace_id, created_at desc);
+create index if not exists idx_cadence_templates_workspace on cadence_templates(workspace_id);
+create index if not exists idx_cadence_enrollments_due on cadence_enrollments(workspace_id, status, next_action_at);
+create index if not exists idx_api_keys_workspace on api_keys(workspace_id);
