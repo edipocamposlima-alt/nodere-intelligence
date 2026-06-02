@@ -42,7 +42,7 @@ export function ReportsClient({ pipeline, forecast, trends }: { pipeline: Pipeli
       <section className="rounded-xl border border-line bg-panel/90 p-5 print:border-0 print:bg-white">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
-            <Image src="/nodere-brand-full.png" alt="NODERE" width={220} height={76} className="hidden h-auto w-44 rounded-lg object-contain print:block" />
+              <Image src="/nodere-logo.png" alt="NODERE" width={220} height={76} className="hidden h-auto w-44 rounded-lg object-contain print:block" />
             <div>
               <h2 className="text-2xl font-semibold text-white print:text-slate-950">Relatórios executivos</h2>
               <p className="mt-1 text-sm text-slate-400 print:text-slate-600">Pipeline, forecast de receita e tendências mensais com filtros aplicados.</p>

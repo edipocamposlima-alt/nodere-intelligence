@@ -17,7 +17,7 @@ export function ManualClient({ sections }: { sections: string[][] }) {
       <section className="rounded-xl border border-line bg-panel/90 p-6 print:border-0 print:bg-white">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
-            <Image src="/nodere-brand-full.png" alt="NODERE" width={260} height={90} priority className="h-auto w-52 rounded-lg object-contain" />
+              <Image src="/nodere-logo.png" alt="NODERE" width={260} height={90} priority className="h-auto w-52 rounded-lg object-contain" />
             <div>
               <div className="flex items-center gap-2">
                 <BookOpen className="h-5 w-5 text-cyan print:text-blue-700" />
