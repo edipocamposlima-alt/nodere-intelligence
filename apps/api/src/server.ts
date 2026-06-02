@@ -253,11 +253,11 @@ app.use("/api/integrations", integrationsRouter);
 app.use("/api/inbox", inboxRouter);
 app.use("/api/sequences", sequencesRouter);
 app.use("/api/operators", operatorsRouter);
+app.use("/api/credits", creditsRouter);
 
 app.use("/api", requireAuth);
 
 app.use("/api/enrichment", enrichmentRouter);
-app.use("/api/credits", creditsRouter);
 app.use("/api/billing", billingRouter);
 app.use("/api/audit", auditRouter);
 
