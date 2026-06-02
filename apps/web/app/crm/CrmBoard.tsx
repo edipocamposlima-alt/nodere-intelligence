@@ -6,6 +6,9 @@ import { Check, GripVertical, Pencil, Plus, Search, Trash2, X } from "lucide-rea
 import { Company, CrmStatus } from "@/lib/types";
 import { updateCompanyStatus } from "@/lib/api";
 
+const STAGES_STORAGE_KEY = "nodere_pipeline_stages";
+const STAGE_COLORS_STORAGE_KEY = "nodere_pipeline_stage_colors";
+
 const defaultColumns = [
   "Novo Lead",
   "Qualificado",
@@ -18,29 +21,42 @@ const defaultColumns = [
   "Perdido"
 ] as string[];
 
-const stageStyle: Record<string, string> = {
-  "Novo Lead": "border-sky-400 bg-sky-500",
-  "Qualificado": "border-cyan-300 bg-cyan-500",
-  "Contatado": "border-yellow-300 bg-yellow-400",
-  "Diagnóstico enviado": "border-fuchsia-300 bg-fuchsia-500",
-  "Reunião marcada": "border-indigo-300 bg-indigo-500",
-  "Proposta enviada": "border-orange-300 bg-orange-500",
-  "Negociação": "border-amber-300 bg-amber-500",
-  "Fechado": "border-emerald-300 bg-emerald-500",
-  "Perdido": "border-rose-300 bg-rose-500"
+const defaultStageColors: Record<string, string> = {
+  "Novo Lead": "#0EA5E9",
+  "Qualificado": "#14B8A6",
+  "Contatado": "#FACC15",
+  "Diagnóstico enviado": "#D946EF",
+  "Reunião marcada": "#6366F1",
+  "Proposta enviada": "#F97316",
+  "Negociação": "#F59E0B",
+  "Fechado": "#22C55E",
+  "Perdido": "#F43F5E"
 };
 
-const stagePanel: Record<string, string> = {
-  "Novo Lead": "border-sky-300/80 bg-sky-500/15",
-  "Qualificado": "border-cyan-300/80 bg-cyan-500/15",
-  "Contatado": "border-yellow-300/80 bg-yellow-400/15",
-  "Diagnóstico enviado": "border-fuchsia-300/80 bg-fuchsia-500/15",
-  "Reunião marcada": "border-indigo-300/80 bg-indigo-500/15",
-  "Proposta enviada": "border-orange-300/80 bg-orange-500/15",
-  "Negociação": "border-amber-300/80 bg-amber-500/15",
-  "Fechado": "border-emerald-300/80 bg-emerald-500/15",
-  "Perdido": "border-rose-300/80 bg-rose-500/15"
-};
+const stagePalette = ["#0EA5E9", "#14B8A6", "#FACC15", "#D946EF", "#6366F1", "#F97316", "#F59E0B", "#22C55E", "#F43F5E", "#8B5CF6", "#06B6D4", "#84CC16"];
+
+function hexToRgba(hex: string, alpha: number) {
+  const clean = hex.replace("#", "");
+  const value = clean.length === 3 ? clean.split("").map((char) => `${char}${char}`).join("") : clean;
+  const int = Number.parseInt(value, 16);
+  if (Number.isNaN(int)) return `rgba(14, 165, 233, ${alpha})`;
+  const r = (int >> 16) & 255;
+  const g = (int >> 8) & 255;
+  const b = int & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function readableTextColor(hex: string) {
+  const clean = hex.replace("#", "");
+  const value = clean.length === 3 ? clean.split("").map((char) => `${char}${char}`).join("") : clean;
+  const int = Number.parseInt(value, 16);
+  if (Number.isNaN(int)) return "#FFFFFF";
+  const r = (int >> 16) & 255;
+  const g = (int >> 8) & 255;
+  const b = int & 255;
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.64 ? "#06111F" : "#FFFFFF";
+}
 
 export function CrmBoard({ companies }: { companies: Company[] }) {
   const [items, setItems] = useState(companies);
@@ -49,20 +65,41 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
   const [message, setMessage] = useState<string | null>(null);
   const [columns, setColumns] = useState<string[]>(defaultColumns);
   const [newStage, setNewStage] = useState("");
+  const [newStageColor, setNewStageColor] = useState(stagePalette[0]);
   const [editingStage, setEditingStage] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
+  const [stageColors, setStageColors] = useState<Record<string, string>>(defaultStageColors);
 
   useEffect(() => {
-    const saved = localStorage.getItem("nodere_pipeline_stages");
-    if (saved) {
-      const parsed = JSON.parse(saved) as string[];
-      if (Array.isArray(parsed) && parsed.length > 0) setColumns(parsed);
+    try {
+      const saved = localStorage.getItem(STAGES_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as string[];
+        if (Array.isArray(parsed) && parsed.length > 0) setColumns(parsed);
+      }
+      const savedColors = localStorage.getItem(STAGE_COLORS_STORAGE_KEY);
+      if (savedColors) {
+        const parsedColors = JSON.parse(savedColors) as Record<string, string>;
+        setStageColors({ ...defaultStageColors, ...parsedColors });
+      }
+    } catch {
+      setColumns(defaultColumns);
+      setStageColors(defaultStageColors);
     }
   }, []);
 
   function persistStages(next: string[]) {
     setColumns(next);
-    localStorage.setItem("nodere_pipeline_stages", JSON.stringify(next));
+    localStorage.setItem(STAGES_STORAGE_KEY, JSON.stringify(next));
+  }
+
+  function persistStageColors(next: Record<string, string>) {
+    setStageColors(next);
+    localStorage.setItem(STAGE_COLORS_STORAGE_KEY, JSON.stringify(next));
+  }
+
+  function colorForStage(stage: string, index: number) {
+    return stageColors[stage] || stagePalette[index % stagePalette.length] || "#0EA5E9";
   }
 
   const filtered = useMemo(() => {
@@ -97,7 +134,9 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
       return;
     }
     persistStages([...columns, label]);
+    persistStageColors({ ...stageColors, [label]: newStageColor });
     setNewStage("");
+    setNewStageColor(stagePalette[(columns.length + 1) % stagePalette.length]);
     setMessage("Etapa criada no funil.");
   }
 
@@ -111,6 +150,9 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
       return;
     }
     persistStages(columns.filter((item) => item !== stage));
+    const nextColors = { ...stageColors };
+    delete nextColors[stage];
+    persistStageColors(nextColors);
     setMessage("Etapa removida do funil.");
   }
 
@@ -126,6 +168,9 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
     }
     const affected = items.filter((company) => company.status === stage);
     persistStages(columns.map((item) => item === stage ? label : item));
+    const nextColors = { ...stageColors, [label]: stageColors[stage] || newStageColor };
+    delete nextColors[stage];
+    persistStageColors(nextColors);
     setItems((current) => current.map((company) => company.status === stage ? { ...company, status: label as CrmStatus } : company));
     setEditingStage(null);
     setMessage("Renomeando etapa e atualizando leads...");
@@ -175,6 +220,16 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
           placeholder="Nova etapa do funil, ex: Retomar futuramente"
           className="min-w-0 flex-1 rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric"
         />
+        <label className="inline-flex items-center gap-2 rounded-lg border border-line bg-ink px-3 py-2 text-sm text-slate-300">
+          Cor
+          <input
+            type="color"
+            value={newStageColor}
+            onChange={(event) => setNewStageColor(event.target.value)}
+            className="h-8 w-10 cursor-pointer rounded-md border border-white/20 bg-transparent p-0"
+            aria-label="Cor da nova etapa"
+          />
+        </label>
         <button onClick={addStage} className="inline-flex items-center justify-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white">
           <Plus className="h-4 w-4" />
           Criar etapa
@@ -184,8 +239,10 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
       {message && <p className="rounded-lg border border-electric/30 bg-electric/10 px-3 py-2 text-sm text-blue-100">{message}</p>}
 
       <div className="grid auto-cols-[19rem] grid-flow-col gap-4 overflow-x-auto pb-2">
-        {columns.map((column) => {
+        {columns.map((column, index) => {
           const leads = filtered.filter((company) => company.status === column);
+          const stageColor = colorForStage(column, index);
+          const stageTextColor = readableTextColor(stageColor);
           return (
             <section
               key={column}
@@ -196,9 +253,19 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
                 if (companyId) void moveLead(companyId, column);
                 setDraggedId(null);
               }}
-              className={`flex h-[680px] flex-col overflow-hidden rounded-xl border shadow-[0_16px_48px_rgba(0,0,0,0.22)] ${stagePanel[column] ?? "border-violet-300/70 bg-violet-500/15"}`}
+              className="flex h-[680px] flex-col overflow-hidden rounded-xl border shadow-[0_16px_48px_rgba(0,0,0,0.22)]"
+              style={{
+                borderColor: hexToRgba(stageColor, 0.88),
+                background: `linear-gradient(180deg, ${hexToRgba(stageColor, 0.18)} 0%, ${hexToRgba(stageColor, 0.08)} 100%)`
+              }}
             >
-              <div className={`rounded-t-xl border-b border-white/15 px-3 py-3 text-white shadow-[0_10px_28px_rgba(0,0,0,0.16)] ${stageStyle[column] ?? "border-violet-300 bg-violet-500"}`}>
+              <div
+                className="rounded-t-xl border-b border-white/20 px-3 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)]"
+                style={{
+                  background: `linear-gradient(135deg, ${stageColor} 0%, ${hexToRgba(stageColor, 0.74)} 100%)`,
+                  color: stageTextColor
+                }}
+              >
                 <div className="flex items-center justify-between gap-2">
                 {editingStage === column ? (
                   <div className="flex min-w-0 flex-1 items-center gap-1">
@@ -223,25 +290,34 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
                   <h3 className="min-w-0 truncate text-sm font-black text-white">{column}</h3>
                 )}
                 <div className="flex items-center gap-2">
-                  <span className="rounded-md bg-white/25 px-2 py-1 text-xs font-black text-white">{leads.length}</span>
+                  <span className="rounded-md bg-white/25 px-2 py-1 text-xs font-black" style={{ color: stageTextColor }}>{leads.length}</span>
+                  <input
+                    type="color"
+                    value={stageColor}
+                    onChange={(event) => persistStageColors({ ...stageColors, [column]: event.target.value })}
+                    className="h-7 w-7 cursor-pointer rounded-md border border-white/35 bg-transparent p-0"
+                    title={`Alterar cor da etapa ${column}`}
+                    aria-label={`Alterar cor da etapa ${column}`}
+                  />
                   {editingStage !== column && (
                     <button
                       onClick={() => {
                         setEditingStage(column);
                         setEditingValue(column);
                       }}
-                      className="rounded-md border border-line p-1 text-slate-300 hover:text-cyan"
+                      className="rounded-md border border-white/35 bg-black/10 p-1 hover:bg-white/20"
+                      style={{ color: stageTextColor }}
                       aria-label={`Renomear etapa ${column}`}
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
                   )}
-                  <button onClick={() => removeStage(column)} className="rounded-md border border-line p-1 text-slate-300 hover:text-red-400" aria-label={`Remover etapa ${column}`}>
+                  <button onClick={() => removeStage(column)} className="rounded-md border border-white/35 bg-black/10 p-1 hover:bg-white/20" style={{ color: stageTextColor }} aria-label={`Remover etapa ${column}`}>
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
-                <div className="mt-2 flex items-center justify-between text-xs text-white/90">
+                <div className="mt-2 flex items-center justify-between text-xs" style={{ color: stageTextColor }}>
                   <span>{leads.length} oportunidade(s)</span>
                   <span className="font-black">{formatBRL(stageValue(leads))}</span>
                 </div>

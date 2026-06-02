@@ -13,8 +13,17 @@ const API_URL = getApiBaseUrl();
 const whatsappMessage =
   "Ola, tudo bem? Estive analisando a presenca digital da sua empresa no Google e identifiquei algumas oportunidades que podem ajudar voces a gerar mais contatos e melhorar o posicionamento online. Posso te mostrar rapidamente?";
 
-function linkedinSearchUrl(name: string) {
-  return `https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(name)}`;
+function linkedinSearchUrl(name: string, city?: string, website?: string) {
+  let domain = "";
+  if (website) {
+    try {
+      domain = new URL(website.startsWith("http") ? website : `https://${website}`).hostname.replace(/^www\./, "");
+    } catch {
+      domain = "";
+    }
+  }
+  const query = [name, city, domain].filter(Boolean).join(" ");
+  return `https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(query)}`;
 }
 
 export default async function CompanyPage({ params }: { params: Promise<{ id: string }> }) {
@@ -91,9 +100,9 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                 </a>
               )}
               {!company.linkedin && (
-                <a href={linkedinSearchUrl(company.name)} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-blue-400/40 bg-blue-500/15 px-4 py-2 text-sm text-blue-100">
+                <a href={linkedinSearchUrl(company.name, company.city, company.website)} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-blue-400/40 bg-blue-500/15 px-4 py-2 text-sm text-blue-100">
                   <Linkedin className="h-4 w-4" />
-                  Buscar LinkedIn
+                  Buscar empresa no LinkedIn
                 </a>
               )}
               {company.youtube && (
@@ -157,7 +166,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                 ["Razão social", "não localizado em fonte pública"],
                 ["Decisor/responsável", "não localizado em fonte pública"],
                 ["E-mail público", "não localizado em fonte pública"],
-                ["LinkedIn", company.linkedin || linkedinSearchUrl(company.name)]
+                ["LinkedIn", company.linkedin || linkedinSearchUrl(company.name, company.city, company.website)]
               ].map(([label, value]) => (
                 <div key={label} className="rounded-md border border-line bg-ink px-3 py-2">
                   <p className="text-xs text-slate-500">{label}</p>

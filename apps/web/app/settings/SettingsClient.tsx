@@ -10,13 +10,19 @@ const BACKEND_ROOT_URL = getBackendRootUrl();
 
 const themePresets: Record<string, { primary: string; mode: Settings["mode"]; cyan: string; panel: string; ink: string; line: string }> = {
   "Nodere Azul": { primary: "#1E6FDB", mode: "dark", cyan: "#42D7FF", panel: "#0B1220", ink: "#050914", line: "#18243A" },
+  "Atlântico premium": { primary: "#0284C7", mode: "dark", cyan: "#22D3EE", panel: "#071827", ink: "#020817", line: "#164E63" },
   "Azul executivo": { primary: "#2563EB", mode: "dark", cyan: "#06B6D4", panel: "#0D1B2A", ink: "#050A14", line: "#1D3557" },
   "Executivo Escuro": { primary: "#2DD4BF", mode: "dark", cyan: "#38BDF8", panel: "#0D1624", ink: "#040812", line: "#223047" },
+  "Preto absoluto": { primary: "#3B82F6", mode: "dark", cyan: "#06B6D4", panel: "#030712", ink: "#000000", line: "#1F2937" },
+  "Aço premium": { primary: "#64748B", mode: "dark", cyan: "#38BDF8", panel: "#111827", ink: "#030712", line: "#334155" },
   "Verde Performance": { primary: "#16C784", mode: "dark", cyan: "#22D3EE", panel: "#071B18", ink: "#04100E", line: "#174239" },
   "Verde comercial": { primary: "#10B981", mode: "dark", cyan: "#2DD4BF", panel: "#06251F", ink: "#03110E", line: "#14532D" },
+  "Esmeralda forte": { primary: "#059669", mode: "dark", cyan: "#10B981", panel: "#052E2B", ink: "#021412", line: "#047857" },
   "Roxo SaaS": { primary: "#8B5CF6", mode: "dark", cyan: "#38BDF8", panel: "#111029", ink: "#070716", line: "#2B2852" },
   "Roxo tecnológico": { primary: "#A855F7", mode: "dark", cyan: "#60A5FA", panel: "#17102A", ink: "#080512", line: "#3B2463" },
+  "Violeta sólido": { primary: "#7C3AED", mode: "dark", cyan: "#A78BFA", panel: "#160B2E", ink: "#070316", line: "#4C1D95" },
   "Laranja performance": { primary: "#F97316", mode: "dark", cyan: "#22D3EE", panel: "#1F1307", ink: "#0F0803", line: "#7C2D12" },
+  "Solar executivo": { primary: "#F59E0B", mode: "dark", cyan: "#F97316", panel: "#211407", ink: "#0F0702", line: "#92400E" },
   "Vermelho conversão": { primary: "#EF4444", mode: "dark", cyan: "#F97316", panel: "#220A0A", ink: "#100303", line: "#7F1D1D" },
   "Magenta premium": { primary: "#EC4899", mode: "dark", cyan: "#A78BFA", panel: "#201020", ink: "#100712", line: "#831843" },
   "Ciano neon": { primary: "#06B6D4", mode: "dark", cyan: "#67E8F9", panel: "#061D24", ink: "#031014", line: "#155E75" },
@@ -31,8 +37,8 @@ type Settings = {
   colorPrimary: string;
   mode: "dark" | "light";
   fontFamily: string;
-  layoutDensity: "compact" | "comfortable" | "executive" | "large";
-  cardStyle: "cards" | "list" | "glass" | "solid";
+  layoutDensity: "ultraCompact" | "compact" | "comfortable" | "executive" | "large";
+  cardStyle: "cards" | "list" | "glass" | "solid" | "borderless" | "elevated";
   backendUrl: string;
 };
 
@@ -135,7 +141,7 @@ export function SettingsClient() {
           <label className="space-y-2 text-sm text-slate-300">
             Tema
             <select value={settings.theme} onChange={(event) => update("theme", event.target.value)} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
-              {["Claro", "Grafite claro", "Escuro", "Azul executivo", "Nodere Azul", "Executivo Escuro", "Ciano neon", "Roxo tecnológico", "Roxo SaaS", "Magenta premium", "Verde comercial", "Verde Performance", "Laranja performance", "Vermelho conversão", "Alto contraste"].map((item) => <option key={item}>{item}</option>)}
+              {["Claro", "Grafite claro", "Escuro", "Nodere Azul", "Atlântico premium", "Azul executivo", "Executivo Escuro", "Preto absoluto", "Aço premium", "Ciano neon", "Roxo tecnológico", "Roxo SaaS", "Violeta sólido", "Magenta premium", "Verde comercial", "Verde Performance", "Esmeralda forte", "Laranja performance", "Solar executivo", "Vermelho conversão", "Alto contraste"].map((item) => <option key={item}>{item}</option>)}
             </select>
           </label>
           <label className="space-y-2 text-sm text-slate-300">
@@ -152,12 +158,13 @@ export function SettingsClient() {
           <label className="space-y-2 text-sm text-slate-300">
             Fonte
             <select value={settings.fontFamily} onChange={(event) => update("fontFamily", event.target.value)} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
-              {["Inter", "Roboto", "Poppins", "Montserrat", "Manrope", "Nunito Sans", "Lato", "Open Sans", "System default", "Arial"].map((item) => <option key={item}>{item}</option>)}
+              {["Inter", "Roboto", "Poppins", "Montserrat", "Manrope", "Nunito Sans", "Lato", "Open Sans", "DM Sans", "Urbanist", "Source Sans 3", "Merriweather", "System default", "Arial"].map((item) => <option key={item}>{item}</option>)}
             </select>
           </label>
           <label className="space-y-2 text-sm text-slate-300">
             Densidade
             <select value={settings.layoutDensity} onChange={(event) => update("layoutDensity", event.target.value as Settings["layoutDensity"])} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
+              <option value="ultraCompact">Ultra compacto</option>
               <option value="compact">Compacto</option>
               <option value="comfortable">Expandido</option>
               <option value="executive">Executivo</option>
@@ -171,6 +178,8 @@ export function SettingsClient() {
               <option value="list">Listas</option>
               <option value="glass">Glass premium</option>
               <option value="solid">Sólido corporativo</option>
+              <option value="borderless">Sem bordas</option>
+              <option value="elevated">Elevado premium</option>
             </select>
           </label>
         </div>

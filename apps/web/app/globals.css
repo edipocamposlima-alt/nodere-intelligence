@@ -70,6 +70,16 @@ body {
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
 }
 
+:root[data-theme="light"] svg.text-cyan,
+:root[data-theme="light"] .text-cyan {
+  color: var(--nodere-primary);
+}
+
+:root[data-theme="light"] aside a,
+:root[data-theme="light"] aside button {
+  color: #15304f;
+}
+
 @media print {
   aside,
   header,
@@ -90,6 +100,19 @@ body {
 
 :root[data-density="comfortable"] .rounded-lg {
   border-radius: 0.75rem;
+}
+
+:root[data-density="ultraCompact"] main > div {
+  padding-block: 0.75rem;
+}
+
+:root[data-density="ultraCompact"] .rounded-lg,
+:root[data-density="ultraCompact"] .rounded-xl {
+  border-radius: 0.5rem;
+}
+
+:root[data-density="ultraCompact"] .metric-card {
+  padding: 0.85rem;
 }
 
 :root[data-density="comfortable"] main > div {
@@ -140,6 +163,20 @@ body {
 :root[data-card-style="solid"] .bg-panel\/70 {
   background-color: var(--color-panel);
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.18);
+}
+
+:root[data-card-style="borderless"] .bg-panel\/90,
+:root[data-card-style="borderless"] .bg-panel\/95,
+:root[data-card-style="borderless"] .bg-panel\/70 {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+:root[data-card-style="elevated"] .bg-panel\/90,
+:root[data-card-style="elevated"] .bg-panel\/95,
+:root[data-card-style="elevated"] .bg-panel\/70 {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-panel) 92%, white 8%) 0%, var(--color-panel) 100%);
+  box-shadow: 0 22px 70px rgba(30, 111, 219, 0.18), 0 1px 0 rgba(255, 255, 255, 0.08) inset;
 }
 
 .crm-stage-scroll {

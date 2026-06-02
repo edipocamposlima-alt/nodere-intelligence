@@ -4,7 +4,7 @@ import { BarChart3, Building2, CircleHelp, CreditCard, Inbox, KanbanSquare, Line
 import { getBillingStatus } from "@/lib/api";
 
 const items = [
-  { href: "/", label: "Dashboard", icon: BarChart3, hex: "#0EA5E9", bg: "linear-gradient(135deg,#0284C7,#38BDF8)" },
+  { href: "/", label: "Início", icon: BarChart3, hex: "#0EA5E9", bg: "linear-gradient(135deg,#0284C7,#38BDF8)" },
   { href: "/searches", label: "Busca de empresas", icon: Search, hex: "#06B6D4", bg: "linear-gradient(135deg,#0891B2,#22D3EE)" },
   { href: "/companies", label: "Empresas", icon: Building2, hex: "#2563EB", bg: "linear-gradient(135deg,#1D4ED8,#60A5FA)" },
   { href: "/crm", label: "CRM / Funil", icon: KanbanSquare, hex: "#A855F7", bg: "linear-gradient(135deg,#7C3AED,#C084FC)" },

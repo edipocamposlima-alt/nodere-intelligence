@@ -82,6 +82,36 @@ async function enrichWithApollo(company: Company, domain?: string): Promise<Exte
     output.messages.push("Apollo.io: site/domínio ausente; busca limitada por nome.");
   }
 
+  if (!output.legalName && !output.linkedin) {
+    const companyResponse = await fetch(`${config.enrichment.apolloApiUrl}/mixed_companies/search`, {
+      method: "POST",
+      headers,
+      signal: AbortSignal.timeout(15000),
+      body: JSON.stringify({
+        q_organization_name: company.name,
+        organization_locations: [company.city, company.state].filter(Boolean),
+        per_page: 3,
+        page: 1
+      })
+    });
+
+    if (companyResponse.ok) {
+      const payload = await companyResponse.json();
+      const org = Array.isArray(payload.organizations) ? payload.organizations[0] : Array.isArray(payload.accounts) ? payload.accounts[0] : undefined;
+      if (org) {
+        output.legalName = pickString(org.name, org.organization_name, org.legal_name);
+        output.linkedin = normalizeLinkedInUrl(pickString(org.linkedin_url, org.linkedin));
+        output.companySize = output.companySize || pickString(org.estimated_num_employees, org.employee_count, org.num_employees);
+        output.revenueRange = output.revenueRange || pickString(org.annual_revenue_printed, org.revenue_range, org.estimated_annual_revenue);
+        output.messages.push("Apollo.io: organização localizada por nome/cidade.");
+      } else {
+        output.messages.push("Apollo.io organização: nenhum resultado localizado por nome/cidade.");
+      }
+    } else {
+      output.messages.push(await providerHttpMessage("Apollo.io busca de organização", companyResponse));
+    }
+  }
+
   const peopleResponse = await fetch(`${config.enrichment.apolloApiUrl}/mixed_people/search`, {
     method: "POST",
     headers,
@@ -200,7 +230,8 @@ async function providerHttpMessage(label: string, response: Response) {
     return `${label}: chave inválida ou ausente. Revise a credencial no Render/Admin.`;
   }
   if (response.status === 403) {
-    return `${label}: integração conectada, mas a Apollo/Econodata recusou a consulta. Normalmente isso indica plano sem API, endpoint sem permissão ou política da conta. Corrija liberando o endpoint no provedor ou usando uma chave com acesso comercial. ${safeDetails ? `Detalhe seguro: ${safeDetails}` : ""}`.trim();
+    const provider = label.toLowerCase().includes("apollo") ? "Apollo" : "Econodata";
+    return `${label}: acesso negado pelo provedor. A integração está configurada, mas o ${provider} recusou este endpoint por plano, escopo da chave ou política da conta. Corrija no painel do provedor liberando API comercial para organizações/pessoas ou informe uma chave com esse acesso. ${safeDetails ? `Detalhe seguro: ${safeDetails}` : ""}`.trim();
   }
   if (response.status === 429) {
     return `${label}: limite de uso excedido. Aguarde a janela de quota ou revise o plano da integração.`;
