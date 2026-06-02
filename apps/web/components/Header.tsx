@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Bell, Search, ShieldCheck } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
@@ -13,6 +14,24 @@ const API_URL = getApiBaseUrl();
 export function Header() {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  const pageTitle = useMemo(() => {
+    const path = pathname || "/";
+    if (path.startsWith("/searches") || path.startsWith("/busca-de-empresas")) return "Busca de empresas";
+    if (path.startsWith("/companies")) return "Ficha 360° da empresa";
+    if (path.startsWith("/crm") || path.startsWith("/pipeline")) return "CRM Comercial";
+    if (path.startsWith("/reports") || path.startsWith("/relatorios")) return "Relatórios executivos";
+    if (path.startsWith("/integrations") || path.startsWith("/integracoes")) return "Integrações";
+    if (path.startsWith("/operators")) return "Operadores";
+    if (path.startsWith("/manual") || path.startsWith("/ajuda") || path.startsWith("/help")) return "Ajuda / Manual";
+    if (path.startsWith("/settings") || path.startsWith("/configuracoes")) return "Configurações";
+    if (path.startsWith("/admin")) return "Administrador";
+    if (path.startsWith("/intelligence") || path.startsWith("/ia")) return "Inteligência comercial";
+    if (path.startsWith("/inbox")) return "Caixa de entrada";
+    if (path.startsWith("/billing")) return "Faturamento";
+    return "Dashboard Executivo";
+  }, [pathname]);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,9 +69,9 @@ export function Header() {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-ink/90 px-4 py-3 backdrop-blur md:px-8">
       <div className="flex items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-electric/30 bg-electric/15 text-sm font-black text-white">N</span>
-          <span className="hidden text-sm font-semibold text-white sm:inline">NODERE</span>
+        <Link href="/" className="min-w-0">
+          <span className="block truncate text-base font-semibold text-white md:text-lg">{pageTitle}</span>
+          <span className="hidden text-xs text-slate-500 sm:block">Operação comercial e inteligência de prospecção</span>
         </Link>
 
         <div className="hidden w-full max-w-md items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 md:flex">

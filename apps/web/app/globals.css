@@ -70,6 +70,24 @@ body {
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
 }
 
+@media print {
+  aside,
+  header,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+}
+
 :root[data-density="comfortable"] .rounded-lg {
   border-radius: 0.75rem;
 }
@@ -80,6 +98,23 @@ body {
 
 :root[data-density="compact"] main > div {
   padding-block: 1.25rem;
+}
+
+:root[data-density="executive"] main > div {
+  padding-block: 1.75rem;
+}
+
+:root[data-density="large"] main > div {
+  padding-block: 2.5rem;
+}
+
+:root[data-density="large"] .rounded-lg,
+:root[data-density="large"] .rounded-xl {
+  border-radius: 1rem;
+}
+
+:root[data-density="large"] .metric-card {
+  padding: 1.5rem;
 }
 
 :root[data-card-style="list"] .bg-panel\/90,

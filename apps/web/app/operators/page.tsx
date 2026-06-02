@@ -2,6 +2,7 @@ import { Medal, Target, TrendingUp } from "lucide-react";
 import { getOperatorRanking, getOperators, getOperatorGoals } from "@/lib/api";
 import type { OperatorGoal } from "@/lib/types";
 import { GoalsForm } from "./GoalsForm";
+import { OperatorCreateForm } from "./OperatorCreateForm";
 
 function formatBRL(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -46,8 +47,10 @@ export default async function OperatorsPage() {
     <div className="space-y-8 p-4 md:p-8">
       <div>
         <h2 className="text-2xl font-semibold text-white">Operadores</h2>
-        <p className="mt-1 text-sm text-slate-400">Ranking de produtividade e metas mensais</p>
+        <p className="mt-1 text-sm text-slate-400">Cadastro, ranking de produtividade e metas mensais</p>
       </div>
+
+      <OperatorCreateForm />
 
       {/* Ranking podium */}
       <section className="space-y-4">

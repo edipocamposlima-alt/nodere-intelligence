@@ -200,6 +200,10 @@ export function getOperators() {
   return api<Operator[]>("/operators", undefined, []);
 }
 
+export function createOperator(payload: { name: string; email?: string; role?: "admin" | "operator" }) {
+  return api<Operator>("/operators", { method: "POST", body: JSON.stringify(payload) });
+}
+
 export function getOperatorRanking() {
   return api<OperatorMetrics[]>("/operators/ranking", undefined, []);
 }
