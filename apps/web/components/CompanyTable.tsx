@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, Download, ExternalLink, FileText, MessageCircle, Save, Search, Trash2, X } from "lucide-react";
 import { Company } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
-import { addCompanyNote } from "@/lib/api";
+import { addCompanyNote, getCompanies } from "@/lib/api";
 
 const whatsappMessage =
   "Ola, tudo bem? Estive analisando a presenca digital da sua empresa no Google e identifiquei algumas oportunidades que podem ajudar voces a gerar mais contatos e melhorar o posicionamento online. Posso te mostrar rapidamente?";
@@ -86,16 +86,47 @@ function companyMatchesQuery(company: Company, query: string) {
 
 export function CompanyTable({ companies, initialQuery = "" }: { companies: Company[]; initialQuery?: string }) {
   const router = useRouter();
+  const [baseCompanies, setBaseCompanies] = useState(companies);
   const [visibleCompanies, setVisibleCompanies] = useState(companies);
   const [query, setQuery] = useState(initialQuery);
+  const [loadingCompanies, setLoadingCompanies] = useState(companies.length === 0);
+  const [loadError, setLoadError] = useState("");
   const [saved, setSaved] = useState<Record<string, "saving" | "saved" | "error">>({});
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    setVisibleCompanies(companies.filter((company) => companyMatchesQuery(company, query)));
+    setBaseCompanies(companies);
+  }, [companies]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadCompaniesFromBrowser() {
+      if (baseCompanies.length > 0) {
+        setLoadingCompanies(false);
+        return;
+      }
+      setLoadingCompanies(true);
+      setLoadError("");
+      try {
+        const loaded = await getCompanies();
+        if (!cancelled) setBaseCompanies(loaded);
+      } catch (error) {
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : "Não foi possível carregar empresas.");
+      } finally {
+        if (!cancelled) setLoadingCompanies(false);
+      }
+    }
+    void loadCompaniesFromBrowser();
+    return () => {
+      cancelled = true;
+    };
+  }, [baseCompanies.length]);
+
+  useEffect(() => {
+    setVisibleCompanies(baseCompanies.filter((company) => companyMatchesQuery(company, query)));
     setSelected({});
-  }, [companies, query]);
+  }, [baseCompanies, query]);
 
   useEffect(() => {
     setQuery(initialQuery);
@@ -203,9 +234,14 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
             )}
           </label>
           <div className="text-sm text-slate-400">
-            {selectedCompanies.length ? `${selectedCompanies.length} selecionada(s)` : `${visibleCompanies.length} de ${companies.length} empresa(s)`}
+            {selectedCompanies.length ? `${selectedCompanies.length} selecionada(s)` : `${visibleCompanies.length} de ${baseCompanies.length} empresa(s)`}
           </div>
         </div>
+        {(loadingCompanies || loadError) && (
+          <div className={`rounded-md border px-3 py-2 text-xs ${loadError ? "border-red-400/40 bg-red-500/10 text-red-100" : "border-cyan/30 bg-cyan/10 text-cyan"}`}>
+            {loadError || "Carregando empresas salvas do backend..."}
+          </div>
+        )}
         <div className="flex flex-wrap gap-2">
           <button onClick={saveSelected} disabled={selectedCompanies.length === 0} className="inline-flex items-center gap-2 rounded-lg bg-electric px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">
             <Save className="h-4 w-4" />Salvar selecionadas
