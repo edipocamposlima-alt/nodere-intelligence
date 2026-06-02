@@ -18,6 +18,7 @@ import auditRouter from "./routes/audit.js";
 import adminRouter from "./routes/admin.js";
 import { processDueSteps } from "./services/emailSequences.js";
 import { requireAuth } from "./middleware/auth.js";
+import { attachSession, getRequestWorkspaceId } from "./middleware/session.js";
 import { searchCompaniesWithMeta } from "./services/companyStore.js";
 import { getAppSettings, savePipelineSettings, savePreferences } from "./services/settingsStore.js";
 import { scanWebsite } from "./services/websiteScanner.js";
@@ -50,6 +51,7 @@ app.use(
 app.post("/api/billing/webhook", express.raw({ type: "application/json" }), stripeWebhookHandler);
 
 app.use(express.json());
+app.use(attachSession);
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, name: "NODERE Intelligence API" });
@@ -86,9 +88,9 @@ function publicIntegrationSettings() {
   };
 }
 
-app.get("/api/settings", async (_req, res, next) => {
+app.get("/api/settings", async (req, res, next) => {
   try {
-    const persisted = await getAppSettings();
+    const persisted = await getAppSettings(getRequestWorkspaceId(req));
     res.json({
       ...publicIntegrationSettings(),
       ...persisted
@@ -100,7 +102,7 @@ app.get("/api/settings", async (_req, res, next) => {
 
 app.patch("/api/settings", async (req, res, next) => {
   try {
-    const preferences = await savePreferences(req.body ?? {});
+    const preferences = await savePreferences(req.body ?? {}, getRequestWorkspaceId(req));
     res.json({
       ok: true,
       message: "Preferencias salvas no backend persistente. Secrets e chaves de API continuam somente no backend/Render.",
@@ -114,7 +116,7 @@ app.patch("/api/settings", async (req, res, next) => {
 
 app.patch("/api/settings/pipeline", async (req, res, next) => {
   try {
-    const pipeline = await savePipelineSettings(req.body ?? {});
+    const pipeline = await savePipelineSettings(req.body ?? {}, getRequestWorkspaceId(req));
     res.json({
       ok: true,
       message: "Funil salvo no backend persistente.",
@@ -263,7 +265,7 @@ app.get("/api/places/search", async (req, res, next) => {
       state: typeof req.query.state === "string" ? req.query.state : undefined,
       keyword: typeof req.query.keyword === "string" ? req.query.keyword : undefined
     };
-    const result = await searchCompaniesWithMeta(input);
+    const result = await searchCompaniesWithMeta(input, getRequestWorkspaceId(req));
     return res.json(result);
   } catch (error) {
     return next(error);

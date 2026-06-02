@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { getRequestWorkspaceId } from "../middleware/session.js";
 import { searchCompaniesWithMeta } from "../services/companyStore.js";
 import { consumeSearch } from "../services/credits.js";
 import { listSearchHistory, saveSearch, getSearch, touchSearch } from "../db/searchHistory.js";
@@ -18,15 +19,15 @@ const searchSchema = z.object({
   { message: "Informe nome da empresa, segmento, cidade, estado ou palavra-chave." }
 );
 
-router.get("/", async (_req, res, next) => {
+router.get("/", async (req, res, next) => {
   try {
-    res.json(await listSearchHistory());
+    res.json(await listSearchHistory(getRequestWorkspaceId(req)));
   } catch (err) { next(err); }
 });
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const search = await getSearch(req.params.id);
+    const search = await getSearch(req.params.id, getRequestWorkspaceId(req));
     if (!search) return res.status(404).json({ message: "Search not found" });
     return res.json(search);
   } catch (err) { return next(err); }
@@ -35,7 +36,8 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     const input = searchSchema.parse(req.body);
-    const result = await searchCompaniesWithMeta(input);
+    const workspaceId = getRequestWorkspaceId(req);
+    const result = await searchCompaniesWithMeta(input, workspaceId);
     const companyIds = result.companies.map((c) => c.id);
 
     consumeSearch([input.companyName, input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" "));
@@ -49,7 +51,8 @@ router.post("/", async (req, res, next) => {
       },
       result.companies.length,
       result.source,
-      companyIds
+      companyIds,
+      workspaceId
     );
 
     res.status(201).json({
@@ -71,7 +74,8 @@ router.post("/", async (req, res, next) => {
 
 router.post("/:id/rerun", async (req, res, next) => {
   try {
-    const saved = await getSearch(req.params.id);
+    const workspaceId = getRequestWorkspaceId(req);
+    const saved = await getSearch(req.params.id, workspaceId);
     if (!saved) return res.status(404).json({ message: "Search not found" });
 
     const result = await searchCompaniesWithMeta({
@@ -79,11 +83,11 @@ router.post("/:id/rerun", async (req, res, next) => {
       state: saved.state,
       segment: saved.segment,
       keyword: saved.keyword
-    });
+    }, workspaceId);
 
     const companyIds = result.companies.map((c) => c.id);
     consumeSearch(`${saved.segment} em ${saved.city} (rerun)`);
-    await touchSearch(saved.id, result.companies.length, result.source, companyIds);
+    await touchSearch(saved.id, result.companies.length, result.source, companyIds, workspaceId);
 
     return res.json({
       search: {

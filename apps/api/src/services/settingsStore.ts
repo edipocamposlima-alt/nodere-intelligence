@@ -69,33 +69,38 @@ function sanitizePipeline(input: Partial<PipelineSettings>): PipelineSettings {
   return { stages, stageColors };
 }
 
-async function readSetting<T>(key: string): Promise<T | undefined> {
-  if (!hasSupabase()) return memSettingsRecord[key] as T | undefined;
+function scopedKey(key: string, workspaceId = "default") {
+  return `${workspaceId}:${key}`;
+}
+
+async function readSetting<T>(key: string, workspaceId = "default"): Promise<T | undefined> {
+  if (!hasSupabase()) return memSettingsRecord[scopedKey(key, workspaceId)] as T | undefined;
   const sb = getSupabase()!;
-  const { data, error } = await sb.from("nodere_app_settings").select("value").eq("key", key).maybeSingle();
+  const { data, error } = await sb.from("nodere_app_settings").select("value").eq("key", scopedKey(key, workspaceId)).maybeSingle();
   if (error) throw error;
   return data?.value as T | undefined;
 }
 
-async function writeSetting(key: keyof AppSettings, value: unknown): Promise<void> {
+async function writeSetting(key: keyof AppSettings, value: unknown, workspaceId = "default"): Promise<void> {
   if (!hasSupabase()) {
-    memSettingsRecord[key] = value;
+    memSettingsRecord[scopedKey(key, workspaceId)] = value;
     return;
   }
   const sb = getSupabase()!;
   const { error } = await sb.from("nodere_app_settings").upsert({
-    key,
+    key: scopedKey(key, workspaceId),
+    workspace_id: workspaceId,
     value,
     updated_at: new Date().toISOString()
   }, { onConflict: "key" });
   if (error) throw error;
 }
 
-export async function getAppSettings(): Promise<AppSettings> {
+export async function getAppSettings(workspaceId = "default"): Promise<AppSettings> {
   try {
     const [preferences, pipeline] = await Promise.all([
-      readSetting<PublicPreferences>("preferences"),
-      readSetting<PipelineSettings>("pipeline")
+      readSetting<PublicPreferences>("preferences", workspaceId),
+      readSetting<PipelineSettings>("pipeline", workspaceId)
     ]);
     return {
       preferences: { ...memSettings.preferences, ...(preferences ?? {}) },
@@ -109,11 +114,11 @@ export async function getAppSettings(): Promise<AppSettings> {
   }
 }
 
-export async function savePreferences(input: Partial<PublicPreferences>) {
-  const current = await getAppSettings();
+export async function savePreferences(input: Partial<PublicPreferences>, workspaceId = "default") {
+  const current = await getAppSettings(workspaceId);
   const preferences = { ...current.preferences, ...sanitizePreferences(input) };
   try {
-    await writeSetting("preferences", preferences);
+    await writeSetting("preferences", preferences, workspaceId);
     memSettings.preferences = preferences;
     return preferences;
   } catch (error) {
@@ -125,15 +130,15 @@ export async function savePreferences(input: Partial<PublicPreferences>) {
   }
 }
 
-export async function savePipelineSettings(input: Partial<PipelineSettings>) {
-  const current = await getAppSettings();
+export async function savePipelineSettings(input: Partial<PipelineSettings>, workspaceId = "default") {
+  const current = await getAppSettings(workspaceId);
   const sanitized = sanitizePipeline(input);
   const pipeline = {
     stages: sanitized.stages ?? current.pipeline.stages,
     stageColors: { ...(current.pipeline.stageColors ?? {}), ...(sanitized.stageColors ?? {}) }
   };
   try {
-    await writeSetting("pipeline", pipeline);
+    await writeSetting("pipeline", pipeline, workspaceId);
     memSettings.pipeline = pipeline;
     return pipeline;
   } catch (error) {

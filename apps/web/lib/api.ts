@@ -3,6 +3,7 @@ import { getApiBaseUrl } from "./apiBase";
 
 const API_URL = getApiBaseUrl();
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
+const USER_TOKEN_KEY = "nodere_admin_token";
 
 export class ApiRequestError extends Error {
   status?: number;
@@ -30,11 +31,12 @@ export const emptyDashboard: DashboardMetrics = {
 
 async function api<T>(path: string, options?: RequestInit, fallback?: T): Promise<T> {
   try {
+    const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
     const response = await fetch(`${API_URL}${path}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
-        ...(API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}),
+        ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}),
         ...(options?.headers ?? {})
       },
       cache: "no-store"

@@ -23,7 +23,8 @@ export async function saveSearch(
   params: Pick<SavedSearch, "city" | "state" | "segment" | "keyword">,
   resultCount: number,
   source: SavedSearch["source"],
-  companyIds: string[]
+  companyIds: string[],
+  workspaceId = "default"
 ): Promise<SavedSearch> {
   const now = new Date().toISOString();
   const saved: SavedSearch = {
@@ -35,6 +36,7 @@ export async function saveSearch(
     createdAt: now,
     lastRanAt: now
   };
+  (saved as any).workspaceId = workspaceId;
 
   memHistory.unshift(saved);
 
@@ -42,6 +44,7 @@ export async function saveSearch(
     const sb = getSupabase()!;
     sb.from("nodere_searches").insert({
       id: saved.id,
+      workspace_id: workspaceId,
       city: saved.city,
       state: saved.state,
       segment: saved.segment,
@@ -57,12 +60,13 @@ export async function saveSearch(
   return saved;
 }
 
-export async function listSearchHistory(): Promise<SavedSearch[]> {
+export async function listSearchHistory(workspaceId = "default"): Promise<SavedSearch[]> {
   if (hasSupabase()) {
     const sb = getSupabase()!;
     const { data, error } = await sb
       .from("nodere_searches")
       .select("*")
+      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(50);
     if (!error && data) {
@@ -74,22 +78,22 @@ export async function listSearchHistory(): Promise<SavedSearch[]> {
       return rows;
     }
   }
-  return memHistory;
+  return memHistory.filter((search) => ((search as any).workspaceId ?? "default") === workspaceId);
 }
 
-export async function getSearch(id: string): Promise<SavedSearch | undefined> {
-  const mem = memHistory.find((s) => s.id === id);
+export async function getSearch(id: string, workspaceId = "default"): Promise<SavedSearch | undefined> {
+  const mem = memHistory.find((s) => s.id === id && (((s as any).workspaceId ?? "default") === workspaceId));
   if (mem) return mem;
 
   if (hasSupabase()) {
     const sb = getSupabase()!;
-    const { data } = await sb.from("nodere_searches").select("*").eq("id", id).maybeSingle();
+    const { data } = await sb.from("nodere_searches").select("*").eq("id", id).eq("workspace_id", workspaceId).maybeSingle();
     if (data) return fromRow(data as Record<string, unknown>);
   }
   return undefined;
 }
 
-export async function touchSearch(id: string, resultCount: number, source: SavedSearch["source"], companyIds: string[]) {
+export async function touchSearch(id: string, resultCount: number, source: SavedSearch["source"], companyIds: string[], workspaceId = "default") {
   const now = new Date().toISOString();
   const mem = memHistory.find((s) => s.id === id);
   if (mem) {
@@ -104,6 +108,7 @@ export async function touchSearch(id: string, resultCount: number, source: Saved
     sb.from("nodere_searches")
       .update({ last_ran_at: now, result_count: resultCount, source, company_ids: companyIds })
       .eq("id", id)
+      .eq("workspace_id", workspaceId)
       ;
   }
 

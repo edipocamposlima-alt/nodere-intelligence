@@ -74,14 +74,14 @@ export interface OperationDocument {
 
 // ─── Supabase helpers ────────────────────────────────────────────────────────
 
-function toRow(c: Company): Record<string, unknown> {
+function toRow(c: Company, workspaceId = "default"): Record<string, unknown> {
   const { id, name, category, city, state, address, phone, whatsapp, website,
     instagram, facebook, linkedin, youtube, rating, reviewCount, mapsUrl,
     latitude, longitude, status, score, opportunityLevel, enrichmentStatus,
     lastContactAt, detectedOpportunities, suggestions, createdAt, updatedAt,
     notes, ...rest } = c;
   return {
-    id, name, category, city, state, address, phone, whatsapp, website,
+    id, workspace_id: workspaceId, name, category, city, state, address, phone, whatsapp, website,
     instagram, facebook, linkedin, youtube, rating,
     review_count: reviewCount,
     maps_url: mapsUrl,
@@ -174,11 +174,12 @@ function fromRow(row: Record<string, unknown>): Company {
   };
 }
 
-async function dbList(): Promise<Company[]> {
+async function dbList(workspaceId = "default"): Promise<Company[]> {
   const sb = getSupabase()!;
   const { data, error } = await sb
     .from("nodere_companies")
     .select("*, nodere_company_notes(id, company_id, body, created_at)")
+    .eq("workspace_id", workspaceId)
     .order("score", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((row: Record<string, unknown>) => {
@@ -188,12 +189,13 @@ async function dbList(): Promise<Company[]> {
   });
 }
 
-async function dbGet(id: string): Promise<Company | undefined> {
+async function dbGet(id: string, workspaceId = "default"): Promise<Company | undefined> {
   const sb = getSupabase()!;
   const { data, error } = await sb
     .from("nodere_companies")
     .select("*, nodere_company_notes(id, company_id, body, created_at)")
     .eq("id", id)
+    .eq("workspace_id", workspaceId)
     .maybeSingle();
   if (error) throw error;
   if (!data) return undefined;
@@ -202,68 +204,72 @@ async function dbGet(id: string): Promise<Company | undefined> {
   return c;
 }
 
-async function dbUpsert(items: Company[]): Promise<void> {
+async function dbUpsert(items: Company[], workspaceId = "default"): Promise<void> {
   if (items.length === 0) return;
   const sb = getSupabase()!;
-  const rows = items.map(toRow);
+  const rows = items.map((item) => toRow(item, workspaceId));
   const { error } = await sb.from("nodere_companies").upsert(rows, { onConflict: "id" });
   if (error) throw error;
 }
 
-async function dbUpdateFields(id: string, fields: Record<string, unknown>): Promise<void> {
+async function dbUpdateFields(id: string, fields: Record<string, unknown>, workspaceId = "default"): Promise<void> {
   const sb = getSupabase()!;
-  const { error } = await sb.from("nodere_companies").update(fields).eq("id", id);
+  const { error } = await sb.from("nodere_companies").update(fields).eq("id", id).eq("workspace_id", workspaceId);
   if (error) throw error;
 }
 
-async function dbAddNote(companyId: string, body: string) {
+async function dbAddNote(companyId: string, body: string, workspaceId = "default") {
   const sb = getSupabase()!;
-  const note = { id: randomUUID(), company_id: companyId, body, created_at: new Date().toISOString() };
+  const note = { id: randomUUID(), workspace_id: workspaceId, company_id: companyId, body, created_at: new Date().toISOString() };
   const { error } = await sb.from("nodere_company_notes").insert(note);
   if (error) throw error;
   return { id: note.id, companyId, body, createdAt: note.created_at };
 }
 
-async function dbListNotes(companyId: string) {
+async function dbListNotes(companyId: string, workspaceId = "default") {
   const sb = getSupabase()!;
   const { data, error } = await sb
     .from("nodere_company_notes")
     .select("id, company_id, body, created_at")
     .eq("company_id", companyId)
+    .eq("workspace_id", workspaceId)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return mapPublicNotes((data ?? []) as Record<string, unknown>[]);
 }
 
-async function dbDeleteNote(companyId: string, noteId: string) {
+async function dbDeleteNote(companyId: string, noteId: string, workspaceId = "default") {
   const sb = getSupabase()!;
   const { error } = await sb
     .from("nodere_company_notes")
     .delete()
     .eq("company_id", companyId)
+    .eq("workspace_id", workspaceId)
     .eq("id", noteId);
   if (error) throw error;
 }
 
-async function dbListSystemItems<T>(companyId: string, prefix: string): Promise<T[]> {
+async function dbListSystemItems<T>(companyId: string, prefix: string, workspaceId = "default"): Promise<T[]> {
   const sb = getSupabase()!;
   const { data, error } = await sb
     .from("nodere_company_notes")
     .select("id, company_id, body, created_at")
     .eq("company_id", companyId)
+    .eq("workspace_id", workspaceId)
     .like("body", `${prefix}%`)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return ((data ?? []) as Record<string, unknown>[]).map((row) => parseSystemItem<T>(row, prefix)).filter(Boolean) as T[];
 }
 
-async function dbAddSystemItem(companyId: string, prefix: string, value: Record<string, unknown>) {
+async function dbAddSystemItem(companyId: string, prefix: string, value: Record<string, unknown>, workspaceId = "default") {
   const sb = getSupabase()!;
   const id = randomUUID();
   const createdAt = new Date().toISOString();
   const item = { ...value, id, companyId, createdAt };
   const { error } = await sb.from("nodere_company_notes").insert({
     id,
+    workspace_id: workspaceId,
     company_id: companyId,
     body: `${prefix}${JSON.stringify(item)}`,
     created_at: createdAt
@@ -272,7 +278,7 @@ async function dbAddSystemItem(companyId: string, prefix: string, value: Record<
   return item;
 }
 
-async function dbReplaceSystemItem(companyId: string, noteId: string, prefix: string, value: Record<string, unknown>) {
+async function dbReplaceSystemItem(companyId: string, noteId: string, prefix: string, value: Record<string, unknown>, workspaceId = "default") {
   const sb = getSupabase()!;
   const updatedAt = new Date().toISOString();
   const item = { ...value, id: noteId, companyId, updatedAt };
@@ -280,6 +286,7 @@ async function dbReplaceSystemItem(companyId: string, noteId: string, prefix: st
     .from("nodere_company_notes")
     .update({ body: `${prefix}${JSON.stringify(item)}` })
     .eq("company_id", companyId)
+    .eq("workspace_id", workspaceId)
     .eq("id", noteId);
   if (error) throw error;
   return item;
@@ -287,41 +294,41 @@ async function dbReplaceSystemItem(companyId: string, noteId: string, prefix: st
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
-export async function listCompaniesAsync(): Promise<Company[]> {
+export async function listCompaniesAsync(workspaceId = "default"): Promise<Company[]> {
   if (hasSupabase()) {
-    return withPersistentRead("listar leads", dbList, () => [...memStore].sort((a, b) => b.score - a.score));
+    return withPersistentRead("listar leads", () => dbList(workspaceId), () => memStore.filter((c) => ((c as any).workspaceId ?? "default") === workspaceId).sort((a, b) => b.score - a.score));
   }
-  return [...memStore].sort((a, b) => b.score - a.score);
+  return memStore.filter((c) => ((c as any).workspaceId ?? "default") === workspaceId).sort((a, b) => b.score - a.score);
 }
 
 export function listCompanies(): Company[] {
   return [...memStore].sort((a, b) => b.score - a.score);
 }
 
-export async function getCompanyAsync(id: string): Promise<Company | undefined> {
+export async function getCompanyAsync(id: string, workspaceId = "default"): Promise<Company | undefined> {
   if (hasSupabase()) {
-    return withPersistentRead("carregar lead", () => dbGet(id), () => memStore.find((c) => c.id === id));
+    return withPersistentRead("carregar lead", () => dbGet(id, workspaceId), () => memStore.find((c) => c.id === id && (((c as any).workspaceId ?? "default") === workspaceId)));
   }
-  return memStore.find((c) => c.id === id);
+  return memStore.find((c) => c.id === id && (((c as any).workspaceId ?? "default") === workspaceId));
 }
 
 export function getCompany(id: string): Company | undefined {
   return memStore.find((c) => c.id === id);
 }
 
-export async function searchCompaniesWithMeta(input: SearchRequest) {
+export async function searchCompaniesWithMeta(input: SearchRequest, workspaceId = "default") {
   if (config.useMockData) {
     const generated = generateMockSearch(input);
-    syncToMem(generated);
-    if (hasSupabase()) await withPersistentWrite("salvar resultados demonstrativos", () => dbUpsert(generated), () => undefined);
+    syncToMem(generated, workspaceId);
+    if (hasSupabase()) await withPersistentWrite("salvar resultados demonstrativos", () => dbUpsert(generated, workspaceId), () => undefined);
     return { source: "mock" as const, companies: generated, warning: "Modo demonstrativo ativo (USE_MOCK_DATA=true)." };
   }
 
   try {
     const generated = await searchGooglePlaces(input);
     const withStatus = generated.map((c) => ({ ...c, enrichmentStatus: "pending" as const }));
-    syncToMem(withStatus);
-    if (hasSupabase()) await withPersistentWrite("salvar resultados da busca", () => dbUpsert(withStatus), () => undefined);
+    syncToMem(withStatus, workspaceId);
+    if (hasSupabase()) await withPersistentWrite("salvar resultados da busca", () => dbUpsert(withStatus, workspaceId), () => undefined);
     queueEnrichmentForAll(withStatus);
     return { source: "google" as const, companies: withStatus };
   } catch (error) {
@@ -330,35 +337,35 @@ export async function searchCompaniesWithMeta(input: SearchRequest) {
   }
 }
 
-export async function searchCompanies(input: SearchRequest) {
-  return (await searchCompaniesWithMeta(input)).companies;
+export async function searchCompanies(input: SearchRequest, workspaceId = "default") {
+  return (await searchCompaniesWithMeta(input, workspaceId)).companies;
 }
 
-export async function updateStatus(id: string, status: CrmStatus): Promise<Company | undefined> {
+export async function updateStatus(id: string, status: CrmStatus, workspaceId = "default"): Promise<Company | undefined> {
   const now = new Date().toISOString();
   const fields: Record<string, unknown> = { status, updated_at: now };
   if (status === "Contatado") fields.last_contact_at = now;
 
   if (hasSupabase()) {
-    await withPersistentWrite("atualizar etapa do lead", () => dbUpdateFields(id, fields), () => undefined);
+    await withPersistentWrite("atualizar etapa do lead", () => dbUpdateFields(id, fields, workspaceId), () => undefined);
   }
-  const local = memStore.find((c) => c.id === id);
+  const local = memStore.find((c) => c.id === id && (((c as any).workspaceId ?? "default") === workspaceId));
   if (local) {
     local.status = status;
     local.updatedAt = now;
     if (status === "Contatado") local.lastContactAt = now;
     return local;
   }
-  if (hasSupabase()) return dbGet(id);
+  if (hasSupabase()) return dbGet(id, workspaceId);
   return undefined;
 }
 
-export async function addNote(id: string, body: string) {
-  const company = memStore.find((c) => c.id === id) ?? (hasSupabase() ? await dbGet(id) : undefined);
+export async function addNote(id: string, body: string, workspaceId = "default") {
+  const company = memStore.find((c) => c.id === id && (((c as any).workspaceId ?? "default") === workspaceId)) ?? (hasSupabase() ? await dbGet(id, workspaceId) : undefined);
   if (!company) return undefined;
 
   if (hasSupabase()) {
-    return withPersistentWrite("salvar observacao do lead", () => dbAddNote(id, body), () => {
+    return withPersistentWrite("salvar observacao do lead", () => dbAddNote(id, body, workspaceId), () => {
       const note = { id: randomUUID(), companyId: id, body, createdAt: new Date().toISOString() };
       company.notes.unshift(note);
       return note;
@@ -371,32 +378,32 @@ export async function addNote(id: string, body: string) {
   return note;
 }
 
-export async function listNotes(id: string) {
+export async function listNotes(id: string, workspaceId = "default") {
   if (hasSupabase()) {
-    return withPersistentRead("listar observacoes do lead", () => dbListNotes(id), () => {
-      const company = memStore.find((c) => c.id === id);
+    return withPersistentRead("listar observacoes do lead", () => dbListNotes(id, workspaceId), () => {
+      const company = memStore.find((c) => c.id === id && (((c as any).workspaceId ?? "default") === workspaceId));
       return company?.notes ?? [];
     });
   }
-  const company = memStore.find((c) => c.id === id);
+  const company = memStore.find((c) => c.id === id && (((c as any).workspaceId ?? "default") === workspaceId));
   return company?.notes ?? [];
 }
 
-export async function removeNote(companyId: string, noteId: string) {
-  if (hasSupabase()) await withPersistentWrite("remover observacao do lead", () => dbDeleteNote(companyId, noteId), () => undefined);
-  const company = memStore.find((c) => c.id === companyId);
+export async function removeNote(companyId: string, noteId: string, workspaceId = "default") {
+  if (hasSupabase()) await withPersistentWrite("remover observacao do lead", () => dbDeleteNote(companyId, noteId, workspaceId), () => undefined);
+  const company = memStore.find((c) => c.id === companyId && (((c as any).workspaceId ?? "default") === workspaceId));
   if (company) company.notes = company.notes.filter((note) => note.id !== noteId);
   return { ok: true };
 }
 
-export async function listTasks(companyId: string): Promise<OperationTask[]> {
+export async function listTasks(companyId: string, workspaceId = "default"): Promise<OperationTask[]> {
   if (hasSupabase()) {
-    return withPersistentRead("listar tarefas do lead", () => dbListSystemItems<OperationTask>(companyId, TASK_PREFIX), () => taskStore.get(companyId) ?? []);
+    return withPersistentRead("listar tarefas do lead", () => dbListSystemItems<OperationTask>(companyId, TASK_PREFIX, workspaceId), () => taskStore.get(`${workspaceId}:${companyId}`) ?? []);
   }
-  return taskStore.get(companyId) ?? [];
+  return taskStore.get(`${workspaceId}:${companyId}`) ?? [];
 }
 
-export async function createTask(companyId: string, input: Partial<OperationTask>): Promise<OperationTask> {
+export async function createTask(companyId: string, input: Partial<OperationTask>, workspaceId = "default"): Promise<OperationTask> {
   const task: Omit<OperationTask, "id" | "companyId" | "createdAt"> = {
     title: input.title || "Follow-up",
     description: input.description,
@@ -409,32 +416,32 @@ export async function createTask(companyId: string, input: Partial<OperationTask
   if (hasSupabase()) {
     return withPersistentWrite(
       "criar tarefa do lead",
-      () => dbAddSystemItem(companyId, TASK_PREFIX, task as unknown as Record<string, unknown>).then((item) => item as unknown as OperationTask),
-      () => createMemoryTask(companyId, task)
+      () => dbAddSystemItem(companyId, TASK_PREFIX, task as unknown as Record<string, unknown>, workspaceId).then((item) => item as unknown as OperationTask),
+      () => createMemoryTask(companyId, task, workspaceId)
     );
   }
-  return createMemoryTask(companyId, task);
+  return createMemoryTask(companyId, task, workspaceId);
 }
 
-export async function updateTask(companyId: string, taskId: string, input: Partial<OperationTask>): Promise<OperationTask | undefined> {
-  const existing = (await listTasks(companyId)).find((task) => task.id === taskId);
+export async function updateTask(companyId: string, taskId: string, input: Partial<OperationTask>, workspaceId = "default"): Promise<OperationTask | undefined> {
+  const existing = (await listTasks(companyId, workspaceId)).find((task) => task.id === taskId);
   if (!existing) return undefined;
   const updated: OperationTask = { ...existing, ...input, updatedAt: new Date().toISOString() };
   if (hasSupabase()) {
-    await withPersistentWrite("atualizar tarefa do lead", () => dbReplaceSystemItem(companyId, taskId, TASK_PREFIX, updated as unknown as Record<string, unknown>).then(() => undefined), () => undefined);
+    await withPersistentWrite("atualizar tarefa do lead", () => dbReplaceSystemItem(companyId, taskId, TASK_PREFIX, updated as unknown as Record<string, unknown>, workspaceId).then(() => undefined), () => undefined);
   }
-  taskStore.set(companyId, (taskStore.get(companyId) ?? []).map((task) => task.id === taskId ? updated : task));
+  taskStore.set(`${workspaceId}:${companyId}`, (taskStore.get(`${workspaceId}:${companyId}`) ?? []).map((task) => task.id === taskId ? updated : task));
   return updated;
 }
 
-export async function listDocuments(companyId: string): Promise<OperationDocument[]> {
+export async function listDocuments(companyId: string, workspaceId = "default"): Promise<OperationDocument[]> {
   if (hasSupabase()) {
-    return withPersistentRead("listar arquivos do lead", () => dbListSystemItems<OperationDocument>(companyId, DOCUMENT_PREFIX), () => documentStore.get(companyId) ?? []);
+    return withPersistentRead("listar arquivos do lead", () => dbListSystemItems<OperationDocument>(companyId, DOCUMENT_PREFIX, workspaceId), () => documentStore.get(`${workspaceId}:${companyId}`) ?? []);
   }
-  return documentStore.get(companyId) ?? [];
+  return documentStore.get(`${workspaceId}:${companyId}`) ?? [];
 }
 
-export async function createDocument(companyId: string, input: Partial<OperationDocument>): Promise<OperationDocument> {
+export async function createDocument(companyId: string, input: Partial<OperationDocument>, workspaceId = "default"): Promise<OperationDocument> {
   const document: Omit<OperationDocument, "id" | "companyId" | "createdAt"> = {
     type: input.type || "documento",
     title: input.title || "Documento NODERE",
@@ -445,41 +452,41 @@ export async function createDocument(companyId: string, input: Partial<Operation
   if (hasSupabase()) {
     return withPersistentWrite(
       "criar arquivo do lead",
-      () => dbAddSystemItem(companyId, DOCUMENT_PREFIX, document as unknown as Record<string, unknown>).then((item) => item as unknown as OperationDocument),
-      () => createMemoryDocument(companyId, document)
+      () => dbAddSystemItem(companyId, DOCUMENT_PREFIX, document as unknown as Record<string, unknown>, workspaceId).then((item) => item as unknown as OperationDocument),
+      () => createMemoryDocument(companyId, document, workspaceId)
     );
   }
-  return createMemoryDocument(companyId, document);
+  return createMemoryDocument(companyId, document, workspaceId);
 }
 
-export async function updateDocument(companyId: string, documentId: string, input: Partial<OperationDocument>): Promise<OperationDocument | undefined> {
-  const existing = (await listDocuments(companyId)).find((document) => document.id === documentId);
+export async function updateDocument(companyId: string, documentId: string, input: Partial<OperationDocument>, workspaceId = "default"): Promise<OperationDocument | undefined> {
+  const existing = (await listDocuments(companyId, workspaceId)).find((document) => document.id === documentId);
   if (!existing) return undefined;
   const updated: OperationDocument = { ...existing, ...input, updatedAt: new Date().toISOString() };
   if (hasSupabase()) {
-    await withPersistentWrite("atualizar arquivo do lead", () => dbReplaceSystemItem(companyId, documentId, DOCUMENT_PREFIX, updated as unknown as Record<string, unknown>).then(() => undefined), () => undefined);
+    await withPersistentWrite("atualizar arquivo do lead", () => dbReplaceSystemItem(companyId, documentId, DOCUMENT_PREFIX, updated as unknown as Record<string, unknown>, workspaceId).then(() => undefined), () => undefined);
   }
-  documentStore.set(companyId, (documentStore.get(companyId) ?? []).map((document) => document.id === documentId ? updated : document));
+  documentStore.set(`${workspaceId}:${companyId}`, (documentStore.get(`${workspaceId}:${companyId}`) ?? []).map((document) => document.id === documentId ? updated : document));
   return updated;
 }
 
-export async function removeDocument(companyId: string, documentId: string) {
-  if (hasSupabase()) await withPersistentWrite("remover arquivo do lead", () => dbDeleteNote(companyId, documentId), () => undefined);
-  documentStore.set(companyId, (documentStore.get(companyId) ?? []).filter((document) => document.id !== documentId));
+export async function removeDocument(companyId: string, documentId: string, workspaceId = "default") {
+  if (hasSupabase()) await withPersistentWrite("remover arquivo do lead", () => dbDeleteNote(companyId, documentId, workspaceId), () => undefined);
+  documentStore.set(`${workspaceId}:${companyId}`, (documentStore.get(`${workspaceId}:${companyId}`) ?? []).filter((document) => document.id !== documentId));
   return { ok: true };
 }
 
-export async function updateCompany(id: string, updates: Partial<Company>): Promise<Company | undefined> {
+export async function updateCompany(id: string, updates: Partial<Company>, workspaceId = "default"): Promise<Company | undefined> {
   const now = new Date().toISOString();
   if (hasSupabase()) {
-    await withPersistentWrite("atualizar dados do lead", () => dbUpdateFields(id, toUpdateRow({ ...updates, updatedAt: now })), () => undefined);
+    await withPersistentWrite("atualizar dados do lead", () => dbUpdateFields(id, toUpdateRow({ ...updates, updatedAt: now }), workspaceId), () => undefined);
   }
-  const local = memStore.find((c) => c.id === id);
+  const local = memStore.find((c) => c.id === id && (((c as any).workspaceId ?? "default") === workspaceId));
   if (local) {
     Object.assign(local, updates, { updatedAt: now });
     return local;
   }
-  if (hasSupabase()) return dbGet(id);
+  if (hasSupabase()) return dbGet(id, workspaceId);
   return undefined;
 }
 
@@ -488,8 +495,8 @@ export function getDashboardMetrics() {
   return buildDashboardMetrics(all);
 }
 
-export async function getDashboardMetricsAsync() {
-  return buildDashboardMetrics(await listCompaniesAsync());
+export async function getDashboardMetricsAsync(workspaceId = "default") {
+  return buildDashboardMetrics(await listCompaniesAsync(workspaceId));
 }
 
 function buildDashboardMetrics(all: Company[]) {
@@ -511,11 +518,12 @@ function buildDashboardMetrics(all: Company[]) {
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
-function syncToMem(items: Company[]) {
+function syncToMem(items: Company[], workspaceId = "default") {
   for (const c of items) {
-    const idx = memStore.findIndex((m) => m.id === c.id);
-    if (idx === -1) memStore.push(c);
-    else memStore[idx] = { ...memStore[idx], ...c };
+    const scoped = { ...c, workspaceId } as Company & { workspaceId: string };
+    const idx = memStore.findIndex((m) => m.id === c.id && (((m as any).workspaceId ?? "default") === workspaceId));
+    if (idx === -1) memStore.push(scoped);
+    else memStore[idx] = { ...memStore[idx], ...scoped };
   }
 }
 
@@ -549,25 +557,25 @@ function parseSystemItem<T>(row: Record<string, unknown>, prefix: string): T | n
   }
 }
 
-function createMemoryTask(companyId: string, input: Omit<OperationTask, "id" | "companyId" | "createdAt">): OperationTask {
+function createMemoryTask(companyId: string, input: Omit<OperationTask, "id" | "companyId" | "createdAt">, workspaceId = "default"): OperationTask {
   const task: OperationTask = {
     ...input,
     id: randomUUID(),
     companyId,
     createdAt: new Date().toISOString()
   };
-  taskStore.set(companyId, [task, ...(taskStore.get(companyId) ?? [])]);
+  taskStore.set(`${workspaceId}:${companyId}`, [task, ...(taskStore.get(`${workspaceId}:${companyId}`) ?? [])]);
   return task;
 }
 
-function createMemoryDocument(companyId: string, input: Omit<OperationDocument, "id" | "companyId" | "createdAt">): OperationDocument {
+function createMemoryDocument(companyId: string, input: Omit<OperationDocument, "id" | "companyId" | "createdAt">, workspaceId = "default"): OperationDocument {
   const document: OperationDocument = {
     ...input,
     id: randomUUID(),
     companyId,
     createdAt: new Date().toISOString()
   };
-  documentStore.set(companyId, [document, ...(documentStore.get(companyId) ?? [])]);
+  documentStore.set(`${workspaceId}:${companyId}`, [document, ...(documentStore.get(`${workspaceId}:${companyId}`) ?? [])]);
   return document;
 }
 

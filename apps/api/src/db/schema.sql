@@ -3,9 +3,39 @@
 
 create extension if not exists pgcrypto;
 
+-- Contas/workspaces e usuários da plataforma.
+-- Cada usuário criado pelo administrador pertence a um workspace. As rotas
+-- escopadas usam workspace_id para que empresas diferentes não vejam dados umas das outras.
+create table if not exists nodere_workspaces (
+  id text primary key default gen_random_uuid()::text,
+  name text not null,
+  owner_email text not null,
+  plan text not null default 'trial',
+  credits integer not null default 20,
+  expires_at timestamptz default (now() + interval '30 days'),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists nodere_platform_users (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null references nodere_workspaces(id) on delete cascade,
+  name text not null,
+  email text not null unique,
+  role text not null default 'operator' check (role in ('admin', 'operator')),
+  active boolean not null default true,
+  password_hash text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_platform_users_workspace on nodere_platform_users(workspace_id);
+create index if not exists idx_platform_users_email on nodere_platform_users(lower(email));
+
 -- Empresas / leads
 create table if not exists nodere_companies (
   id text primary key,
+  workspace_id text not null default 'default',
   name text not null,
   category text not null default '',
   city text not null default '',
@@ -39,6 +69,7 @@ create table if not exists nodere_companies (
 -- Notas CRM de cada empresa
 create table if not exists nodere_company_notes (
   id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
   company_id text not null references nodere_companies(id) on delete cascade,
   body text not null,
   created_at timestamptz not null default now()
@@ -47,6 +78,7 @@ create table if not exists nodere_company_notes (
 -- Histórico de buscas realizadas
 create table if not exists nodere_searches (
   id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
   city text not null,
   state text,
   segment text not null,
@@ -68,6 +100,7 @@ create index if not exists idx_searches_created on nodere_searches(created_at de
 -- Operadores comerciais e metas mensais
 create table if not exists nodere_operators (
   id text primary key,
+  workspace_id text not null default 'default',
   name text not null,
   email text,
   role text not null default 'operator',
@@ -75,6 +108,7 @@ create table if not exists nodere_operators (
 );
 
 create table if not exists nodere_operator_goals (
+  workspace_id text not null default 'default',
   operator_id text not null references nodere_operators(id) on delete cascade,
   month text not null,
   target_searches integer not null default 20,
@@ -92,6 +126,21 @@ create index if not exists idx_operator_goals_month on nodere_operator_goals(mon
 -- porque atualizacoes, troca de navegador ou deploys nao podem apagar a operacao.
 create table if not exists nodere_app_settings (
   key text primary key,
+  workspace_id text not null default 'default',
   value jsonb not null default '{}',
   updated_at timestamptz not null default now()
 );
+
+-- Migração segura para bancos que já tinham as tabelas antes do multiusuário.
+alter table nodere_companies add column if not exists workspace_id text not null default 'default';
+alter table nodere_company_notes add column if not exists workspace_id text not null default 'default';
+alter table nodere_searches add column if not exists workspace_id text not null default 'default';
+alter table nodere_operators add column if not exists workspace_id text not null default 'default';
+alter table nodere_operator_goals add column if not exists workspace_id text not null default 'default';
+alter table nodere_app_settings add column if not exists workspace_id text not null default 'default';
+
+create index if not exists idx_companies_workspace on nodere_companies(workspace_id);
+create index if not exists idx_notes_workspace on nodere_company_notes(workspace_id);
+create index if not exists idx_searches_workspace on nodere_searches(workspace_id, created_at desc);
+create index if not exists idx_operators_workspace on nodere_operators(workspace_id);
+create index if not exists idx_app_settings_workspace on nodere_app_settings(workspace_id);

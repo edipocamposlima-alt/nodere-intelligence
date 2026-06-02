@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { config } from "../config.js";
+import { extractBearerToken, issueSessionToken, verifySessionToken } from "../services/adminSession.js";
+import { authenticateUser, createWorkspaceUser, listWorkspaceUsers, updateWorkspaceUser } from "../services/userStore.js";
 
 const router = Router();
 
@@ -24,39 +25,9 @@ type ApiKeyField = (typeof apiKeyFields)[number];
 
 const runtimeApiSettings = new Map<ApiKeyField, { masked: string; updatedAt: string }>();
 
-function sign(payload: string) {
-  return createHmac("sha256", config.admin.sessionSecret).update(payload).digest("base64url");
-}
-
-function issueToken(email: string) {
-  const payload = Buffer.from(JSON.stringify({
-    email,
-    role: "admin",
-    exp: Date.now() + 1000 * 60 * 60 * 12
-  })).toString("base64url");
-  return `${payload}.${sign(payload)}`;
-}
-
-function verifyToken(token = "") {
-  const [payload, signature] = token.split(".");
-  if (!payload || !signature) return null;
-  const expected = sign(payload);
-  const a = Buffer.from(signature);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  try {
-    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-    if (!data.exp || data.exp < Date.now()) return null;
-    return data as { email: string; role: "admin"; exp: number };
-  } catch {
-    return null;
-  }
-}
-
 function requireAdmin(request: any, response: any, next: any) {
-  const token = String(request.headers.authorization || "").replace(/^Bearer\s+/i, "");
-  const session = verifyToken(token);
-  if (!session) return response.status(401).json({ message: "Sessao administrativa invalida ou expirada." });
+  const session = verifySessionToken(extractBearerToken(request.headers.authorization));
+  if (!session || session.role !== "admin") return response.status(401).json({ message: "Sessao administrativa invalida ou expirada." });
   request.admin = session;
   return next();
 }
@@ -141,31 +112,97 @@ function applyRuntimeValue(field: ApiKeyField, value: string) {
   }
 }
 
-router.post("/login", (request, response) => {
+router.post("/login", async (request, response, next) => {
   const body = z.object({
     email: z.string().email(),
     password: z.string().min(1)
   }).parse(request.body);
 
-  if (!config.admin.password) {
-    return response.status(503).json({
-      message: "ADMIN_PASSWORD nao esta configurada no backend/Render.",
-      code: "ADMIN_PASSWORD_MISSING"
+  try {
+    const user = await authenticateUser(body.email, body.password);
+    if (user) {
+      return response.json({
+        token: issueSessionToken({
+          email: user.email,
+          role: user.role,
+          workspaceId: user.workspaceId,
+          userId: user.id
+        }),
+        user: { email: user.email, name: user.name, role: user.role, workspaceId: user.workspaceId }
+      });
+    }
+
+    if (!config.admin.password) {
+      return response.status(503).json({
+        message: "ADMIN_PASSWORD nao esta configurada no backend/Render.",
+        code: "ADMIN_PASSWORD_MISSING"
+      });
+    }
+
+    if (body.email.toLowerCase() !== config.admin.email.toLowerCase() || body.password !== config.admin.password) {
+      return response.status(401).json({ message: "Login ou senha invalidos." });
+    }
+
+    return response.json({
+      token: issueSessionToken({ email: body.email, role: "admin", workspaceId: "default", userId: "admin-default" }),
+      user: { email: body.email, role: "admin", workspaceId: "default" }
     });
+  } catch (error) {
+    return next(error);
   }
-
-  if (body.email.toLowerCase() !== config.admin.email.toLowerCase() || body.password !== config.admin.password) {
-    return response.status(401).json({ message: "Login ou senha invalidos." });
-  }
-
-  return response.json({
-    token: issueToken(body.email),
-    user: { email: body.email, role: "admin" }
-  });
 });
 
 router.get("/session", requireAdmin, (request: any, response) => {
-  response.json({ user: { email: request.admin.email, role: request.admin.role } });
+  response.json({ user: { email: request.admin.email, role: request.admin.role, workspaceId: request.admin.workspaceId, userId: request.admin.userId } });
+});
+
+router.get("/users", requireAdmin, async (request: any, response, next) => {
+  try {
+    response.json({ users: await listWorkspaceUsers(request.admin.workspaceId || "default") });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/users", requireAdmin, async (request: any, response, next) => {
+  try {
+    const body = z.object({
+      name: z.string().min(2),
+      email: z.string().email(),
+      password: z.string().min(8),
+      role: z.enum(["admin", "operator"]).default("operator")
+    }).parse(request.body);
+    const user = await createWorkspaceUser(request.admin.workspaceId || "default", body);
+    response.status(201).json({ user, message: "Usuário criado. Ele já pode acessar a plataforma pelo login." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/users/:id", requireAdmin, async (request: any, response, next) => {
+  try {
+    const body = z.object({
+      name: z.string().min(2).optional(),
+      password: z.string().min(8).optional(),
+      role: z.enum(["admin", "operator"]).optional(),
+      active: z.boolean().optional()
+    }).parse(request.body);
+    const user = await updateWorkspaceUser(request.admin.workspaceId || "default", request.params.id, body);
+    if (!user) return response.status(404).json({ message: "Usuário não encontrado nesta conta." });
+    response.json({ user, message: "Usuário atualizado." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/users/:id", requireAdmin, async (request: any, response, next) => {
+  try {
+    const user = await updateWorkspaceUser(request.admin.workspaceId || "default", request.params.id, { active: false });
+    if (!user) return response.status(404).json({ message: "Usuário não encontrado nesta conta." });
+    response.json({ user, message: "Usuário desativado." });
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.get("/api-keys", requireAdmin, (_request, response) => {

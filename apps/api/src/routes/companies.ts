@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { getRequestWorkspaceId } from "../middleware/session.js";
 import {
   addNote,
   createDocument,
@@ -32,9 +33,9 @@ import { activateSequence, getInstancesByCompany } from "../services/emailSequen
 
 const router = Router();
 
-router.get("/", async (_req, res, next) => {
+router.get("/", async (req, res, next) => {
   try {
-    res.json(await listCompaniesAsync());
+    res.json(await listCompaniesAsync(getRequestWorkspaceId(req)));
   } catch (err) { next(err); }
 });
 
@@ -64,7 +65,7 @@ router.get("/:id/enrichment", (req, res) => {
 router.patch("/:id/status", async (req, res, next) => {
   try {
     const body = z.object({ status: z.string() }).parse(req.body);
-    const company = await updateStatus(req.params.id, body.status as never);
+    const company = await updateStatus(req.params.id, body.status as never, getRequestWorkspaceId(req));
     if (!company) return res.status(404).json({ message: "Company not found" });
     return res.json(company);
   } catch (err) { return next(err); }
@@ -73,7 +74,7 @@ router.patch("/:id/status", async (req, res, next) => {
 router.post("/:id/notes", async (req, res, next) => {
   try {
     const body = z.object({ body: z.string().min(2) }).parse(req.body);
-    const note = await addNote(req.params.id, body.body);
+    const note = await addNote(req.params.id, body.body, getRequestWorkspaceId(req));
     if (!note) return res.status(404).json({ message: "Company not found" });
     return res.status(201).json(note);
   } catch (err) { return next(err); }
@@ -81,7 +82,8 @@ router.post("/:id/notes", async (req, res, next) => {
 
 router.post("/:id/enrich-external", async (req, res, next) => {
   try {
-    const company = await getCompanyAsync(req.params.id);
+    const workspaceId = getRequestWorkspaceId(req);
+    const company = await getCompanyAsync(req.params.id, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
     const enrichment = await enrichCompanyExternal(company);
     const updated = await import("../services/companyStore.js").then(({ updateCompany }) =>
@@ -94,7 +96,7 @@ router.post("/:id/enrich-external", async (req, res, next) => {
         decisionMakers: enrichment.decisionMakers,
         enrichmentSources: enrichment.enrichmentSources,
         enrichmentStatus: enrichment.enrichmentSources.length ? "done" : "error"
-      })
+      }, workspaceId)
     );
     return res.json({ company: updated ?? company, enrichment });
   } catch (err) {
@@ -104,25 +106,28 @@ router.post("/:id/enrich-external", async (req, res, next) => {
 
 router.get("/:id/notes", async (req, res, next) => {
   try {
-    const company = await getCompanyAsync(req.params.id);
+    const workspaceId = getRequestWorkspaceId(req);
+    const company = await getCompanyAsync(req.params.id, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
-    return res.json(await listNotes(req.params.id));
+    return res.json(await listNotes(req.params.id, workspaceId));
   } catch (err) { return next(err); }
 });
 
 router.delete("/:id/notes/:noteId", async (req, res, next) => {
   try {
-    const company = await getCompanyAsync(req.params.id);
+    const workspaceId = getRequestWorkspaceId(req);
+    const company = await getCompanyAsync(req.params.id, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
-    return res.json(await removeNote(req.params.id, req.params.noteId));
+    return res.json(await removeNote(req.params.id, req.params.noteId, workspaceId));
   } catch (err) { return next(err); }
 });
 
 router.get("/:id/tasks", async (req, res, next) => {
   try {
-    const company = await getCompanyAsync(req.params.id);
+    const workspaceId = getRequestWorkspaceId(req);
+    const company = await getCompanyAsync(req.params.id, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
-    return res.json(await listTasks(req.params.id));
+    return res.json(await listTasks(req.params.id, workspaceId));
   } catch (err) { return next(err); }
 });
 
@@ -135,7 +140,8 @@ router.post("/:id/tasks", async (req, res, next) => {
       priority: z.string().optional().nullable(),
       channel: z.string().optional().nullable()
     }).parse(req.body);
-    const company = await getCompanyAsync(req.params.id);
+    const workspaceId = getRequestWorkspaceId(req);
+    const company = await getCompanyAsync(req.params.id, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
     const task = await createTask(req.params.id, {
       title: body.title,
@@ -143,8 +149,8 @@ router.post("/:id/tasks", async (req, res, next) => {
       dueAt: body.dueAt ?? undefined,
       priority: body.priority ?? undefined,
       channel: body.channel ?? undefined
-    });
-    await addNote(req.params.id, `Tarefa criada: ${task.title}`);
+    }, workspaceId);
+    await addNote(req.params.id, `Tarefa criada: ${task.title}`, workspaceId);
     return res.status(201).json(task);
   } catch (err) { return next(err); }
 });
@@ -159,7 +165,7 @@ router.patch("/:id/tasks/:taskId", async (req, res, next) => {
       channel: z.string().optional(),
       status: z.enum(["open", "done", "cancelled"]).optional()
     }).parse(req.body);
-    const task = await updateTask(req.params.id, req.params.taskId, body);
+    const task = await updateTask(req.params.id, req.params.taskId, body, getRequestWorkspaceId(req));
     if (!task) return res.status(404).json({ message: "Task not found" });
     return res.json(task);
   } catch (err) { return next(err); }
@@ -167,9 +173,10 @@ router.patch("/:id/tasks/:taskId", async (req, res, next) => {
 
 router.get("/:id/documents", async (req, res, next) => {
   try {
-    const company = await getCompanyAsync(req.params.id);
+    const workspaceId = getRequestWorkspaceId(req);
+    const company = await getCompanyAsync(req.params.id, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
-    return res.json(await listDocuments(req.params.id));
+    return res.json(await listDocuments(req.params.id, workspaceId));
   } catch (err) { return next(err); }
 });
 
@@ -181,10 +188,11 @@ router.post("/:id/documents", async (req, res, next) => {
       content: z.string().min(1),
       fileName: z.string().optional()
     }).parse(req.body);
-    const company = await getCompanyAsync(req.params.id);
+    const workspaceId = getRequestWorkspaceId(req);
+    const company = await getCompanyAsync(req.params.id, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
-    const document = await createDocument(req.params.id, body);
-    await addNote(req.params.id, `Documento salvo: ${document.title}`);
+    const document = await createDocument(req.params.id, body, workspaceId);
+    await addNote(req.params.id, `Documento salvo: ${document.title}`, workspaceId);
     return res.status(201).json(document);
   } catch (err) { return next(err); }
 });
@@ -197,7 +205,7 @@ router.patch("/:id/documents/:documentId", async (req, res, next) => {
       content: z.string().optional(),
       fileName: z.string().optional()
     }).parse(req.body);
-    const document = await updateDocument(req.params.id, req.params.documentId, body);
+    const document = await updateDocument(req.params.id, req.params.documentId, body, getRequestWorkspaceId(req));
     if (!document) return res.status(404).json({ message: "Document not found" });
     return res.json(document);
   } catch (err) { return next(err); }
@@ -205,7 +213,7 @@ router.patch("/:id/documents/:documentId", async (req, res, next) => {
 
 router.delete("/:id/documents/:documentId", async (req, res, next) => {
   try {
-    return res.json(await removeDocument(req.params.id, req.params.documentId));
+    return res.json(await removeDocument(req.params.id, req.params.documentId, getRequestWorkspaceId(req)));
   } catch (err) { return next(err); }
 });
 
