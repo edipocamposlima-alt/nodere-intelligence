@@ -15,16 +15,11 @@ export const dynamic = "force-dynamic";
 const whatsappMessage =
   "Ola, tudo bem? Estive analisando a presenca digital da sua empresa no Google e identifiquei algumas oportunidades que podem ajudar voces a gerar mais contatos e melhorar o posicionamento online. Posso te mostrar rapidamente?";
 
-function linkedinSearchUrl(name: string, city?: string, website?: string) {
-  let domain = "";
-  if (website) {
-    try {
-      domain = new URL(website.startsWith("http") ? website : `https://${website}`).hostname.replace(/^www\./, "");
-    } catch {
-      domain = "";
-    }
-  }
-  const query = [name, city, domain].filter(Boolean).join(" ");
+function linkedinSearchUrl(name: string, _city?: string, _website?: string) {
+  const query = String(name || "")
+    .replace(/https?:\/\/\S+/gi, "")
+    .replace(/\b(?:www\.)?[\w-]+\.(?:com|com\.br|net|org|br|io|app)\b/gi, "")
+    .trim();
   return `https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(query)}`;
 }
 

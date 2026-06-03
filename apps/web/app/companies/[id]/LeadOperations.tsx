@@ -10,7 +10,10 @@ const API_URL = getApiBaseUrl();
 type Note = { id: string; companyId: string; body: string; type?: string; owner?: string; createdAt: string; updatedAt?: string };
 type Task = { id: string; companyId: string; title: string; description?: string; dueAt?: string; priority?: string; channel?: string; status: string; createdAt: string };
 type DocumentItem = { id: string; companyId: string; type: string; title: string; content: string; fileName?: string; createdAt: string };
-type Tab = "observacoes" | "agenda" | "ia" | "documentos" | "whatsapp" | "enriquecimento";
+type Contact = { id: string; name: string; role?: string; email?: string; phone?: string; whatsapp?: string; linkedin_url?: string; notes?: string; created_at?: string };
+type Communication = { id: string; type: string; direction: string; subject?: string; body?: string; sent_at: string; status?: string };
+type ContractItem = { id: string; catalog_items?: { name?: string; code?: string; type?: string }; quantity?: number; contracted_price?: number; status?: string; notes?: string; created_at?: string };
+type Tab = "observacoes" | "agenda" | "decisores" | "historico" | "contratos" | "ia" | "documentos" | "whatsapp" | "enriquecimento";
 
 function pdfEscape(value: string) {
   return value.replace(/[\\()]/g, "\\$&").replace(/[^\x20-\x7EÀ-ÿ]/g, " ");
@@ -80,6 +83,9 @@ export function LeadOperations({ company }: { company: Company }) {
   const [notes, setNotes] = useState<Note[]>(company.notes || []);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [communications, setCommunications] = useState<Communication[]>([]);
+  const [contracts, setContracts] = useState<ContractItem[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editor, setEditor] = useState("");
@@ -97,6 +103,9 @@ export function LeadOperations({ company }: { company: Company }) {
     api<Note[]>(`/companies/${company.id}/notes`).then(setNotes).catch(() => {});
     api<Task[]>(`/companies/${company.id}/tasks`).then(setTasks).catch(() => {});
     api<DocumentItem[]>(`/companies/${company.id}/documents`).then(setDocuments).catch(() => {});
+    api<Contact[]>(`/companies/${company.id}/contacts`).then(setContacts).catch(() => {});
+    api<Communication[]>(`/companies/${company.id}/communications`).then(setCommunications).catch(() => {});
+    api<ContractItem[]>(`/companies/${company.id}/contracts`).then(setContracts).catch(() => {});
   }, [company.id]);
 
   function showSuccess(text: string) {
@@ -161,6 +170,54 @@ export function LeadOperations({ company }: { company: Company }) {
       }
       target?.reset();
       showSuccess("Tarefa criada.");
+    } catch (err) {
+      showError(err);
+    }
+  }
+
+  async function addContact(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const target = event.currentTarget;
+    const form = new FormData(target);
+    try {
+      const contact = await api<Contact>(`/companies/${company.id}/contacts`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: form.get("name"),
+          role: form.get("role"),
+          email: form.get("email"),
+          phone: form.get("phone"),
+          whatsapp: form.get("whatsapp"),
+          linkedinUrl: form.get("linkedinUrl"),
+          notes: form.get("notes")
+        })
+      });
+      setContacts((items) => [contact, ...items]);
+      target.reset();
+      showSuccess("Decisor salvo.");
+    } catch (err) {
+      showError(err);
+    }
+  }
+
+  async function addCommunication(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const target = event.currentTarget;
+    const form = new FormData(target);
+    try {
+      const comm = await api<Communication>(`/companies/${company.id}/communications`, {
+        method: "POST",
+        body: JSON.stringify({
+          type: form.get("type"),
+          direction: form.get("direction"),
+          subject: form.get("subject"),
+          body: form.get("body"),
+          sentAt: form.get("sentAt") || new Date().toISOString()
+        })
+      });
+      setCommunications((items) => [comm, ...items]);
+      target.reset();
+      showSuccess("Interação registrada.");
     } catch (err) {
       showError(err);
     }
@@ -255,6 +312,9 @@ export function LeadOperations({ company }: { company: Company }) {
   const tabs: [Tab, string][] = [
     ["observacoes", "Observações"],
     ["agenda", "Agenda"],
+    ["decisores", "Decisores"],
+    ["historico", "Histórico"],
+    ["contratos", "Serviços contratados"],
     ["enriquecimento", "Apollo/Econodata"],
     ["ia", "IA / Editor"],
     ["documentos", "Propostas e contratos"],
@@ -336,6 +396,91 @@ export function LeadOperations({ company }: { company: Company }) {
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {tab === "decisores" && (
+        <div className="mt-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+          <form onSubmit={addContact} className="space-y-3">
+            <input name="name" required placeholder="Nome do decisor" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+            <input name="role" placeholder="Cargo" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <input name="email" placeholder="Email" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <input name="phone" placeholder="Telefone" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <input name="whatsapp" placeholder="WhatsApp celular" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <input name="linkedinUrl" placeholder="LinkedIn URL" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+            </div>
+            <textarea name="notes" rows={4} placeholder="Notas sobre o decisor" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+            <button className="inline-flex items-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white"><Plus className="h-4 w-4" />Salvar decisor</button>
+          </form>
+          <div className="space-y-3">
+            {contacts.length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhum decisor cadastrado.</p>}
+            {contacts.map((contact) => (
+              <article key={contact.id} className="rounded-lg border border-line bg-ink p-4">
+                <p className="font-semibold text-white">{contact.name}</p>
+                <p className="mt-1 text-sm text-slate-400">{contact.role || "Cargo não informado"}</p>
+                <div className="mt-3 grid gap-1 text-xs text-slate-300">
+                  {contact.email && <span>{contact.email}</span>}
+                  {contact.phone && <span>{contact.phone}</span>}
+                  {contact.whatsapp && <span>WhatsApp: {contact.whatsapp}</span>}
+                  {contact.linkedin_url && <a href={contact.linkedin_url} target="_blank" className="text-cyan hover:underline">LinkedIn</a>}
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab === "historico" && (
+        <div className="mt-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+          <form onSubmit={addCommunication} className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <select name="type" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm">
+                {["whatsapp", "email", "call", "meeting", "note", "internal", "linkedin", "instagram"].map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+              <select name="direction" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm">
+                <option value="outbound">Saída</option>
+                <option value="inbound">Entrada</option>
+                <option value="manual">Manual</option>
+              </select>
+            </div>
+            <input name="subject" placeholder="Assunto" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+            <input name="sentAt" type="datetime-local" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+            <textarea name="body" rows={6} placeholder="Conteúdo da interação" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+            <button className="inline-flex items-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white"><Save className="h-4 w-4" />Registrar interação</button>
+          </form>
+          <div className="space-y-3">
+            {communications.length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhuma comunicação registrada.</p>}
+            {communications.map((comm) => (
+              <article key={comm.id} className="rounded-lg border border-line bg-ink p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-cyan/15 px-2 py-1 text-xs font-bold text-cyan">{comm.type}</span>
+                  <span className="rounded-full bg-white/5 px-2 py-1 text-xs text-slate-300">{comm.direction}</span>
+                  <span className="text-xs text-slate-500">{new Date(comm.sent_at).toLocaleString("pt-BR")}</span>
+                </div>
+                {comm.subject && <p className="mt-3 font-semibold text-white">{comm.subject}</p>}
+                {comm.body && <p className="mt-2 whitespace-pre-wrap text-sm text-slate-300">{comm.body}</p>}
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab === "contratos" && (
+        <div className="mt-5 space-y-3">
+          {contracts.length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhum produto ou serviço contratado vinculado. Use o catálogo e a API /companies/:id/contracts para vincular itens.</p>}
+          {contracts.map((contract) => (
+            <article key={contract.id} className="rounded-lg border border-line bg-ink p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-white">{contract.catalog_items?.name || "Item do catálogo"}</p>
+                  <p className="mt-1 text-xs text-slate-400">{contract.catalog_items?.code || "Sem código"} · {contract.status || "active"}</p>
+                </div>
+                <p className="text-lg font-black text-cyan">{Number(contract.contracted_price || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+              </div>
+              {contract.notes && <p className="mt-3 text-sm text-slate-300">{contract.notes}</p>}
+            </article>
+          ))}
         </div>
       )}
 
