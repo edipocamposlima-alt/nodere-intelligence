@@ -306,3 +306,225 @@ create index if not exists idx_inbox_messages_workspace on inbox_messages(worksp
 create index if not exists idx_cadence_templates_workspace on cadence_templates(workspace_id);
 create index if not exists idx_cadence_enrollments_due on cadence_enrollments(workspace_id, status, next_action_at);
 create index if not exists idx_api_keys_workspace on api_keys(workspace_id);
+
+-- V2 — cadastro completo, agenda, catalogo e comunicacoes.
+alter table nodere_companies add column if not exists nome_fantasia text;
+alter table nodere_companies add column if not exists cnaes_secundarios text[] default '{}';
+alter table nodere_companies add column if not exists porte text;
+alter table nodere_companies add column if not exists natureza_juridica text;
+alter table nodere_companies add column if not exists inscricao_estadual text;
+alter table nodere_companies add column if not exists inscricao_municipal text;
+alter table nodere_companies add column if not exists telefone_principal text;
+alter table nodere_companies add column if not exists telefone_secundario text;
+alter table nodere_companies add column if not exists email_principal text;
+alter table nodere_companies add column if not exists email_comercial text;
+alter table nodere_companies add column if not exists endereco_completo text;
+alter table nodere_companies add column if not exists pais text default 'Brasil';
+alter table nodere_companies add column if not exists cep text;
+alter table nodere_companies add column if not exists resumo text;
+alter table nodere_companies add column if not exists contexto text;
+alter table nodere_companies add column if not exists produtos_servicos_principais text;
+alter table nodere_companies add column if not exists publico_alvo text;
+alter table nodere_companies add column if not exists area_atuacao text;
+alter table nodere_companies add column if not exists num_funcionarios text;
+alter table nodere_companies add column if not exists faturamento_estimado text;
+alter table nodere_companies add column if not exists presenca_digital jsonb not null default '{}';
+alter table nodere_companies add column if not exists redes_sociais jsonb not null default '{}';
+alter table nodere_companies add column if not exists score_comercial integer;
+alter table nodere_companies add column if not exists potencial_comercial text;
+alter table nodere_companies add column if not exists enrichment_updated_at timestamptz;
+alter table nodere_companies add column if not exists custom_fields jsonb not null default '{}';
+
+create table if not exists company_contacts (
+  id text primary key default gen_random_uuid()::text,
+  company_id text not null references nodere_companies(id) on delete cascade,
+  workspace_id text not null default 'default',
+  name text not null,
+  role text,
+  email text,
+  phone text,
+  whatsapp text,
+  linkedin_url text,
+  notes text,
+  custom_fields jsonb not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists calendar_events (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  company_id text references nodere_companies(id) on delete set null,
+  title text not null,
+  type text not null default 'follow-up',
+  priority text not null default 'medium',
+  start_at timestamptz not null,
+  end_at timestamptz not null,
+  notes text,
+  assigned_to text,
+  created_by text,
+  metadata jsonb not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists catalog_items (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  code text not null,
+  name text not null,
+  commercial_name text,
+  category text not null,
+  subcategory text,
+  brand text,
+  type text not null check (type in ('product','service')),
+  status text not null default 'active' check (status in ('active','inactive')),
+  description_short text not null default '',
+  description_full text,
+  features text,
+  benefits text,
+  differentials text,
+  target_audience text,
+  use_cases text,
+  cost numeric not null default 0,
+  price numeric not null default 0,
+  commission_pct numeric,
+  max_discount_pct numeric,
+  promotional_price numeric,
+  promotion_expires_at date,
+  supplier text,
+  delivery_days integer,
+  warranty text,
+  exchange_policy text,
+  cancellation_policy text,
+  payment_conditions text,
+  installments_available integer,
+  unit_measure text,
+  weight_kg numeric,
+  height_cm numeric,
+  width_cm numeric,
+  length_cm numeric,
+  color text,
+  material text,
+  model text,
+  voltage text,
+  technical_specs text,
+  execution_time text,
+  scope text,
+  limitations text,
+  deliverables text,
+  complexity text,
+  sla text,
+  stock_current integer,
+  stock_min integer,
+  stock_max integer,
+  stock_location text,
+  keywords text[] not null default '{}',
+  market_segment text,
+  campaign_url text,
+  support_material_urls text[] not null default '{}',
+  registered_by text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (workspace_id, code)
+);
+
+create table if not exists company_contracts (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  company_id text not null references nodere_companies(id) on delete cascade,
+  catalog_item_id text not null references catalog_items(id) on delete restrict,
+  quantity integer not null default 1,
+  contracted_price numeric not null default 0,
+  discount_pct numeric,
+  contracted_at date not null default current_date,
+  status text not null default 'active',
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists communications (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  company_id text not null references nodere_companies(id) on delete cascade,
+  contact_id text references company_contacts(id) on delete set null,
+  type text not null check (type in ('whatsapp','email','call','meeting','note','internal','linkedin','instagram')),
+  direction text not null check (direction in ('outbound','inbound','manual')),
+  subject text,
+  body text,
+  sent_by text,
+  sent_at timestamptz not null default now(),
+  status text not null default 'sent',
+  metadata jsonb not null default '{}'
+);
+
+create table if not exists message_templates (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  name text not null,
+  channel text not null default 'whatsapp',
+  subject text,
+  body text not null,
+  variables text[] not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists social_connections (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  platform text not null,
+  account_name text,
+  access_token_encrypted text,
+  refresh_token_encrypted text,
+  expires_at timestamptz,
+  scopes text[] not null default '{}',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists campaigns (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  name text not null,
+  platforms text[] not null default '{}',
+  start_date date,
+  end_date date,
+  status text not null default 'draft',
+  budget_brl numeric,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists activity_logs (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  user_id text,
+  action text not null,
+  entity_type text,
+  entity_id text,
+  metadata jsonb not null default '{}',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists download_logs (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  user_id text,
+  file_type text not null,
+  file_name text,
+  metadata jsonb not null default '{}',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_company_contacts_company on company_contacts(workspace_id, company_id);
+create index if not exists idx_calendar_events_range on calendar_events(workspace_id, start_at, end_at);
+create index if not exists idx_catalog_items_workspace on catalog_items(workspace_id, status, category);
+create index if not exists idx_company_contracts_company on company_contracts(workspace_id, company_id);
+create index if not exists idx_communications_company on communications(workspace_id, company_id, sent_at desc);
+create index if not exists idx_message_templates_workspace on message_templates(workspace_id, channel);
+create index if not exists idx_social_connections_workspace on social_connections(workspace_id, platform);
+create index if not exists idx_campaigns_workspace on campaigns(workspace_id, status);
+create index if not exists idx_activity_logs_workspace on activity_logs(workspace_id, created_at desc);
+create index if not exists idx_download_logs_workspace on download_logs(workspace_id, created_at desc);

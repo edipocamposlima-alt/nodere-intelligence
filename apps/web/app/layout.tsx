@@ -1,11 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
-import { Header } from "@/components/Header";
-import { MobileNav } from "@/components/MobileNav";
-import { PwaRegister } from "@/components/PwaRegister";
-import { Sidebar } from "@/components/Sidebar";
-import { ThemeRuntime } from "@/components/ThemeRuntime";
+import { AppShell } from "@/components/AppShell";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://nodere.com.br"),
@@ -35,16 +31,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="pt-BR">
       <body>
-        <div className="flex min-h-screen nodere-grid">
-          <Sidebar />
-          <main className="min-w-0 flex-1 pb-20 lg:pb-0">
-            <Header />
-            {children}
-          </main>
-          <MobileNav />
-          <PwaRegister />
-          <ThemeRuntime />
-        </div>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

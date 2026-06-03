@@ -70,11 +70,15 @@ export function getCompanies() {
   return api<Company[]>("/companies");
 }
 
+export function getSavedCompanyIds() {
+  return api<string[]>("/companies/saved-ids", undefined, []);
+}
+
 export function getCompany(id: string) {
   return api<Company>(`/companies/${id}`);
 }
 
-export function searchCompanies(payload: { city?: string; state?: string; segment?: string; keyword?: string; companyName?: string; limit?: number; lat?: number; lng?: number; radiusKm?: number }) {
+export function searchCompanies(payload: { mode?: "places" | "cnpj" | "global"; city?: string; state?: string; country?: string; segment?: string; keyword?: string; companyName?: string; limit?: number; lat?: number; lng?: number; radiusKm?: number }) {
   return api<{
     companies: Company[];
     search: {
@@ -83,6 +87,10 @@ export function searchCompanies(payload: { city?: string; state?: string; segmen
       error?: { message?: string; activationUrl?: string; reason?: string; code?: string; status?: number };
     };
   }>("/searches", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function searchCompanyByCnpj(cnpj: string) {
+  return api<{ company: Company; source: "receitaws" }>(`/searches/cnpj?q=${encodeURIComponent(cnpj)}`);
 }
 
 export function geocodeAddress(address: string) {
@@ -286,4 +294,116 @@ export function savePipelineSettings(pipeline: { stages: string[]; stageColors: 
     method: "PATCH",
     body: JSON.stringify(pipeline)
   });
+}
+
+export interface CalendarEvent {
+  id: string;
+  company_id?: string;
+  title: string;
+  type: string;
+  priority: string;
+  start_at: string;
+  end_at: string;
+  notes?: string;
+  assigned_to?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export function getCalendarEvents(params = "") {
+  return api<CalendarEvent[]>(`/calendar${params}`, undefined, []);
+}
+
+export function createCalendarEvent(payload: {
+  companyId?: string;
+  title: string;
+  type: string;
+  priority: string;
+  startAt: string;
+  endAt: string;
+  notes?: string;
+  assignedTo?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  return api<CalendarEvent>("/calendar", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export interface CatalogItem {
+  id: string;
+  code: string;
+  name: string;
+  commercial_name?: string;
+  category: string;
+  type: "product" | "service";
+  status: "active" | "inactive";
+  description_short: string;
+  cost: number;
+  price: number;
+  scope?: string;
+  deliverables?: string;
+  sla?: string;
+  stock_current?: number;
+}
+
+export function getCatalogItems(params = "") {
+  return api<CatalogItem[]>(`/catalog${params}`, undefined, []);
+}
+
+export function createCatalogItem(payload: {
+  code?: string;
+  name: string;
+  commercialName?: string;
+  category: string;
+  type: "product" | "service";
+  descriptionShort: string;
+  cost: number;
+  price: number;
+  scope?: string;
+  deliverables?: string;
+  sla?: string;
+  stockCurrent?: number;
+}) {
+  return api<CatalogItem>("/catalog", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export interface MessageTemplate {
+  id: string;
+  name: string;
+  channel: "whatsapp" | "email" | "linkedin";
+  subject?: string;
+  body: string;
+  variables?: string[];
+}
+
+export interface Campaign {
+  id: string;
+  name: string;
+  platforms: string[];
+  start_date?: string;
+  end_date?: string;
+  status: string;
+  budget_brl?: number;
+  notes?: string;
+}
+
+export function getMarketingTemplates() {
+  return api<MessageTemplate[]>("/marketing/templates", undefined, []);
+}
+
+export function createMarketingTemplate(payload: { name: string; channel: "whatsapp" | "email" | "linkedin"; subject?: string; body: string; variables?: string[] }) {
+  return api<MessageTemplate>("/marketing/templates", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function getCampaigns() {
+  return api<Campaign[]>("/marketing/campaigns", undefined, []);
+}
+
+export function createCampaign(payload: { name: string; platforms: string[]; startDate?: string; endDate?: string; status?: string; budgetBrl?: number; notes?: string }) {
+  return api<Campaign>("/marketing/campaigns", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function getSocialStatus() {
+  return api<{
+    platforms: Array<{ key: string; name: string; configured: boolean; requiredEnv: string[] }>;
+    mlabs: { configured: boolean; type: string; url: string; message: string };
+  }>("/marketing/social/status", undefined, { platforms: [], mlabs: { configured: true, type: "workflow_shortcut", url: "https://app.mlabs.com.br", message: "Atalho operacional." } });
 }

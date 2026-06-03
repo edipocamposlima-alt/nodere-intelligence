@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, Building2, CircleHelp, Inbox, KanbanSquare, LineChart, Plug, Search, Settings, ShieldCheck, Zap } from "lucide-react";
+import { BarChart3, Building2, CalendarDays, CircleHelp, Inbox, KanbanSquare, LineChart, Megaphone, PackageOpen, Plug, Search, Settings, ShieldCheck, Zap } from "lucide-react";
 
 const items = [
   { href: "/", label: "Início", icon: BarChart3, bg: "linear-gradient(135deg,#0284C7,#38BDF8)" },
@@ -8,7 +8,10 @@ const items = [
   { href: "/crm", label: "CRM", icon: KanbanSquare, bg: "linear-gradient(135deg,#7C3AED,#C084FC)" },
   { href: "/intelligence", label: "IA", icon: Zap, bg: "linear-gradient(135deg,#EAB308,#F97316)" },
   { href: "/inbox", label: "Inbox", icon: Inbox, bg: "linear-gradient(135deg,#059669,#34D399)" },
+  { href: "/calendar", label: "Agenda", icon: CalendarDays, bg: "linear-gradient(135deg,#D97706,#FDE047)" },
   { href: "/reports", label: "Relatórios", icon: LineChart, bg: "linear-gradient(135deg,#65A30D,#A3E635)" },
+  { href: "/marketing", label: "Marketing", icon: Megaphone, bg: "linear-gradient(135deg,#DB2777,#FB7185)" },
+  { href: "/catalog", label: "Catálogo", icon: PackageOpen, bg: "linear-gradient(135deg,#16A34A,#86EFAC)" },
   { href: "/integrations", label: "Integrações", icon: Plug, bg: "linear-gradient(135deg,#0D9488,#5EEAD4)" },
   { href: "/settings", label: "Config", icon: Settings, bg: "linear-gradient(135deg,#2563EB,#93C5FD)" },
   { href: "/manual", label: "Manual", icon: CircleHelp, bg: "linear-gradient(135deg,#E11D48,#FDA4AF)" },

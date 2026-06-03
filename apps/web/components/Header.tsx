@@ -6,6 +6,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Bell, CreditCard, Search, ShieldCheck } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { getAdminToken } from "@/lib/adminAuth";
+import { useAuth } from "@/context/AuthProvider";
 
 type CompanyListItem = { id: string; name: string };
 type TaskItem = { id: string; title: string; dueAt?: string; status: string; companyId: string; companyName: string };
@@ -16,10 +17,11 @@ export function Header() {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [open, setOpen] = useState(false);
   const [globalQuery, setGlobalQuery] = useState("");
-  const [sessionInfo, setSessionInfo] = useState<{ email?: string; workspaceName?: string; credits?: number } | null>(null);
+  const [credits, setCredits] = useState<number | null>(null);
   const [brandName, setBrandName] = useState("NODERE Intelligence");
   const pathname = usePathname();
   const router = useRouter();
+  const { user, workspace, logout } = useAuth();
 
   const pageTitle = useMemo(() => {
     const path = pathname || "/";
@@ -45,7 +47,7 @@ export function Header() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    async function loadSession() {
+    async function loadCredits() {
       const token = getAdminToken();
       if (!token) return;
       try {
@@ -55,16 +57,12 @@ export function Header() {
         });
         if (!response.ok) return;
         const payload = await response.json();
-        setSessionInfo({
-          email: payload.user?.email,
-          workspaceName: payload.workspace?.name,
-          credits: payload.credits?.remaining
-        });
+        setCredits(typeof payload.credits?.remaining === "number" ? payload.credits.remaining : null);
       } catch {
-        setSessionInfo(null);
+        setCredits(null);
       }
     }
-    void loadSession();
+    void loadCredits();
   }, []);
 
   useEffect(() => {
@@ -148,26 +146,29 @@ export function Header() {
         </form>
 
         <div className="flex items-center gap-2">
-          {typeof sessionInfo?.credits === "number" && (
+          {typeof credits === "number" && (
             <Link
               href="/billing"
               className={`hidden items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold sm:inline-flex ${
-                sessionInfo.credits < 5
+                credits < 5
                   ? "border-rose-400/50 bg-rose-500/15 text-rose-200"
-                  : sessionInfo.credits <= 10
+                  : credits <= 10
                     ? "border-amber-300/50 bg-amber-300/15 text-amber-100"
                     : "border-emerald-400/50 bg-emerald-400/15 text-emerald-100"
               }`}
               title="Créditos disponíveis"
             >
               <CreditCard className="h-4 w-4" />
-              {sessionInfo.credits}
+              {credits}
             </Link>
           )}
-          <Link href="/admin" className="inline-flex items-center gap-2 rounded-lg border border-electric/40 bg-electric/10 px-3 py-2 text-sm font-semibold text-blue-200 hover:bg-electric/20">
+          <Link href="/admin" className="inline-flex items-center gap-2 rounded-lg border border-electric/40 bg-electric/10 px-3 py-2 text-sm font-semibold text-blue-200 hover:bg-electric/20" title={workspace?.name || "Workspace NODERE"}>
             <ShieldCheck className="h-4 w-4" />
-            <span className="max-w-36 truncate">{sessionInfo?.email || "Admin"}</span>
+            <span className="max-w-36 truncate">{user?.email || "Conta NODERE"}</span>
           </Link>
+          <button onClick={logout} className="hidden rounded-lg border border-line px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white sm:inline-flex">
+            Sair
+          </button>
           <div className="relative">
             <button
               onClick={() => setOpen((value) => !value)}

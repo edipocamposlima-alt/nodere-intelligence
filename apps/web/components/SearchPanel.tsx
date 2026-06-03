@@ -2,9 +2,10 @@
 
 import { FormEvent, useState } from "react";
 import { AlertTriangle, CheckCircle2, LocateFixed, Search, Sparkles } from "lucide-react";
-import { geocodeAddress, searchCompanies } from "@/lib/api";
+import { geocodeAddress, getSavedCompanyIds, searchCompanies, searchCompanyByCnpj } from "@/lib/api";
 import { Company } from "@/lib/types";
 import { CompanyTable } from "./CompanyTable";
+import { COUNTRIES, SEGMENTS } from "@/constants/segments";
 
 export function SearchPanel() {
   const [loading, setLoading] = useState(false);
@@ -17,11 +18,17 @@ export function SearchPanel() {
     event.preventDefault();
     setLoading(true);
     setWarning(null);
+    setResults([]);
+    setMessage("Limpando resultados anteriores e consultando novas empresas...");
     const form = new FormData(event.currentTarget);
+    const mode = String(form.get("mode") || "places") as "places" | "cnpj" | "global";
+    const country = String(form.get("country") || "BR");
     const payload = {
+      mode,
       companyName: String(form.get("companyName") ?? "").trim(),
       city: String(form.get("city") ?? ""),
       state: String(form.get("state") ?? ""),
+      country,
       segment: String(form.get("segment") ?? ""),
       keyword: String(form.get("keyword") ?? ""),
       limit: 60,
@@ -31,16 +38,29 @@ export function SearchPanel() {
     };
 
     try {
-      if (!Object.values(payload).some(Boolean)) {
+      if (mode === "cnpj") {
+        const cnpj = String(form.get("cnpj") || "").trim();
+        if (!cnpj) {
+          setWarning("Informe o CNPJ para consultar a ReceitaWS.");
+          setMessage("Busca por CNPJ nao executada.");
+          return;
+        }
+        const response = await searchCompanyByCnpj(cnpj);
+        setResults([response.company]);
+        setMessage("CNPJ localizado em fonte pública. Revise os dados e salve no CRM.");
+        return;
+      }
+
+      if (![payload.companyName, payload.city, payload.state, payload.segment, payload.keyword].some(Boolean)) {
         setResults([]);
         setWarning("Informe pelo menos nome da empresa, segmento, cidade, estado ou palavra-chave.");
         setMessage("Busca nao executada.");
         return;
       }
 
-      const response = await searchCompanies(payload);
-      const savedIds = JSON.parse(localStorage.getItem("nodere_saved_leads") || "[]") as string[];
-      const savedSet = new Set(savedIds);
+      const [response, savedIds] = await Promise.all([searchCompanies(payload), getSavedCompanyIds()]);
+      const localSavedIds = JSON.parse(localStorage.getItem("nodere_saved_leads") || "[]") as string[];
+      const savedSet = new Set([...savedIds, ...localSavedIds]);
       const filtered = response.companies.filter((company) => !savedSet.has(company.id));
       setResults(filtered);
       setWarning(response.search.warning ?? response.search.error?.message ?? null);
@@ -89,10 +109,22 @@ export function SearchPanel() {
           Busca inteligente
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-6">
+          <select name="mode" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" defaultValue="places">
+            <option value="places">Google Places local</option>
+            <option value="cnpj">CNPJ direto</option>
+            <option value="global">Global / Internacional</option>
+          </select>
+          <input name="cnpj" placeholder="CNPJ (modo CNPJ)" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
           <input name="companyName" placeholder="Nome da empresa" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
-          <input name="segment" placeholder="Segmento" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
+          <select name="segment" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" defaultValue="">
+            <option value="">Segmento</option>
+            {SEGMENTS.map((segment) => <option key={segment} value={segment}>{segment}</option>)}
+          </select>
           <input name="city" placeholder="Cidade" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
           <input name="state" placeholder="Estado" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
+          <select name="country" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" defaultValue="BR">
+            {COUNTRIES.map((country) => <option key={country.code} value={country.code}>{country.name}</option>)}
+          </select>
           <input name="keyword" placeholder="Palavra-chave" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
           <button disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-60">
             <Search className="h-4 w-4" />

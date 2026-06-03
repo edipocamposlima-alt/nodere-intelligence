@@ -92,9 +92,11 @@ export interface CrmNote {
 }
 
 export interface SearchRequest {
+  mode?: "places" | "cnpj" | "global";
   companyName?: string;
   city?: string;
   state?: string;
+  country?: string;
   segment?: string;
   keyword?: string;
   limit?: number;

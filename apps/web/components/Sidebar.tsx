@@ -1,6 +1,9 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { BarChart3, Building2, CircleHelp, CreditCard, Inbox, KanbanSquare, LineChart, Plug, Search, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
+import { BarChart3, Building2, CalendarDays, CircleHelp, CreditCard, Inbox, KanbanSquare, LineChart, Megaphone, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
 import { getBillingStatus } from "@/lib/api";
 
 const items = [
@@ -10,9 +13,12 @@ const items = [
   { href: "/crm", label: "CRM / Funil", icon: KanbanSquare, hex: "#A855F7", bg: "linear-gradient(135deg,#7C3AED,#C084FC)" },
   { href: "/intelligence", label: "Inteligência", icon: Zap, hex: "#FACC15", bg: "linear-gradient(135deg,#EAB308,#F97316)" },
   { href: "/inbox", label: "Caixa de entrada", icon: Inbox, hex: "#10B981", bg: "linear-gradient(135deg,#059669,#34D399)" },
+  { href: "/calendar", label: "Calendário", icon: CalendarDays, hex: "#F59E0B", bg: "linear-gradient(135deg,#D97706,#FDE047)" },
   { href: "/automations", label: "Automações", icon: Workflow, hex: "#E879F9", bg: "linear-gradient(135deg,#C026D3,#F0ABFC)" },
   { href: "/operators", label: "Operadores", icon: Users, hex: "#6366F1", bg: "linear-gradient(135deg,#4F46E5,#818CF8)" },
   { href: "/reports", label: "Relatórios", icon: LineChart, hex: "#84CC16", bg: "linear-gradient(135deg,#65A30D,#A3E635)" },
+  { href: "/marketing", label: "Marketing", icon: Megaphone, hex: "#EC4899", bg: "linear-gradient(135deg,#DB2777,#FB7185)" },
+  { href: "/catalog", label: "Catálogo", icon: PackageOpen, hex: "#22C55E", bg: "linear-gradient(135deg,#16A34A,#86EFAC)" },
   { href: "/billing", label: "Faturamento", icon: CreditCard, hex: "#F97316", bg: "linear-gradient(135deg,#EA580C,#FDBA74)" },
   { href: "/integrations", label: "Integrações", icon: Plug, hex: "#14B8A6", bg: "linear-gradient(135deg,#0D9488,#5EEAD4)" },
   { href: "/settings", label: "Configurações", icon: Settings, hex: "#3B82F6", bg: "linear-gradient(135deg,#2563EB,#93C5FD)" },
@@ -20,8 +26,12 @@ const items = [
   { href: "/admin", label: "Administrador", icon: ShieldCheck, hex: "#1D4ED8", bg: "linear-gradient(135deg,#1D4ED8,#22D3EE)" }
 ];
 
-export async function Sidebar() {
-  const billing = await getBillingStatus().catch(() => null);
+export function Sidebar() {
+  const [billing, setBilling] = useState<Awaited<ReturnType<typeof getBillingStatus>> | null>(null);
+
+  useEffect(() => {
+    getBillingStatus().then(setBilling).catch(() => setBilling(null));
+  }, []);
 
   return (
     <aside className="hidden min-h-screen w-72 border-r border-line bg-ink/90 p-5 lg:block">

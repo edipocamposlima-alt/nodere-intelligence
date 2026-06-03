@@ -33,6 +33,7 @@ import { cacheDiagnosis, getCachedDiagnosis } from "../services/diagnosisStore.j
 import { defaultProspectingMessage, sendWhatsappMessage } from "../services/whatsapp.js";
 import { activateSequence, getInstancesByCompany } from "../services/emailSequences.js";
 import { enrichCnpj } from "../services/cnpjEnrichment.js";
+import { getSupabase } from "../db/supabase.js";
 import { randomUUID } from "node:crypto";
 
 const router = Router();
@@ -41,6 +42,45 @@ router.get("/", async (req, res, next) => {
   try {
     res.json(await listCompaniesAsync(getRequestWorkspaceId(req)));
   } catch (err) { next(err); }
+});
+
+router.get("/saved-ids", async (req, res, next) => {
+  try {
+    const companies = await listCompaniesAsync(getRequestWorkspaceId(req));
+    res.json(companies.map((company) => company.id));
+  } catch (err) { next(err); }
+});
+
+router.get("/import/template", (_req, res) => {
+  const headers = [
+    "name",
+    "razao_social",
+    "cnpj",
+    "segment",
+    "city",
+    "state",
+    "phone",
+    "whatsapp",
+    "email_principal",
+    "website",
+    "notes"
+  ];
+  const example = [
+    "Empresa Exemplo",
+    "Empresa Exemplo Ltda",
+    "00.000.000/0001-00",
+    "Clínicas e Saúde",
+    "Caxias do Sul",
+    "RS",
+    "(54) 3333-3333",
+    "(54) 99999-9999",
+    "contato@empresa.com.br",
+    "https://empresa.com.br",
+    "Observação inicial"
+  ];
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", "attachment; filename=\"modelo-importacao-nodere.csv\"");
+  res.send(`${headers.join(",")}\n${example.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")}\n`);
 });
 
 router.get("/:id", async (req, res, next) => {
@@ -101,7 +141,7 @@ router.post("/import", async (req, res, next) => {
         state: String(get("state")).trim(),
         address: "",
         phone: normalizePhone(String(get("phone"))),
-        whatsapp: normalizePhone(String(get("phone"))),
+        whatsapp: normalizeWhatsapp(String(get("whatsapp") || get("phone"))),
         website: String(get("website")).trim(),
         status: "Novo Lead",
         score: 50,
@@ -192,6 +232,99 @@ router.get("/:id/notes", async (req, res, next) => {
   } catch (err) { return next(err); }
 });
 
+router.get("/:id/contacts", async (req, res, next) => {
+  try {
+    const sb = requireSupabase();
+    const workspaceId = getRequestWorkspaceId(req);
+    const { data, error } = await sb
+      .from("company_contacts")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .eq("company_id", req.params.id)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return res.json(data ?? []);
+  } catch (error) { return next(error); }
+});
+
+router.post("/:id/contacts", async (req, res, next) => {
+  try {
+    const body = z.object({
+      name: z.string().min(2),
+      role: z.string().optional().nullable(),
+      email: z.string().optional().nullable(),
+      phone: z.string().optional().nullable(),
+      whatsapp: z.string().optional().nullable(),
+      linkedinUrl: z.string().optional().nullable(),
+      notes: z.string().optional().nullable()
+    }).parse(req.body);
+    const workspaceId = getRequestWorkspaceId(req);
+    const row = {
+      id: randomUUID(),
+      workspace_id: workspaceId,
+      company_id: req.params.id,
+      name: body.name,
+      role: body.role,
+      email: body.email,
+      phone: body.phone,
+      whatsapp: normalizeWhatsapp(String(body.whatsapp || body.phone || "")),
+      linkedin_url: body.linkedinUrl,
+      notes: body.notes
+    };
+    const { data, error } = await requireSupabase().from("company_contacts").insert(row).select("*").single();
+    if (error) throw error;
+    await addNote(req.params.id, `Decisor cadastrado: ${body.name}`, workspaceId);
+    return res.status(201).json(data);
+  } catch (error) { return next(error); }
+});
+
+router.patch("/:id/contacts/:contactId", async (req, res, next) => {
+  try {
+    const body = z.object({
+      name: z.string().optional(),
+      role: z.string().optional().nullable(),
+      email: z.string().optional().nullable(),
+      phone: z.string().optional().nullable(),
+      whatsapp: z.string().optional().nullable(),
+      linkedinUrl: z.string().optional().nullable(),
+      notes: z.string().optional().nullable()
+    }).parse(req.body);
+    const row: Record<string, unknown> = {
+      updated_at: new Date().toISOString()
+    };
+    if (body.name !== undefined) row.name = body.name;
+    if (body.role !== undefined) row.role = body.role;
+    if (body.email !== undefined) row.email = body.email;
+    if (body.phone !== undefined) row.phone = body.phone;
+    if (body.whatsapp !== undefined) row.whatsapp = normalizeWhatsapp(String(body.whatsapp || ""));
+    if (body.linkedinUrl !== undefined) row.linkedin_url = body.linkedinUrl;
+    if (body.notes !== undefined) row.notes = body.notes;
+    const { data, error } = await requireSupabase()
+      .from("company_contacts")
+      .update(row)
+      .eq("workspace_id", getRequestWorkspaceId(req))
+      .eq("company_id", req.params.id)
+      .eq("id", req.params.contactId)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return res.json(data);
+  } catch (error) { return next(error); }
+});
+
+router.delete("/:id/contacts/:contactId", async (req, res, next) => {
+  try {
+    const { error } = await requireSupabase()
+      .from("company_contacts")
+      .delete()
+      .eq("workspace_id", getRequestWorkspaceId(req))
+      .eq("company_id", req.params.id)
+      .eq("id", req.params.contactId);
+    if (error) throw error;
+    return res.json({ ok: true });
+  } catch (error) { return next(error); }
+});
+
 router.delete("/:id/notes/:noteId", async (req, res, next) => {
   try {
     const workspaceId = getRequestWorkspaceId(req);
@@ -208,6 +341,107 @@ router.get("/:id/tasks", async (req, res, next) => {
     if (!company) return res.status(404).json({ message: "Company not found" });
     return res.json(await listTasks(req.params.id, workspaceId));
   } catch (err) { return next(err); }
+});
+
+router.get("/:id/communications", async (req, res, next) => {
+  try {
+    const { data, error } = await requireSupabase()
+      .from("communications")
+      .select("*")
+      .eq("workspace_id", getRequestWorkspaceId(req))
+      .eq("company_id", req.params.id)
+      .order("sent_at", { ascending: false });
+    if (error) throw error;
+    return res.json(data ?? []);
+  } catch (error) { return next(error); }
+});
+
+router.post("/:id/communications", async (req, res, next) => {
+  try {
+    const body = z.object({
+      contactId: z.string().optional().nullable(),
+      type: z.enum(["whatsapp", "email", "call", "meeting", "note", "internal", "linkedin", "instagram"]),
+      direction: z.enum(["outbound", "inbound", "manual"]),
+      subject: z.string().optional().nullable(),
+      body: z.string().optional().nullable(),
+      sentAt: z.string().optional().nullable(),
+      status: z.string().optional().nullable()
+    }).parse(req.body);
+    const workspaceId = getRequestWorkspaceId(req);
+    const row = {
+      id: randomUUID(),
+      workspace_id: workspaceId,
+      company_id: req.params.id,
+      contact_id: body.contactId,
+      type: body.type,
+      direction: body.direction,
+      subject: body.subject,
+      body: body.body,
+      sent_at: body.sentAt || new Date().toISOString(),
+      status: body.status || "sent"
+    };
+    const { data, error } = await requireSupabase().from("communications").insert(row).select("*").single();
+    if (error) throw error;
+    await addNote(req.params.id, `Interação registrada: ${body.type}${body.subject ? ` — ${body.subject}` : ""}`, workspaceId);
+    return res.status(201).json(data);
+  } catch (error) { return next(error); }
+});
+
+router.delete("/:id/communications/:commId", async (req, res, next) => {
+  try {
+    const { error } = await requireSupabase()
+      .from("communications")
+      .delete()
+      .eq("workspace_id", getRequestWorkspaceId(req))
+      .eq("company_id", req.params.id)
+      .eq("id", req.params.commId);
+    if (error) throw error;
+    return res.json({ ok: true });
+  } catch (error) { return next(error); }
+});
+
+router.get("/:id/contracts", async (req, res, next) => {
+  try {
+    const { data, error } = await requireSupabase()
+      .from("company_contracts")
+      .select("*, catalog_items(*)")
+      .eq("workspace_id", getRequestWorkspaceId(req))
+      .eq("company_id", req.params.id)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return res.json(data ?? []);
+  } catch (error) { return next(error); }
+});
+
+router.post("/:id/contracts", async (req, res, next) => {
+  try {
+    const body = z.object({
+      catalogItemId: z.string(),
+      quantity: z.coerce.number().min(1).default(1),
+      contractedPrice: z.coerce.number().min(0),
+      discountPct: z.coerce.number().min(0).optional().nullable(),
+      contractedAt: z.string().optional().nullable(),
+      status: z.string().optional().nullable(),
+      notes: z.string().optional().nullable()
+    }).parse(req.body);
+    const workspaceId = getRequestWorkspaceId(req);
+    const row = {
+      id: randomUUID(),
+      workspace_id: workspaceId,
+      company_id: req.params.id,
+      catalog_item_id: body.catalogItemId,
+      quantity: body.quantity,
+      contracted_price: body.contractedPrice,
+      discount_pct: body.discountPct,
+      contracted_at: body.contractedAt || new Date().toISOString().slice(0, 10),
+      status: body.status || "active",
+      notes: body.notes
+    };
+    const { data, error } = await requireSupabase().from("company_contracts").insert(row).select("*").single();
+    if (error) throw error;
+    await addNote(req.params.id, `Serviço/produto contratado vinculado ao lead.`, workspaceId);
+    return res.status(201).json(data);
+  } catch (error) { return next(error); }
 });
 
 router.post("/:id/tasks", async (req, res, next) => {
@@ -568,4 +802,23 @@ function normalizePhone(phone: string) {
   if (!digits) return "";
   if (digits.startsWith("55")) return `+${digits}`;
   return `+55${digits}`;
+}
+
+function normalizeWhatsapp(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return "";
+  const local = digits.startsWith("55") ? digits.slice(2) : digits;
+  if (local.length === 11 && local[2] === "9") return digits.startsWith("55") ? `+${digits}` : `+55${digits}`;
+  return "";
+}
+
+function requireSupabase() {
+  const sb = getSupabase();
+  if (!sb) {
+    const error = new Error("Supabase não configurado para persistência desta operação.") as Error & { status?: number; code?: string };
+    error.status = 503;
+    error.code = "SUPABASE_NOT_CONFIGURED";
+    throw error;
+  }
+  return sb;
 }

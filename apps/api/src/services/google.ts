@@ -41,7 +41,7 @@ export async function searchGooglePlaces(input: SearchRequest): Promise<Company[
     });
   }
 
-  const query = [input.companyName, input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" ");
+  const query = [input.companyName, input.segment, input.keyword, input.city, input.state, input.country && input.country !== "BR" ? input.country : ""].filter(Boolean).join(" ");
   if (isFiniteNumber(input.lat) && isFiniteNumber(input.lng) && isFiniteNumber(input.radiusKm)) {
     return searchGooglePlacesNearby(input);
   }
@@ -114,7 +114,8 @@ async function searchGooglePlacesNearby(input: SearchRequest): Promise<Company[]
           radius: Math.min(Math.max((input.radiusKm ?? 5) * 1000, 100), 50000)
         }
       },
-      languageCode: "pt-BR"
+      languageCode: input.country && input.country !== "BR" ? "en" : "pt-BR",
+      regionCode: input.country || "BR"
     })
   });
   if (!response.ok) throw await buildGoogleApiError(response, "Google Places Nearby");
@@ -141,7 +142,12 @@ async function searchGooglePlacesBatch(query: string, input: SearchRequest, maxR
       "X-Goog-FieldMask":
         "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.googleMapsUri,places.primaryTypeDisplayName,places.location"
     },
-    body: JSON.stringify({ textQuery: query, languageCode: "pt-BR", maxResultCount })
+    body: JSON.stringify({
+      textQuery: query,
+      languageCode: input.country && input.country !== "BR" ? "en" : "pt-BR",
+      regionCode: input.country || "BR",
+      maxResultCount
+    })
   });
 
   if (!response.ok) {
@@ -166,6 +172,7 @@ function buildQueryVariants(input: SearchRequest, query: string) {
 }
 
 function normalizePlace(place: GooglePlace, input: SearchRequest): Company {
+  const phone = normalizePhone(place.nationalPhoneNumber);
   const digital = {
     hasGoogleAds: false,
     hasDescription: false,
@@ -181,8 +188,8 @@ function normalizePlace(place: GooglePlace, input: SearchRequest): Company {
     city: input.city ?? "",
     state: input.state ?? "",
     address: place.formattedAddress ?? "",
-    phone: place.nationalPhoneNumber,
-    whatsapp: place.nationalPhoneNumber,
+    phone,
+    whatsapp: normalizeWhatsapp(phone),
     website: place.websiteUri,
     rating: place.rating,
     reviewCount: place.userRatingCount,
@@ -201,6 +208,23 @@ function normalizePlace(place: GooglePlace, input: SearchRequest): Company {
   };
 
   return { ...base, ...calculateOpportunityScore(base) };
+}
+
+function normalizePhone(phone?: string) {
+  const digits = (phone ?? "").replace(/\D/g, "");
+  if (!digits) return undefined;
+  if (digits.startsWith("55")) return `+${digits}`;
+  return `+55${digits}`;
+}
+
+function normalizeWhatsapp(phone?: string) {
+  const digits = (phone ?? "").replace(/\D/g, "");
+  if (!digits) return undefined;
+  const local = digits.startsWith("55") ? digits.slice(2) : digits;
+  // Brasil: DDD + celular com 9 digitos, iniciando por 9. Telefones fixos
+  // (DDD + 8 digitos, normalmente iniciando por 2-5) ficam apenas no telefone.
+  if (local.length === 11 && local[2] === "9") return digits.startsWith("55") ? `+${digits}` : `+55${digits}`;
+  return undefined;
 }
 
 function isFiniteNumber(value: unknown): value is number {
