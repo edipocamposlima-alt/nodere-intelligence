@@ -1,9 +1,10 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { CheckCircle2, Palette, Save, Server, Smartphone } from "lucide-react";
+import { Bell, CheckCircle2, Code2, FileText, Palette, Save, Server, Smartphone, Stamp } from "lucide-react";
 import { getBackendRootUrl } from "@/lib/apiBase";
 import { getPublicSettings, savePublicSettings } from "@/lib/api";
+import { getAdminToken } from "@/lib/adminAuth";
 
 const STORAGE_KEY = "nodere_settings";
 const BACKEND_ROOT_URL = getBackendRootUrl();
@@ -70,6 +71,7 @@ export function SettingsClient() {
   const [settings, setSettings] = useState<Settings>(defaults);
   const [status, setStatus] = useState<string>("Preferências carregadas localmente.");
   const [health, setHealth] = useState<string>("Não testado");
+  const [adminMessage, setAdminMessage] = useState("");
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -127,6 +129,44 @@ export function SettingsClient() {
     }
   }
 
+  async function enablePush() {
+    try {
+      if (!("Notification" in window) || !("serviceWorker" in navigator)) throw new Error("Este navegador não suporta push.");
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") throw new Error("Permissão de notificação negada.");
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (!subscription) throw new Error("VAPID_PUBLIC_KEY precisa estar configurada no frontend para criar assinatura push.");
+      const response = await fetch(`${settings.backendUrl.replace(/\/$/, "")}/api/push/subscribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAdminToken()}` },
+        body: JSON.stringify(subscription)
+      });
+      const payload = await response.json();
+      setAdminMessage(payload.message || "Push configurado.");
+    } catch (error) {
+      setAdminMessage(error instanceof Error ? error.message : "Não foi possível habilitar push.");
+    }
+  }
+
+  async function generateApiKey() {
+    const name = window.prompt("Nome da chave de API");
+    if (!name) return;
+    try {
+      const response = await fetch(`${settings.backendUrl.replace(/\/$/, "")}/api/developer/keys`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAdminToken()}` },
+        body: JSON.stringify({ name, scopes: ["leads:read", "search:write"] })
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message || "Falha ao gerar chave.");
+      window.prompt("Copie a chave agora. Ela não será exibida novamente:", payload.key);
+      setAdminMessage("Chave de API criada.");
+    } catch (error) {
+      setAdminMessage(error instanceof Error ? error.message : "Erro ao gerar chave.");
+    }
+  }
+
   return (
     <form onSubmit={save} className="space-y-5">
       <section className="rounded-lg border border-line bg-panel/90 p-5">
@@ -139,6 +179,51 @@ export function SettingsClient() {
           <button type="button" onClick={testBackend} className="rounded-lg border border-line bg-ink px-4 py-2 text-sm font-semibold text-white hover:border-electric">Testar conexão</button>
         </div>
         <p className="mt-2 text-sm text-slate-400">{health}</p>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        <div className="rounded-lg border border-line bg-panel/90 p-5">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-cyan" />
+            <h3 className="font-semibold text-white">Templates de proposta</h3>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            Templates padrão e personalizados ficam em <code className="text-cyan">/api/proposals/templates</code>. Use a ficha do lead para gerar proposta com dados reais e salvar versões.
+          </p>
+        </div>
+        <div className="rounded-lg border border-line bg-panel/90 p-5">
+          <div className="flex items-center gap-2">
+            <Code2 className="h-4 w-4 text-cyan" />
+            <h3 className="font-semibold text-white">Developer API</h3>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            Gere chaves para parceiros consumirem <code className="text-cyan">/v1/leads</code> e <code className="text-cyan">/v1/search</code>. Somente Owner/Admin.
+          </p>
+          <button type="button" onClick={generateApiKey} className="mt-3 rounded-lg border border-cyan/40 bg-cyan/10 px-4 py-2 text-sm font-semibold text-cyan hover:bg-cyan/20">
+            Gerar chave de API
+          </button>
+        </div>
+        <div className="rounded-lg border border-line bg-panel/90 p-5">
+          <div className="flex items-center gap-2">
+            <Bell className="h-4 w-4 text-cyan" />
+            <h3 className="font-semibold text-white">Notificações push</h3>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            Requer VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY no Render e assinatura do navegador.
+          </p>
+          <button type="button" onClick={enablePush} className="mt-3 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:border-electric">
+            Habilitar notificações
+          </button>
+        </div>
+        <div className="rounded-lg border border-line bg-panel/90 p-5">
+          <div className="flex items-center gap-2">
+            <Stamp className="h-4 w-4 text-cyan" />
+            <h3 className="font-semibold text-white">White-label</h3>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            Disponível no plano Agency via <code className="text-cyan">/api/workspace/branding</code>. Configure nome, domínio, logo e cor principal do workspace.
+          </p>
+        </div>
       </section>
 
       <section className="rounded-lg border border-line bg-panel/90 p-5">
@@ -215,6 +300,7 @@ export function SettingsClient() {
           <CheckCircle2 className="h-4 w-4 text-success" />
           {status}
         </span>
+        {adminMessage && <span className="text-sm text-cyan">{adminMessage}</span>}
       </div>
     </form>
   );
