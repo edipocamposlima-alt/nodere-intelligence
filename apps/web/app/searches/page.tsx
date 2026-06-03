@@ -2,6 +2,7 @@ import { Clock, Database, RefreshCw, Search } from "lucide-react";
 import { SearchPanel } from "@/components/SearchPanel";
 import { getSearchHistory, getEnrichmentQueue, getCredits } from "@/lib/api";
 import { RerunButton } from "./RerunButton";
+import { CsvImportPanel } from "./CsvImportPanel";
 
 export default async function SearchesPage() {
   const [history, queue, credits] = await Promise.all([getSearchHistory(), getEnrichmentQueue(), getCredits()]);
@@ -35,6 +36,8 @@ export default async function SearchesPage() {
         </div>
         <SearchPanel />
       </section>
+
+      <CsvImportPanel />
 
       {queue.running > 0 || queue.pending > 0 ? (
         <div className="rounded-lg border border-electric/30 bg-electric/10 px-4 py-3">

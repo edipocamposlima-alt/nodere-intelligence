@@ -150,6 +150,11 @@ alter table nodere_operators add column if not exists workspace_id text not null
 alter table nodere_operator_goals add column if not exists workspace_id text not null default 'default';
 alter table nodere_app_settings add column if not exists workspace_id text not null default 'default';
 alter table nodere_workspaces add column if not exists onboarding_completed boolean not null default false;
+alter table nodere_workspaces add column if not exists wl_domain text;
+alter table nodere_workspaces add column if not exists wl_name text;
+alter table nodere_workspaces add column if not exists wl_logo_url text;
+alter table nodere_workspaces add column if not exists wl_primary_color text;
+alter table nodere_workspaces add column if not exists wl_enabled boolean not null default false;
 
 do $$
 begin
@@ -190,6 +195,7 @@ create index if not exists idx_notes_workspace on nodere_company_notes(workspace
 create index if not exists idx_searches_workspace on nodere_searches(workspace_id, created_at desc);
 create index if not exists idx_operators_workspace on nodere_operators(workspace_id);
 create index if not exists idx_app_settings_workspace on nodere_app_settings(workspace_id);
+create index if not exists idx_workspaces_wl_domain on nodere_workspaces(wl_domain);
 
 -- Estruturas solicitadas no roadmap SaaS. Elas são seguras para aplicar
 -- incrementalmente: não removem dados existentes e permitem ativar as telas

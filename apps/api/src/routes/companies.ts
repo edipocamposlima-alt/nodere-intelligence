@@ -15,6 +15,7 @@ import {
   removeNote,
   updateCompany,
   updateDocument,
+  saveCompanies,
   updateStatus,
   updateTask
 } from "../services/companyStore.js";
@@ -32,6 +33,7 @@ import { cacheDiagnosis, getCachedDiagnosis } from "../services/diagnosisStore.j
 import { defaultProspectingMessage, sendWhatsappMessage } from "../services/whatsapp.js";
 import { activateSequence, getInstancesByCompany } from "../services/emailSequences.js";
 import { enrichCnpj } from "../services/cnpjEnrichment.js";
+import { randomUUID } from "node:crypto";
 
 const router = Router();
 
@@ -59,6 +61,62 @@ router.post("/:id/analyze", async (req, res, next) => {
   return res.status(202).json({ message: "Enrichment queued", job });
   } catch (error) {
     return next(error);
+  }
+});
+
+router.post("/import", async (req, res, next) => {
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    const csv = typeof req.body === "string" ? req.body : String(req.body?.csv || "");
+    const map = typeof req.body?.column_map === "object" ? req.body.column_map : {};
+    if (!csv.trim()) return res.status(400).json({ message: "Envie CSV no corpo ou campo csv." });
+    const rows = parseCsv(csv);
+    if (rows.length < 2) return res.status(400).json({ message: "CSV sem linhas suficientes." });
+    const headers = rows[0].map((h) => h.trim());
+    const imported: any[] = [];
+    const duplicates: any[] = [];
+    const errors: Array<{ row: number; reason: string }> = [];
+    const existing = await listCompaniesAsync(workspaceId);
+    const existingKeys = new Set(existing.map((c) => `${c.name}|${c.city}`.toLowerCase()));
+    for (let i = 1; i < rows.length; i++) {
+      const raw = Object.fromEntries(headers.map((h, idx) => [h, rows[i][idx] || ""]));
+      const get = (field: string) => raw[map[field] || field] || "";
+      const name = String(get("name")).trim();
+      const city = String(get("city")).trim();
+      if (!name) {
+        errors.push({ row: i + 1, reason: "name vazio" });
+        continue;
+      }
+      const key = `${name}|${city}`.toLowerCase();
+      if (existingKeys.has(key)) {
+        duplicates.push({ row: i + 1, name, city });
+        continue;
+      }
+      existingKeys.add(key);
+      imported.push({
+        id: `csv-${randomUUID()}`,
+        name,
+        category: String(get("segment")).trim(),
+        city,
+        state: String(get("state")).trim(),
+        address: "",
+        phone: normalizePhone(String(get("phone"))),
+        whatsapp: normalizePhone(String(get("phone"))),
+        website: String(get("website")).trim(),
+        status: "Novo Lead",
+        score: 50,
+        opportunityLevel: "Media",
+        detectedOpportunities: [],
+        suggestions: [],
+        notes: get("notes") ? [{ id: randomUUID(), companyId: "", body: String(get("notes")), createdAt: new Date().toISOString() }] : [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+    }
+    await saveCompanies(imported, workspaceId);
+    res.status(201).json({ imported: imported.length, duplicates: duplicates.length, errors, companies: imported });
+  } catch (error) {
+    next(error);
   }
 });
 
@@ -484,3 +542,30 @@ router.post("/:id/sequences", (req, res) => {
 });
 
 export default router;
+
+function parseCsv(csv: string) {
+  return csv
+    .split(/\r?\n/)
+    .filter((line) => line.trim())
+    .map((line) => {
+      const cells: string[] = [];
+      let current = "";
+      let quoted = false;
+      for (const char of line) {
+        if (char === '"') quoted = !quoted;
+        else if (char === "," && !quoted) {
+          cells.push(current.trim());
+          current = "";
+        } else current += char;
+      }
+      cells.push(current.trim());
+      return cells;
+    });
+}
+
+function normalizePhone(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("55")) return `+${digits}`;
+  return `+55${digits}`;
+}

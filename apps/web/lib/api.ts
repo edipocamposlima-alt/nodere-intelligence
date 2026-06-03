@@ -105,6 +105,13 @@ export function getCrmCards(params = "") {
   return api<{ data: Company[]; total: number; page: number; limit: number }>(`/crm/cards${params}`, undefined, { data: [], total: 0, page: 1, limit: 25 });
 }
 
+export function importCompaniesCsv(csv: string, column_map?: Record<string, string>) {
+  return api<{ imported: number; duplicates: number; errors: Array<{ row: number; reason: string }> }>("/companies/import", {
+    method: "POST",
+    body: JSON.stringify({ csv, column_map })
+  });
+}
+
 export function updateCompanyStatus(id: string, status: string) {
   return api<Company>(`/companies/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
 }

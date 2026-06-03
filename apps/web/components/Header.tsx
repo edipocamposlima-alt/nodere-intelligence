@@ -17,6 +17,7 @@ export function Header() {
   const [open, setOpen] = useState(false);
   const [globalQuery, setGlobalQuery] = useState("");
   const [sessionInfo, setSessionInfo] = useState<{ email?: string; workspaceName?: string; credits?: number } | null>(null);
+  const [brandName, setBrandName] = useState("NODERE Intelligence");
   const pathname = usePathname();
   const router = useRouter();
 
@@ -67,6 +68,24 @@ export function Header() {
   }, []);
 
   useEffect(() => {
+    async function loadBranding() {
+      try {
+        const response = await fetch(`${API_URL}/workspace/branding?domain=${encodeURIComponent(window.location.hostname)}`, { cache: "no-store" });
+        if (!response.ok) return;
+        const brand = await response.json();
+        if (brand?.name) {
+          setBrandName(brand.name);
+          document.title = brand.name;
+        }
+        if (brand?.primaryColor) document.documentElement.style.setProperty("--color-primary", brand.primaryColor);
+      } catch {
+        // Keep NODERE default branding.
+      }
+    }
+    if (typeof window !== "undefined") void loadBranding();
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     async function loadTasks() {
       try {
@@ -114,7 +133,7 @@ export function Header() {
       <div className="flex items-center justify-between gap-4">
         <Link href="/" className="min-w-0">
           <span className="block truncate text-base font-semibold text-white md:text-lg">{pageTitle}</span>
-          <span className="hidden text-xs text-slate-500 sm:block">Operação comercial e inteligência de prospecção</span>
+          <span className="hidden text-xs text-slate-500 sm:block">{brandName} · Operação comercial e inteligência de prospecção</span>
         </Link>
 
         <form onSubmit={submitGlobalSearch} className="hidden w-full max-w-md items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 md:flex">

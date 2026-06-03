@@ -438,6 +438,13 @@ export async function searchCompanies(input: SearchRequest, workspaceId = "defau
   return (await searchCompaniesWithMeta(input, workspaceId)).companies;
 }
 
+export async function saveCompanies(items: Company[], workspaceId = "default") {
+  const scoped = items.map((item) => ({ ...item, enrichmentStatus: item.enrichmentStatus ?? "pending" as const }));
+  syncToMem(scoped, workspaceId);
+  if (hasSupabase()) await withPersistentWrite("salvar leads importados", () => dbUpsert(scoped, workspaceId), () => undefined);
+  return scoped;
+}
+
 export async function updateStatus(id: string, status: CrmStatus, workspaceId = "default"): Promise<Company | undefined> {
   const now = new Date().toISOString();
   const fields: Record<string, unknown> = { status, updated_at: now };
