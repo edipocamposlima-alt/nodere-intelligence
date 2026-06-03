@@ -95,15 +95,21 @@ export async function getMonthlyTrends(workspaceId = "default", months = 6): Pro
 
 export async function getFunnelReport(workspaceId = "default") {
   const pipeline = await getPipelineReport(workspaceId);
+  const total = pipeline.totalLeads || 0;
+  let previousCount = total;
   let previous = pipeline.totalLeads || 0;
   return {
     stages: pipeline.stages.map((stage) => {
       const conversionRate = previous > 0 ? stage.count / previous : 0;
       previous = stage.count;
+      const conversionFromPrevious = previousCount > 0 ? stage.count / previousCount : 0;
+      previousCount = stage.count;
       return {
         name: stage.status,
         count: stage.count,
-        conversion_rate: Math.round(conversionRate * 100) / 100
+        conversion_rate: Math.round(conversionRate * 100) / 100,
+        pct_of_total: total ? Math.round((stage.count / total) * 10000) / 100 : 0,
+        conversion_from_previous: Math.round(conversionFromPrevious * 10000) / 100
       };
     })
   };
@@ -129,6 +135,90 @@ export async function getPerformanceReport(workspaceId = "default") {
     pct_with_site: Math.round((companies.filter((company) => Boolean(company.website)).length / total) * 100),
     pct_with_google_ads: Math.round((companies.filter((company) => Boolean(company.hasGoogleAds)).length / total) * 100),
     pct_without_whatsapp: Math.round((companies.filter((company) => !company.whatsapp).length / total) * 100)
+  };
+}
+
+export async function getSummaryReport(workspaceId = "default", period = "30d") {
+  const companies = await listCompaniesAsync(workspaceId);
+  const periodCompanies = filterByPeriod(companies, period);
+  const decided = companies.filter((company) => company.status === "Fechado" || company.status === "Perdido").length;
+  const closed = companies.filter((company) => company.status === "Fechado").length;
+  return {
+    total_companies: companies.length,
+    total_leads_in_crm: companies.length,
+    avg_score: companies.length ? Math.round(companies.reduce((sum, company) => sum + (company.score || 0), 0) / companies.length) : 0,
+    conversion_rate: decided ? Math.round((closed / decided) * 10000) / 100 : 0,
+    credits_used: 0,
+    new_this_period: periodCompanies.length
+  };
+}
+
+export async function getTimelineReport(workspaceId = "default", period = "30d", groupByMode = "day") {
+  const companies = filterByPeriod(await listCompaniesAsync(workspaceId), period);
+  const formatKey = (company: Company) => {
+    const date = new Date(company.createdAt || new Date().toISOString());
+    if (groupByMode === "month") return date.toISOString().slice(0, 7);
+    if (groupByMode === "week") {
+      const start = new Date(date);
+      start.setDate(date.getDate() - date.getDay());
+      return start.toISOString().slice(0, 10);
+    }
+    return date.toISOString().slice(0, 10);
+  };
+  return {
+    data: [...groupBy(companies, formatKey).entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, items]) => ({ date, count: items.length }))
+  };
+}
+
+export async function getSegmentsReport(workspaceId = "default", period = "30d") {
+  const companies = filterByPeriod(await listCompaniesAsync(workspaceId), period);
+  return {
+    segments: [...groupBy(companies, (company) => company.category || "Sem segmento").entries()]
+      .map(([segment, items]) => ({
+        segment,
+        count: items.length,
+        avg_score: items.length ? Math.round(items.reduce((sum, company) => sum + (company.score || 0), 0) / items.length) : 0
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 15)
+  };
+}
+
+export async function getCitiesReport(workspaceId = "default", period = "30d") {
+  const companies = filterByPeriod(await listCompaniesAsync(workspaceId), period);
+  return {
+    cities: [...groupBy(companies, (company) => `${company.city || "Sem cidade"}|${company.state || ""}`).entries()]
+      .map(([key, items]) => {
+        const [city, state] = key.split("|");
+        return { city, state, count: items.length };
+      })
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 15)
+  };
+}
+
+export async function getOriginReport(workspaceId = "default", period = "30d") {
+  const companies = filterByPeriod(await listCompaniesAsync(workspaceId), period);
+  return {
+    origins: [...groupBy(companies, (company) => String((company as any).source || "search")).entries()]
+      .map(([source, items]) => ({ source, count: items.length }))
+      .sort((a, b) => b.count - a.count)
+  };
+}
+
+export async function getIntelligenceReport(workspaceId = "default", period = "30d") {
+  const companies = filterByPeriod(await listCompaniesAsync(workspaceId), period);
+  const total = Math.max(companies.length, 1);
+  return {
+    pct_with_site: Math.round((companies.filter((company) => Boolean(company.website)).length / total) * 100),
+    pct_with_google_ads: Math.round((companies.filter((company) => Boolean(company.hasGoogleAds)).length / total) * 100),
+    pct_with_meta_pixel: Math.round((companies.filter((company) => Boolean(company.metaPixel)).length / total) * 100),
+    pct_with_ga4: Math.round((companies.filter((company) => Boolean(company.hasGA4)).length / total) * 100),
+    pct_with_gtm: Math.round((companies.filter((company) => Boolean(company.googleTagManager || company.gtmContainerId)).length / total) * 100),
+    pct_with_whatsapp: Math.round((companies.filter((company) => Boolean(company.whatsapp)).length / total) * 100),
+    avg_pagespeed_mobile: companies.length ? Math.round(companies.reduce((sum, company) => sum + (company.pageSpeed || 0), 0) / companies.length) : 0
   };
 }
 

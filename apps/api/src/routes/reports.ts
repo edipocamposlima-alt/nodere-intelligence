@@ -7,7 +7,13 @@ import {
   getFunnelReport,
   getLeadsReport,
   getPerformanceReport,
-  getOperatorsReport
+  getOperatorsReport,
+  getSummaryReport,
+  getTimelineReport,
+  getSegmentsReport,
+  getCitiesReport,
+  getOriginReport,
+  getIntelligenceReport
 } from "../services/reports.js";
 
 const router = Router();
@@ -15,6 +21,14 @@ const router = Router();
 router.get("/pipeline", async (req, res, next) => {
   try {
     res.json(await getPipelineReport(getRequestWorkspaceId(req)));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/summary", async (req, res, next) => {
+  try {
+    res.json(await getSummaryReport(getRequestWorkspaceId(req), String(req.query.period || "30d")));
   } catch (error) {
     next(error);
   }
@@ -39,6 +53,46 @@ router.get("/trends", async (req, res, next) => {
 router.get("/funnel", async (req, res, next) => {
   try {
     res.json(await getFunnelReport(getRequestWorkspaceId(req)));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/timeline", async (req, res, next) => {
+  try {
+    res.json(await getTimelineReport(getRequestWorkspaceId(req), String(req.query.period || "30d"), String(req.query.group_by || "day")));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/segments", async (req, res, next) => {
+  try {
+    res.json(await getSegmentsReport(getRequestWorkspaceId(req), String(req.query.period || "30d")));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/cities", async (req, res, next) => {
+  try {
+    res.json(await getCitiesReport(getRequestWorkspaceId(req), String(req.query.period || "30d")));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/origin", async (req, res, next) => {
+  try {
+    res.json(await getOriginReport(getRequestWorkspaceId(req), String(req.query.period || "30d")));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/intelligence", async (req, res, next) => {
+  try {
+    res.json(await getIntelligenceReport(getRequestWorkspaceId(req), String(req.query.period || "30d")));
   } catch (error) {
     next(error);
   }
