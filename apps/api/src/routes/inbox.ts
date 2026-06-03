@@ -53,6 +53,26 @@ router.post("/", (req, res, next) => {
   }
 });
 
+router.post("/manual", (req, res, next) => {
+  try {
+    const body = z.object({
+      phone: z.string().min(6),
+      content: z.string().min(1),
+      leadId: z.string().optional(),
+      companyName: z.string().optional()
+    }).parse(req.body);
+    addInboundMessage(body.phone, body.content);
+    const updated = getConversation(body.phone);
+    if (updated) {
+      updated.companyId = body.leadId;
+      updated.companyName = body.companyName;
+    }
+    return res.status(201).json(updated ? { ...updated, slaStatus: getSlaStatus(updated) } : null);
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.get("/:phone", (req, res) => {
   const conv = getConversation(req.params.phone);
   if (!conv) return res.status(404).json({ message: "Conversation not found" });

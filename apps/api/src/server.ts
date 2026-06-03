@@ -19,6 +19,13 @@ import adminRouter from "./routes/admin.js";
 import workspaceRouter from "./routes/workspace.js";
 import legalRouter from "./routes/legal.js";
 import backupRouter from "./routes/backup.js";
+import proposalsRouter from "./routes/proposals.js";
+import pushRouter from "./routes/push.js";
+import geocodeRouter from "./routes/geocode.js";
+import { developerRouter, publicApiRouter } from "./routes/developer.js";
+import verticalsRouter from "./routes/verticals.js";
+import webhooksRouter from "./routes/webhooks.js";
+import crmRouter from "./routes/crm.js";
 import { processDueSteps } from "./services/emailSequences.js";
 import { requireAuth } from "./middleware/auth.js";
 import { attachSession, getRequestWorkspaceId } from "./middleware/session.js";
@@ -250,17 +257,38 @@ app.get("/api/places/search", async (req, res, next) => {
 app.use("/api/admin", adminRouter);
 app.use("/api/workspace", workspaceRouter);
 app.use("/api/legal", legalRouter);
+app.use("/api/geocode", geocodeRouter);
 app.use("/api/searches", searchesRouter);
 app.use("/api/companies", companiesRouter);
+app.use("/api/crm", crmRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/reports", reportsRouter);
 app.use("/api/integrations", integrationsRouter);
 app.use("/api/inbox", inboxRouter);
+app.use("/api/webhooks", webhooksRouter);
 app.use("/api/sequences", sequencesRouter);
 app.use("/api/operators", operatorsRouter);
 app.use("/api/credits", creditsRouter);
 app.use("/api/backup", backupRouter);
 app.use("/api/billing", billingRouter);
+app.use("/api/proposals", proposalsRouter);
+app.use("/api/push", pushRouter);
+app.use("/api/developer", developerRouter);
+app.use("/api/admin/verticals", verticalsRouter);
+app.use("/v1", publicApiRouter);
+app.get("/docs", (_req, res) => {
+  res.type("html").send(`<!doctype html><title>NODERE API</title><body style="font-family:sans-serif;background:#0A0F1E;color:white;padding:32px"><h1>NODERE Public API</h1><p>Use <code>X-NODERE-API-Key</code>.</p><pre>${JSON.stringify({
+    openapi: "3.0.0",
+    info: { title: "NODERE Public API", version: "1.0.0" },
+    paths: {
+      "/v1/leads": { get: { summary: "List leads" }, post: { summary: "Create lead" } },
+      "/v1/leads/{id}": { patch: { summary: "Update lead" } },
+      "/v1/leads/{id}/stage": { patch: { summary: "Move lead stage" } },
+      "/v1/leads/{id}/notes": { post: { summary: "Add note" } },
+      "/v1/search": { get: { summary: "Search companies" } }
+    }
+  }, null, 2)}</pre></body>`);
+});
 
 app.use("/api", requireAuth);
 

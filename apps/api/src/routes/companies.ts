@@ -13,6 +13,7 @@ import {
   listTasks,
   removeDocument,
   removeNote,
+  updateCompany,
   updateDocument,
   updateStatus,
   updateTask
@@ -30,6 +31,7 @@ import { generateCommercialDiagnosis } from "../services/openai.js";
 import { cacheDiagnosis, getCachedDiagnosis } from "../services/diagnosisStore.js";
 import { defaultProspectingMessage, sendWhatsappMessage } from "../services/whatsapp.js";
 import { activateSequence, getInstancesByCompany } from "../services/emailSequences.js";
+import { enrichCnpj } from "../services/cnpjEnrichment.js";
 
 const router = Router();
 
@@ -105,6 +107,21 @@ router.post("/:id/enrich-external", async (req, res, next) => {
     return res.json({ company: updated ?? company, enrichment });
   } catch (err) {
     return next(err);
+  }
+});
+
+router.get("/:id/enrich", async (req, res, next) => {
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    const company = await getCompanyAsync(req.params.id, workspaceId);
+    if (!company) return res.status(404).json({ message: "Company not found" });
+    await updateCompany(company.id, { enrichmentStatus: "running" as any }, workspaceId);
+    const result = await enrichCnpj(company);
+    if (result.fields) await updateCompany(company.id, { ...(result.fields as any), enrichmentStatus: result.status === "enriched" ? "done" : "error" } as any, workspaceId);
+    else await updateCompany(company.id, { enrichmentStatus: result.status === "not_found" ? "none" : "error" } as any, workspaceId);
+    res.json({ enrichment: result, company: await getCompanyAsync(company.id, workspaceId) });
+  } catch (error) {
+    next(error);
   }
 });
 

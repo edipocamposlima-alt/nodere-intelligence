@@ -74,7 +74,7 @@ export function getCompany(id: string) {
   return api<Company>(`/companies/${id}`);
 }
 
-export function searchCompanies(payload: { city?: string; state?: string; segment?: string; keyword?: string; companyName?: string; limit?: number }) {
+export function searchCompanies(payload: { city?: string; state?: string; segment?: string; keyword?: string; companyName?: string; limit?: number; lat?: number; lng?: number; radiusKm?: number }) {
   return api<{
     companies: Company[];
     search: {
@@ -83,6 +83,26 @@ export function searchCompanies(payload: { city?: string; state?: string; segmen
       error?: { message?: string; activationUrl?: string; reason?: string; code?: string; status?: number };
     };
   }>("/searches", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function geocodeAddress(address: string) {
+  return api<{ status: string; results: Array<{ address?: string; lat?: number; lng?: number }> }>(`/geocode?address=${encodeURIComponent(address)}`);
+}
+
+export function getProposalTemplates() {
+  return api<Array<{ id: string; name: string; service_type: string; content: string; variables?: string[] }>>("/proposals/templates", undefined, []);
+}
+
+export function generateProposal(payload: { template_id: string; lead_id: string; enhance?: boolean }) {
+  return api<{ content: string }>("/proposals/generate", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function saveProposalVersion(payload: { lead_id: string; content: string; service_type?: string; generated_by?: "user" | "ai" }) {
+  return api("/proposals/versions", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function getCrmCards(params = "") {
+  return api<{ data: Company[]; total: number; page: number; limit: number }>(`/crm/cards${params}`, undefined, { data: [], total: 0, page: 1, limit: 25 });
 }
 
 export function updateCompanyStatus(id: string, status: string) {

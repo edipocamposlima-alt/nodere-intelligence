@@ -134,6 +134,16 @@ create table if not exists nodere_app_settings (
 
 -- Migração segura para bancos que já tinham as tabelas antes do multiusuário.
 alter table nodere_companies add column if not exists workspace_id text not null default 'default';
+alter table nodere_companies add column if not exists cnpj text;
+alter table nodere_companies add column if not exists legal_name text;
+alter table nodere_companies add column if not exists razao_social text;
+alter table nodere_companies add column if not exists situacao_cadastral text;
+alter table nodere_companies add column if not exists data_abertura text;
+alter table nodere_companies add column if not exists capital_social text;
+alter table nodere_companies add column if not exists cnae_principal text;
+alter table nodere_companies add column if not exists socios jsonb not null default '[]';
+alter table nodere_companies add column if not exists endereco_fiscal text;
+alter table nodere_companies add column if not exists owner_id text;
 alter table nodere_company_notes add column if not exists workspace_id text not null default 'default';
 alter table nodere_searches add column if not exists workspace_id text not null default 'default';
 alter table nodere_operators add column if not exists workspace_id text not null default 'default';
@@ -175,6 +185,7 @@ create table if not exists workspace_members (
 );
 
 create index if not exists idx_companies_workspace on nodere_companies(workspace_id);
+create index if not exists idx_companies_owner on nodere_companies(workspace_id, owner_id);
 create index if not exists idx_notes_workspace on nodere_company_notes(workspace_id);
 create index if not exists idx_searches_workspace on nodere_searches(workspace_id, created_at desc);
 create index if not exists idx_operators_workspace on nodere_operators(workspace_id);
@@ -212,6 +223,19 @@ create table if not exists proposal_versions (
   content text not null,
   service_type text,
   generated_by text not null default 'user' check (generated_by in ('user', 'ai')),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists schedules (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  company_id text,
+  assignee_id text,
+  title text not null,
+  channel text not null default 'WhatsApp',
+  scheduled_at timestamptz,
+  notified boolean not null default false,
+  status text not null default 'open',
   created_at timestamptz not null default now()
 );
 
@@ -271,6 +295,7 @@ create table if not exists vertical_prompts (
 create index if not exists idx_push_subscriptions_workspace on push_subscriptions(workspace_id);
 create index if not exists idx_proposal_templates_workspace on proposal_templates(workspace_id);
 create index if not exists idx_proposal_versions_lead on proposal_versions(workspace_id, lead_id, version_number desc);
+create index if not exists idx_schedules_due on schedules(workspace_id, status, scheduled_at);
 create index if not exists idx_inbox_messages_workspace on inbox_messages(workspace_id, created_at desc);
 create index if not exists idx_cadence_templates_workspace on cadence_templates(workspace_id);
 create index if not exists idx_cadence_enrollments_due on cadence_enrollments(workspace_id, status, next_action_at);

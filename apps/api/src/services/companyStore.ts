@@ -90,7 +90,7 @@ export interface OperationDocument {
 
 function toRow(c: Company, workspaceId = "default", includeWorkspace = workspaceColumnAvailable): Record<string, unknown> {
   const { id, name, category, city, state, address, phone, whatsapp, website,
-    instagram, facebook, linkedin, youtube, rating, reviewCount, mapsUrl,
+    instagram, facebook, linkedin, youtube, rating, reviewCount, mapsUrl, cnpj, legalName,
     latitude, longitude, status, score, opportunityLevel, enrichmentStatus,
     lastContactAt, detectedOpportunities, suggestions, createdAt, updatedAt,
     notes, ...rest } = c;
@@ -99,6 +99,8 @@ function toRow(c: Company, workspaceId = "default", includeWorkspace = workspace
     instagram, facebook, linkedin, youtube, rating,
     review_count: reviewCount,
     maps_url: mapsUrl,
+    cnpj,
+    legal_name: legalName,
     latitude, longitude, status, score,
     opportunity_level: opportunityLevel,
     enrichment_status: enrichmentStatus ?? "none",
@@ -132,6 +134,8 @@ function toUpdateRow(updates: Partial<Company>): Record<string, unknown> {
     ["rating", "rating"],
     ["reviewCount", "review_count"],
     ["mapsUrl", "maps_url"],
+    ["cnpj", "cnpj"],
+    ["legalName", "legal_name"],
     ["latitude", "latitude"],
     ["longitude", "longitude"],
     ["status", "status"],
@@ -174,6 +178,8 @@ function fromRow(row: Record<string, unknown>): Company {
     rating: row.rating as number | undefined,
     reviewCount: row.review_count as number | undefined,
     mapsUrl: row.maps_url as string | undefined,
+    cnpj: row.cnpj as string | undefined,
+    legalName: (row.legal_name as string | undefined) ?? (row.razao_social as string | undefined),
     latitude: row.latitude as number | undefined,
     longitude: row.longitude as number | undefined,
     status: (row.status as CrmStatus) ?? "Novo Lead",

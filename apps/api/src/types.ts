@@ -39,6 +39,7 @@ export interface Company {
   enrichmentSources?: string[];
   latitude?: number;
   longitude?: number;
+  distanceKm?: number;
   hasGoogleAds?: boolean;
   hasDescription?: boolean;
   hasRecentPhotos?: boolean;
@@ -97,6 +98,9 @@ export interface SearchRequest {
   segment?: string;
   keyword?: string;
   limit?: number;
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
 }
 
 export interface DecisionMaker {

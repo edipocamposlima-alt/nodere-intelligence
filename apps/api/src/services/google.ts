@@ -42,6 +42,9 @@ export async function searchGooglePlaces(input: SearchRequest): Promise<Company[
   }
 
   const query = [input.companyName, input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" ");
+  if (isFiniteNumber(input.lat) && isFiniteNumber(input.lng) && isFiniteNumber(input.radiusKm)) {
+    return searchGooglePlacesNearby(input);
+  }
   if (!query.trim()) {
     throw new GoogleApiError("Informe pelo menos um criterio de busca.", {
       status: 400,
@@ -60,6 +63,69 @@ export async function searchGooglePlaces(input: SearchRequest): Promise<Company[
   }
 
   return Array.from(found.values()).slice(0, requestedLimit);
+}
+
+export async function geocodeAddress(address: string) {
+  const key = config.google.mapsKey || config.google.placesKey;
+  if (!key) {
+    throw new GoogleApiError("Chave Google Maps/Places não configurada para geocode.", {
+      status: 0,
+      code: "KEY_NOT_CONFIGURED",
+      reason: "missingKey"
+    });
+  }
+  const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
+  url.searchParams.set("address", address);
+  url.searchParams.set("key", key);
+  const response = await fetch(url);
+  if (!response.ok) throw await buildGoogleApiError(response, "Google Geocoding");
+  const payload = await response.json() as { status?: string; results?: Array<{ formatted_address?: string; geometry?: { location?: { lat?: number; lng?: number } } }> };
+  if (payload.status !== "OK" || !payload.results?.[0]?.geometry?.location) {
+    return { status: payload.status || "ZERO_RESULTS", results: [] };
+  }
+  return {
+    status: payload.status,
+    results: payload.results.map((item) => ({
+      address: item.formatted_address,
+      lat: item.geometry?.location?.lat,
+      lng: item.geometry?.location?.lng
+    }))
+  };
+}
+
+async function searchGooglePlacesNearby(input: SearchRequest): Promise<Company[]> {
+  const placesKey = config.google.placesKey;
+  if (!placesKey || !isFiniteNumber(input.lat) || !isFiniteNumber(input.lng) || !isFiniteNumber(input.radiusKm)) return [];
+  const query = [input.companyName, input.segment, input.keyword].filter(Boolean).join(" ") || "empresa";
+  const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": placesKey,
+      "X-Goog-FieldMask":
+        "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.googleMapsUri,places.primaryTypeDisplayName,places.location"
+    },
+    body: JSON.stringify({
+      textQuery: query,
+      maxResultCount: Math.min(Math.max(input.limit ?? 20, 1), 20),
+      locationBias: {
+        circle: {
+          center: { latitude: input.lat, longitude: input.lng },
+          radius: Math.min(Math.max((input.radiusKm ?? 5) * 1000, 100), 50000)
+        }
+      },
+      languageCode: "pt-BR"
+    })
+  });
+  if (!response.ok) throw await buildGoogleApiError(response, "Google Places Nearby");
+  const payload = (await response.json()) as { places?: GooglePlace[] };
+  return (payload.places ?? []).map((place) => {
+    const company = normalizePlace(place, input);
+    if (place.location?.latitude && place.location?.longitude) {
+      company.distanceKm = haversineKm(input.lat!, input.lng!, place.location.latitude, place.location.longitude);
+    }
+    return company;
+  });
 }
 
 async function searchGooglePlacesBatch(query: string, input: SearchRequest, maxResultCount: number): Promise<Company[]> {
@@ -135,6 +201,19 @@ function normalizePlace(place: GooglePlace, input: SearchRequest): Company {
   };
 
   return { ...base, ...calculateOpportunityScore(base) };
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const toRad = (n: number) => n * Math.PI / 180;
+  const radius = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return Math.round(radius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10;
 }
 
 async function buildGoogleApiError(response: Response, serviceName: string) {

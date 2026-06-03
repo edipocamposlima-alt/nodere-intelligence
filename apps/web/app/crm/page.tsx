@@ -1,5 +1,5 @@
 import { getCompanies } from "@/lib/api";
-import { CrmBoard } from "./CrmBoard";
+import { CrmSwitcher } from "./CrmSwitcher";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +18,7 @@ export default async function CrmPage() {
           <strong>Persistência precisa de atenção:</strong> {error}
         </div>
       )}
-      <CrmBoard companies={companies} />
+      <CrmSwitcher companies={companies} />
     </div>
   );
 }

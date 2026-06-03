@@ -21,7 +21,8 @@ export const config = {
     pageSpeedKey: process.env.GOOGLE_PAGESPEED_API_KEY ?? _googleApiKey,
     businessProfileClientId: process.env.GOOGLE_BUSINESS_PROFILE_CLIENT_ID,
     businessProfileClientSecret: process.env.GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET,
-    businessProfileRefreshToken: process.env.GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN
+    businessProfileRefreshToken: process.env.GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN,
+    customSearchKey: process.env.GOOGLE_CUSTOM_SEARCH_KEY
   },
   whatsapp: {
     token: process.env.WHATSAPP_CLOUD_TOKEN,
