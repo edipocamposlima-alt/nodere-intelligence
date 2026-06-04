@@ -35,6 +35,8 @@ import { activateSequence, getInstancesByCompany } from "../services/emailSequen
 import { enrichCnpj } from "../services/cnpjEnrichment.js";
 import { getSupabase } from "../db/supabase.js";
 import { randomUUID } from "node:crypto";
+import { parse as parseCsvSync } from "csv-parse/sync";
+import * as XLSX from "xlsx";
 
 const router = Router();
 
@@ -107,10 +109,10 @@ router.post("/:id/analyze", async (req, res, next) => {
 router.post("/import", async (req, res, next) => {
   try {
     const workspaceId = getRequestWorkspaceId(req);
-    const csv = typeof req.body === "string" ? req.body : String(req.body?.csv || "");
-    const map = typeof req.body?.column_map === "object" ? req.body.column_map : {};
-    if (!csv.trim()) return res.status(400).json({ message: "Envie CSV no corpo ou campo csv." });
-    const rows = parseCsv(csv);
+    const parsed = parseImportPayload(req);
+    const map = parsed.columnMap;
+    if (parsed.rows.length === 0) return res.status(400).json({ message: "Envie arquivo CSV/XLSX, CSV bruto ou campo csv." });
+    const rows = parsed.rows;
     if (rows.length < 2) return res.status(400).json({ message: "CSV sem linhas suficientes." });
     const headers = rows[0].map((h) => h.trim());
     const imported: any[] = [];
@@ -166,6 +168,12 @@ router.post("/import", async (req, res, next) => {
       });
     }
     await saveCompanies(imported, workspaceId);
+    await logDownload(workspaceId, getSessionUserId(req), "import", parsed.fileName || "importacao-empresas", {
+      imported: imported.length,
+      duplicates: duplicates.length,
+      errors: errors.length,
+      source: parsed.source
+    });
     res.status(201).json({ imported: imported.length, duplicates: duplicates.length, errors, companies: imported });
   } catch (error) {
     next(error);
@@ -809,6 +817,117 @@ function parseCsv(csv: string) {
       cells.push(current.trim());
       return cells;
     });
+}
+
+function parseImportPayload(req: any): { rows: string[][]; columnMap: Record<string, string>; fileName?: string; source: string } {
+  const contentType = String(req.headers["content-type"] || "");
+  if (Buffer.isBuffer(req.body)) {
+    if (contentType.includes("multipart/form-data")) {
+      const multipart = parseMultipart(req.body, contentType);
+      const columnMap = parseColumnMap(multipart.fields.column_map || multipart.fields.columnMap);
+      if (!multipart.file?.buffer?.length) return { rows: [], columnMap, source: "multipart" };
+      return {
+        rows: parseImportFile(multipart.file.buffer, multipart.file.filename || "", multipart.file.contentType || ""),
+        columnMap,
+        fileName: multipart.file.filename,
+        source: "multipart"
+      };
+    }
+    return {
+      rows: parseImportFile(req.body, String(req.headers["x-file-name"] || ""), contentType),
+      columnMap: {},
+      fileName: String(req.headers["x-file-name"] || ""),
+      source: contentType.includes("sheet") || contentType.includes("excel") ? "xlsx" : "csv"
+    };
+  }
+
+  const csv = typeof req.body === "string" ? req.body : String(req.body?.csv || "");
+  return {
+    rows: csv.trim() ? parseCsv(csv) : [],
+    columnMap: typeof req.body?.column_map === "object" ? req.body.column_map : parseColumnMap(req.body?.column_map),
+    source: "json"
+  };
+}
+
+function parseImportFile(buffer: Buffer, filename: string, contentType: string) {
+  const lowerName = filename.toLowerCase();
+  if (lowerName.endsWith(".xlsx") || lowerName.endsWith(".xls") || contentType.includes("spreadsheet") || contentType.includes("excel")) {
+    const workbook = XLSX.read(buffer, { type: "buffer" });
+    const firstSheet = workbook.SheetNames[0];
+    if (!firstSheet) return [];
+    return (XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], { header: 1, defval: "" }) as unknown[][])
+      .map((row) => row.map((cell) => String(cell ?? "").trim()))
+      .filter((row) => row.some((cell) => cell));
+  }
+  return parseCsvSync(buffer.toString("utf8"), {
+    bom: true,
+    delimiter: [",", ";"],
+    relaxColumnCount: true,
+    skipEmptyLines: true,
+    trim: true
+  }) as string[][];
+}
+
+function parseMultipart(buffer: Buffer, contentType: string) {
+  const boundary = contentType.match(/boundary=([^;]+)/i)?.[1]?.replace(/^"|"$/g, "");
+  if (!boundary) return { fields: {} as Record<string, string>, file: null as null | { filename: string; contentType: string; buffer: Buffer } };
+  const marker = Buffer.from(`--${boundary}`);
+  const parts: Buffer[] = [];
+  let start = buffer.indexOf(marker);
+  while (start >= 0) {
+    start += marker.length;
+    if (buffer[start] === 45 && buffer[start + 1] === 45) break;
+    if (buffer[start] === 13 && buffer[start + 1] === 10) start += 2;
+    const next = buffer.indexOf(marker, start);
+    if (next < 0) break;
+    const end = buffer[next - 2] === 13 && buffer[next - 1] === 10 ? next - 2 : next;
+    parts.push(buffer.subarray(start, end));
+    start = next;
+  }
+
+  const fields: Record<string, string> = {};
+  let file: null | { filename: string; contentType: string; buffer: Buffer } = null;
+  for (const part of parts) {
+    const separator = Buffer.from("\r\n\r\n");
+    const splitAt = part.indexOf(separator);
+    if (splitAt < 0) continue;
+    const headerText = part.subarray(0, splitAt).toString("utf8");
+    const body = part.subarray(splitAt + separator.length);
+    const name = headerText.match(/name="([^"]+)"/)?.[1] || "";
+    const filename = headerText.match(/filename="([^"]*)"/)?.[1] || "";
+    const partType = headerText.match(/Content-Type:\s*([^\r\n]+)/i)?.[1] || "";
+    if (filename) file = { filename, contentType: partType, buffer: body };
+    else if (name) fields[name] = body.toString("utf8").trim();
+  }
+  return { fields, file };
+}
+
+function parseColumnMap(value: unknown) {
+  if (!value) return {};
+  if (typeof value === "object") return value as Record<string, string>;
+  try {
+    const parsed = JSON.parse(String(value));
+    return typeof parsed === "object" && parsed ? parsed as Record<string, string> : {};
+  } catch {
+    return {};
+  }
+}
+
+function getSessionUserId(req: any) {
+  return String(req.session?.userId || req.admin?.userId || "");
+}
+
+async function logDownload(workspaceId: string, userId: string, fileType: string, fileName: string, metadata: Record<string, unknown>) {
+  const sb = getSupabase();
+  if (!sb) return;
+  await sb.from("download_logs").insert({
+    id: randomUUID(),
+    workspace_id: workspaceId,
+    user_id: userId || null,
+    file_type: fileType,
+    file_name: fileName,
+    metadata
+  });
 }
 
 function readMappedField(raw: Record<string, string>, field: string, map: Record<string, string>) {

@@ -63,6 +63,19 @@ app.use(
 
 // Stripe webhook must receive raw body before express.json()
 app.post("/api/billing/webhook", express.raw({ type: "application/json" }), stripeWebhookHandler);
+app.use(
+  "/api/companies/import",
+  express.raw({
+    type: [
+      "multipart/form-data",
+      "text/csv",
+      "application/csv",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    ],
+    limit: "12mb"
+  })
+);
 
 app.use(express.json());
 app.use(attachSession);

@@ -120,6 +120,24 @@ export function importCompaniesCsv(csv: string, column_map?: Record<string, stri
   });
 }
 
+export async function importCompaniesFile(file: File, column_map?: Record<string, string>) {
+  const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
+  const form = new FormData();
+  form.append("file", file);
+  if (column_map) form.append("column_map", JSON.stringify(column_map));
+  const response = await fetch(`${API_URL}/companies/import`, {
+    method: "POST",
+    headers: {
+      ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {})
+    },
+    body: form,
+    cache: "no-store"
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new ApiRequestError(payload.message || payload.error || `API retornou HTTP ${response.status}`, response.status);
+  return payload as { imported: number; duplicates: number; errors: Array<{ row: number; reason: string }> };
+}
+
 export function updateCompanyStatus(id: string, status: string) {
   return api<Company>(`/companies/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
 }
