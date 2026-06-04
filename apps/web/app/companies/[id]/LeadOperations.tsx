@@ -35,15 +35,16 @@ function buildSimplePdf(title: string, body: string) {
   }).slice(0, 48);
 
   const logo = [
-    "0.04 0.09 0.18 rg 0 0 595 842 re f",
+    "1 1 1 rg 0 0 595 842 re f",
     "0.12 0.44 0.86 rg 50 785 44 44 re f",
     "1 1 1 rg BT /F2 24 Tf 63 798 Td (N) Tj ET",
-    "1 1 1 rg BT /F2 24 Tf 108 806 Td (NODERE) Tj ET",
-    "0.25 0.84 1 rg BT /F1 8 Tf 110 792 Td (INTELLIGENCE) Tj ET",
+    "0.07 0.09 0.14 rg BT /F2 24 Tf 108 806 Td (NODERE) Tj ET",
+    "0.12 0.44 0.86 rg BT /F1 8 Tf 110 792 Td (INTELLIGENCE) Tj ET",
     "0.12 0.44 0.86 rg 50 770 495 1 re f"
   ].join("\n");
-  const text = lines.map((line, index) => `BT /F1 10 Tf 50 ${735 - index * 14} Td (${pdfEscape(line)}) Tj ET`).join("\n");
-  const stream = `q\n${logo}\n0.9 0.94 1 rg\n${text}\nQ`;
+  const text = lines.map((line, index) => `0.07 0.09 0.14 rg BT /F1 10 Tf 50 ${735 - index * 14} Td (${pdfEscape(line)}) Tj ET`).join("\n");
+  const footer = "0.22 0.25 0.32 rg BT /F1 8 Tf 50 34 Td (Gerado pelo NODERE Intelligence · nodere.com.br · Pagina 1) Tj ET";
+  const stream = `q\n${logo}\n${text}\n${footer}\nQ`;
   const objects = [
     "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
     "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
