@@ -3,6 +3,9 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Megaphone, Plus, Send } from "lucide-react";
 import { Campaign, MessageTemplate, createCampaign, createMarketingTemplate, getCampaigns, getMarketingTemplates, getSocialStatus } from "@/lib/api";
+import { getBackendRootUrl } from "@/lib/apiBase";
+
+const API_ROOT = getBackendRootUrl();
 
 export function MarketingClient() {
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
@@ -150,6 +153,13 @@ export function MarketingClient() {
                 {platform.configured ? "Configurado" : "Não configurado"}
               </span>
               {!platform.configured && <p className="mt-3 text-xs text-slate-400">Env vars: {platform.requiredEnv.join(", ")}</p>}
+              <a
+                href={`${API_ROOT}/api/marketing/social/connect/${platform.key}`}
+                target="_blank"
+                className="mt-3 inline-flex rounded-lg border border-line px-3 py-2 text-xs font-bold text-white hover:border-cyan hover:text-cyan"
+              >
+                {platform.configured ? "Conectar" : "Ver pendência"}
+              </a>
             </article>
           ))}
           {social?.mlabs && (

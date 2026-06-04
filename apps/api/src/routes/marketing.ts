@@ -73,6 +73,55 @@ router.post("/campaigns", async (req, res, next) => {
 router.get("/social/status", (_req, res) => res.json(buildSocialStatus()));
 router.get("/status", (_req, res) => res.json(buildSocialStatus()));
 
+router.get("/social/connect/:platform", (req, res) => {
+  return startOAuth(req, res);
+});
+
+router.get("/connect/:platform", (req, res) => {
+  return startOAuth(req, res);
+});
+
+function startOAuth(req: any, res: any) {
+  const platform = String(req.params.platform);
+  const callbackUrl = `${req.protocol}://${req.get("host")}/api/marketing/social/callback/${platform}`;
+  const target = buildOAuthUrl(platform, callbackUrl);
+  if (!target.url) {
+    return res.status(503).json({
+      message: target.message,
+      requiredEnv: target.requiredEnv
+    });
+  }
+  return res.redirect(target.url);
+}
+
+router.get("/social/callback/:platform", async (req, res, next) => {
+  try {
+    const platform = String(req.params.platform);
+    const code = String(req.query.code || "");
+    if (!code) return res.status(400).json({ message: "Callback OAuth sem code." });
+    return res.status(501).json({
+      message: `Callback ${platform} recebido. Troca de token deve ser ativada com credenciais e SOCIAL_TOKEN_ENCRYPTION_KEY no Render antes de gravar tokens reais.`,
+      platform
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/callback/:platform", async (req, res, next) => {
+  try {
+    const platform = String(req.params.platform);
+    const code = String(req.query.code || "");
+    if (!code) return res.status(400).json({ message: "Callback OAuth sem code." });
+    return res.status(501).json({
+      message: `Callback ${platform} recebido. Troca de token deve ser ativada com credenciais e SOCIAL_TOKEN_ENCRYPTION_KEY no Render antes de gravar tokens reais.`,
+      platform
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 function requireSupabase() {
   const sb = getSupabase();
   if (!sb) {
@@ -136,6 +185,45 @@ function buildSocialStatus() {
       message: "mLabs não possui API pública para terceiros; use como atalho operacional."
     }
   };
+}
+
+function buildOAuthUrl(platform: string, callbackUrl: string): { url?: string; message?: string; requiredEnv?: string[] } {
+  if (platform === "instagram" || platform === "facebook") {
+    const requiredEnv = ["META_APP_ID", "META_APP_SECRET", "SOCIAL_TOKEN_ENCRYPTION_KEY"];
+    if (!process.env.META_APP_ID || !process.env.META_APP_SECRET || !process.env.SOCIAL_TOKEN_ENCRYPTION_KEY) {
+      return { message: "Meta OAuth não configurado no backend.", requiredEnv };
+    }
+    const url = new URL("https://www.facebook.com/v20.0/dialog/oauth");
+    url.searchParams.set("client_id", process.env.META_APP_ID);
+    url.searchParams.set("redirect_uri", callbackUrl);
+    url.searchParams.set("scope", "pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic");
+    return { url: url.toString() };
+  }
+  if (platform === "linkedin") {
+    const requiredEnv = ["LINKEDIN_CLIENT_ID", "LINKEDIN_CLIENT_SECRET", "SOCIAL_TOKEN_ENCRYPTION_KEY"];
+    if (!process.env.LINKEDIN_CLIENT_ID || !process.env.LINKEDIN_CLIENT_SECRET || !process.env.SOCIAL_TOKEN_ENCRYPTION_KEY) {
+      return { message: "LinkedIn OAuth não configurado no backend.", requiredEnv };
+    }
+    const url = new URL("https://www.linkedin.com/oauth/v2/authorization");
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("client_id", process.env.LINKEDIN_CLIENT_ID);
+    url.searchParams.set("redirect_uri", callbackUrl);
+    url.searchParams.set("scope", "w_member_social r_liteprofile");
+    return { url: url.toString() };
+  }
+  if (platform === "google-business") {
+    const requiredEnv = ["GOOGLE_BUSINESS_CLIENT_ID", "GOOGLE_BUSINESS_CLIENT_SECRET", "SOCIAL_TOKEN_ENCRYPTION_KEY"];
+    if (!process.env.GOOGLE_BUSINESS_CLIENT_ID || !process.env.GOOGLE_BUSINESS_CLIENT_SECRET || !process.env.SOCIAL_TOKEN_ENCRYPTION_KEY) {
+      return { message: "Google Business OAuth não configurado no backend.", requiredEnv };
+    }
+    const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("client_id", process.env.GOOGLE_BUSINESS_CLIENT_ID);
+    url.searchParams.set("redirect_uri", callbackUrl);
+    url.searchParams.set("scope", "https://www.googleapis.com/auth/business.manage");
+    return { url: url.toString() };
+  }
+  return { message: "Plataforma social inválida.", requiredEnv: [] };
 }
 
 export default router;
