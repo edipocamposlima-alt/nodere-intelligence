@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { config } from "../config.js";
 
-export type SessionRole = "owner" | "admin" | "operator";
+export type SessionRole = "owner" | "admin" | "operator" | "viewer";
 
 export interface AdminSession {
   email: string;
@@ -36,7 +36,7 @@ export function verifySessionToken(token = ""): AdminSession | null {
     if (!data.exp || data.exp < Date.now()) return null;
     return {
       ...data,
-      role: data.role === "owner" ? "owner" : data.role === "operator" ? "operator" : "admin",
+      role: data.role === "owner" ? "owner" : data.role === "admin" ? "admin" : data.role === "viewer" ? "viewer" : "operator",
       workspaceId: data.workspaceId || "default"
     };
   } catch {

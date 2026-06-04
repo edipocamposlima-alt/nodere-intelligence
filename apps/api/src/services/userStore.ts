@@ -253,6 +253,7 @@ export async function updateWorkspaceUser(workspaceId: string, userId: string, i
 function normalizeRole(role?: SessionRole): SessionRole {
   if (role === "owner") return "owner";
   if (role === "admin") return "admin";
+  if (role === "viewer") return "viewer";
   return "operator";
 }
 

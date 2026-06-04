@@ -47,7 +47,7 @@ router.post("/invite", requireWorkspaceRole("owner", "admin"), async (req: Reque
 
 router.patch("/:id/role", requireWorkspaceRole("owner"), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const role = req.body?.role === "owner" ? "owner" : req.body?.role === "admin" ? "admin" : "operator";
+    const role = req.body?.role === "owner" ? "owner" : req.body?.role === "admin" ? "admin" : req.body?.role === "viewer" ? "viewer" : "operator";
     const user = await updateWorkspaceUser(getRequestWorkspaceId(req), String(req.params.id), { role });
     if (!user) return res.status(404).json({ message: "Operador não encontrado." });
     res.json(user);

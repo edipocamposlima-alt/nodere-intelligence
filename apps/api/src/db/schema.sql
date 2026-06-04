@@ -23,7 +23,7 @@ create table if not exists nodere_platform_users (
   workspace_id text not null references nodere_workspaces(id) on delete cascade,
   name text not null,
   email text not null unique,
-  role text not null default 'operator' check (role in ('owner', 'admin', 'operator')),
+  role text not null default 'operator' check (role in ('owner', 'admin', 'operator', 'viewer')),
   active boolean not null default true,
   password_hash text not null,
   created_at timestamptz not null default now(),
@@ -167,7 +167,7 @@ begin
 end $$;
 
 alter table nodere_platform_users
-  add constraint nodere_platform_users_role_check check (role in ('owner', 'admin', 'operator'));
+  add constraint nodere_platform_users_role_check check (role in ('owner', 'admin', 'operator', 'viewer'));
 
 -- Compatibilidade opcional com Supabase Auth/RLS para a fase SaaS comercial.
 create table if not exists workspaces (
@@ -184,7 +184,7 @@ create table if not exists workspaces (
 create table if not exists workspace_members (
   workspace_id uuid not null references workspaces(id) on delete cascade,
   user_id uuid not null,
-  role text not null default 'operator' check (role in ('owner','admin','operator')),
+  role text not null default 'operator' check (role in ('owner','admin','operator','viewer')),
   invited_at timestamptz not null default now(),
   primary key (workspace_id, user_id)
 );

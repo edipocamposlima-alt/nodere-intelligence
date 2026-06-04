@@ -47,7 +47,7 @@ export function requireWorkspaceSession(request: Request, response: Response, ne
   return next();
 }
 
-export function requireWorkspaceRole(...roles: Array<"owner" | "admin" | "operator">) {
+export function requireWorkspaceRole(...roles: Array<"owner" | "admin" | "operator" | "viewer">) {
   return (request: Request, response: Response, next: NextFunction) => {
     const session = (request as any).session;
     if (!session) return response.status(401).json({ error: "Unauthorized", message: "Login obrigatório." });

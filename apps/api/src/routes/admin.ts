@@ -170,7 +170,7 @@ router.post("/users", requireAdmin, async (request: any, response, next) => {
       name: z.string().min(2),
       email: z.string().email(),
       password: z.string().min(8),
-      role: z.enum(["owner", "admin", "operator"]).default("operator")
+      role: z.enum(["owner", "admin", "operator", "viewer"]).default("operator")
     }).parse(request.body);
     const user = await createWorkspaceUser(request.admin.workspaceId || "default", body);
     response.status(201).json({ user, message: "Usuário criado. Ele já pode acessar a plataforma pelo login." });
@@ -184,7 +184,7 @@ router.patch("/users/:id", requireAdmin, async (request: any, response, next) =>
     const body = z.object({
       name: z.string().min(2).optional(),
       password: z.string().min(8).optional(),
-      role: z.enum(["owner", "admin", "operator"]).optional(),
+      role: z.enum(["owner", "admin", "operator", "viewer"]).optional(),
       active: z.boolean().optional()
     }).parse(request.body);
     const user = await updateWorkspaceUser(request.admin.workspaceId || "default", request.params.id, body);
