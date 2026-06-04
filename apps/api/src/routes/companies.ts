@@ -117,17 +117,26 @@ router.post("/import", async (req, res, next) => {
     const duplicates: any[] = [];
     const errors: Array<{ row: number; reason: string }> = [];
     const existing = await listCompaniesAsync(workspaceId);
-    const existingKeys = new Set(existing.map((c) => `${c.name}|${c.city}`.toLowerCase()));
+    const existingKeys = new Set(existing.flatMap((c) => [
+      `${c.name}|${c.city}`.toLowerCase(),
+      c.cnpj ? `cnpj:${cleanDigits(c.cnpj)}` : ""
+    ].filter(Boolean)));
     for (let i = 1; i < rows.length; i++) {
       const raw = Object.fromEntries(headers.map((h, idx) => [h, rows[i][idx] || ""]));
-      const get = (field: string) => raw[map[field] || field] || "";
+      const get = (field: string) => readMappedField(raw, field, map);
       const name = String(get("name")).trim();
       const city = String(get("city")).trim();
+      const cnpj = cleanDigits(String(get("cnpj")));
+      const email = String(get("email_principal") || get("email")).trim();
       if (!name) {
         errors.push({ row: i + 1, reason: "name vazio" });
         continue;
       }
-      const key = `${name}|${city}`.toLowerCase();
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errors.push({ row: i + 1, reason: "email inválido" });
+        continue;
+      }
+      const key = cnpj ? `cnpj:${cnpj}` : `${name}|${city}`.toLowerCase();
       if (existingKeys.has(key)) {
         duplicates.push({ row: i + 1, name, city });
         continue;
@@ -139,9 +148,12 @@ router.post("/import", async (req, res, next) => {
         category: String(get("segment")).trim(),
         city,
         state: String(get("state")).trim(),
+        cnpj,
+        legalName: String(get("razao_social")).trim() || undefined,
         address: "",
         phone: normalizePhone(String(get("phone"))),
         whatsapp: normalizeWhatsapp(String(get("whatsapp") || get("phone"))),
+        emailPrincipal: email,
         website: String(get("website")).trim(),
         status: "Novo Lead",
         score: 50,
@@ -778,6 +790,8 @@ router.post("/:id/sequences", (req, res) => {
 export default router;
 
 function parseCsv(csv: string) {
+  const firstLine = csv.split(/\r?\n/).find((line) => line.trim()) ?? "";
+  const delimiter = (firstLine.match(/;/g)?.length ?? 0) > (firstLine.match(/,/g)?.length ?? 0) ? ";" : ",";
   return csv
     .split(/\r?\n/)
     .filter((line) => line.trim())
@@ -787,7 +801,7 @@ function parseCsv(csv: string) {
       let quoted = false;
       for (const char of line) {
         if (char === '"') quoted = !quoted;
-        else if (char === "," && !quoted) {
+        else if (char === delimiter && !quoted) {
           cells.push(current.trim());
           current = "";
         } else current += char;
@@ -795,6 +809,43 @@ function parseCsv(csv: string) {
       cells.push(current.trim());
       return cells;
     });
+}
+
+function readMappedField(raw: Record<string, string>, field: string, map: Record<string, string>) {
+  const normalizedRaw = Object.fromEntries(Object.entries(raw).map(([key, value]) => [normalizeColumn(key), value]));
+  const aliases: Record<string, string[]> = {
+    name: ["name", "nome", "empresa", "nome_empresa", "nome_fantasia"],
+    razao_social: ["razao_social", "razão_social", "razao", "razão", "legal_name"],
+    cnpj: ["cnpj", "cpf_cnpj"],
+    city: ["city", "cidade", "municipio", "município"],
+    state: ["state", "estado", "uf"],
+    segment: ["segment", "segmento", "categoria", "ramo"],
+    phone: ["phone", "telefone", "telefone_principal", "fone"],
+    whatsapp: ["whatsapp", "whats", "zap"],
+    email_principal: ["email_principal", "email", "e-mail", "email_comercial"],
+    website: ["website", "site", "url"],
+    notes: ["notes", "observacoes", "observações", "obs"]
+  };
+  const mapped = map[field];
+  if (mapped && raw[mapped]) return raw[mapped];
+  for (const alias of aliases[field] ?? [field]) {
+    const value = normalizedRaw[normalizeColumn(alias)];
+    if (value) return value;
+  }
+  return "";
+}
+
+function normalizeColumn(value: string) {
+  return String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
+}
+
+function cleanDigits(value: string) {
+  return value.replace(/\D/g, "");
 }
 
 function normalizePhone(phone: string) {
