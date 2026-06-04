@@ -37,6 +37,7 @@ import { getSupabase } from "../db/supabase.js";
 import { randomUUID } from "node:crypto";
 import { parse as parseCsvSync } from "csv-parse/sync";
 import * as XLSX from "xlsx";
+import nodemailer from "nodemailer";
 
 const router = Router();
 
@@ -417,6 +418,56 @@ router.delete("/:id/communications/:commId", async (req, res, next) => {
       .eq("id", req.params.commId);
     if (error) throw error;
     return res.json({ ok: true });
+  } catch (error) { return next(error); }
+});
+
+router.post("/:id/email", async (req, res, next) => {
+  try {
+    if (!config.smtp.host || !config.smtp.user || !config.smtp.pass || !config.smtp.from) {
+      return res.status(503).json({
+        code: "SMTP_NOT_CONFIGURED",
+        message: "SMTP não configurado no backend. Configure SMTP_HOST, SMTP_USER, SMTP_PASS e SMTP_FROM no Render para enviar e-mails reais."
+      });
+    }
+    const body = z.object({
+      to: z.string().email(),
+      subject: z.string().min(2),
+      body: z.string().min(2),
+      contactId: z.string().optional().nullable()
+    }).parse(req.body);
+    const workspaceId = getRequestWorkspaceId(req);
+    const company = await getCompanyAsync(req.params.id, workspaceId);
+    if (!company) return res.status(404).json({ message: "Company not found" });
+    const transporter = nodemailer.createTransport({
+      host: config.smtp.host,
+      port: config.smtp.port,
+      secure: config.smtp.port === 465,
+      auth: { user: config.smtp.user, pass: config.smtp.pass }
+    });
+    const sent = await transporter.sendMail({
+      from: config.smtp.from,
+      to: body.to,
+      subject: body.subject,
+      text: body.body
+    });
+    const row = {
+      id: randomUUID(),
+      workspace_id: workspaceId,
+      company_id: req.params.id,
+      contact_id: body.contactId || null,
+      type: "email",
+      direction: "outbound",
+      subject: body.subject,
+      body: body.body,
+      sent_by: getSessionUserId(req) || null,
+      sent_at: new Date().toISOString(),
+      status: "sent",
+      metadata: { messageId: sent.messageId, to: body.to }
+    };
+    const { data, error } = await requireSupabase().from("communications").insert(row).select("*").single();
+    if (error) throw error;
+    await addNote(req.params.id, `E-mail enviado para ${body.to}: ${body.subject}`, workspaceId);
+    return res.status(201).json({ communication: data, messageId: sent.messageId });
   } catch (error) { return next(error); }
 });
 

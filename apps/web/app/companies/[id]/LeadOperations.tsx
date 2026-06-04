@@ -223,6 +223,27 @@ export function LeadOperations({ company }: { company: Company }) {
     }
   }
 
+  async function sendEmail(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const target = event.currentTarget;
+    const form = new FormData(target);
+    try {
+      const response = await api<{ communication: Communication; messageId: string }>(`/companies/${company.id}/email`, {
+        method: "POST",
+        body: JSON.stringify({
+          to: form.get("to"),
+          subject: form.get("subject"),
+          body: form.get("body")
+        })
+      });
+      setCommunications((items) => [response.communication, ...items]);
+      target.reset();
+      showSuccess("E-mail enviado e registrado no histórico.");
+    } catch (err) {
+      showError(err);
+    }
+  }
+
   async function completeTask(task: Task) {
     try {
       const updated = await api<Task>(`/companies/${company.id}/tasks/${task.id}`, {
@@ -433,22 +454,33 @@ export function LeadOperations({ company }: { company: Company }) {
 
       {tab === "historico" && (
         <div className="mt-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
-          <form onSubmit={addCommunication} className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <select name="type" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm">
-                {["whatsapp", "email", "call", "meeting", "note", "internal", "linkedin", "instagram"].map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
-              <select name="direction" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm">
-                <option value="outbound">Saída</option>
-                <option value="inbound">Entrada</option>
-                <option value="manual">Manual</option>
-              </select>
-            </div>
-            <input name="subject" placeholder="Assunto" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-            <input name="sentAt" type="datetime-local" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-            <textarea name="body" rows={6} placeholder="Conteúdo da interação" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-            <button className="inline-flex items-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white"><Save className="h-4 w-4" />Registrar interação</button>
-          </form>
+          <div className="space-y-4">
+            <form onSubmit={addCommunication} className="space-y-3 rounded-lg border border-line bg-panel/70 p-4">
+              <p className="text-sm font-semibold text-white">Registrar interação manual</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <select name="type" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm">
+                  {["whatsapp", "email", "call", "meeting", "note", "internal", "linkedin", "instagram"].map((item) => <option key={item} value={item}>{item}</option>)}
+                </select>
+                <select name="direction" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm">
+                  <option value="outbound">Saída</option>
+                  <option value="inbound">Entrada</option>
+                  <option value="manual">Manual</option>
+                </select>
+              </div>
+              <input name="subject" placeholder="Assunto" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <input name="sentAt" type="datetime-local" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <textarea name="body" rows={5} placeholder="Conteúdo da interação" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <button className="inline-flex items-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white"><Save className="h-4 w-4" />Registrar interação</button>
+            </form>
+            <form onSubmit={sendEmail} className="space-y-3 rounded-lg border border-cyan/30 bg-cyan/5 p-4">
+              <p className="text-sm font-semibold text-white">Enviar e-mail real via SMTP</p>
+              <input name="to" type="email" required defaultValue={(lead as any).emailPrincipal || ""} placeholder="cliente@empresa.com.br" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <input name="subject" required placeholder="Assunto do e-mail" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <textarea name="body" required rows={5} defaultValue={editor || ""} placeholder="Mensagem" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <button className="inline-flex items-center gap-2 rounded-lg bg-cyan px-4 py-2 text-sm font-semibold text-ink"><MessageCircle className="h-4 w-4" />Enviar e registrar</button>
+              <p className="text-xs text-slate-400">Se SMTP não estiver configurado no Render, o backend retorna aviso claro e nada é enviado.</p>
+            </form>
+          </div>
           <div className="space-y-3">
             {communications.length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhuma comunicação registrada.</p>}
             {communications.map((comm) => (
