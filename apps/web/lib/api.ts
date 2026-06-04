@@ -283,6 +283,49 @@ export function getMonthlyTrends() {
   return api<MonthlyTrend[]>("/reports/trends", undefined, []);
 }
 
+export function getReportSummary(period = "30d") {
+  return api<{
+    total_companies: number;
+    total_leads_in_crm: number;
+    avg_score: number;
+    conversion_rate: number;
+    credits_used: number;
+    new_this_period: number;
+  }>(`/reports/summary?period=${encodeURIComponent(period)}`);
+}
+
+export function getReportFunnel(period = "30d") {
+  return api<{ stages: Array<{ name: string; count: number; pct_of_total: number; conversion_from_previous: number }> }>(`/reports/funnel?period=${encodeURIComponent(period)}`);
+}
+
+export function getReportTimeline(period = "30d", groupBy = "day") {
+  return api<{ data: Array<{ date: string; count: number }> }>(`/reports/timeline?period=${encodeURIComponent(period)}&group_by=${encodeURIComponent(groupBy)}`);
+}
+
+export function getReportSegments(period = "30d") {
+  return api<{ segments: Array<{ segment: string; count: number; avg_score: number }> }>(`/reports/segments?period=${encodeURIComponent(period)}`);
+}
+
+export function getReportCities(period = "30d") {
+  return api<{ cities: Array<{ city: string; state?: string; count: number }> }>(`/reports/cities?period=${encodeURIComponent(period)}`);
+}
+
+export function getReportOrigin(period = "30d") {
+  return api<{ origins: Array<{ source: string; count: number }> }>(`/reports/origin?period=${encodeURIComponent(period)}`);
+}
+
+export function getReportIntelligence(period = "30d") {
+  return api<{
+    pct_with_site: number;
+    pct_with_google_ads: number;
+    pct_with_meta_pixel: number;
+    pct_with_ga4: number;
+    pct_with_gtm: number;
+    pct_with_whatsapp: number;
+    avg_pagespeed_mobile: number;
+  }>(`/reports/intelligence?period=${encodeURIComponent(period)}`);
+}
+
 export function getAuditLog(limit = 100) {
   return api<AuditLogEvent[]>(`/audit?limit=${limit}`, undefined, []);
 }
