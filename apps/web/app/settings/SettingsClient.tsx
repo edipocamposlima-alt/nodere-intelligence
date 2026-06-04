@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Bell, CheckCircle2, Code2, FileText, Palette, Save, Server, Smartphone, Stamp } from "lucide-react";
+import { Bell, CheckCircle2, Code2, Download, FileText, Palette, Save, Server, ShieldCheck, Smartphone, Stamp, UsersRound } from "lucide-react";
 import { getBackendRootUrl } from "@/lib/apiBase";
 import { getPublicSettings, savePublicSettings } from "@/lib/api";
 import { getAdminToken } from "@/lib/adminAuth";
@@ -43,6 +43,32 @@ type Settings = {
   backendUrl: string;
 };
 
+type SettingsUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: "owner" | "admin" | "operator" | "viewer";
+  active: boolean;
+  createdAt: string;
+};
+
+type AuditEvent = {
+  id: string;
+  category?: string;
+  action: string;
+  description?: string;
+  operatorId?: string;
+  at: string;
+};
+
+type DownloadLog = {
+  id: string;
+  userId?: string;
+  fileType: string;
+  fileName?: string;
+  createdAt: string;
+};
+
 const defaults: Settings = {
   theme: "Nodere Azul",
   colorPrimary: "#1E6FDB",
@@ -72,6 +98,10 @@ export function SettingsClient() {
   const [status, setStatus] = useState<string>("Preferências carregadas localmente.");
   const [health, setHealth] = useState<string>("Não testado");
   const [adminMessage, setAdminMessage] = useState("");
+  const [adminUsers, setAdminUsers] = useState<SettingsUser[]>([]);
+  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
+  const [downloadLogs, setDownloadLogs] = useState<DownloadLog[]>([]);
+  const [adminPanelsStatus, setAdminPanelsStatus] = useState("");
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -91,6 +121,8 @@ export function SettingsClient() {
       .catch((error) => {
         setStatus(error instanceof Error ? error.message : "Não foi possível carregar preferências do backend.");
       });
+
+    void loadAdminPanels(next.backendUrl);
   }, []);
 
   function update<K extends keyof Settings>(key: K, value: Settings[K]) {
@@ -167,6 +199,31 @@ export function SettingsClient() {
     }
   }
 
+  async function loadAdminPanels(backendUrl = settings.backendUrl) {
+    const token = getAdminToken();
+    if (!token) return;
+    setAdminPanelsStatus("Carregando usuários e auditoria...");
+    const root = backendUrl.replace(/\/$/, "");
+    const headers = { Authorization: `Bearer ${token}` };
+    try {
+      const [usersResponse, auditResponse, downloadsResponse] = await Promise.all([
+        fetch(`${root}/api/admin/users`, { headers, cache: "no-store" }),
+        fetch(`${root}/api/audit?limit=50`, { headers, cache: "no-store" }),
+        fetch(`${root}/api/audit/downloads?limit=50`, { headers, cache: "no-store" })
+      ]);
+      const usersPayload = await usersResponse.json().catch(() => ({ users: [] }));
+      const auditPayload = await auditResponse.json().catch(() => []);
+      const downloadPayload = await downloadsResponse.json().catch(() => []);
+      if (!usersResponse.ok) throw new Error(usersPayload.message || `Usuários HTTP ${usersResponse.status}`);
+      setAdminUsers(Array.isArray(usersPayload.users) ? usersPayload.users : []);
+      setAuditEvents(Array.isArray(auditPayload) ? auditPayload : []);
+      setDownloadLogs(Array.isArray(downloadPayload) ? downloadPayload : []);
+      setAdminPanelsStatus("Usuários e auditoria carregados.");
+    } catch (error) {
+      setAdminPanelsStatus(error instanceof Error ? error.message : "Não foi possível carregar usuários/auditoria.");
+    }
+  }
+
   return (
     <form onSubmit={save} className="space-y-5">
       <section className="rounded-lg border border-line bg-panel/90 p-5">
@@ -225,6 +282,92 @@ export function SettingsClient() {
           </p>
         </div>
       </section>
+
+      {getAdminToken() && (
+        <section className="grid gap-4 xl:grid-cols-2">
+          <div className="rounded-lg border border-line bg-panel/90 p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <UsersRound className="h-4 w-4 text-cyan" />
+                <h3 className="font-semibold text-white">Usuários</h3>
+              </div>
+              <button type="button" onClick={() => loadAdminPanels()} className="rounded-lg border border-line bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 hover:border-electric">
+                Atualizar
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-slate-400">Somente Owner/Admin. Cada usuário acessa o workspace da própria conta.</p>
+            <div className="mt-4 max-h-80 space-y-2 overflow-y-auto pr-1">
+              {adminUsers.length === 0 && <p className="rounded-lg border border-line bg-ink p-3 text-sm text-slate-400">Nenhum usuário retornado ou sessão admin ausente.</p>}
+              {adminUsers.map((user) => (
+                <div key={user.id} className="rounded-lg border border-line bg-ink p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-semibold text-white">{user.name}</p>
+                      <p className="text-xs text-slate-400">{user.email}</p>
+                    </div>
+                    <span className={`rounded-full px-2 py-1 text-xs font-bold ${user.active ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"}`}>
+                      {user.active ? "Ativo" : "Inativo"}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs text-slate-500">Perfil: {user.role} · Criado em {new Date(user.createdAt).toLocaleDateString("pt-BR")}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-line bg-panel/90 p-5">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-cyan" />
+              <h3 className="font-semibold text-white">Auditoria</h3>
+            </div>
+            <p className="mt-2 text-sm text-slate-400">Atividades operacionais e eventos técnicos do workspace.</p>
+            <div className="mt-4 max-h-80 space-y-2 overflow-y-auto pr-1">
+              {auditEvents.length === 0 && <p className="rounded-lg border border-line bg-ink p-3 text-sm text-slate-400">Nenhum evento de auditoria registrado ainda.</p>}
+              {auditEvents.map((event) => (
+                <div key={event.id} className="rounded-lg border border-line bg-ink p-3">
+                  <p className="text-sm font-semibold text-white">{event.action}</p>
+                  <p className="mt-1 text-xs text-slate-400">{event.description || event.category || "Evento do sistema"}</p>
+                  <p className="mt-2 text-xs text-slate-500">{new Date(event.at).toLocaleString("pt-BR")}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-line bg-panel/90 p-5 xl:col-span-2">
+            <div className="flex items-center gap-2">
+              <Download className="h-4 w-4 text-cyan" />
+              <h3 className="font-semibold text-white">Downloads e exportações</h3>
+            </div>
+            <p className="mt-2 text-sm text-slate-400">Lista arquivos exportados quando a operação passa pelo backend.</p>
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="text-xs uppercase tracking-wide text-slate-400">
+                  <tr>
+                    <th className="px-3 py-2">Tipo</th>
+                    <th className="px-3 py-2">Arquivo</th>
+                    <th className="px-3 py-2">Usuário</th>
+                    <th className="px-3 py-2">Data</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {downloadLogs.length === 0 && (
+                    <tr><td colSpan={4} className="px-3 py-4 text-slate-400">Nenhum download registrado ainda.</td></tr>
+                  )}
+                  {downloadLogs.map((item) => (
+                    <tr key={item.id} className="border-t border-line">
+                      <td className="px-3 py-2 text-white">{item.fileType}</td>
+                      <td className="px-3 py-2 text-slate-300">{item.fileName || "Sem nome"}</td>
+                      <td className="px-3 py-2 text-slate-400">{item.userId || "Sistema"}</td>
+                      <td className="px-3 py-2 text-slate-400">{new Date(item.createdAt).toLocaleString("pt-BR")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {adminPanelsStatus && <p className="mt-3 text-xs text-slate-500">{adminPanelsStatus}</p>}
+          </div>
+        </section>
+      )}
 
       <section className="rounded-lg border border-line bg-panel/90 p-5">
         <div className="flex items-center gap-2">
