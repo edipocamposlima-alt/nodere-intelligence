@@ -142,6 +142,10 @@ export function updateCompanyStatus(id: string, status: string) {
   return api<Company>(`/companies/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
 }
 
+export function updateCompany(id: string, updates: Partial<Company>) {
+  return api<Company>(`/companies/${id}`, { method: "PATCH", body: JSON.stringify(updates) });
+}
+
 export function addCompanyNote(id: string, body: string) {
   return api(`/companies/${id}/notes`, { method: "POST", body: JSON.stringify({ body }) });
 }

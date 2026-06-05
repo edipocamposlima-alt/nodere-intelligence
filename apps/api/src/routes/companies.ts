@@ -41,6 +41,27 @@ import nodemailer from "nodemailer";
 
 const router = Router();
 
+const companyUpdateSchema = z.object({
+  name: z.string().min(2).optional(),
+  category: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  state: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  whatsapp: z.string().optional().nullable(),
+  website: z.string().optional().nullable(),
+  instagram: z.string().optional().nullable(),
+  facebook: z.string().optional().nullable(),
+  linkedin: z.string().optional().nullable(),
+  youtube: z.string().optional().nullable(),
+  cnpj: z.string().optional().nullable(),
+  legalName: z.string().optional().nullable(),
+  score: z.coerce.number().min(0).max(100).optional(),
+  opportunityLevel: z.enum(["Alta", "Media", "Baixa"]).optional(),
+  companySize: z.string().optional().nullable(),
+  revenueRange: z.string().optional().nullable()
+}).passthrough();
+
 router.get("/", async (req, res, next) => {
   try {
     res.json(await listCompaniesAsync(getRequestWorkspaceId(req)));
@@ -88,7 +109,16 @@ router.get("/import/template", (_req, res) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const company = await getCompanyAsync(req.params.id);
+    const company = await getCompanyAsync(req.params.id, getRequestWorkspaceId(req));
+    if (!company) return res.status(404).json({ message: "Company not found" });
+    return res.json(company);
+  } catch (err) { return next(err); }
+});
+
+router.patch("/:id", async (req, res, next) => {
+  try {
+    const body = companyUpdateSchema.parse(req.body);
+    const company = await updateCompany(req.params.id, normalizeCompanyPatch(body) as any, getRequestWorkspaceId(req));
     if (!company) return res.status(404).json({ message: "Company not found" });
     return res.json(company);
   } catch (err) { return next(err); }
@@ -1037,6 +1067,12 @@ function parseColumnMap(value: unknown) {
 
 function getSessionUserId(req: any) {
   return String(req.session?.userId || req.admin?.userId || "");
+}
+
+function normalizeCompanyPatch(input: Record<string, unknown>) {
+  return Object.fromEntries(
+    Object.entries(input).map(([key, value]) => [key, value === null ? undefined : value])
+  );
 }
 
 async function logDownload(workspaceId: string, userId: string, fileType: string, fileName: string, metadata: Record<string, unknown>) {

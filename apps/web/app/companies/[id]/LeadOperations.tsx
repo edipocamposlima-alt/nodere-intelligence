@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CalendarClock, Copy, Download, FileText, MessageCircle, Pencil, Plus, Save, Sparkles, Trash2 } from "lucide-react";
 import { Company } from "@/lib/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { updateCompany as saveCompanyData } from "@/lib/api";
 
 const API_URL = getApiBaseUrl();
 
@@ -13,7 +14,7 @@ type DocumentItem = { id: string; companyId: string; type: string; title: string
 type Contact = { id: string; name: string; role?: string; email?: string; phone?: string; whatsapp?: string; linkedin_url?: string; notes?: string; created_at?: string };
 type Communication = { id: string; type: string; direction: string; subject?: string; body?: string; sent_at: string; status?: string };
 type ContractItem = { id: string; catalog_items?: { name?: string; code?: string; type?: string }; quantity?: number; contracted_price?: number; status?: string; notes?: string; created_at?: string };
-type Tab = "observacoes" | "agenda" | "decisores" | "historico" | "contratos" | "ia" | "documentos" | "whatsapp" | "enriquecimento";
+type Tab = "dados" | "observacoes" | "agenda" | "decisores" | "historico" | "contratos" | "ia" | "documentos" | "whatsapp" | "enriquecimento";
 
 function pdfEscape(value: string) {
   return value.replace(/[\\()]/g, "\\$&").replace(/[^\x20-\x7EÀ-ÿ]/g, " ");
@@ -80,7 +81,7 @@ async function api<T>(path: string, options?: RequestInit): Promise<T> {
 
 export function LeadOperations({ company }: { company: Company }) {
   const [lead, setLead] = useState(company);
-  const [tab, setTab] = useState<Tab>("observacoes");
+  const [tab, setTab] = useState<Tab>("dados");
   const [notes, setNotes] = useState<Note[]>(company.notes || []);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
@@ -117,6 +118,43 @@ export function LeadOperations({ company }: { company: Company }) {
 
   function showError(err: unknown) {
     setError(err instanceof Error ? err.message : "Ação não concluída.");
+  }
+
+  async function saveLeadData(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const updates: Partial<Company> = {
+      name: String(form.get("name") || "").trim(),
+      legalName: String(form.get("legalName") || "").trim(),
+      cnpj: String(form.get("cnpj") || "").trim(),
+      category: String(form.get("category") || "").trim(),
+      city: String(form.get("city") || "").trim(),
+      state: String(form.get("state") || "").trim().toUpperCase(),
+      address: String(form.get("address") || "").trim(),
+      phone: String(form.get("phone") || "").trim(),
+      whatsapp: String(form.get("whatsapp") || "").trim(),
+      website: String(form.get("website") || "").trim(),
+      instagram: String(form.get("instagram") || "").trim(),
+      facebook: String(form.get("facebook") || "").trim(),
+      linkedin: String(form.get("linkedin") || "").trim(),
+      youtube: String(form.get("youtube") || "").trim(),
+      score: Number(form.get("score") || lead.score || 0),
+      opportunityLevel: String(form.get("opportunityLevel") || lead.opportunityLevel || "Media") as Company["opportunityLevel"],
+      companySize: String(form.get("companySize") || "").trim(),
+      revenueRange: String(form.get("revenueRange") || "").trim()
+    };
+    if (!updates.name) return showError(new Error("Nome da empresa é obrigatório."));
+    const fixedLine = updates.whatsapp?.replace(/\D/g, "");
+    if (fixedLine && fixedLine.length >= 10 && !/^\d{2}9/.test(fixedLine.slice(-11))) {
+      return showError(new Error("WhatsApp deve ser celular. Telefone fixo deve ficar em Telefone."));
+    }
+    try {
+      const updated = await saveCompanyData(company.id, updates);
+      setLead(updated);
+      showSuccess("Dados da empresa salvos no banco.");
+    } catch (err) {
+      showError(err);
+    }
   }
 
   async function addNote(event: FormEvent<HTMLFormElement>) {
@@ -332,6 +370,7 @@ export function LeadOperations({ company }: { company: Company }) {
   }
 
   const tabs: [Tab, string][] = [
+    ["dados", "Dados"],
     ["observacoes", "Observações"],
     ["agenda", "Agenda"],
     ["decisores", "Decisores"],
@@ -361,6 +400,61 @@ export function LeadOperations({ company }: { company: Company }) {
 
       {message && <p className="mt-4 rounded-md border border-success/30 bg-success/10 px-3 py-2 text-sm text-emerald-200">{message}</p>}
       {error && <p className="mt-4 rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-red-200">{error}</p>}
+
+      {tab === "dados" && (
+        <form onSubmit={saveLeadData} className="mt-5 space-y-5">
+          <div className="rounded-lg border border-line bg-ink p-4">
+            <h4 className="font-semibold text-white">Identificação</h4>
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <Field name="name" label="Empresa" required defaultValue={lead.name} />
+              <Field name="legalName" label="Razão social" defaultValue={lead.legalName} />
+              <Field name="cnpj" label="CNPJ" defaultValue={lead.cnpj} placeholder="00.000.000/0001-00" />
+              <Field name="category" label="Segmento" defaultValue={lead.category} />
+              <Field name="companySize" label="Porte" defaultValue={lead.companySize} placeholder="MEI, ME, EPP, Médio, Grande" />
+              <Field name="revenueRange" label="Faixa de receita" defaultValue={lead.revenueRange} />
+              <label className="block">
+                <span className="text-xs font-semibold text-slate-400">Score comercial</span>
+                <input name="score" type="number" min={0} max={100} defaultValue={lead.score} className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-white outline-none focus:border-electric" />
+              </label>
+              <label className="block">
+                <span className="text-xs font-semibold text-slate-400">Oportunidade</span>
+                <select name="opportunityLevel" defaultValue={lead.opportunityLevel} className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-white outline-none focus:border-electric">
+                  <option value="Alta">Alta</option>
+                  <option value="Media">Média</option>
+                  <option value="Baixa">Baixa</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-line bg-ink p-4">
+            <h4 className="font-semibold text-white">Contato e localização</h4>
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <Field name="phone" label="Telefone" defaultValue={lead.phone} />
+              <Field name="whatsapp" label="WhatsApp celular" defaultValue={lead.whatsapp} />
+              <Field name="website" label="Site" defaultValue={lead.website} placeholder="https://empresa.com.br" />
+              <Field name="address" label="Endereço" defaultValue={lead.address} />
+              <Field name="city" label="Cidade" defaultValue={lead.city} />
+              <Field name="state" label="Estado" defaultValue={lead.state} />
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-line bg-ink p-4">
+            <h4 className="font-semibold text-white">Redes sociais</h4>
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <Field name="instagram" label="Instagram" defaultValue={lead.instagram} />
+              <Field name="facebook" label="Facebook" defaultValue={lead.facebook} />
+              <Field name="linkedin" label="LinkedIn" defaultValue={lead.linkedin} />
+              <Field name="youtube" label="YouTube" defaultValue={lead.youtube} />
+            </div>
+          </div>
+
+          <button className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-cyan to-electric px-5 py-3 text-sm font-black text-white shadow-glow">
+            <Save className="h-4 w-4" />
+            Salvar dados da empresa
+          </button>
+        </form>
+      )}
 
       {tab === "observacoes" && (
         <div className="mt-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
@@ -630,5 +724,20 @@ function Info({ label, value, isLink, hint }: { label: string; value?: string; i
       </dd>
       {hint && <p className="mt-1 text-[11px] text-slate-500">{hint}</p>}
     </div>
+  );
+}
+
+function Field({ name, label, defaultValue, placeholder, required }: { name: string; label: string; defaultValue?: string | number; placeholder?: string; required?: boolean }) {
+  return (
+    <label className="block">
+      <span className="text-xs font-semibold text-slate-400">{label}</span>
+      <input
+        name={name}
+        required={required}
+        defaultValue={defaultValue ?? ""}
+        placeholder={placeholder}
+        className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-white outline-none focus:border-electric"
+      />
+    </label>
   );
 }
