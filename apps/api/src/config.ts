@@ -18,8 +18,8 @@ export const config = {
   useMockData: process.env.USE_MOCK_DATA === "true",
   google: {
     mapsKey: process.env.GOOGLE_MAPS_API_KEY ?? _googleApiKey,
-    placesKey: process.env.GOOGLE_PLACES_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY ?? _googleApiKey,
-    pageSpeedKey: process.env.GOOGLE_PAGESPEED_API_KEY ?? _googleApiKey,
+    placesKey: process.env.GOOGLE_PLACES_API_KEY ?? process.env.GOOGLE_PLACES_KEY ?? process.env.GOOGLE_MAPS_API_KEY ?? _googleApiKey,
+    pageSpeedKey: process.env.GOOGLE_PAGESPEED_API_KEY ?? process.env.GOOGLE_PAGESPEED_KEY ?? _googleApiKey,
     businessProfileClientId: process.env.GOOGLE_BUSINESS_PROFILE_CLIENT_ID,
     businessProfileClientSecret: process.env.GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET,
     businessProfileRefreshToken: process.env.GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN,
@@ -46,6 +46,12 @@ export const config = {
     econodataApiUrl: process.env.ECONODATA_API_URL,
     apolloApiKey: process.env.APOLLO_API_KEY,
     apolloApiUrl: process.env.APOLLO_API_URL ?? "https://api.apollo.io/api/v1"
+  },
+  marketplace: {
+    blingClientId: process.env.BLING_CLIENT_ID,
+    blingClientSecret: process.env.BLING_CLIENT_SECRET,
+    rdStationClientId: process.env.RDSTATION_CLIENT_ID,
+    rdStationClientSecret: process.env.RDSTATION_CLIENT_SECRET
   },
   googleAds: {
     developerToken: process.env.GOOGLE_ADS_DEVELOPER_TOKEN,

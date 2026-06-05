@@ -69,6 +69,20 @@ export function getIntegrationStatus() {
       configured: Boolean(config.enrichment.apolloApiKey),
       required: false,
       capability: "Enriquecimento automatizado de organização e decisores B2B por domínio/site."
+    },
+    {
+      key: "bling",
+      name: "Bling ERP",
+      configured: Boolean(config.marketplace.blingClientId && config.marketplace.blingClientSecret),
+      required: false,
+      capability: "OAuth preparado para sincronizar contatos, produtos e pedidos quando BLING_CLIENT_ID e BLING_CLIENT_SECRET estiverem no Render."
+    },
+    {
+      key: "rdstation",
+      name: "RD Station",
+      configured: Boolean(config.marketplace.rdStationClientId && config.marketplace.rdStationClientSecret),
+      required: false,
+      capability: "OAuth preparado para enviar leads quentes e eventos comerciais quando RDSTATION_CLIENT_ID e RDSTATION_CLIENT_SECRET estiverem no Render."
     }
   ];
 }
