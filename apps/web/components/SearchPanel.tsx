@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, LocateFixed, Search, Sparkles } from "lucide-react";
 import { geocodeAddress, getSavedCompanyIds, searchCompanies, searchCompanyByCnpj } from "@/lib/api";
 import { Company } from "@/lib/types";
@@ -13,9 +13,12 @@ export function SearchPanel() {
   const [message, setMessage] = useState("Use cidade, estado e segmento para encontrar oportunidades.");
   const [warning, setWarning] = useState<string | null>(null);
   const [geo, setGeo] = useState<{ lat?: number; lng?: number; label?: string }>({});
+  const activeSearchId = useRef(0);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const searchId = Date.now();
+    activeSearchId.current = searchId;
     setLoading(true);
     setWarning(null);
     setResults([]);
@@ -39,13 +42,19 @@ export function SearchPanel() {
 
     try {
       if (mode === "cnpj") {
-        const cnpj = String(form.get("cnpj") || "").trim();
+        const cnpj = String(form.get("cnpj") || "").replace(/\D/g, "");
         if (!cnpj) {
           setWarning("Informe o CNPJ para consultar a ReceitaWS.");
           setMessage("Busca por CNPJ nao executada.");
           return;
         }
+        if (cnpj.length !== 14) {
+          setWarning("CNPJ inválido. Informe 14 dígitos antes de consultar.");
+          setMessage("Busca por CNPJ não executada.");
+          return;
+        }
         const response = await searchCompanyByCnpj(cnpj);
+        if (activeSearchId.current !== searchId) return;
         setResults([response.company]);
         setMessage("CNPJ localizado em fonte pública. Revise os dados e salve no CRM.");
         return;
@@ -59,6 +68,7 @@ export function SearchPanel() {
       }
 
       const [response, savedIds] = await Promise.all([searchCompanies(payload), getSavedCompanyIds()]);
+      if (activeSearchId.current !== searchId) return;
       const localSavedIds = JSON.parse(localStorage.getItem("nodere_saved_leads") || "[]") as string[];
       const savedSet = new Set([...savedIds, ...localSavedIds]);
       const filtered = response.companies.filter((company) => !savedSet.has(company.id));
@@ -66,11 +76,12 @@ export function SearchPanel() {
       setWarning(response.search.warning ?? response.search.error?.message ?? null);
       setMessage(`${filtered.length} resultado(s) visíveis. ${response.companies.length - filtered.length} já salvo(s) foram ocultado(s). A busca ampla consulta lotes do Google e deduplica por Place ID.`);
     } catch (error) {
+      if (activeSearchId.current !== searchId) return;
       setResults([]);
       setWarning(error instanceof Error ? error.message : "Falha ao buscar empresas.");
       setMessage("Nao foi possivel concluir a busca.");
     } finally {
-      setLoading(false);
+      if (activeSearchId.current === searchId) setLoading(false);
     }
   }
 

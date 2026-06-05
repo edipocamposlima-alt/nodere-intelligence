@@ -78,6 +78,33 @@ export function getCompany(id: string) {
   return api<Company>(`/companies/${id}`);
 }
 
+export function createCompany(payload: {
+  name: string;
+  legalName?: string;
+  cnpj?: string;
+  category?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  cep?: string;
+  phone?: string;
+  whatsapp?: string;
+  email?: string;
+  website?: string;
+  instagram?: string;
+  facebook?: string;
+  linkedin?: string;
+  youtube?: string;
+  principalContact?: string;
+  principalContactRole?: string;
+  notes?: string;
+  status?: string;
+  temperature?: string;
+  serviceInterest?: string;
+}) {
+  return api<Company>("/companies", { method: "POST", body: JSON.stringify(payload) });
+}
+
 export function searchCompanies(payload: { mode?: "places" | "cnpj" | "global"; city?: string; state?: string; country?: string; segment?: string; keyword?: string; companyName?: string; limit?: number; lat?: number; lng?: number; radiusKm?: number }) {
   return api<{
     companies: Company[];
@@ -422,15 +449,52 @@ export interface CatalogItem {
   name: string;
   commercial_name?: string;
   category: string;
+  subcategory?: string;
+  brand?: string;
   type: "product" | "service";
   status: "active" | "inactive";
   description_short: string;
+  description_full?: string;
+  features?: string;
+  benefits?: string;
+  differentials?: string;
+  target_audience?: string;
+  use_cases?: string;
   cost: number;
   price: number;
+  commission_pct?: number;
+  max_discount_pct?: number;
+  promotional_price?: number;
+  promotion_expires_at?: string;
+  supplier?: string;
+  delivery_days?: number;
+  warranty?: string;
+  exchange_policy?: string;
+  cancellation_policy?: string;
+  payment_conditions?: string;
+  installments_available?: number;
+  unit_measure?: string;
+  weight_kg?: number;
+  height_cm?: number;
+  width_cm?: number;
+  length_cm?: number;
+  color?: string;
+  material?: string;
+  model?: string;
+  voltage?: string;
+  technical_specs?: string;
+  execution_time?: string;
   scope?: string;
+  limitations?: string;
   deliverables?: string;
+  complexity?: string;
   sla?: string;
   stock_current?: number;
+  stock_min?: number;
+  stock_max?: number;
+  stock_location?: string;
+  market_segment?: string;
+  campaign_url?: string;
 }
 
 export function getCatalogItems(params = "") {
@@ -442,14 +506,51 @@ export function createCatalogItem(payload: {
   name: string;
   commercialName?: string;
   category: string;
+  subcategory?: string;
+  brand?: string;
   type: "product" | "service";
   descriptionShort: string;
+  descriptionFull?: string;
+  features?: string;
+  benefits?: string;
+  differentials?: string;
+  targetAudience?: string;
+  useCases?: string;
   cost: number;
   price: number;
+  commissionPct?: number;
+  maxDiscountPct?: number;
+  promotionalPrice?: number;
+  promotionExpiresAt?: string;
+  supplier?: string;
+  deliveryDays?: number;
+  warranty?: string;
+  exchangePolicy?: string;
+  cancellationPolicy?: string;
+  paymentConditions?: string;
+  installmentsAvailable?: number;
+  unitMeasure?: string;
+  weightKg?: number;
+  heightCm?: number;
+  widthCm?: number;
+  lengthCm?: number;
+  color?: string;
+  material?: string;
+  model?: string;
+  voltage?: string;
+  technicalSpecs?: string;
+  executionTime?: string;
   scope?: string;
+  limitations?: string;
   deliverables?: string;
+  complexity?: string;
   sla?: string;
   stockCurrent?: number;
+  stockMin?: number;
+  stockMax?: number;
+  stockLocation?: string;
+  marketSegment?: string;
+  campaignUrl?: string;
 }) {
   return api<CatalogItem>("/catalog", { method: "POST", body: JSON.stringify(payload) });
 }

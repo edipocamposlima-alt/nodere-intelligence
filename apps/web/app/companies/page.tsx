@@ -1,5 +1,6 @@
 import { CompanyTable } from "@/components/CompanyTable";
 import { getCompanies } from "@/lib/api";
+import { ManualCompanyForm } from "./ManualCompanyForm";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams?: P
         <h2 className="text-2xl font-semibold text-white">Empresas</h2>
         <p className="mt-1 text-sm text-slate-400">Leads encontrados, enriquecidos e priorizados por oportunidade comercial.</p>
       </div>
+      <ManualCompanyForm />
       <CompanyTable companies={companies} initialQuery={query} />
     </div>
   );

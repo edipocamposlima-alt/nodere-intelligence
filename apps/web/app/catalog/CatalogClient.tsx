@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useState } from "react";
 import { PackageOpen, Plus } from "lucide-react";
 import { CatalogItem, createCatalogItem, getCatalogItems } from "@/lib/api";
 import { SEGMENTS } from "@/constants/segments";
@@ -29,20 +29,59 @@ export function CatalogClient() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const text = (name: string) => String(form.get(name) || "").trim();
+    const num = (name: string) => Number(form.get(name) || 0);
     try {
       await createCatalogItem({
-        code: String(form.get("code") || "").trim() || undefined,
-        name: String(form.get("name") || ""),
-        commercialName: String(form.get("commercialName") || ""),
-        category: String(form.get("category") || ""),
-        type: String(form.get("type") || "service") as "product" | "service",
-        descriptionShort: String(form.get("descriptionShort") || ""),
-        cost: Number(form.get("cost") || 0),
-        price: Number(form.get("price") || 0),
-        scope: String(form.get("scope") || ""),
-        deliverables: String(form.get("deliverables") || ""),
-        sla: String(form.get("sla") || ""),
-        stockCurrent: Number(form.get("stockCurrent") || 0)
+        code: text("code") || undefined,
+        name: text("name"),
+        commercialName: text("commercialName"),
+        category: text("category"),
+        subcategory: text("subcategory"),
+        brand: text("brand"),
+        type: text("type") as "product" | "service",
+        descriptionShort: text("descriptionShort"),
+        descriptionFull: text("descriptionFull"),
+        features: text("features"),
+        benefits: text("benefits"),
+        differentials: text("differentials"),
+        targetAudience: text("targetAudience"),
+        useCases: text("useCases"),
+        cost: num("cost"),
+        price: num("price"),
+        commissionPct: num("commissionPct"),
+        maxDiscountPct: num("maxDiscountPct"),
+        promotionalPrice: num("promotionalPrice"),
+        promotionExpiresAt: text("promotionExpiresAt"),
+        supplier: text("supplier"),
+        deliveryDays: num("deliveryDays"),
+        warranty: text("warranty"),
+        exchangePolicy: text("exchangePolicy"),
+        cancellationPolicy: text("cancellationPolicy"),
+        paymentConditions: text("paymentConditions"),
+        installmentsAvailable: num("installmentsAvailable"),
+        unitMeasure: text("unitMeasure"),
+        weightKg: num("weightKg"),
+        heightCm: num("heightCm"),
+        widthCm: num("widthCm"),
+        lengthCm: num("lengthCm"),
+        color: text("color"),
+        material: text("material"),
+        model: text("model"),
+        voltage: text("voltage"),
+        technicalSpecs: text("technicalSpecs"),
+        executionTime: text("executionTime"),
+        scope: text("scope"),
+        limitations: text("limitations"),
+        deliverables: text("deliverables"),
+        complexity: text("complexity"),
+        sla: text("sla"),
+        stockCurrent: num("stockCurrent"),
+        stockMin: num("stockMin"),
+        stockMax: num("stockMax"),
+        stockLocation: text("stockLocation"),
+        marketSegment: text("marketSegment"),
+        campaignUrl: text("campaignUrl")
       });
       event.currentTarget.reset();
       await refresh();
@@ -63,26 +102,81 @@ export function CatalogClient() {
         <p className="text-sm text-slate-300">Cadastre ofertas reais para usar em propostas, contratos e IA comercial.</p>
       </section>
 
-      <form onSubmit={onSubmit} className="grid gap-3 rounded-2xl border border-line bg-panel/80 p-4 md:grid-cols-4">
-        <input name="code" placeholder="Código opcional" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-        <select name="type" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" defaultValue="service">
-          <option value="service">Serviço</option>
-          <option value="product">Produto</option>
-        </select>
-        <input name="name" required placeholder="Nome" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-        <input name="commercialName" placeholder="Nome comercial" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-        <select name="category" required className="rounded-lg border border-line bg-ink px-3 py-2 text-sm">
-          <option value="">Categoria</option>
-          {SEGMENTS.map((segment) => <option key={segment} value={segment}>{segment}</option>)}
-        </select>
-        <input name="cost" type="number" min="0" step="0.01" placeholder="Custo" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-        <input name="price" type="number" min="0" step="0.01" placeholder="Preço" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-        <input name="stockCurrent" type="number" min="0" placeholder="Estoque atual" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-        <textarea name="descriptionShort" required placeholder="Descrição curta" className="md:col-span-2 min-h-20 rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-        <textarea name="scope" placeholder="Escopo" className="md:col-span-2 min-h-20 rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-        <textarea name="deliverables" placeholder="Entregáveis" className="md:col-span-2 min-h-20 rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-        <textarea name="sla" placeholder="SLA / prazo / condições" className="md:col-span-2 min-h-20 rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-        <button className="inline-flex items-center justify-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-bold text-white">
+      <form onSubmit={onSubmit} className="space-y-5 rounded-2xl border border-line bg-panel/80 p-4">
+        <CatalogSection title="1. Identificação">
+          <Input name="code" label="Código opcional" placeholder="SRV-0001, PRD-0001 ou MKT-0025" />
+          <label className="block">
+            <span className="text-xs font-semibold text-slate-400">Tipo</span>
+            <select name="type" className="mt-1 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" defaultValue="service">
+              <option value="service">Serviço</option>
+              <option value="product">Produto</option>
+            </select>
+          </label>
+          <Input name="name" label="Nome do produto/serviço" required />
+          <Input name="commercialName" label="Nome comercial" />
+          <label className="block">
+            <span className="text-xs font-semibold text-slate-400">Categoria</span>
+            <select name="category" required className="mt-1 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm">
+              <option value="">Categoria</option>
+              {SEGMENTS.map((segment) => <option key={segment} value={segment}>{segment}</option>)}
+            </select>
+          </label>
+          <Input name="subcategory" label="Subcategoria" />
+          <Input name="brand" label="Marca" />
+        </CatalogSection>
+
+        <CatalogSection title="2. Descrição e marketing">
+          <Textarea name="descriptionShort" label="Descrição resumida" required />
+          <Textarea name="descriptionFull" label="Descrição completa" />
+          <Textarea name="features" label="Principais características" />
+          <Textarea name="benefits" label="Benefícios" />
+          <Textarea name="differentials" label="Diferenciais competitivos" />
+          <Textarea name="targetAudience" label="Público-alvo" />
+          <Textarea name="useCases" label="Aplicações de uso" />
+          <Input name="marketSegment" label="Segmento de mercado" />
+          <Input name="campaignUrl" label="URL da página/campanha" />
+        </CatalogSection>
+
+        <CatalogSection title="3. Precificação e comercial">
+          <Input name="cost" label="Custo" type="number" step="0.01" />
+          <Input name="price" label="Preço de venda" type="number" step="0.01" />
+          <Input name="commissionPct" label="Comissão (%)" type="number" step="0.01" />
+          <Input name="maxDiscountPct" label="Desconto máximo (%)" type="number" step="0.01" />
+          <Input name="promotionalPrice" label="Preço promocional" type="number" step="0.01" />
+          <Input name="promotionExpiresAt" label="Vigência promoção" type="date" />
+          <Input name="supplier" label="Fornecedor" />
+          <Input name="deliveryDays" label="Prazo entrega (dias)" type="number" />
+          <Input name="warranty" label="Garantia" />
+          <Input name="paymentConditions" label="Condições de pagamento" />
+          <Input name="installmentsAvailable" label="Parcelas disponíveis" type="number" />
+          <Textarea name="exchangePolicy" label="Política de troca" />
+          <Textarea name="cancellationPolicy" label="Política de cancelamento" />
+        </CatalogSection>
+
+        <CatalogSection title="4. Técnico, serviço e estoque">
+          <Input name="unitMeasure" label="Unidade de medida" />
+          <Input name="weightKg" label="Peso kg" type="number" step="0.01" />
+          <Input name="heightCm" label="Altura cm" type="number" step="0.01" />
+          <Input name="widthCm" label="Largura cm" type="number" step="0.01" />
+          <Input name="lengthCm" label="Comprimento cm" type="number" step="0.01" />
+          <Input name="color" label="Cor" />
+          <Input name="material" label="Material" />
+          <Input name="model" label="Modelo" />
+          <Input name="voltage" label="Voltagem" />
+          <Textarea name="technicalSpecs" label="Especificações técnicas" />
+          <Input name="executionTime" label="Tempo médio de execução" />
+          <Textarea name="scope" label="Escopo do serviço" />
+          <Textarea name="limitations" label="Limitações do serviço" />
+          <Textarea name="deliverables" label="Entregáveis" />
+          <Input name="complexity" label="Complexidade" />
+          <Input name="sla" label="SLA / prazo de atendimento" />
+          <Input name="stockCurrent" label="Estoque atual" type="number" />
+          <Input name="stockMin" label="Estoque mínimo" type="number" />
+          <Input name="stockMax" label="Estoque máximo" type="number" />
+          <Input name="stockLocation" label="Localização no estoque" />
+        </CatalogSection>
+
+        <button className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-cyan to-electric px-5 py-3 text-sm font-black text-white shadow-glow">
           <Plus className="h-4 w-4" />
           Salvar item
         </button>
@@ -128,5 +222,32 @@ export function CatalogClient() {
         )}
       </section>
     </main>
+  );
+}
+
+function CatalogSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="rounded-xl border border-line bg-ink/70 p-4">
+      <h2 className="text-sm font-black text-white">{title}</h2>
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">{children}</div>
+    </section>
+  );
+}
+
+function Input({ name, label, type = "text", required, step, placeholder }: { name: string; label: string; type?: string; required?: boolean; step?: string; placeholder?: string }) {
+  return (
+    <label className="block">
+      <span className="text-xs font-semibold text-slate-400">{label}</span>
+      <input name={name} type={type} required={required} step={step} placeholder={placeholder} className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm outline-none focus:border-electric" />
+    </label>
+  );
+}
+
+function Textarea({ name, label, required }: { name: string; label: string; required?: boolean }) {
+  return (
+    <label className="block md:col-span-2">
+      <span className="text-xs font-semibold text-slate-400">{label}</span>
+      <textarea name={name} required={required} className="mt-1 min-h-24 w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm outline-none focus:border-electric" />
+    </label>
   );
 }

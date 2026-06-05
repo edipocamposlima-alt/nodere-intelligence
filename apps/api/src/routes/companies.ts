@@ -62,6 +62,45 @@ const companyUpdateSchema = z.object({
   revenueRange: z.string().optional().nullable()
 }).passthrough();
 
+const manualCompanySchema = z.object({
+  name: z.string().min(2),
+  legalName: z.string().optional().nullable(),
+  cnpj: z.string().optional().nullable(),
+  category: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  state: z.string().optional().nullable(),
+  cep: z.string().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  whatsapp: z.string().optional().nullable(),
+  email: z.string().email().optional().or(z.literal("")),
+  website: z.string().optional().nullable(),
+  instagram: z.string().optional().nullable(),
+  facebook: z.string().optional().nullable(),
+  linkedin: z.string().optional().nullable(),
+  youtube: z.string().optional().nullable(),
+  principalContact: z.string().optional().nullable(),
+  principalContactRole: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  status: z.string().optional().nullable(),
+  temperature: z.string().optional().nullable(),
+  serviceInterest: z.string().optional().nullable(),
+  score: z.coerce.number().min(0).max(100).optional(),
+  opportunityLevel: z.enum(["Alta", "Media", "Baixa"]).optional()
+}).superRefine((input, ctx) => {
+  const cnpj = cleanDigits(input.cnpj || "");
+  if (cnpj && cnpj.length !== 14) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "CNPJ deve conter 14 dígitos.", path: ["cnpj"] });
+  }
+  const whatsapp = cleanDigits(input.whatsapp || "");
+  if (whatsapp && whatsapp.length >= 10) {
+    const local = whatsapp.startsWith("55") ? whatsapp.slice(2) : whatsapp;
+    if (!(local.length === 11 && local[2] === "9")) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "WhatsApp deve ser celular com DDD e 9 dígitos.", path: ["whatsapp"] });
+    }
+  }
+});
+
 router.get("/", async (req, res, next) => {
   try {
     res.json(await listCompaniesAsync(getRequestWorkspaceId(req)));
@@ -105,6 +144,48 @@ router.get("/import/template", (_req, res) => {
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader("Content-Disposition", "attachment; filename=\"modelo-importacao-nodere.csv\"");
   res.send(`${headers.join(",")}\n${example.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")}\n`);
+});
+
+router.post("/", async (req, res, next) => {
+  try {
+    const body = manualCompanySchema.parse(req.body);
+    const workspaceId = getRequestWorkspaceId(req);
+    const now = new Date().toISOString();
+    const company = {
+      id: `manual-${randomUUID()}`,
+      name: body.name,
+      legalName: body.legalName,
+      cnpj: cleanDigits(body.cnpj || ""),
+      category: body.category || "Serviços",
+      city: body.city || "",
+      state: body.state || "",
+      address: body.address || "",
+      phone: normalizePhone(body.phone || ""),
+      whatsapp: normalizeWhatsapp(body.whatsapp || ""),
+      website: body.website || "",
+      instagram: body.instagram || "",
+      facebook: body.facebook || "",
+      linkedin: body.linkedin || "",
+      youtube: body.youtube || "",
+      status: body.status || "Novo Lead",
+      score: body.score ?? 50,
+      opportunityLevel: body.opportunityLevel || "Media",
+      detectedOpportunities: [],
+      suggestions: [],
+      notes: body.notes ? [{ id: randomUUID(), companyId: "", body: body.notes, createdAt: now }] : [],
+      createdAt: now,
+      updatedAt: now,
+      origin: "Manual",
+      emailPrincipal: body.email || "",
+      cep: body.cep || "",
+      principalContact: body.principalContact || "",
+      principalContactRole: body.principalContactRole || "",
+      serviceInterest: body.serviceInterest || "",
+      temperature: body.temperature || "Morno"
+    } as any;
+    await saveCompanies([company], workspaceId);
+    return res.status(201).json(company);
+  } catch (err) { return next(err); }
 });
 
 router.get("/:id", async (req, res, next) => {
