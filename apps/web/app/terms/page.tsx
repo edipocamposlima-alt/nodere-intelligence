@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getApiBaseUrl } from "@/lib/apiBase";
 
 async function getTerms() {
@@ -22,9 +23,13 @@ export default async function TermsPage() {
   const data = await getTerms();
   return (
     <main className="mx-auto max-w-4xl space-y-6 p-5 md:p-10">
-      <Link href="/login" className="text-sm font-semibold text-cyan">Voltar</Link>
+      <div className="flex items-center justify-between gap-4">
+        <Image src="/nodere-wordmark.png" alt="NODERE" width={220} height={80} className="h-auto w-44 rounded-lg object-contain" priority />
+        <Link href="/login" className="text-sm font-semibold text-cyan">Voltar</Link>
+      </div>
       <div>
         <h1 className="text-3xl font-semibold text-white">{data.title}</h1>
+        {data.subtitle && <p className="mt-1 text-sm text-cyan">{data.subtitle}</p>}
         <p className="mt-2 text-sm text-slate-400">Atualizado em {new Date(data.updatedAt).toLocaleDateString("pt-BR")}</p>
       </div>
       <section className="space-y-4">

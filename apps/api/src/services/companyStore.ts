@@ -14,6 +14,7 @@ const documentStore = new Map<string, OperationDocument[]>();
 const TASK_PREFIX = "__NODERE_TASK__";
 const DOCUMENT_PREFIX = "__NODERE_DOCUMENT__";
 let workspaceColumnAvailable = true;
+const unavailableCompanyColumns = new Set<string>();
 
 function isWorkspaceColumnMissing(error: unknown) {
   const text = error instanceof Error ? error.message : JSON.stringify(error);
@@ -28,12 +29,33 @@ function markWorkspaceColumnMissing(error: unknown) {
   return false;
 }
 
+function getMissingColumn(error: unknown) {
+  const source = error as { code?: unknown; message?: unknown };
+  const text = typeof source?.message === "string" ? source.message : JSON.stringify(error);
+  if (source?.code !== "PGRST204" && !text.includes("Could not find the")) return "";
+  const match = text.match(/'([^']+)' column/);
+  return match?.[1] || "";
+}
+
+function markMissingCompanyColumn(error: unknown) {
+  const column = getMissingColumn(error);
+  if (!column) return false;
+  unavailableCompanyColumns.add(column);
+  console.warn("NODERE Supabase schema column unavailable; retrying without column", { table: "nodere_companies", column });
+  return true;
+}
+
 function canUseVolatileFallback() {
   return !hasSupabase() || process.env.NODE_ENV !== "production";
 }
 
 function persistenceError(action: string, error: unknown) {
   const detail = error instanceof Error ? error.message : JSON.stringify(error);
+  console.error("NODERE Supabase persistence error", {
+    action,
+    detail,
+    raw: serializeSupabaseError(error)
+  });
   const err = new Error(
     `Persistencia indisponivel: nao foi possivel ${action} no Supabase. ` +
     "Para evitar perda de leads em atualizacoes/deploys, o NODERE bloqueou o fallback temporario em memoria."
@@ -42,6 +64,19 @@ function persistenceError(action: string, error: unknown) {
   err.code = "PERSISTENCE_UNAVAILABLE";
   err.reason = detail;
   return err;
+}
+
+function serializeSupabaseError(error: unknown) {
+  if (!error || typeof error !== "object") return error;
+  const source = error as Record<string, unknown>;
+  return {
+    name: source.name,
+    message: source.message,
+    code: source.code,
+    details: source.details,
+    hint: source.hint,
+    status: source.status
+  };
 }
 
 async function withPersistentRead<T>(action: string, dbAction: () => Promise<T>, fallback: () => T): Promise<T> {
@@ -112,6 +147,7 @@ function toRow(c: Company, workspaceId = "default", includeWorkspace = workspace
     updated_at: updatedAt
   };
   if (includeWorkspace) row.workspace_id = workspaceId;
+  stripUnavailableCompanyColumns(row);
   return row;
 }
 
@@ -156,7 +192,14 @@ function toUpdateRow(updates: Partial<Company>): Record<string, unknown> {
   }
   if (Object.keys(signals).length) row.digital_signals = signals;
   row.updated_at = new Date().toISOString();
+  stripUnavailableCompanyColumns(row);
   return row;
+}
+
+function stripUnavailableCompanyColumns(row: Record<string, unknown>) {
+  for (const column of unavailableCompanyColumns) {
+    delete row[column];
+  }
 }
 
 function fromRow(row: Record<string, unknown>): Company {
@@ -246,25 +289,39 @@ async function dbGet(id: string, workspaceId = "default"): Promise<Company | und
 async function dbUpsert(items: Company[], workspaceId = "default"): Promise<void> {
   if (items.length === 0) return;
   const sb = getSupabase()!;
-  const rows = items.map((item) => toRow(item, workspaceId));
-  let { error } = await sb.from("nodere_companies").upsert(rows, { onConflict: "id" });
-  if (error && markWorkspaceColumnMissing(error)) {
-    const retry = await sb.from("nodere_companies").upsert(items.map((item) => toRow(item, workspaceId, false)), { onConflict: "id" });
-    error = retry.error;
+  let includeWorkspace = workspaceColumnAvailable;
+  for (let attempt = 0; attempt < 16; attempt++) {
+    const rows = items.map((item) => toRow(item, workspaceId, includeWorkspace));
+    let { error } = await sb.from("nodere_companies").upsert(rows, { onConflict: "id" });
+    if (!error) return;
+    if (markWorkspaceColumnMissing(error)) {
+      includeWorkspace = false;
+      continue;
+    }
+    if (markMissingCompanyColumn(error)) continue;
+    throw error;
   }
-  if (error) throw error;
+  throw new Error("Nao foi possivel persistir empresas: schema Supabase tem colunas incompatíveis demais. Aplique apps/api/src/db/schema.sql.");
 }
 
 async function dbUpdateFields(id: string, fields: Record<string, unknown>, workspaceId = "default"): Promise<void> {
   const sb = getSupabase()!;
-  let query = sb.from("nodere_companies").update(fields).eq("id", id);
-  if (workspaceColumnAvailable) query = query.eq("workspace_id", workspaceId);
-  let { error } = await query;
-  if (error && markWorkspaceColumnMissing(error)) {
-    const retry = await sb.from("nodere_companies").update(fields).eq("id", id);
-    error = retry.error;
+  let includeWorkspace = workspaceColumnAvailable;
+  for (let attempt = 0; attempt < 16; attempt++) {
+    const nextFields = { ...fields };
+    stripUnavailableCompanyColumns(nextFields);
+    let query = sb.from("nodere_companies").update(nextFields).eq("id", id);
+    if (includeWorkspace) query = query.eq("workspace_id", workspaceId);
+    let { error } = await query;
+    if (!error) return;
+    if (markWorkspaceColumnMissing(error)) {
+      includeWorkspace = false;
+      continue;
+    }
+    if (markMissingCompanyColumn(error)) continue;
+    throw error;
   }
-  if (error) throw error;
+  throw new Error("Nao foi possivel atualizar empresa: schema Supabase tem colunas incompatíveis demais. Aplique apps/api/src/db/schema.sql.");
 }
 
 async function dbAddNote(companyId: string, body: string, workspaceId = "default") {

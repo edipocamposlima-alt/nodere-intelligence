@@ -713,12 +713,20 @@ router.post("/:id/diagnosis", async (req, res, next) => {
   }
 });
 
-router.get("/:id/export-pdf", (req, res) => {
-  const company = getCompany(req.params.id);
-  if (!company) return res.status(404).json({ message: "Company not found" });
+router.get("/:id/export-pdf", async (req, res, next) => {
+  try {
+  const workspaceId = getRequestWorkspaceId(req);
+  const company = await getCompanyAsync(req.params.id, workspaceId);
+  if (!company) {
+    console.warn("NODERE company PDF lookup failed", { companyId: req.params.id, workspaceId });
+    return res.status(404).json({ message: "Company not found" });
+  }
 
   const diagnosis = getCachedDiagnosis(req.params.id);
   const scan = getAudit(req.params.id);
+  const notes = await listNotes(company.id, workspaceId).catch(() => []);
+  const tasks = await listTasks(company.id, workspaceId).catch(() => []);
+  const documents = await listDocuments(company.id, workspaceId).catch(() => []);
 
   const checks = [
     { label: "Site", ok: Boolean(company.website) },
@@ -736,29 +744,41 @@ router.get("/:id/export-pdf", (req, res) => {
     .join("");
 
   const opportunitiesHtml = company.detectedOpportunities
-    .map((o) => `<li>${o}</li>`)
+    .map((o) => `<li>${escapeHtml(o)}</li>`)
     .join("") || "<li>Nenhuma oportunidade detectada.</li>";
 
   const suggestionsHtml = company.suggestions
-    .map((s) => `<li>${s}</li>`)
+    .map((s) => `<li>${escapeHtml(s)}</li>`)
     .join("") || "<li>Sem sugestões no momento.</li>";
+
+  const notesHtml = notes
+    .map((note) => `<li><strong>${formatPtBrDate(note.createdAt)}</strong> — ${escapeHtml(note.body)}</li>`)
+    .join("") || "<li>Sem observações registradas.</li>";
+
+  const tasksHtml = tasks
+    .map((task) => `<li><strong>${escapeHtml(task.title)}</strong> — ${escapeHtml(task.status)}${task.dueAt ? ` · ${formatPtBrDate(task.dueAt)}` : ""}</li>`)
+    .join("") || "<li>Sem follow-ups registrados.</li>";
+
+  const documentsHtml = documents
+    .map((doc) => `<li><strong>${escapeHtml(doc.title)}</strong>${doc.fileName ? ` — ${escapeHtml(doc.fileName)}` : ""}</li>`)
+    .join("") || "<li>Sem documentos anexados.</li>";
 
   const diagHtml = diagnosis
     ? `
     <section>
       <h2>Diagnóstico IA</h2>
-      <p>${diagnosis.summary}</p>
+      <p>${escapeHtml(diagnosis.summary)}</p>
       <h3>Serviços sugeridos</h3>
-      <ul>${diagnosis.suggestedServices.map((s) => `<li>${s}</li>`).join("")}</ul>
+      <ul>${diagnosis.suggestedServices.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>
     </section>
     <section>
       <h2>Mensagem WhatsApp</h2>
-      <p class="copy-box">${diagnosis.whatsappCopy}</p>
+      <p class="copy-box">${escapeHtml(diagnosis.whatsappCopy)}</p>
     </section>
     <section>
       <h2>Email comercial</h2>
-      <p><strong>Assunto:</strong> ${diagnosis.emailSubject}</p>
-      <pre class="copy-box">${diagnosis.emailBody}</pre>
+      <p><strong>Assunto:</strong> ${escapeHtml(diagnosis.emailSubject)}</p>
+      <pre class="copy-box">${escapeHtml(diagnosis.emailBody)}</pre>
     </section>`
     : `<section><p class="note">Gere o diagnóstico IA para incluir cópias comerciais neste relatório.</p></section>`;
 
@@ -766,11 +786,11 @@ router.get("/:id/export-pdf", (req, res) => {
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Relatório — ${company.name}</title>
+<title>Relatório — ${escapeHtml(company.name)}</title>
 <style>
   body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 24px; color: #1e293b; }
   .brand { display:flex; align-items:center; gap:16px; background:#0A0F1E; border-radius:12px; padding:18px; margin-bottom:20px; color:#fff; }
-  .brand img { width:76px; height:auto; object-fit:contain; }
+  .brand img { width:76px; height:auto; object-fit:contain; border-radius:10px; }
   .brand-title { font-size:24px; font-weight:800; letter-spacing:0.02em; }
   .brand-sub { color:#42D7FF; font-size:11px; text-transform:uppercase; letter-spacing:0.22em; margin-top:3px; }
   h1 { font-size: 22px; color: #0f172a; border-bottom: 2px solid #0ea5e9; padding-bottom: 8px; }
@@ -796,13 +816,40 @@ router.get("/:id/export-pdf", (req, res) => {
       <div class="brand-sub">Intelligence</div>
     </div>
   </div>
-  <h1>Relatório Comercial — ${company.name}</h1>
-  <p class="meta">${company.category} · ${company.address} · Gerado em ${new Date().toLocaleDateString("pt-BR")}</p>
+  <h1>Relatório Comercial — ${escapeHtml(company.name)}</h1>
+  <p class="meta">${escapeHtml(company.category || "Sem segmento")} · ${escapeHtml(company.address || `${company.city || ""} ${company.state || ""}`.trim())} · Gerado em ${formatPtBrDate(new Date().toISOString())}</p>
+
+  <section>
+    <h2>Dados da empresa</h2>
+    <ul>
+      <li><strong>CNPJ:</strong> ${escapeHtml(company.cnpj || "Não informado")}</li>
+      <li><strong>Telefone:</strong> ${escapeHtml(company.phone || (company as any).telefonePrincipal || (company as any).telefone_principal || "Não informado")}</li>
+      <li><strong>WhatsApp:</strong> ${escapeHtml(company.whatsapp || "Não informado")}</li>
+      <li><strong>E-mail:</strong> ${escapeHtml((company as any).emailPrincipal || (company as any).email_principal || (company as any).email || "Não informado")}</li>
+      <li><strong>Site:</strong> ${escapeHtml(company.website || "Não informado")}</li>
+      <li><strong>Redes:</strong> ${escapeHtml([company.instagram, company.facebook, company.linkedin, company.youtube].filter(Boolean).join(" · ") || "Não informado")}</li>
+    </ul>
+  </section>
 
   <section>
     <h2>Score de Oportunidade</h2>
     <p class="score">${company.score}<span style="font-size:18px;color:#94a3b8">/100</span></p>
     <p>Nível: <strong>${company.opportunityLevel}</strong> · Rating Google: ${company.rating ?? "—"} (${company.reviewCount ?? 0} avaliações)</p>
+  </section>
+
+  <section>
+    <h2>Histórico e observações</h2>
+    <ul>${notesHtml}</ul>
+  </section>
+
+  <section>
+    <h2>Follow-ups e agenda</h2>
+    <ul>${tasksHtml}</ul>
+  </section>
+
+  <section>
+    <h2>Documentos anexados</h2>
+    <ul>${documentsHtml}</ul>
   </section>
 
   <section>
@@ -830,6 +877,9 @@ router.get("/:id/export-pdf", (req, res) => {
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   return res.send(html);
+  } catch (error) {
+    return next(error);
+  }
 });
 
 router.get("/:id/sequences", (req, res) => {
@@ -847,6 +897,27 @@ router.post("/:id/sequences", (req, res) => {
 });
 
 export default router;
+
+function escapeHtml(value: unknown) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function formatPtBrDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
 
 function parseCsv(csv: string) {
   const firstLine = csv.split(/\r?\n/).find((line) => line.trim()) ?? "";

@@ -7,6 +7,7 @@ const _googleApiKey = process.env.GOOGLE_API_KEY;
 export const config = {
   port: Number(process.env.PORT ?? process.env.API_PORT ?? 4000),
   webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:3000",
+  frontendUrl: process.env.FRONTEND_URL ?? process.env.WEB_ORIGIN ?? "http://localhost:3000",
   apiKey: process.env.API_KEY,
   admin: {
     email: process.env.ADMIN_EMAIL ?? "admin@nodere.com.br",

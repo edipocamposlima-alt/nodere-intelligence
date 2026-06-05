@@ -54,9 +54,6 @@ export function LoginClient() {
     setError("");
     setNotice("");
     try {
-      if (!hasSupabaseAuthConfig()) {
-        throw new Error("Recuperação automática exige NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY.");
-      }
       await sendPasswordRecovery(email);
       setNotice("Enviamos o link de recuperação para o e-mail informado.");
     } catch (err) {

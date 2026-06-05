@@ -3,9 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 const PUBLIC_PREFIXES = [
   "/login",
   "/register",
+  "/reset-password",
   "/terms",
   "/privacy",
   "/api/auth",
+  "/api/webhooks",
   "/_next",
   "/manifest.json",
   "/favicon",

@@ -57,53 +57,53 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               {company.whatsapp && (
-                <a href={`https://wa.me/${company.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" className="inline-flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-ink">
+                <a href={`https://wa.me/${company.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-ink">
                   <MessageCircle className="h-4 w-4" />
                   Chamar no WhatsApp
                 </a>
               )}
-              <a href={`${API_URL}/companies/${company.id}/export-pdf`} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
+              <a href={`${API_URL}/companies/${company.id}/export-pdf`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
                 <FileText className="h-4 w-4" />
                 Exportar PDF
               </a>
               {company.website && (
-                <a href={company.website} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
+                <a href={company.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
                   <Globe2 className="h-4 w-4" />
                   Site
                 </a>
               )}
               {company.mapsUrl && (
-                <a href={company.mapsUrl} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
+                <a href={company.mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
                   <ExternalLink className="h-4 w-4" />
                   Google Maps
                 </a>
               )}
               {company.instagram && (
-                <a href={company.instagram} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
+                <a href={company.instagram} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
                   <Instagram className="h-4 w-4" />
                   Instagram
                 </a>
               )}
               {company.facebook && (
-                <a href={company.facebook} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
+                <a href={company.facebook} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
                   <Facebook className="h-4 w-4" />
                   Facebook
                 </a>
               )}
               {company.linkedin && (
-                <a href={company.linkedin} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
+                <a href={company.linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
                   <Linkedin className="h-4 w-4" />
                   LinkedIn
                 </a>
               )}
               {!company.linkedin && (
-                <a href={linkedinSearchUrl(company.name, company.city, company.website)} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-blue-400/40 bg-blue-500/15 px-4 py-2 text-sm text-blue-100">
+                <a href={linkedinSearchUrl(company.name, company.city, company.website)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-blue-400/40 bg-blue-500/15 px-4 py-2 text-sm text-blue-100">
                   <Linkedin className="h-4 w-4" />
                   Buscar empresa no LinkedIn
                 </a>
               )}
               {company.youtube && (
-                <a href={company.youtube} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
+                <a href={company.youtube} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
                   <Youtube className="h-4 w-4" />
                   YouTube
                 </a>

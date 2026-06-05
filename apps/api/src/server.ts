@@ -32,6 +32,7 @@ import crmRouter from "./routes/crm.js";
 import { processDueSteps } from "./services/emailSequences.js";
 import { requireAuth } from "./middleware/auth.js";
 import { attachSession, getRequestWorkspaceId } from "./middleware/session.js";
+import { getSupabase, hasSupabase } from "./db/supabase.js";
 import { searchCompaniesWithMeta } from "./services/companyStore.js";
 import { getAppSettings, savePipelineSettings, savePreferences } from "./services/settingsStore.js";
 import { scanWebsite } from "./services/websiteScanner.js";
@@ -95,6 +96,64 @@ app.get("/api/health", async (_req, res) => {
     supabaseConfigured: Boolean(config.supabase.url && config.supabase.serviceRoleKey),
     providers: await getAiProviderHealth()
   });
+});
+
+app.get("/api/health/supabase", async (_req, res) => {
+  const missing = [
+    !config.supabase.url ? "SUPABASE_URL" : "",
+    !config.supabase.serviceRoleKey ? "SUPABASE_SERVICE_ROLE_KEY" : ""
+  ].filter(Boolean);
+
+  if (missing.length) {
+    return res.status(503).json({
+      status: "error",
+      message: `Supabase nao configurado. Variavel ausente: ${missing.join(", ")}.`,
+      missing,
+      backendTime: new Date().toISOString()
+    });
+  }
+
+  try {
+    const sb = getSupabase();
+    const { error } = await sb!
+      .from("nodere_companies")
+      .select("id", { count: "exact", head: true })
+      .limit(1);
+    if (error) throw error;
+    return res.json({
+      status: "ok",
+      message: "Supabase conectado e tabela nodere_companies acessivel.",
+      backendTime: new Date().toISOString()
+    });
+  } catch (error) {
+    return res.status(503).json({
+      status: "error",
+      message: error instanceof Error ? error.message : "Falha ao conectar ao Supabase.",
+      backendTime: new Date().toISOString()
+    });
+  }
+});
+
+app.post("/api/auth/forgot-password", async (req, res, next) => {
+  try {
+    const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+    if (!email) return res.status(400).json({ message: "Informe um e-mail valido." });
+    if (!hasSupabase() || !config.supabase.anonKey) {
+      return res.status(503).json({
+        message: "Recuperacao de senha indisponivel. Configure SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY e SUPABASE_ANON_KEY no backend."
+      });
+    }
+    const redirectTo = `${config.frontendUrl.replace(/\/+$/, "")}/reset-password`;
+    const { error } = await getSupabase()!.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) throw error;
+    return res.json({
+      ok: true,
+      message: "Se o e-mail existir no NODERE, enviaremos um link de redefinicao de senha.",
+      redirectTo
+    });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 function publicIntegrationSettings() {
