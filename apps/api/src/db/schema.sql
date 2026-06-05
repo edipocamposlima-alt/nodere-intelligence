@@ -368,6 +368,9 @@ create table if not exists calendar_events (
   updated_at timestamptz not null default now()
 );
 
+alter table calendar_events add column if not exists status text not null default 'pendente';
+alter table calendar_events add column if not exists channel text;
+
 create table if not exists catalog_items (
   id text primary key default gen_random_uuid()::text,
   workspace_id text not null default 'default',

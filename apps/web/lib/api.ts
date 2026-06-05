@@ -367,6 +367,8 @@ export interface CalendarEvent {
   end_at: string;
   notes?: string;
   assigned_to?: string;
+  status?: string;
+  channel?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -383,9 +385,31 @@ export function createCalendarEvent(payload: {
   endAt: string;
   notes?: string;
   assignedTo?: string;
+  status?: string;
+  channel?: string;
   metadata?: Record<string, unknown>;
 }) {
   return api<CalendarEvent>("/calendar", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function updateCalendarEvent(id: string, payload: Partial<{
+  companyId: string | null;
+  title: string;
+  type: string;
+  priority: string;
+  startAt: string;
+  endAt: string;
+  notes: string;
+  assignedTo: string | null;
+  status: string;
+  channel: string | null;
+  metadata: Record<string, unknown>;
+}>) {
+  return api<CalendarEvent>(`/calendar/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
+}
+
+export function deleteCalendarEvent(id: string) {
+  return api<{ ok: boolean }>(`/calendar/${id}`, { method: "DELETE" });
 }
 
 export interface CatalogItem {

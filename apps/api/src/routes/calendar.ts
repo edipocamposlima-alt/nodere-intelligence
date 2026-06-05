@@ -15,6 +15,8 @@ router.get("/", async (req, res, next) => {
       .eq("workspace_id", workspaceId);
     if (req.query.company_id) query = query.eq("company_id", String(req.query.company_id));
     if (req.query.operator_id) query = query.eq("assigned_to", String(req.query.operator_id));
+    if (req.query.type) query = query.eq("type", String(req.query.type));
+    if (req.query.status) query = query.eq("status", String(req.query.status));
     if (req.query.start) query = query.gte("start_at", String(req.query.start));
     if (req.query.end) query = query.lte("end_at", String(req.query.end));
     const { data, error } = await query.order("start_at", { ascending: true });
@@ -39,6 +41,8 @@ router.post("/", async (req, res, next) => {
       end_at: body.endAt,
       notes: body.notes,
       assigned_to: body.assignedTo,
+      status: body.status,
+      channel: body.channel,
       created_by: (req as any).session?.userId,
       metadata: body.metadata ?? {}
     };
@@ -91,6 +95,8 @@ const eventSchema = z.object({
   endAt: z.string(),
   notes: z.string().optional().nullable(),
   assignedTo: z.string().optional().nullable(),
+  status: z.string().default("pendente"),
+  channel: z.string().optional().nullable(),
   metadata: z.record(z.unknown()).optional()
 });
 
@@ -104,6 +110,8 @@ function mapEventUpdate(input: Partial<z.infer<typeof eventSchema>>) {
   if (input.endAt !== undefined) row.end_at = input.endAt;
   if (input.notes !== undefined) row.notes = input.notes;
   if (input.assignedTo !== undefined) row.assigned_to = input.assignedTo;
+  if (input.status !== undefined) row.status = input.status;
+  if (input.channel !== undefined) row.channel = input.channel;
   if (input.metadata !== undefined) row.metadata = input.metadata;
   return row;
 }
