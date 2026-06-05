@@ -9,7 +9,10 @@ export const metadata: Metadata = {
   description: "Sistema de prospeccao inteligente para Google Ads e Google Meu Negocio",
   manifest: "/manifest.json",
   icons: {
-    icon: "/nodere-logo.png",
+    icon: [
+      { url: "/nodere-logo-192.png", sizes: "32x32", type: "image/png" },
+      { url: "/nodere-logo-192.png", sizes: "192x192", type: "image/png" }
+    ],
     apple: "/nodere-logo-192.png"
   },
   openGraph: {
@@ -32,7 +35,10 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     <html lang="pt-BR">
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="NODERE" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/nodere-logo-192.png" />
         <link rel="apple-touch-icon" href="/nodere-logo-192.png" />
       </head>
       <body>

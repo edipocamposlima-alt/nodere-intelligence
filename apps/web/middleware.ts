@@ -10,6 +10,7 @@ const PUBLIC_PREFIXES = [
   "/api/webhooks",
   "/_next",
   "/manifest.json",
+  "/sw.js",
   "/favicon",
   "/icons",
   "/nodere"

@@ -244,16 +244,16 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
           </div>
         )}
         <div className="flex flex-wrap gap-2">
-          <button onClick={saveSelected} disabled={selectedCompanies.length === 0} className="inline-flex items-center gap-2 rounded-lg bg-electric px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">
+          <button onClick={saveSelected} disabled={selectedCompanies.length === 0} className="btn-primary px-3 py-2 text-xs">
             <Save className="h-4 w-4" />Salvar selecionadas
           </button>
-          <button onClick={ignoreSelected} disabled={selectedCompanies.length === 0} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-xs text-white disabled:opacity-50">
+          <button onClick={ignoreSelected} disabled={selectedCompanies.length === 0} className="btn-secondary px-3 py-2 text-xs">
             <Trash2 className="h-4 w-4" />Ignorar
           </button>
-          <button onClick={exportCsv} disabled={visibleCompanies.length === 0} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-xs text-white disabled:opacity-50">
+          <button onClick={exportCsv} disabled={visibleCompanies.length === 0} className="btn-secondary px-3 py-2 text-xs">
             <Download className="h-4 w-4" />CSV
           </button>
-          <button onClick={exportPdf} disabled={visibleCompanies.length === 0} className="inline-flex items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-amber-100 disabled:opacity-50">
+          <button onClick={exportPdf} disabled={visibleCompanies.length === 0} className="btn-primary px-3 py-2 text-xs">
             <FileText className="h-4 w-4" />PDF
           </button>
         </div>
@@ -327,7 +327,7 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
                     <button
                       onClick={() => saveLead(company)}
                       disabled={saved[company.id] === "saving" || saved[company.id] === "saved"}
-                      className="inline-flex items-center gap-2 rounded-lg bg-electric px-3 py-2 text-xs font-semibold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-70"
+                      className="btn-primary px-3 py-2 text-xs"
                     >
                       {saved[company.id] === "saved" ? <CheckCircle2 className="h-4 w-4" /> : <Save className="h-4 w-4" />}
                       {saved[company.id] === "saving" ? "Salvando" : saved[company.id] === "saved" ? "Salvo" : "Salvar lead"}

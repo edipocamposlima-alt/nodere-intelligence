@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
+import { existsSync, readFileSync } from "node:fs";
+import * as path from "node:path";
 import { getRequestWorkspaceId } from "../middleware/session.js";
 import {
   addNote,
@@ -40,6 +42,7 @@ import * as XLSX from "xlsx";
 import nodemailer from "nodemailer";
 
 const router = Router();
+const embeddedLogoDataUri = loadNodereLogoDataUri();
 
 const companyUpdateSchema = z.object({
   name: z.string().min(2).optional(),
@@ -921,7 +924,7 @@ router.get("/:id/export-pdf", async (req, res, next) => {
 </head>
 <body>
   <div class="brand">
-    <img src="https://nodere.com.br/nodere-logo.png" alt="NODERE">
+    <img src="${embeddedLogoDataUri}" alt="NODERE">
     <div>
       <div class="brand-title">NODERE</div>
       <div class="brand-sub">Intelligence</div>
@@ -1016,6 +1019,21 @@ function escapeHtml(value: unknown) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function loadNodereLogoDataUri() {
+  const candidates = [
+    path.join(process.cwd(), "public", "nodere-logo.png"),
+    path.join(process.cwd(), "..", "web", "public", "nodere-logo.png"),
+    path.join(process.cwd(), "..", "..", "apps", "web", "public", "nodere-logo.png")
+  ];
+  const found = candidates.find((candidate) => existsSync(candidate));
+  if (!found) {
+    console.warn("NODERE PDF logo not found locally; using inline SVG fallback", { candidates });
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="#1E6FDB"/><text x="256" y="318" text-anchor="middle" font-family="Arial, sans-serif" font-size="230" font-weight="800" fill="#FFFFFF">N</text></svg>`;
+    return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+  }
+  return `data:image/png;base64,${readFileSync(found).toString("base64")}`;
 }
 
 function formatPtBrDate(value: string) {

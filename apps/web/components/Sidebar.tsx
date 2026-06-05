@@ -76,8 +76,8 @@ export function Sidebar() {
 
       <div className="mt-4 rounded-lg border border-electric/30 bg-electric/10 p-4">
         <ShieldCheck className="h-5 w-5 text-cyan" />
-        <p className="mt-3 text-sm font-medium text-white">Scanner de oportunidades</p>
-        <p className="mt-1 text-xs leading-5 text-slate-400">Busca local, score comercial e CRM leve em um fluxo rapido.</p>
+        <p className="mt-3 text-sm font-medium text-white">Ambiente seguro</p>
+        <p className="mt-1 text-xs leading-5 text-slate-400">Dados isolados por workspace, APIs via backend e operação comercial protegida.</p>
       </div>
     </aside>
   );
