@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: "/nodere-logo.png",
-    apple: "/nodere-logo.png"
+    apple: "/nodere-logo-192.png"
   },
   openGraph: {
     title: "NODERE Intelligence",
@@ -30,6 +30,11 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="pt-BR">
+      <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="NODERE" />
+        <link rel="apple-touch-icon" href="/nodere-logo-192.png" />
+      </head>
       <body>
         <AppShell>{children}</AppShell>
       </body>

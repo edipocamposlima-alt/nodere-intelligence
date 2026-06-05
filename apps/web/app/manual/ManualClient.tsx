@@ -4,6 +4,15 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { BookOpen, CheckCircle2, Download, Search } from "lucide-react";
 
+function slugify(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 export function ManualClient({ sections }: { sections: string[][] }) {
   const [query, setQuery] = useState("");
   const filtered = useMemo(() => {
@@ -11,6 +20,8 @@ export function ManualClient({ sections }: { sections: string[][] }) {
     if (!q) return sections;
     return sections.filter(([title, body]) => `${title} ${body}`.toLowerCase().includes(q));
   }, [query, sections]);
+
+  const toc = sections.map(([title]) => ({ title, id: slugify(title) }));
 
   return (
     <div className="space-y-6 p-4 md:p-8">
@@ -45,9 +56,21 @@ export function ManualClient({ sections }: { sections: string[][] }) {
         </label>
       </section>
 
+      <div className="grid gap-5 lg:grid-cols-[280px_1fr] print:block">
+        <aside className="rounded-xl border border-line bg-panel/90 p-4 lg:sticky lg:top-4 lg:self-start print:hidden">
+          <p className="text-sm font-semibold text-white">Sumário</p>
+          <nav className="mt-3 max-h-[68vh] space-y-1 overflow-y-auto pr-1">
+            {toc.map((item) => (
+              <a key={item.id} href={`#${item.id}`} className="block rounded-lg px-3 py-2 text-xs leading-5 text-slate-400 hover:bg-white/[0.06] hover:text-white">
+                {item.title}
+              </a>
+            ))}
+          </nav>
+        </aside>
+
       <section className="grid gap-4 xl:grid-cols-2 print:block">
         {filtered.map(([title, body]) => (
-          <article key={title} className="rounded-lg border border-line bg-panel/90 p-5 print:mb-4 print:border-slate-200 print:bg-white">
+          <article id={slugify(title)} key={title} className="scroll-mt-6 rounded-lg border border-line bg-panel/90 p-5 print:mb-4 print:border-slate-200 print:bg-white">
             <div className="flex items-start gap-3">
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success print:text-blue-700" />
               <div>
@@ -62,6 +85,7 @@ export function ManualClient({ sections }: { sections: string[][] }) {
       {filtered.length === 0 && (
         <p className="rounded-lg border border-line bg-panel/90 p-5 text-sm text-slate-400">Nenhum tópico encontrado para esta busca.</p>
       )}
+      </div>
     </div>
   );
 }
