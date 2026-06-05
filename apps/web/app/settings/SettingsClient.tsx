@@ -27,6 +27,8 @@ const themePresets: Record<string, { primary: string; mode: Settings["mode"]; cy
   "Vermelho conversão": { primary: "#EF4444", mode: "dark", cyan: "#F97316", panel: "#220A0A", ink: "#100303", line: "#7F1D1D" },
   "Magenta premium": { primary: "#EC4899", mode: "dark", cyan: "#A78BFA", panel: "#201020", ink: "#100712", line: "#831843" },
   "Ciano neon": { primary: "#06B6D4", mode: "dark", cyan: "#67E8F9", panel: "#061D24", ink: "#031014", line: "#155E75" },
+  "Vibrante NODERE": { primary: "#00C2FF", mode: "dark", cyan: "#22D3EE", panel: "#061A2F", ink: "#030B18", line: "#155E75" },
+  "Vibrante claro": { primary: "#E11D48", mode: "light", cyan: "#2563EB", panel: "#FFFFFF", ink: "#F8FAFC", line: "#CBD5E1" },
   "Grafite claro": { primary: "#334155", mode: "light", cyan: "#2563EB", panel: "#FFFFFF", ink: "#F1F5F9", line: "#CBD5E1" },
   "Alto contraste": { primary: "#FACC15", mode: "dark", cyan: "#00E5FF", panel: "#000000", ink: "#000000", line: "#FFFFFF" },
   "Claro": { primary: "#2563EB", mode: "light", cyan: "#0EA5E9", panel: "#FFFFFF", ink: "#F6F8FC", line: "#D9E2EF" },
@@ -38,6 +40,7 @@ type Settings = {
   colorPrimary: string;
   mode: "dark" | "light";
   fontFamily: string;
+  fontSize: "small" | "normal" | "large";
   layoutDensity: "ultraCompact" | "compact" | "comfortable" | "executive" | "large";
   cardStyle: "cards" | "list" | "glass" | "solid" | "borderless" | "elevated";
   backendUrl: string;
@@ -74,6 +77,7 @@ const defaults: Settings = {
   colorPrimary: "#1E6FDB",
   mode: "dark",
   fontFamily: "Inter",
+  fontSize: "normal",
   layoutDensity: "compact",
   cardStyle: "cards",
   backendUrl: BACKEND_ROOT_URL
@@ -87,6 +91,7 @@ function applySettings(settings: Settings) {
   document.documentElement.style.setProperty("--color-ink", settings.mode === "light" ? "#F6F8FC" : preset.ink);
   document.documentElement.style.setProperty("--color-line", settings.mode === "light" ? "#D9E2EF" : preset.line);
   document.documentElement.dataset.theme = settings.mode;
+  document.documentElement.dataset.fontSize = settings.fontSize;
   document.documentElement.dataset.density = settings.layoutDensity;
   document.documentElement.dataset.cardStyle = settings.cardStyle;
   const font = settings.fontFamily === "System default" ? "system-ui" : settings.fontFamily;
@@ -378,7 +383,7 @@ export function SettingsClient() {
           <label className="space-y-2 text-sm text-slate-300">
             Tema
             <select value={settings.theme} onChange={(event) => update("theme", event.target.value)} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
-              {["Claro", "Grafite claro", "Escuro", "Nodere Azul", "Atlântico premium", "Azul executivo", "Executivo Escuro", "Preto absoluto", "Aço premium", "Ciano neon", "Roxo tecnológico", "Roxo SaaS", "Violeta sólido", "Magenta premium", "Verde comercial", "Verde Performance", "Esmeralda forte", "Laranja performance", "Solar executivo", "Vermelho conversão", "Alto contraste"].map((item) => <option key={item}>{item}</option>)}
+              {["Claro", "Grafite claro", "Vibrante claro", "Escuro", "Nodere Azul", "Vibrante NODERE", "Atlântico premium", "Azul executivo", "Executivo Escuro", "Preto absoluto", "Aço premium", "Ciano neon", "Roxo tecnológico", "Roxo SaaS", "Violeta sólido", "Magenta premium", "Verde comercial", "Verde Performance", "Esmeralda forte", "Laranja performance", "Solar executivo", "Vermelho conversão", "Alto contraste"].map((item) => <option key={item}>{item}</option>)}
             </select>
           </label>
           <label className="space-y-2 text-sm text-slate-300">
@@ -396,6 +401,14 @@ export function SettingsClient() {
             Fonte
             <select value={settings.fontFamily} onChange={(event) => update("fontFamily", event.target.value)} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
               {["Inter", "Roboto", "Poppins", "Montserrat", "Manrope", "Nunito Sans", "Lato", "Open Sans", "DM Sans", "Urbanist", "Source Sans 3", "Merriweather", "System default", "Arial"].map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </label>
+          <label className="space-y-2 text-sm text-slate-300">
+            Tamanho da fonte
+            <select value={settings.fontSize} onChange={(event) => update("fontSize", event.target.value as Settings["fontSize"])} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
+              <option value="small">Pequena</option>
+              <option value="normal">Normal</option>
+              <option value="large">Grande</option>
             </select>
           </label>
           <label className="space-y-2 text-sm text-slate-300">

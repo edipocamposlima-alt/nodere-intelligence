@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2, LocateFixed, Search, Sparkles } from "lucide-react";
+import { AlertTriangle, CheckCircle2, LocateFixed, MapPin, Search, Sparkles } from "lucide-react";
 import { geocodeAddress, getSavedCompanyIds, searchCompanies, searchCompanyByCnpj } from "@/lib/api";
 import { Company } from "@/lib/types";
 import { CompanyTable } from "./CompanyTable";
@@ -13,6 +13,8 @@ export function SearchPanel() {
   const [message, setMessage] = useState("Use cidade, estado e segmento para encontrar oportunidades.");
   const [warning, setWarning] = useState<string | null>(null);
   const [geo, setGeo] = useState<{ lat?: number; lng?: number; label?: string }>({});
+  const [mapQuery, setMapQuery] = useState("Empresas no Brasil");
+  const [focusedMapCompany, setFocusedMapCompany] = useState<Company | null>(null);
   const activeSearchId = useRef(0);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -39,6 +41,11 @@ export function SearchPanel() {
       lng: geo.lng,
       radiusKm: Number(form.get("radiusKm") || 0) || undefined
     };
+    const readableQuery = [payload.companyName, payload.segment, payload.keyword, payload.city, payload.state, payload.country]
+      .filter(Boolean)
+      .join(" ");
+    if (readableQuery) setMapQuery(readableQuery);
+    setFocusedMapCompany(null);
 
     try {
       if (mode === "cnpj") {
@@ -73,6 +80,7 @@ export function SearchPanel() {
       const savedSet = new Set([...savedIds, ...localSavedIds]);
       const filtered = response.companies.filter((company) => !savedSet.has(company.id));
       setResults(filtered);
+      setFocusedMapCompany(filtered[0] ?? null);
       setWarning(response.search.warning ?? response.search.error?.message ?? null);
       setMessage(`${filtered.length} resultado(s) visíveis. ${response.companies.length - filtered.length} já salvo(s) foram ocultado(s). A busca ampla consulta lotes do Google e deduplica por Place ID.`);
     } catch (error) {
@@ -170,7 +178,74 @@ export function SearchPanel() {
           )}
         </div>
       </form>
+      <EmbeddedGoogleMap
+        query={focusedMapCompany ? [focusedMapCompany.name, focusedMapCompany.address, focusedMapCompany.city, focusedMapCompany.state].filter(Boolean).join(" ") : mapQuery}
+        results={results}
+        focusedId={focusedMapCompany?.id}
+        onFocus={setFocusedMapCompany}
+      />
       {results.length > 0 && <CompanyTable companies={results} />}
+    </section>
+  );
+}
+
+function EmbeddedGoogleMap({
+  query,
+  results,
+  focusedId,
+  onFocus
+}: {
+  query: string;
+  results: Company[];
+  focusedId?: string;
+  onFocus: (company: Company) => void;
+}) {
+  const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(query || "Empresas no Brasil")}&output=embed`;
+  return (
+    <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+      <div className="overflow-hidden rounded-lg border border-line bg-panel/90">
+        <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-white">
+            <MapPin className="h-4 w-4 text-rose-400" />
+            Google Maps visual
+          </div>
+          <span className="truncate text-xs text-slate-400">{query}</span>
+        </div>
+        <iframe
+          title="Mapa visual de empresas"
+          src={mapUrl}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          className="h-[360px] w-full border-0"
+        />
+      </div>
+      <div className="rounded-lg border border-line bg-panel/90 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-white">Empresas no mapa</p>
+          <span className="rounded-full bg-cyan/10 px-2 py-1 text-xs font-bold text-cyan">{results.length}</span>
+        </div>
+        <p className="mt-2 text-xs leading-5 text-slate-400">
+          Clique em uma empresa para centralizar o mapa. O salvamento continua na tabela abaixo para manter deduplicação e histórico no CRM.
+        </p>
+        <div className="mt-3 max-h-[276px] space-y-2 overflow-y-auto pr-1">
+          {results.length === 0 && (
+            <p className="rounded-lg border border-dashed border-line p-3 text-xs text-slate-500">
+              Execute uma busca para carregar empresas reais e visualizar a região no mapa.
+            </p>
+          )}
+          {results.slice(0, 40).map((company) => (
+            <button
+              type="button"
+              key={company.id}
+              onClick={() => onFocus(company)}
+              className={`w-full rounded-lg border px-3 py-2 text-left transition hover:border-cyan ${focusedId === company.id ? "border-cyan bg-cyan/10" : "border-line bg-ink"}`}
+            >
+              <span className="block truncate text-sm font-semibold text-white">{company.name}</span>
+              <span className="mt-1 block truncate text-xs text-slate-400">{company.address || `${company.city}/${company.state}`} · Score {company.score}</span>
+            </button>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
