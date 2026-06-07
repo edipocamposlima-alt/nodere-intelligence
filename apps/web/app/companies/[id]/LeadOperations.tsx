@@ -20,7 +20,7 @@ function pdfEscape(value: string) {
   return value.replace(/[\\()]/g, "\\$&").replace(/[^\x20-\x7EÀ-ÿ]/g, " ");
 }
 
-function linkedinSearchUrl(name: string, _city?: string, _website?: string) {
+function linkedinSearchUrl(name: string) {
   const query = String(name || "")
     .replace(/https?:\/\/\S+/gi, "")
     .replace(/\b(?:www\.)?[\w-]+\.(?:com|com\.br|net|org|br|io|app)\b/gi, "")
@@ -406,7 +406,7 @@ export function LeadOperations({ company }: { company: Company }) {
           <div className="rounded-lg border border-line bg-ink p-4">
             <h4 className="font-semibold text-white">Identificação</h4>
             <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <Field name="name" label="Empresa" required defaultValue={lead.name} />
+              <Field name="name" label="Nome fantasia" required defaultValue={lead.name} />
               <Field name="legalName" label="Razão social" defaultValue={lead.legalName} />
               <Field name="cnpj" label="CNPJ" defaultValue={lead.cnpj} placeholder="00.000.000/0001-00" />
               <Field name="category" label="Segmento" defaultValue={lead.category} />
@@ -449,7 +449,7 @@ export function LeadOperations({ company }: { company: Company }) {
             </div>
           </div>
 
-          <button className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-cyan to-electric px-5 py-3 text-sm font-black text-white shadow-glow">
+          <button className="btn-action px-5 py-3 text-sm shadow-glow">
             <Save className="h-4 w-4" />
             Salvar dados da empresa
           </button>
@@ -463,7 +463,7 @@ export function LeadOperations({ company }: { company: Company }) {
               {["Observação", "Ligação", "WhatsApp", "Email", "Reunião", "Objeção", "Interno"].map((item) => <option key={item}>{item}</option>)}
             </select>
             <textarea name="body" rows={8} placeholder="Escreva uma observação real do atendimento..." className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
-            <button className="inline-flex items-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white"><Save className="h-4 w-4" />Salvar observação</button>
+            <button className="btn-action px-4 py-2 text-sm"><Save className="h-4 w-4" />Salvar observação</button>
           </form>
           <div className="space-y-3">
             {notes.length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhuma observação salva ainda.</p>}
@@ -501,7 +501,7 @@ export function LeadOperations({ company }: { company: Company }) {
                 <select name="channel" className="h-12 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm"><option>WhatsApp</option><option>Ligação</option><option>Email</option><option>Reunião</option></select>
               </label>
             </div>
-            <button className="inline-flex items-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white"><CalendarClock className="h-4 w-4" />Criar follow-up</button>
+            <button className="btn-action px-4 py-2 text-sm"><CalendarClock className="h-4 w-4" />Criar follow-up</button>
           </form>
           <div className="space-y-3">
             {tasks.length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhum follow-up agendado.</p>}
@@ -527,7 +527,7 @@ export function LeadOperations({ company }: { company: Company }) {
               <input name="linkedinUrl" placeholder="LinkedIn URL" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
             </div>
             <textarea name="notes" rows={4} placeholder="Notas sobre o decisor" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-            <button className="inline-flex items-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white"><Plus className="h-4 w-4" />Salvar decisor</button>
+            <button className="btn-action px-4 py-2 text-sm"><Plus className="h-4 w-4" />Salvar decisor</button>
           </form>
           <div className="space-y-3">
             {contacts.length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhum decisor cadastrado.</p>}
@@ -539,7 +539,7 @@ export function LeadOperations({ company }: { company: Company }) {
                   {contact.email && <span>{contact.email}</span>}
                   {contact.phone && <span>{contact.phone}</span>}
                   {contact.whatsapp && <span>WhatsApp: {contact.whatsapp}</span>}
-                  {contact.linkedin_url && <a href={contact.linkedin_url} target="_blank" className="text-cyan hover:underline">LinkedIn</a>}
+                  {contact.linkedin_url && <a href={contact.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-cyan hover:underline">LinkedIn</a>}
                 </div>
               </article>
             ))}
@@ -565,7 +565,7 @@ export function LeadOperations({ company }: { company: Company }) {
               <input name="subject" placeholder="Assunto" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
               <input name="sentAt" type="datetime-local" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
               <textarea name="body" rows={5} placeholder="Conteúdo da interação" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <button className="inline-flex items-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white"><Save className="h-4 w-4" />Registrar interação</button>
+              <button className="btn-action px-4 py-2 text-sm"><Save className="h-4 w-4" />Registrar interação</button>
             </form>
             <form onSubmit={sendEmail} className="space-y-3 rounded-lg border border-cyan/30 bg-cyan/5 p-4">
               <p className="text-sm font-semibold text-white">Enviar e-mail real via SMTP</p>
@@ -635,7 +635,7 @@ export function LeadOperations({ company }: { company: Company }) {
           <div className="rounded-lg border border-line bg-ink p-4">
             <h4 className="font-semibold text-white">Enriquecimento externo</h4>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              Consulta Apollo.io para decisores e LinkedIn por domínio/site. Consulta Econodata quando `ECONODATA_API_URL` e `ECONODATA_API_KEY` estiverem configurados no backend. O sistema não inventa CNPJ nem decisores.
+              Consulta Apollo.io para decisores e LinkedIn somente pelo nome da empresa. Consulta Econodata quando `ECONODATA_API_URL` e `ECONODATA_API_KEY` estiverem configurados no backend. O sistema não inventa CNPJ nem decisores.
             </p>
             <button
               onClick={enrichExternal}
@@ -658,7 +658,7 @@ export function LeadOperations({ company }: { company: Company }) {
               <Info label="CNPJ" value={lead.cnpj} />
               <Info label="Porte" value={lead.companySize} />
               <Info label="Receita" value={lead.revenueRange} />
-              <Info label={lead.linkedin ? "LinkedIn direto" : "LinkedIn sugerido"} value={lead.linkedin || linkedinSearchUrl(lead.name, lead.city, lead.website)} isLink hint={lead.linkedin ? "Fonte externa/site" : "Busca no LinkedIn somente pelo nome da empresa. Confirme a empresa correta antes de usar."} />
+              <Info label={lead.linkedin ? "LinkedIn direto" : "LinkedIn sugerido"} value={lead.linkedin || linkedinSearchUrl(lead.name)} isLink hint={lead.linkedin ? "Fonte externa/site" : "Busca no LinkedIn somente pelo nome da empresa. Confirme a empresa correta antes de usar."} />
               <Info label="Fontes" value={lead.enrichmentSources?.join(", ")} />
             </dl>
             <div className="mt-5">
@@ -668,7 +668,7 @@ export function LeadOperations({ company }: { company: Company }) {
                   <div key={`${person.email || person.linkedin || person.name}-${index}`} className="rounded-lg border border-line bg-panel/80 p-3 text-sm">
                     <p className="font-medium text-white">{person.name || "Decisor sem nome"}</p>
                     <p className="mt-1 text-xs text-slate-400">{person.title || "Cargo não informado"} · {person.source || "fonte externa"}</p>
-                    {person.linkedin && <a href={person.linkedin} target="_blank" className="mt-2 block text-xs text-cyan hover:underline">Abrir LinkedIn</a>}
+                    {person.linkedin && <a href={person.linkedin} target="_blank" rel="noopener noreferrer" className="mt-2 block text-xs text-cyan hover:underline">Abrir LinkedIn</a>}
                     {person.email && <p className="mt-1 text-xs text-slate-300">{person.email}</p>}
                   </div>
                 )) : (
@@ -705,7 +705,7 @@ export function LeadOperations({ company }: { company: Company }) {
             ) : (
               <span className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-2 text-sm text-amber-100">Este lead não possui telefone/WhatsApp.</span>
             )}
-            <button onClick={() => saveDocument("template_whatsapp")} className="inline-flex items-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white"><Plus className="h-4 w-4" />Salvar como template</button>
+            <button onClick={() => saveDocument("template_whatsapp")} className="btn-action px-4 py-2 text-sm"><Plus className="h-4 w-4" />Salvar como template</button>
           </div>
         </div>
       )}

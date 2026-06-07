@@ -12,6 +12,16 @@ function missingSupabaseAuthVars() {
   ].filter(Boolean);
 }
 
+export function assertSupabaseAuthConfig() {
+  const missing = missingSupabaseAuthVars();
+  if (missing.length) {
+    throw new Error(`Supabase Auth não configurado no frontend. Variável ausente: ${missing.join(", ")}. Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY no build.`);
+  }
+}
+
+if (process.env.NODE_ENV === "production" && typeof window !== "undefined") {
+  assertSupabaseAuthConfig();
+}
 async function supabaseAuthFetch<T>(path: string, body: Record<string, unknown>): Promise<T> {
   const missing = missingSupabaseAuthVars();
   if (missing.length) {
