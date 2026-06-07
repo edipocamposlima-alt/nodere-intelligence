@@ -262,7 +262,7 @@ export function Header() {
                 {initial}
               </div>
             )}
-            <span className="hidden max-w-36 truncate text-sm font-medium text-slate-100 md:block">{shownName}</span>
+            <span className="hidden max-w-64 truncate text-sm font-medium text-slate-100 lg:block" title={shownName}>{shownName}</span>
             <span aria-hidden="true" title="Preferências">⚙️</span>
           </button>
 

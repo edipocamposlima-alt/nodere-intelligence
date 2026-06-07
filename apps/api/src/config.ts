@@ -11,6 +11,7 @@ export const config = {
   apiKey: process.env.API_KEY,
   admin: {
     email: process.env.ADMIN_EMAIL ?? "admin@nodere.com.br",
+    name: process.env.ADMIN_NAME ?? "Administrador",
     password: process.env.ADMIN_PASSWORD,
     sessionSecret: process.env.ADMIN_SESSION_SECRET ?? process.env.API_KEY ?? "nodere-local-admin-secret"
   },

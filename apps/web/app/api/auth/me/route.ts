@@ -19,7 +19,11 @@ export async function GET(request: NextRequest) {
   }
 
   const payload = await response.json();
-  const displayName = payload.user?.name || payload.members?.find?.((member: { email?: string }) => member.email === payload.user?.email)?.name;
+  const displayName =
+    payload.user?.name ||
+    payload.session?.name ||
+    payload.members?.find?.((member: { email?: string }) => member.email === payload.user?.email)?.name ||
+    formatDisplayName(payload.user?.email);
   return NextResponse.json({
     user: {
       id: payload.user?.id ?? payload.user?.userId,
@@ -33,4 +37,9 @@ export async function GET(request: NextRequest) {
       name: payload.workspace?.name ?? "Workspace NODERE"
     }
   });
+}
+
+function formatDisplayName(email?: string) {
+  const raw = String(email || "Usuário").split("@")[0].replace(/[._-]+/g, " ");
+  return raw.split(" ").filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join(" ") || "Usuário";
 }

@@ -16,11 +16,14 @@ router.get("/me", requireWorkspaceSession, async (req, res, next) => {
     const workspace = sb
       ? await sb.from("nodere_workspaces").select("id, name, owner_email, plan, credits, expires_at, created_at, updated_at").eq("id", workspaceId).maybeSingle()
       : { data: null };
+    const members = await listWorkspaceUsers(workspaceId);
+    const member = members.find((item) => item.email === session.email);
 
     res.json({
       user: {
         id: session.userId,
         email: session.email,
+        name: session.name || member?.name || session.email,
         role: session.role,
         workspaceId
       },
@@ -30,7 +33,7 @@ router.get("/me", requireWorkspaceSession, async (req, res, next) => {
         plan: "trial"
       },
       credits: await getCreditStatus(workspaceId),
-      members: await listWorkspaceUsers(workspaceId)
+      members
     });
   } catch (error) {
     next(error);

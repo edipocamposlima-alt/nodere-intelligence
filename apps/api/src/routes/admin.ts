@@ -208,6 +208,7 @@ router.post("/login", async (request, response, next) => {
       return response.json({
         token: issueSessionToken({
           email: user.email,
+          name: user.name,
           role: user.role,
           workspaceId: user.workspaceId,
           userId: user.id
@@ -228,8 +229,8 @@ router.post("/login", async (request, response, next) => {
     }
 
     return response.json({
-      token: issueSessionToken({ email: body.email, role: "owner", workspaceId: "default", userId: "admin-default" }),
-      user: { email: body.email, role: "owner", workspaceId: "default" }
+      token: issueSessionToken({ email: body.email, name: config.admin.name, role: "owner", workspaceId: "default", userId: "admin-default" }),
+      user: { email: body.email, name: config.admin.name, role: "owner", workspaceId: "default" }
     });
   } catch (error) {
     return next(error);
@@ -237,7 +238,7 @@ router.post("/login", async (request, response, next) => {
 });
 
 router.get("/session", requireAdmin, (request: any, response) => {
-  response.json({ user: { email: request.admin.email, role: request.admin.role, workspaceId: request.admin.workspaceId, userId: request.admin.userId } });
+  response.json({ user: { email: request.admin.email, name: request.admin.name || config.admin.name, role: request.admin.role, workspaceId: request.admin.workspaceId, userId: request.admin.userId } });
 });
 
 router.get("/users", requireAdmin, async (request: any, response, next) => {

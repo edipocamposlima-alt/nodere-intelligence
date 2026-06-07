@@ -17,6 +17,16 @@ export function clearAdminToken() {
   localStorage.removeItem(TOKEN_KEY);
 }
 
+export class AdminFetchError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "AdminFetchError";
+    this.status = status;
+  }
+}
+
 export async function adminFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...options,
@@ -29,7 +39,7 @@ export async function adminFetch<T>(path: string, options: RequestInit = {}): Pr
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.message || payload.error || `HTTP ${response.status}`);
+    throw new AdminFetchError(payload.message || payload.error || `HTTP ${response.status}`, response.status);
   }
   return payload as T;
 }

@@ -5,6 +5,7 @@ export type SessionRole = "owner" | "admin" | "operator" | "viewer";
 
 export interface AdminSession {
   email: string;
+  name?: string;
   role: SessionRole;
   workspaceId: string;
   userId?: string;

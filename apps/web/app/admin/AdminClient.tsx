@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Activity, CheckCircle2, Copy, KeyRound, LogOut, ShieldCheck, SlidersHorizontal, Trash2, UserCog, UserPlus, UsersRound } from "lucide-react";
-import { adminFetch, clearAdminToken, getAdminToken } from "@/lib/adminAuth";
+import { AdminFetchError, adminFetch, clearAdminToken, getAdminToken } from "@/lib/adminAuth";
 
 const fields = [
   "GOOGLE_PLACES_API_KEY",
@@ -110,16 +110,22 @@ export function AdminClient() {
         adminFetch<{ roles: CustomRole[] }>("/admin/roles"),
         adminFetch<{ activityLogs: AuditRow[]; downloadLogs: AuditRow[] }>("/admin/audit")
       ]);
-      setKeys(data.keys);
-      setUsers(userData.users);
-      setRoles(roleData.roles);
-      setActivityLogs(auditData.activityLogs);
-      setDownloadLogs(auditData.downloadLogs);
+      setKeys(Array.isArray(data.keys) ? data.keys : []);
+      setUsers(Array.isArray(userData.users) ? userData.users : []);
+      setRoles(Array.isArray(roleData.roles) ? roleData.roles : []);
+      setActivityLogs(Array.isArray(auditData.activityLogs) ? auditData.activityLogs : []);
+      setDownloadLogs(Array.isArray(auditData.downloadLogs) ? auditData.downloadLogs : []);
       setAuthorized(true);
       setMessage("Painel administrativo conectado.");
     } catch (error) {
       setAuthorized(false);
-      setMessage(error instanceof Error ? error.message : "Sessão inválida.");
+      if (error instanceof AdminFetchError && [401, 403].includes(error.status)) {
+        clearAdminToken();
+        void fetch("/api/auth/session", { method: "DELETE" });
+        setMessage("Sessão administrativa expirada. Entre novamente para acessar o painel.");
+      } else {
+        setMessage(error instanceof Error && error.message !== "Unexpected error" ? error.message : "Não foi possível carregar o painel administrativo agora. Faça login novamente ou tente em instantes.");
+      }
     }
   }
 
