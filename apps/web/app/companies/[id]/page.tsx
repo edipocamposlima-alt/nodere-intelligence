@@ -21,6 +21,14 @@ function externalUrl(value?: string) {
   return /^https?:\/\//i.test(clean) ? clean : `https://${clean}`;
 }
 
+
+function isValidBrazilMobileWhatsapp(value?: string) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return false;
+  const local = digits.startsWith("55") ? digits.slice(2) : digits;
+  return local.length === 11 && local[2] === "9";
+}
+
 function linkedinSearchUrl(name: string) {
   const query = String(name || "")
     .replace(/https?:\/\/\S+/gi, "")
@@ -63,8 +71,8 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
               {company.category} · {company.address}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              {company.whatsapp && (
-                <a href={`https://wa.me/${company.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-ink">
+              {isValidBrazilMobileWhatsapp(company.whatsapp) && (
+                <a href={`https://wa.me/${company.whatsapp!.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-ink">
                   <MessageCircle className="h-4 w-4" />
                   Chamar no WhatsApp
                 </a>

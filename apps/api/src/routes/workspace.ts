@@ -4,6 +4,7 @@ import { getRequestWorkspaceId, requireWorkspaceRole, requireWorkspaceSession } 
 import { getSupabase } from "../db/supabase.js";
 import { ensureSupabaseAuthUser, listWorkspaceUsers } from "../services/userStore.js";
 import { getCreditStatus } from "../services/credits.js";
+import { PREDEFINED_SEGMENTS } from "../constants/segments.js";
 
 const router = Router();
 
@@ -74,6 +75,43 @@ router.patch("/onboarding", requireWorkspaceSession, async (req, res, next) => {
   }
 });
 
+router.get("/segments", async (req, res, next) => {
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    const sb = getSupabase();
+    let custom: string[] = [];
+    if (sb) {
+      const { data, error } = await sb.from("nodere_workspaces").select("custom_segments").eq("id", workspaceId).maybeSingle();
+      if (!error && Array.isArray(data?.custom_segments)) custom = data.custom_segments;
+    }
+    const segments = Array.from(new Set([...PREDEFINED_SEGMENTS, ...custom.map((item) => String(item).trim()).filter(Boolean)])).sort((a, b) => a.localeCompare(b));
+    res.json({ segments, predefined: PREDEFINED_SEGMENTS, custom });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/segments", requireWorkspaceSession, async (req, res, next) => {
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    const segment = String(req.body?.segment || "").trim();
+    if (!segment || segment.length < 2) return res.status(400).json({ message: "Informe um segmento válido." });
+    if (segment.length > 80) return res.status(400).json({ message: "Segmento deve ter até 80 caracteres." });
+    const sb = getSupabase();
+    let custom = [segment];
+    if (sb) {
+      const current = await sb.from("nodere_workspaces").select("custom_segments").eq("id", workspaceId).maybeSingle();
+      const currentSegments = Array.isArray(current.data?.custom_segments) ? current.data.custom_segments.map(String) : [];
+      custom = Array.from(new Set([...currentSegments, segment])).slice(-120);
+      const { error } = await sb.from("nodere_workspaces").update({ custom_segments: custom, updated_at: new Date().toISOString() }).eq("id", workspaceId);
+      if (error) throw error;
+    }
+    const segments = Array.from(new Set([...PREDEFINED_SEGMENTS, ...custom])).sort((a, b) => a.localeCompare(b));
+    res.status(201).json({ segments, predefined: PREDEFINED_SEGMENTS, custom });
+  } catch (error) {
+    next(error);
+  }
+});
 router.get("/branding", async (req, res, next) => {
   try {
     const domain = String(req.query.domain || req.headers.host || "").replace(/^www\./, "");
@@ -130,3 +168,4 @@ function defaultBranding() {
 }
 
 export default router;
+

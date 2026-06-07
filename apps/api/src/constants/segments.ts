@@ -1,4 +1,4 @@
-export const SEGMENTS = [
+export const PREDEFINED_SEGMENTS = [
   "Advocacia",
   "Agropecuária",
   "Arquitetura e Urbanismo",
@@ -44,13 +44,4 @@ export const SEGMENTS = [
   "Terceiro Setor e ONGs",
   "Turismo e Viagens",
   "Outros"
-];
-
-export const COUNTRIES = [
-  { code: "BR", name: "Brasil" },
-  { code: "AR", name: "Argentina" },
-  { code: "CL", name: "Chile" },
-  { code: "US", name: "Estados Unidos" },
-  { code: "PT", name: "Portugal" },
-  { code: "UY", name: "Uruguai" }
 ];

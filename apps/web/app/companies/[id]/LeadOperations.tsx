@@ -20,6 +20,20 @@ function pdfEscape(value: string) {
   return value.replace(/[\\()]/g, "\\$&").replace(/[^\x20-\x7EÀ-ÿ]/g, " ");
 }
 
+
+function isValidBrazilMobileWhatsapp(value?: string) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return false;
+  const local = digits.startsWith("55") ? digits.slice(2) : digits;
+  return local.length === 11 && local[2] === "9";
+}
+
+function whatsappDigits(value?: string) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+  return digits.startsWith("55") ? digits : `55${digits}`;
+}
+
 function linkedinSearchUrl(name: string) {
   const query = String(name || "")
     .replace(/https?:\/\/\S+/gi, "")
@@ -701,10 +715,10 @@ export function LeadOperations({ company }: { company: Company }) {
           <textarea value={whatsappText} onChange={(event) => setEditor(event.target.value)} rows={8} className="w-full rounded-lg border border-line bg-ink px-4 py-3 text-sm leading-6" />
           <div className="flex flex-wrap gap-2">
             <button onClick={() => copy(whatsappText)} className="inline-flex items-center gap-2 rounded-lg border border-line bg-ink px-4 py-2 text-sm text-white"><Copy className="h-4 w-4" />Copiar mensagem</button>
-            {lead.whatsapp || lead.phone ? (
-              <a target="_blank" href={`https://wa.me/${String(lead.whatsapp || lead.phone).replace(/\D/g, "")}?text=${encodeURIComponent(whatsappText)}`} className="inline-flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-ink"><MessageCircle className="h-4 w-4" />Abrir WhatsApp</a>
+            {isValidBrazilMobileWhatsapp(lead.whatsapp) ? (
+              <a target="_blank" href={`https://wa.me/${whatsappDigits(lead.whatsapp)}?text=${encodeURIComponent(whatsappText)}`} className="inline-flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-ink"><MessageCircle className="h-4 w-4" />Abrir WhatsApp</a>
             ) : (
-              <span className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-2 text-sm text-amber-100">Este lead não possui telefone/WhatsApp.</span>
+              <span className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-2 text-sm text-amber-100">Informe um WhatsApp celular válido. Telefone fixo fica somente no campo Telefone.</span>
             )}
             <button onClick={() => saveDocument("template_whatsapp")} className="btn-action px-4 py-2 text-sm"><Plus className="h-4 w-4" />Salvar como template</button>
           </div>

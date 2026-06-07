@@ -531,3 +531,9 @@ create index if not exists idx_social_connections_workspace on social_connection
 create index if not exists idx_campaigns_workspace on campaigns(workspace_id, status);
 create index if not exists idx_activity_logs_workspace on activity_logs(workspace_id, created_at desc);
 create index if not exists idx_download_logs_workspace on download_logs(workspace_id, created_at desc);
+
+
+-- Phase 2: custom segments per workspace
+alter table nodere_workspaces add column if not exists custom_segments text[] not null default '{}';
+alter table workspaces add column if not exists custom_segments text[] not null default '{}';
+

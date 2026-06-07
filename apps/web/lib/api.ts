@@ -117,7 +117,18 @@ export function searchCompanies(payload: { mode?: "places" | "cnpj" | "global"; 
 }
 
 export function searchCompanyByCnpj(cnpj: string) {
-  return api<{ company: Company; source: "receitaws" }>(`/searches/cnpj?q=${encodeURIComponent(cnpj)}`);
+  return api<{ company: Company; source: "receitaws" }>(`/search/cnpj?q=${encodeURIComponent(cnpj)}`);
+}
+
+export function getWorkspaceSegments() {
+  return api<{ segments: string[]; predefined: string[]; custom: string[] }>("/workspace/segments");
+}
+
+export function saveWorkspaceSegment(segment: string) {
+  return api<{ segments: string[]; predefined: string[]; custom: string[] }>("/workspace/segments", {
+    method: "POST",
+    body: JSON.stringify({ segment })
+  });
 }
 
 

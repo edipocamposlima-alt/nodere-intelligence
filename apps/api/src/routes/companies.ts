@@ -113,7 +113,24 @@ router.get("/", async (req, res, next) => {
 router.get("/saved-ids", async (req, res, next) => {
   try {
     const companies = await listCompaniesAsync(getRequestWorkspaceId(req));
-    res.json(companies.map((company) => company.id));
+    const ids = new Set<string>();
+    for (const company of companies) {
+      const raw = company as unknown as Record<string, unknown>;
+      const signals = (raw.digitalSignals || raw.digital_signals || {}) as Record<string, unknown>;
+      [
+        company.id,
+        raw.placeId,
+        raw.googlePlaceId,
+        raw.google_place_id,
+        signals.placeId,
+        signals.googlePlaceId,
+        signals.google_place_id
+      ].forEach((value) => {
+        const id = String(value || "").trim();
+        if (id) ids.add(id);
+      });
+    }
+    res.json(Array.from(ids));
   } catch (err) { next(err); }
 });
 

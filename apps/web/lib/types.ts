@@ -36,6 +36,9 @@ export interface Company {
   rating?: number;
   reviewCount?: number;
   mapsUrl?: string;
+  latitude?: number;
+  longitude?: number;
+  distanceKm?: number;
   cnpj?: string;
   legalName?: string;
   companySize?: string;

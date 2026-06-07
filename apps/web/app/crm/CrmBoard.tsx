@@ -220,6 +220,15 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
     return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
   }
 
+  function staleInfo(company: Company) {
+    const source = company.lastContactAt || company.updatedAt || company.createdAt;
+    const days = Math.floor((Date.now() - new Date(source).getTime()) / 86400000);
+    if (!Number.isFinite(days) || company.status === "Fechado" || company.status === "Perdido") return null;
+    if (days >= 14) return { label: `Parado há ${days} dias`, className: "border-l-4 border-l-red-500 bg-red-950/20" };
+    if (days >= 7) return { label: `Sem contato há ${days} dias`, className: "border-l-4 border-l-amber-400 bg-amber-950/20" };
+    return null;
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 rounded-lg border border-line bg-panel/90 p-4 md:flex-row md:items-center md:justify-between">
@@ -288,7 +297,7 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
               <div
                 className="rounded-t-xl border-b border-white/20 px-3 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)]"
                 style={{
-                  background: `linear-gradient(135deg, ${stageColor} 0%, ${hexToRgba(stageColor, 0.74)} 100%)`,
+                  backgroundColor: stageColor,
                   color: stageTextColor
                 }}
               >
@@ -348,33 +357,37 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
                   <span className="font-black">{formatBRL(stageValue(leads))}</span>
                 </div>
               </div>
-              <div className="crm-stage-scroll min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pr-2">
+              <div className="crm-stage-scroll min-h-0 flex-1 space-y-3 overflow-y-scroll p-3 pr-2">
                 {leads.length === 0 && <p className="rounded-lg border border-dashed border-line p-3 text-xs text-slate-500">Solte um lead aqui.</p>}
-                {leads.map((company) => (
-                  <article
-                    key={company.id}
-                    draggable
-                    onDragStart={(event) => {
-                      setDraggedId(company.id);
-                      event.dataTransfer.setData("text/plain", company.id);
-                    }}
-                    className="rounded-lg border border-white/15 bg-ink/90 p-3 shadow-sm ring-1 ring-white/5 transition hover:-translate-y-0.5 hover:border-cyan/70 hover:shadow-[0_10px_28px_rgba(34,211,238,0.14)]"
-                  >
-                    <div className="flex items-start gap-2">
-                      <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
-                      <div className="min-w-0">
-                        <Link href={`/companies/${company.id}`} className="block truncate text-sm font-medium text-white hover:text-cyan">
-                          {company.name}
-                        </Link>
-                        <p className="mt-1 truncate text-xs text-slate-500">{company.category} · {company.city}/{company.state}</p>
+                {leads.map((company) => {
+                  const stale = staleInfo(company);
+                  return (
+                    <article
+                      key={company.id}
+                      draggable
+                      onDragStart={(event) => {
+                        setDraggedId(company.id);
+                        event.dataTransfer.setData("text/plain", company.id);
+                      }}
+                      className={`rounded-lg border border-white/15 bg-ink/90 p-3 shadow-sm ring-1 ring-white/5 transition hover:-translate-y-0.5 hover:border-cyan/70 hover:shadow-[0_10px_28px_rgba(34,211,238,0.14)] ${stale?.className || ""}`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+                        <div className="min-w-0">
+                          <Link href={`/companies/${company.id}`} className="block truncate text-sm font-medium text-white hover:text-cyan">
+                            {company.name}
+                          </Link>
+                          <p className="mt-1 truncate text-xs text-slate-500">{company.category} · {company.city}/{company.state}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between text-xs">
-                      <span className="text-slate-400">Score</span>
-                      <span className="font-semibold text-cyan">{company.score}</span>
-                    </div>
-                  </article>
-                ))}
+                      <div className="mt-3 flex items-center justify-between text-xs">
+                        <span className="text-slate-400">Score</span>
+                        <span className="font-semibold text-cyan">{company.score}</span>
+                      </div>
+                      {stale && <p className="mt-2 rounded-md bg-black/20 px-2 py-1 text-[11px] font-semibold text-amber-100">{stale.label}</p>}
+                    </article>
+                  );
+                })}
               </div>
             </section>
           );

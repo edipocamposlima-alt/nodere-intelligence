@@ -54,6 +54,14 @@ function buildSimplePdf(title: string, body: string) {
   return new Blob([pdf], { type: "application/pdf" });
 }
 
+
+function isValidBrazilMobileWhatsapp(value?: string) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return false;
+  const local = digits.startsWith("55") ? digits.slice(2) : digits;
+  return local.length === 11 && local[2] === "9";
+}
+
 function normalizeSearch(value: unknown) {
   return String(value ?? "")
     .toLowerCase()
@@ -293,7 +301,7 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
           </thead>
           <tbody className="divide-y divide-line">
             {visibleCompanies.map((company) => (
-              <tr key={company.id} className="hover:bg-white/[0.03]">
+              <tr id={`result-${company.id}`} key={company.id} className="scroll-mt-28 hover:bg-white/[0.03]">
                 <td className="px-4 py-4">
                   <input
                     type="checkbox"
@@ -336,15 +344,18 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
                       <FileText className="h-4 w-4" />
                       Ficha
                     </Link>
-                    {company.whatsapp && (
+                    {isValidBrazilMobileWhatsapp(company.whatsapp) && (
                       <a
-                        href={`https://wa.me/${company.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMessage)}`}
+                        href={`https://wa.me/${company.whatsapp!.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMessage)}`}
                         target="_blank"
                         className="rounded-lg border border-success/30 bg-success/10 p-2 text-emerald-200 hover:bg-success/20"
                         aria-label="Chamar no WhatsApp"
                       >
                         <MessageCircle className="h-4 w-4" />
                       </a>
+                    )}
+                    {company.whatsapp && !isValidBrazilMobileWhatsapp(company.whatsapp) && (
+                      <span className="rounded-lg border border-warning/30 bg-warning/10 px-2 py-2 text-[11px] text-amber-100" title="Telefone fixo não é WhatsApp">WhatsApp inválido</span>
                     )}
                     {company.mapsUrl && (
                       <a target="_blank" href={company.mapsUrl} className="rounded-lg border border-line bg-white/5 p-2 text-slate-300 hover:text-white" aria-label="Abrir Google Maps">

@@ -1,11 +1,32 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2, LocateFixed, MapPin, Search, Sparkles } from "lucide-react";
-import { geocodeAddress, getSavedCompanyIds, searchCompanies, searchCompanyByCnpj } from "@/lib/api";
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, LocateFixed, MapPin, Search, Sparkles } from "lucide-react";
+import { geocodeAddress, getSavedCompanyIds, getWorkspaceSegments, saveWorkspaceSegment, searchCompanies, searchCompanyByCnpj } from "@/lib/api";
 import { Company } from "@/lib/types";
 import { CompanyTable } from "./CompanyTable";
 import { COUNTRIES, SEGMENTS } from "@/constants/segments";
+
+type SearchMode = "places" | "cnpj" | "global";
+const ADD_SEGMENT = "__add_segment__";
+
+function normalizeId(value: unknown) {
+  return String(value ?? "").trim();
+}
+
+function companySavedKeys(company: Company) {
+  const raw = company as unknown as Record<string, unknown>;
+  return [company.id, raw.placeId, raw.googlePlaceId, raw.google_place_id].map(normalizeId).filter(Boolean);
+}
+
+function formatCnpj(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 14);
+  return digits
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+}
 
 export function SearchPanel() {
   const [loading, setLoading] = useState(false);
@@ -15,18 +36,54 @@ export function SearchPanel() {
   const [geo, setGeo] = useState<{ lat?: number; lng?: number; label?: string }>({});
   const [mapQuery, setMapQuery] = useState("Empresas no Brasil");
   const [focusedMapCompany, setFocusedMapCompany] = useState<Company | null>(null);
+  const [segments, setSegments] = useState<string[]>(SEGMENTS);
+  const [selectedSegment, setSelectedSegment] = useState("");
+  const [customSegment, setCustomSegment] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [mapOpen, setMapOpen] = useState(true);
   const activeSearchId = useRef(0);
-  const [customSegments, setCustomSegments] = useState<string[]>([]);
-  const allSegments = useMemo(() => Array.from(new Set([...SEGMENTS, ...customSegments])).sort((a, b) => a.localeCompare(b)), [customSegments]);
+
+  const allSegments = useMemo(() => Array.from(new Set([...SEGMENTS, ...segments])).sort((a, b) => a.localeCompare(b)), [segments]);
 
   useEffect(() => {
+    let cancelled = false;
+    async function loadSegments() {
+      try {
+        const payload = await getWorkspaceSegments();
+        if (!cancelled && Array.isArray(payload.segments)) setSegments(payload.segments);
+      } catch {
+        try {
+          const stored = JSON.parse(localStorage.getItem("nodere_custom_segments") || "[]");
+          if (!cancelled && Array.isArray(stored)) setSegments([...SEGMENTS, ...stored.filter((item) => typeof item === "string" && item.trim())]);
+        } catch {
+          if (!cancelled) setSegments(SEGMENTS);
+        }
+      }
+    }
+    void loadSegments();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function persistCustomSegment(segment: string) {
+    const clean = segment.trim();
+    if (!clean || allSegments.some((item) => item.toLowerCase() === clean.toLowerCase())) return;
+    setSegments((current) => Array.from(new Set([...current, clean])).sort((a, b) => a.localeCompare(b)));
     try {
       const stored = JSON.parse(localStorage.getItem("nodere_custom_segments") || "[]");
-      if (Array.isArray(stored)) setCustomSegments(stored.filter((item) => typeof item === "string" && item.trim()).slice(0, 80));
+      const next = Array.from(new Set([...(Array.isArray(stored) ? stored : []), clean])).slice(-120);
+      localStorage.setItem("nodere_custom_segments", JSON.stringify(next));
     } catch {
-      setCustomSegments([]);
+      localStorage.setItem("nodere_custom_segments", JSON.stringify([clean]));
     }
-  }, []);
+    try {
+      const payload = await saveWorkspaceSegment(clean);
+      if (Array.isArray(payload.segments)) setSegments(payload.segments);
+    } catch (error) {
+      setWarning(error instanceof Error ? `Segmento salvo localmente. Backend: ${error.message}` : "Segmento salvo localmente; backend indisponível.");
+    }
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,76 +92,75 @@ export function SearchPanel() {
     setLoading(true);
     setWarning(null);
     setResults([]);
+    setFocusedMapCompany(null);
     setMessage("Limpando resultados anteriores e consultando novas empresas...");
+
     const form = new FormData(event.currentTarget);
-    const mode = String(form.get("mode") || "places") as "places" | "cnpj" | "global";
+    const mode = String(form.get("mode") || "places") as SearchMode;
     const country = String(form.get("country") || "BR");
+    const segment = selectedSegment === ADD_SEGMENT ? customSegment.trim() : selectedSegment.trim();
+
+    if (selectedSegment === ADD_SEGMENT && segment) await persistCustomSegment(segment);
+
     const payload = {
       mode,
       companyName: String(form.get("companyName") ?? "").trim(),
-      city: String(form.get("city") ?? ""),
-      state: String(form.get("state") ?? ""),
+      city: String(form.get("city") ?? "").trim(),
+      state: String(form.get("state") ?? "").trim(),
       country,
-      segment: String(form.get("segmentCustom") || form.get("segment") || "").trim(),
-      keyword: String(form.get("keyword") ?? ""),
+      segment,
+      keyword: String(form.get("keyword") ?? "").trim(),
       limit: 60,
       lat: geo.lat,
       lng: geo.lng,
       radiusKm: Number(form.get("radiusKm") || 0) || undefined
     };
-    const segmentCustom = String(form.get("segmentCustom") || "").trim();
-    if (segmentCustom && !allSegments.includes(segmentCustom)) {
-      const updated = [...customSegments, segmentCustom].slice(-80);
-      setCustomSegments(updated);
-      localStorage.setItem("nodere_custom_segments", JSON.stringify(updated));
-    }
-    const readableQuery = [payload.companyName, payload.segment, payload.keyword, payload.city, payload.state, payload.country]
-      .filter(Boolean)
-      .join(" ");
+
+    const readableQuery = [payload.companyName, payload.segment, payload.keyword, payload.city, payload.state, payload.country].filter(Boolean).join(" ");
     if (readableQuery) setMapQuery(readableQuery);
-    setFocusedMapCompany(null);
 
     try {
       if (mode === "cnpj") {
-        const cnpj = String(form.get("cnpj") || "").replace(/\D/g, "");
-        if (!cnpj) {
+        const cleanCnpj = cnpj.replace(/\D/g, "");
+        if (!cleanCnpj) {
           setWarning("Informe o CNPJ para consultar a ReceitaWS.");
-          setMessage("Busca por CNPJ nao executada.");
+          setMessage("Busca por CNPJ não executada.");
           return;
         }
-        if (cnpj.length !== 14) {
+        if (cleanCnpj.length !== 14) {
           setWarning("CNPJ inválido. Informe 14 dígitos antes de consultar.");
           setMessage("Busca por CNPJ não executada.");
           return;
         }
-        const response = await searchCompanyByCnpj(cnpj);
+        const response = await searchCompanyByCnpj(cleanCnpj);
         if (activeSearchId.current !== searchId) return;
         setResults([response.company]);
+        setFocusedMapCompany(response.company);
         setMessage("CNPJ localizado em fonte pública. Revise os dados e salve no CRM.");
         return;
       }
 
       if (![payload.companyName, payload.city, payload.state, payload.segment, payload.keyword].some(Boolean)) {
-        setResults([]);
         setWarning("Informe pelo menos nome da empresa, segmento, cidade, estado ou palavra-chave.");
-        setMessage("Busca nao executada.");
+        setMessage("Busca não executada.");
         return;
       }
 
-      const [response, savedIds] = await Promise.all([searchCompanies(payload), getSavedCompanyIds()]);
+      const savedIds = await getSavedCompanyIds();
+      const response = await searchCompanies(payload);
       if (activeSearchId.current !== searchId) return;
       const localSavedIds = JSON.parse(localStorage.getItem("nodere_saved_leads") || "[]") as string[];
-      const savedSet = new Set([...savedIds, ...localSavedIds]);
-      const filtered = response.companies.filter((company) => !savedSet.has(company.id));
+      const savedSet = new Set([...savedIds, ...localSavedIds].map(normalizeId).filter(Boolean));
+      const filtered = response.companies.filter((company) => !companySavedKeys(company).some((key) => savedSet.has(key)));
       setResults(filtered);
       setFocusedMapCompany(filtered[0] ?? null);
       setWarning(response.search.warning ?? response.search.error?.message ?? null);
-      setMessage(`${filtered.length} resultado(s) visíveis. ${response.companies.length - filtered.length} já salvo(s) foram ocultado(s). A busca ampla consulta lotes do Google e deduplica por Place ID.`);
+      setMessage(`${filtered.length} resultado(s) visíveis. ${response.companies.length - filtered.length} já salvo(s) foram ocultado(s). A busca foi deduplicada por Place ID.`);
     } catch (error) {
       if (activeSearchId.current !== searchId) return;
       setResults([]);
       setWarning(error instanceof Error ? error.message : "Falha ao buscar empresas.");
-      setMessage("Nao foi possivel concluir a busca.");
+      setMessage("Não foi possível concluir a busca.");
     } finally {
       if (activeSearchId.current === searchId) setLoading(false);
     }
@@ -127,13 +183,17 @@ export function SearchPanel() {
   async function geocodeReference(form: HTMLFormElement) {
     const address = String(new FormData(form).get("referenceAddress") || "").trim();
     if (!address) return;
-    const result = await geocodeAddress(address);
-    const first = result.results[0];
-    if (first?.lat && first?.lng) {
-      setGeo({ lat: first.lat, lng: first.lng, label: first.address || address });
-      setMessage(`Referência aplicada: ${first.address || address}`);
-    } else {
-      setWarning("Endereço de referência não localizado.");
+    try {
+      const result = await geocodeAddress(address);
+      const first = result.results[0];
+      if (first?.lat && first?.lng) {
+        setGeo({ lat: first.lat, lng: first.lng, label: first.address || address });
+        setMessage(`Referência aplicada: ${first.address || address}`);
+      } else {
+        setWarning("Endereço de referência não localizado.");
+      }
+    } catch (error) {
+      setWarning(error instanceof Error ? error.message : "Não foi possível geocodificar o endereço.");
     }
   }
 
@@ -150,19 +210,24 @@ export function SearchPanel() {
             <option value="cnpj">CNPJ direto</option>
             <option value="global">Global / Internacional</option>
           </select>
-          <input name="cnpj" placeholder="CNPJ (modo CNPJ)" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
+          <input name="cnpj" value={cnpj} onChange={(event) => setCnpj(formatCnpj(event.target.value))} placeholder="CNPJ (modo CNPJ)" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
           <input name="companyName" placeholder="Nome da empresa" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
-          <select name="segment" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" defaultValue="">
+          <select value={selectedSegment} onChange={(event) => setSelectedSegment(event.target.value)} name="segment" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric">
             <option value="">Segmento</option>
             {allSegments.map((segment) => <option key={segment} value={segment}>{segment}</option>)}
+            <option value={ADD_SEGMENT}>Adicionar segmento...</option>
           </select>
-          <input name="segmentCustom" placeholder="Segmento manual" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
+          {selectedSegment === ADD_SEGMENT ? (
+            <input value={customSegment} onChange={(event) => setCustomSegment(event.target.value)} placeholder="Novo segmento" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
+          ) : (
+            <input name="keyword" placeholder="Palavra-chave" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
+          )}
           <input name="city" placeholder="Cidade" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
           <input name="state" placeholder="Estado" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
           <select name="country" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" defaultValue="BR">
             {COUNTRIES.map((country) => <option key={country.code} value={country.code}>{country.name}</option>)}
           </select>
-          <input name="keyword" placeholder="Palavra-chave" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
+          {selectedSegment === ADD_SEGMENT && <input name="keyword" placeholder="Palavra-chave" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />}
           <button disabled={loading} className="btn-action disabled:opacity-60">
             <Search className="h-4 w-4" />
             {loading ? "Buscando" : "Buscar"}
@@ -196,7 +261,14 @@ export function SearchPanel() {
           )}
         </div>
       </form>
-      <EmbeddedGoogleMap
+      <div className="lg:hidden">
+        <button type="button" onClick={() => setMapOpen((value) => !value)} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-line bg-panel px-3 py-2 text-sm font-semibold text-white">
+          {mapOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          {mapOpen ? "Ocultar mapa" : "Mostrar mapa"}
+        </button>
+      </div>
+      <GoogleMapPanel
+        open={mapOpen}
         query={focusedMapCompany ? [focusedMapCompany.name, focusedMapCompany.address, focusedMapCompany.city, focusedMapCompany.state].filter(Boolean).join(" ") : mapQuery}
         results={results}
         focusedId={focusedMapCompany?.id}
@@ -207,20 +279,96 @@ export function SearchPanel() {
   );
 }
 
-function EmbeddedGoogleMap({
+function GoogleMapPanel({
+  open,
   query,
   results,
   focusedId,
   onFocus
 }: {
+  open: boolean;
   query: string;
   results: Company[];
   focusedId?: string;
   onFocus: (company: Company) => void;
 }) {
-  const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(query || "Empresas no Brasil")}&output=embed`;
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const mapInstance = useRef<any>(null);
+  const markers = useRef<any[]>([]);
+  const [mapMessage, setMapMessage] = useState<string | null>(null);
+  const mapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+  const mappedCompanies = useMemo(() => results.filter((company) => Number.isFinite(company.latitude) && Number.isFinite(company.longitude)), [results]);
+
+  useEffect(() => {
+    if (!open || !mapRef.current) return;
+    if (!mapsKey) {
+      setMapMessage("Configure NEXT_PUBLIC_GOOGLE_MAPS_KEY na Vercel para exibir o Google Maps com marcadores reais.");
+      return;
+    }
+    let cancelled = false;
+    async function loadMap() {
+      try {
+        const { Loader } = await import("@googlemaps/js-api-loader");
+        const loader = new Loader({ apiKey: mapsKey, version: "weekly" });
+        const loaderAny = loader as any;
+        if (typeof loaderAny.load === "function") {
+          await loaderAny.load();
+        } else if (typeof loaderAny.importLibrary === "function") {
+          await loaderAny.importLibrary("maps");
+          await loaderAny.importLibrary("marker");
+        } else {
+          throw new Error("Google Maps Loader incompatível. Atualize @googlemaps/js-api-loader.");
+        }
+        if (cancelled || !mapRef.current) return;
+        const googleApi = (window as any).google;
+        const center = mappedCompanies[0]
+          ? { lat: mappedCompanies[0].latitude!, lng: mappedCompanies[0].longitude! }
+          : { lat: -14.235, lng: -51.9253 };
+        if (!mapInstance.current) {
+          mapInstance.current = new googleApi.maps.Map(mapRef.current, { center, zoom: mappedCompanies[0] ? 12 : 4, mapId: "nodere-search-map" });
+        } else {
+          mapInstance.current.setCenter(center);
+          mapInstance.current.setZoom(mappedCompanies[0] ? 12 : 4);
+        }
+        markers.current.forEach((marker) => marker.setMap(null));
+        markers.current = mappedCompanies.map((company) => {
+          const marker = new googleApi.maps.Marker({
+            map: mapInstance.current,
+            position: { lat: company.latitude!, lng: company.longitude! },
+            title: company.name
+          });
+          marker.addListener("click", () => {
+            onFocus(company);
+            document.getElementById(`result-${company.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+          });
+          return marker;
+        });
+        if (markers.current.length > 1) {
+          const bounds = new googleApi.maps.LatLngBounds();
+          mappedCompanies.forEach((company) => bounds.extend({ lat: company.latitude!, lng: company.longitude! }));
+          mapInstance.current.fitBounds(bounds);
+        }
+        setMapMessage(mappedCompanies.length ? null : "A busca retornou empresas sem coordenadas. O mapa será preenchido quando a API devolver latitude e longitude.");
+      } catch (error) {
+        setMapMessage(error instanceof Error ? error.message : "Não foi possível carregar o Google Maps.");
+      }
+    }
+    void loadMap();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, mapsKey, mappedCompanies, onFocus]);
+
+  useEffect(() => {
+    const company = mappedCompanies.find((item) => item.id === focusedId);
+    if (company && mapInstance.current) {
+      mapInstance.current.panTo({ lat: company.latitude!, lng: company.longitude! });
+      mapInstance.current.setZoom(Math.max(mapInstance.current.getZoom() || 12, 14));
+    }
+  }, [focusedId, mappedCompanies]);
+
   return (
-    <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+    <section className={`${open ? "grid" : "hidden lg:grid"} gap-4 lg:grid-cols-[1.2fr_0.8fr]`}>
       <div className="overflow-hidden rounded-lg border border-line bg-panel/90">
         <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-white">
@@ -229,21 +377,16 @@ function EmbeddedGoogleMap({
           </div>
           <span className="truncate text-xs text-slate-400">{query}</span>
         </div>
-        <iframe
-          title="Mapa visual de empresas"
-          src={mapUrl}
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          className="h-[360px] w-full border-0"
-        />
+        <div ref={mapRef} className="h-[360px] w-full bg-ink" />
+        {mapMessage && <p className="border-t border-line px-4 py-3 text-xs text-amber-100">{mapMessage}</p>}
       </div>
       <div className="rounded-lg border border-line bg-panel/90 p-4">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-semibold text-white">Empresas no mapa</p>
-          <span className="rounded-full bg-cyan/10 px-2 py-1 text-xs font-bold text-cyan">{results.length}</span>
+          <span className="rounded-full bg-cyan/10 px-2 py-1 text-xs font-bold text-cyan">{mappedCompanies.length}/{results.length}</span>
         </div>
         <p className="mt-2 text-xs leading-5 text-slate-400">
-          Clique em uma empresa para centralizar o mapa. O salvamento continua na tabela abaixo para manter deduplicação e histórico no CRM.
+          Clique em uma empresa para centralizar no mapa e rolar até o resultado correspondente.
         </p>
         <div className="mt-3 max-h-[276px] space-y-2 overflow-y-auto pr-1">
           {results.length === 0 && (
@@ -255,7 +398,10 @@ function EmbeddedGoogleMap({
             <button
               type="button"
               key={company.id}
-              onClick={() => onFocus(company)}
+              onClick={() => {
+                onFocus(company);
+                document.getElementById(`result-${company.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+              }}
               className={`w-full rounded-lg border px-3 py-2 text-left transition hover:border-cyan ${focusedId === company.id ? "border-cyan bg-cyan/10" : "border-line bg-ink"}`}
             >
               <span className="block truncate text-sm font-semibold text-white">{company.name}</span>
@@ -267,4 +413,3 @@ function EmbeddedGoogleMap({
     </section>
   );
 }
-
