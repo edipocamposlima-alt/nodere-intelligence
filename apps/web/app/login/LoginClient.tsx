@@ -27,6 +27,10 @@ export function LoginClient() {
         const auth = await signInWithPassword(email, password);
         if (!auth.access_token) throw new Error("Supabase não retornou token de sessão.");
         setAdminToken(auth.access_token);
+        localStorage.setItem("nodere_user_profile", JSON.stringify({
+          email,
+          name: auth.user?.email ? formatDisplayName(auth.user.email) : formatDisplayName(email)
+        }));
         await fetch("/api/auth/session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -44,6 +48,11 @@ export function LoginClient() {
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.message || "Não foi possível entrar.");
       setAdminToken(payload.token);
+      localStorage.setItem("nodere_user_profile", JSON.stringify({
+        email: payload.user?.email || email,
+        name: payload.user?.name || formatDisplayName(payload.user?.email || email),
+        role: payload.user?.role
+      }));
       await fetch("/api/auth/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -124,4 +133,9 @@ export function LoginClient() {
       </section>
     </main>
   );
+}
+
+function formatDisplayName(email: string) {
+  const raw = String(email || "Usuário").split("@")[0].replace(/[._-]+/g, " ");
+  return raw.split(" ").filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join(" ") || "Usuário";
 }

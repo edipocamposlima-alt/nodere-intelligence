@@ -21,9 +21,6 @@ export function assertSupabaseAuthConfig() {
   }
 }
 
-if (process.env.NODE_ENV === "production" && typeof window !== "undefined") {
-  assertSupabaseAuthConfig();
-}
 async function supabaseAuthFetch<T>(path: string, body: Record<string, unknown>): Promise<T> {
   const missing = missingSupabaseAuthVars();
   if (missing.length) {

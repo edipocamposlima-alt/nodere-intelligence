@@ -16,6 +16,7 @@ type UserPrefs = {
   fontSize: "small" | "normal" | "large";
   density: "compact" | "comfortable" | "large";
   avatarUrl: string;
+  displayName: string;
 };
 
 const API_URL = getApiBaseUrl();
@@ -26,13 +27,15 @@ const defaultPrefs: UserPrefs = {
   theme: "dark",
   fontSize: "normal",
   density: "compact",
-  avatarUrl: ""
+  avatarUrl: "",
+  displayName: ""
 };
 
 function readPrefs(): UserPrefs {
   if (typeof window === "undefined") return defaultPrefs;
   try {
-    return { ...defaultPrefs, ...JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") };
+    const profile = JSON.parse(localStorage.getItem("nodere_user_profile") || "{}");
+    return { ...defaultPrefs, displayName: profile.name || "", ...JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") };
   } catch {
     return defaultPrefs;
   }
@@ -180,8 +183,9 @@ export function Header() {
   }, [tasks]);
 
   const displayName = user?.name || user?.email || "Usuário";
+  const shownName = prefs.displayName || user?.name || displayName;
   const avatarUrl = prefs.avatarUrl || user?.avatar_url || "";
-  const initial = (user?.name || user?.email || "U").charAt(0).toUpperCase();
+  const initial = (shownName || user?.email || "U").charAt(0).toUpperCase();
 
   function submitGlobalSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -258,7 +262,7 @@ export function Header() {
                 {initial}
               </div>
             )}
-            <span className="hidden max-w-36 truncate text-sm font-medium text-slate-100 md:block">{displayName}</span>
+            <span className="hidden max-w-36 truncate text-sm font-medium text-slate-100 md:block">{shownName}</span>
             <span aria-hidden="true" title="Preferências">⚙️</span>
           </button>
 
@@ -344,6 +348,10 @@ export function Header() {
               <label className="block">
                 <span className="text-sm font-medium text-slate-300">Foto</span>
                 <input type="file" accept="image/*" onChange={handleAvatarUpload} className="mt-2 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="text-sm font-medium text-slate-300">Nome exibido</span>
+                <input value={prefs.displayName} onChange={(event) => updatePrefs({ displayName: event.target.value })} placeholder="Ex.: ÉDIPO LIMA" className="mt-2 min-h-11 w-full rounded-lg border border-line bg-ink px-3 text-sm outline-none" />
               </label>
             </div>
 

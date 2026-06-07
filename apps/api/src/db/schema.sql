@@ -532,6 +532,22 @@ create table if not exists campaigns (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists social_connections (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  platform text not null,
+  provider text not null,
+  status text not null default 'connected',
+  access_token_encrypted text not null,
+  token_type text,
+  scope text,
+  expires_at timestamptz,
+  metadata jsonb not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(workspace_id, platform)
+);
+
 create table if not exists activity_logs (
   id text primary key default gen_random_uuid()::text,
   workspace_id text not null default 'default',

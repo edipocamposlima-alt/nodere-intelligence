@@ -726,7 +726,7 @@ export function createCampaign(payload: { name: string; platforms: string[]; sta
 
 export function getSocialStatus() {
   return api<{
-    platforms: Array<{ key: string; name: string; configured: boolean; requiredEnv: string[] }>;
+    platforms: Array<{ key: string; name: string; provider?: string; category?: string; color?: string; configured: boolean; requiredEnv: string[]; scope?: string }>;
     mlabs: { configured: boolean; type: string; url: string; message: string };
   }>("/marketing/social/status", undefined, { platforms: [], mlabs: { configured: true, type: "workflow_shortcut", url: "https://app.mlabs.com.br", message: "Atalho operacional." } });
 }
