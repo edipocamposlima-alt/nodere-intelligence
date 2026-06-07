@@ -120,6 +120,26 @@ export function searchCompanyByCnpj(cnpj: string) {
   return api<{ company: Company; source: "receitaws" }>(`/searches/cnpj?q=${encodeURIComponent(cnpj)}`);
 }
 
+
+export function searchApollo(payload: {
+  type?: "companies" | "people";
+  companyName?: string;
+  domain?: string;
+  personName?: string;
+  title?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  page?: number;
+  perPage?: number;
+}) {
+  return api<{
+    source: "apollo";
+    type: "companies" | "people";
+    count: number;
+    results: Array<Record<string, string | number | undefined>>;
+  }>("/searches/apollo", { method: "POST", body: JSON.stringify(payload) });
+}
 export function geocodeAddress(address: string) {
   return api<{ status: string; results: Array<{ address?: string; lat?: number; lng?: number }> }>(`/geocode?address=${encodeURIComponent(address)}`);
 }
@@ -597,3 +617,4 @@ export function getSocialStatus() {
     mlabs: { configured: boolean; type: string; url: string; message: string };
   }>("/marketing/social/status", undefined, { platforms: [], mlabs: { configured: true, type: "workflow_shortcut", url: "https://app.mlabs.com.br", message: "Atalho operacional." } });
 }
+

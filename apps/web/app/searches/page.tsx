@@ -3,6 +3,7 @@ import { SearchPanel } from "@/components/SearchPanel";
 import { getSearchHistory, getEnrichmentQueue, getCredits } from "@/lib/api";
 import { RerunButton } from "./RerunButton";
 import { CsvImportPanel } from "./CsvImportPanel";
+import { ExternalSearchTabs } from "./ExternalSearchTabs";
 
 export default async function SearchesPage() {
   const [history, queue, credits] = await Promise.all([getSearchHistory(), getEnrichmentQueue(), getCredits()]);
@@ -35,6 +36,7 @@ export default async function SearchesPage() {
           <p className="mt-1 text-sm text-slate-400">Pesquise, selecione empresas em massa, salve leads, exporte CSV ou baixe relatório PDF.</p>
         </div>
         <SearchPanel />
+        <ExternalSearchTabs />
       </section>
 
       <CsvImportPanel />
@@ -138,3 +140,4 @@ export default async function SearchesPage() {
     </div>
   );
 }
+

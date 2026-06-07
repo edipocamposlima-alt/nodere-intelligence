@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, LocateFixed, MapPin, Search, Sparkles } from "lucide-react";
 import { geocodeAddress, getSavedCompanyIds, searchCompanies, searchCompanyByCnpj } from "@/lib/api";
 import { Company } from "@/lib/types";
@@ -16,6 +16,17 @@ export function SearchPanel() {
   const [mapQuery, setMapQuery] = useState("Empresas no Brasil");
   const [focusedMapCompany, setFocusedMapCompany] = useState<Company | null>(null);
   const activeSearchId = useRef(0);
+  const [customSegments, setCustomSegments] = useState<string[]>([]);
+  const allSegments = useMemo(() => Array.from(new Set([...SEGMENTS, ...customSegments])).sort((a, b) => a.localeCompare(b)), [customSegments]);
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("nodere_custom_segments") || "[]");
+      if (Array.isArray(stored)) setCustomSegments(stored.filter((item) => typeof item === "string" && item.trim()).slice(0, 80));
+    } catch {
+      setCustomSegments([]);
+    }
+  }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,13 +45,19 @@ export function SearchPanel() {
       city: String(form.get("city") ?? ""),
       state: String(form.get("state") ?? ""),
       country,
-      segment: String(form.get("segment") ?? ""),
+      segment: String(form.get("segmentCustom") || form.get("segment") || "").trim(),
       keyword: String(form.get("keyword") ?? ""),
       limit: 60,
       lat: geo.lat,
       lng: geo.lng,
       radiusKm: Number(form.get("radiusKm") || 0) || undefined
     };
+    const segmentCustom = String(form.get("segmentCustom") || "").trim();
+    if (segmentCustom && !allSegments.includes(segmentCustom)) {
+      const updated = [...customSegments, segmentCustom].slice(-80);
+      setCustomSegments(updated);
+      localStorage.setItem("nodere_custom_segments", JSON.stringify(updated));
+    }
     const readableQuery = [payload.companyName, payload.segment, payload.keyword, payload.city, payload.state, payload.country]
       .filter(Boolean)
       .join(" ");
@@ -137,15 +154,16 @@ export function SearchPanel() {
           <input name="companyName" placeholder="Nome da empresa" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
           <select name="segment" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" defaultValue="">
             <option value="">Segmento</option>
-            {SEGMENTS.map((segment) => <option key={segment} value={segment}>{segment}</option>)}
+            {allSegments.map((segment) => <option key={segment} value={segment}>{segment}</option>)}
           </select>
+          <input name="segmentCustom" placeholder="Segmento manual" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
           <input name="city" placeholder="Cidade" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
           <input name="state" placeholder="Estado" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
           <select name="country" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" defaultValue="BR">
             {COUNTRIES.map((country) => <option key={country.code} value={country.code}>{country.name}</option>)}
           </select>
           <input name="keyword" placeholder="Palavra-chave" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
-          <button disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-60">
+          <button disabled={loading} className="btn-action disabled:opacity-60">
             <Search className="h-4 w-4" />
             {loading ? "Buscando" : "Buscar"}
           </button>
@@ -249,3 +267,4 @@ function EmbeddedGoogleMap({
     </section>
   );
 }
+

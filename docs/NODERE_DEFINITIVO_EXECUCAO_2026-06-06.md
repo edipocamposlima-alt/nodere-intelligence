@@ -79,3 +79,18 @@ O arquivo e idempotente e pode ser reexecutado. Nao remove tabelas nem colunas.
 
 Nenhuma chave real foi adicionada ao repositorio. Variaveis sensiveis devem ficar somente no Render, Vercel, Supabase ou provedor adequado. Chaves OpenAI, Google, Apollo, Econodata, Stripe e tokens sociais nunca devem ir para frontend ou GitHub.
 
+
+## Bloco complementar - Busca externa Apollo/LinkedIn
+
+- Mantida a busca principal via Google Places sem alterar endpoints existentes.
+- Adicionado endpoint backend `POST /api/searches/apollo` para busca real de empresas ou pessoas no Apollo.io usando `APOLLO_API_KEY` somente no backend.
+- Adicionada aba operacional em `Buscas` com:
+  - Apollo.io: busca por empresa, dominio, decisor, cargo, cidade, estado e pais.
+  - LinkedIn: abertura de buscas oficiais por nome/contexto, sem scraping e sem links genericos incorretos.
+- Adicionado campo `Segmento manual` na busca principal. Segmentos digitados ficam salvos no navegador para reaproveitamento sem substituir a lista padrao.
+- Se Apollo retornar 401/403/429, o frontend mostra erro claro. Nao ha fallback fake nem dados inventados.
+
+Pendencias externas:
+
+- Apollo.io precisa liberar o endpoint de empresas/pessoas para a chave configurada. HTTP 403 indica plano, escopo ou politica da conta.
+- LinkedIn automatico depende de API/produto oficial aprovado pelo LinkedIn. Ate la o sistema abre buscas oficiais pelo navegador.
