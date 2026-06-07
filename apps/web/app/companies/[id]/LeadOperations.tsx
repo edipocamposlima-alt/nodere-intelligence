@@ -1,25 +1,24 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { CalendarClock, Copy, Download, FileText, MessageCircle, Pencil, Plus, Save, Sparkles, Trash2 } from "lucide-react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { CalendarClock, Copy, Download, Eye, FileText, ImageIcon, MessageCircle, Pencil, Plus, RotateCcw, Save, Sparkles, Trash2, Upload } from "lucide-react";
 import { Company } from "@/lib/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { updateCompany as saveCompanyData } from "@/lib/api";
+import { downloadNoderePdf } from "@/lib/pdf";
+import { RichTextEditor, RichTextPreview } from "@/components/RichTextEditor";
 
 const API_URL = getApiBaseUrl();
 
 type Note = { id: string; companyId: string; body: string; type?: string; owner?: string; createdAt: string; updatedAt?: string };
 type Task = { id: string; companyId: string; title: string; description?: string; dueAt?: string; priority?: string; channel?: string; status: string; createdAt: string };
 type DocumentItem = { id: string; companyId: string; type: string; title: string; content: string; fileName?: string; createdAt: string };
+type CompanyFile = { id: string; companyId: string; filename: string; fileUrl: string; fileType?: string; fileSize?: number; createdAt: string; storagePath?: string };
 type Contact = { id: string; name: string; role?: string; email?: string; phone?: string; whatsapp?: string; linkedin_url?: string; notes?: string; created_at?: string };
 type Communication = { id: string; type: string; direction: string; subject?: string; body?: string; sent_at: string; status?: string };
 type ContractItem = { id: string; catalog_items?: { name?: string; code?: string; type?: string }; quantity?: number; contracted_price?: number; status?: string; notes?: string; created_at?: string };
+type ProposalVersion = { id: string; lead_id: string; version_number: number; content?: string; service_type?: string; generated_by?: "user" | "ai"; created_at: string };
 type Tab = "dados" | "observacoes" | "agenda" | "decisores" | "historico" | "contratos" | "ia" | "documentos" | "whatsapp" | "enriquecimento";
-
-function pdfEscape(value: string) {
-  return value.replace(/[\\()]/g, "\\$&").replace(/[^\x20-\x7EÀ-ÿ]/g, " ");
-}
-
 
 function isValidBrazilMobileWhatsapp(value?: string) {
   const digits = String(value || "").replace(/\D/g, "");
@@ -43,45 +42,6 @@ function linkedinSearchUrl(name: string) {
   return `https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(query)}`;
 }
 
-function buildSimplePdf(title: string, body: string) {
-  const lines = [title, "", ...body.split(/\r?\n/)].flatMap((line) => {
-    const clean = line.trim();
-    if (clean.length <= 86) return [clean];
-    return clean.match(/.{1,86}(\s|$)/g)?.map((chunk) => chunk.trim()) ?? [clean];
-  }).slice(0, 48);
-
-  const logo = [
-    "1 1 1 rg 0 0 595 842 re f",
-    "0.12 0.44 0.86 rg 50 785 44 44 re f",
-    "1 1 1 rg BT /F2 24 Tf 63 798 Td (N) Tj ET",
-    "0.07 0.09 0.14 rg BT /F2 24 Tf 108 806 Td (NODERE) Tj ET",
-    "0.12 0.44 0.86 rg BT /F1 8 Tf 110 792 Td (INTELLIGENCE) Tj ET",
-    "0.12 0.44 0.86 rg 50 770 495 1 re f"
-  ].join("\n");
-  const text = lines.map((line, index) => `0.07 0.09 0.14 rg BT /F1 10 Tf 50 ${735 - index * 14} Td (${pdfEscape(line)}) Tj ET`).join("\n");
-  const footer = "0.22 0.25 0.32 rg BT /F1 8 Tf 50 34 Td (Gerado pelo NODERE Intelligence · nodere.com.br · Pagina 1) Tj ET";
-  const stream = `q\n${logo}\n${text}\n${footer}\nQ`;
-  const objects = [
-    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
-    "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
-    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >> endobj",
-    "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
-    "5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> endobj",
-    `6 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj`
-  ];
-  let pdf = "%PDF-1.4\n";
-  const offsets = [0];
-  for (const object of objects) {
-    offsets.push(pdf.length);
-    pdf += `${object}\n`;
-  }
-  const xref = pdf.length;
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  for (const offset of offsets.slice(1)) pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
-  pdf += `trailer << /Root 1 0 R /Size ${objects.length + 1} >>\nstartxref\n${xref}\n%%EOF`;
-  return new Blob([pdf], { type: "application/pdf" });
-}
-
 async function api<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
@@ -100,16 +60,26 @@ export function LeadOperations({ company }: { company: Company }) {
   const [notes, setNotes] = useState<Note[]>(company.notes || []);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [companyFiles, setCompanyFiles] = useState<CompanyFile[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [communications, setCommunications] = useState<Communication[]>([]);
   const [contracts, setContracts] = useState<ContractItem[]>([]);
+  const [proposalVersions, setProposalVersions] = useState<ProposalVersion[]>([]);
+  const [previewVersion, setPreviewVersion] = useState<ProposalVersion | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editor, setEditor] = useState("");
+  const [noteBody, setNoteBody] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [contactNotes, setContactNotes] = useState("");
+  const [communicationBody, setCommunicationBody] = useState("");
+  const [emailBody, setEmailBody] = useState("");
   const [instruction, setInstruction] = useState("");
   const [generationType, setGenerationType] = useState("Proposta comercial");
   const [loading, setLoading] = useState(false);
   const [enriching, setEnriching] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [enrichmentMessages, setEnrichmentMessages] = useState<string[]>([]);
 
   const whatsappText = useMemo(() => {
@@ -120,9 +90,11 @@ export function LeadOperations({ company }: { company: Company }) {
     api<Note[]>(`/companies/${company.id}/notes`).then(setNotes).catch(() => {});
     api<Task[]>(`/companies/${company.id}/tasks`).then(setTasks).catch(() => {});
     api<DocumentItem[]>(`/companies/${company.id}/documents`).then(setDocuments).catch(() => {});
+    api<CompanyFile[]>(`/companies/${company.id}/files`).then(setCompanyFiles).catch(() => {});
     api<Contact[]>(`/companies/${company.id}/contacts`).then(setContacts).catch(() => {});
     api<Communication[]>(`/companies/${company.id}/communications`).then(setCommunications).catch(() => {});
     api<ContractItem[]>(`/companies/${company.id}/contracts`).then(setContracts).catch(() => {});
+    api<ProposalVersion[]>(`/proposals/leads/${company.id}`).then(setProposalVersions).catch(() => {});
   }, [company.id]);
 
   function showSuccess(text: string) {
@@ -135,6 +107,59 @@ export function LeadOperations({ company }: { company: Company }) {
     setError(err instanceof Error ? err.message : "Ação não concluída.");
   }
 
+
+  async function uploadLogo(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const form = new FormData();
+    form.append("logo", file);
+    setUploadingLogo(true);
+    try {
+      const response = await fetch(`${API_URL}/companies/${company.id}/logo`, { method: "POST", body: form });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.message || `API HTTP ${response.status}`);
+      const updated = payload.company || { ...lead, logoUrl: payload.logoUrl };
+      setLead(updated);
+      showSuccess("Logo da empresa atualizado.");
+    } catch (err) {
+      showError(err);
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
+  async function uploadCompanyFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const form = new FormData();
+    form.append("file", file);
+    setUploadingFile(true);
+    try {
+      const response = await fetch(`${API_URL}/companies/${company.id}/files`, { method: "POST", body: form });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.message || `API HTTP ${response.status}`);
+      setCompanyFiles((items) => [payload, ...items]);
+      showSuccess("Arquivo anexado à ficha do cliente.");
+    } catch (err) {
+      showError(err);
+    } finally {
+      setUploadingFile(false);
+    }
+  }
+
+  async function deleteCompanyFile(fileId: string) {
+    try {
+      const response = await fetch(`${API_URL}/companies/${company.id}/files/${fileId}`, { method: "DELETE" });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.message || `API HTTP ${response.status}`);
+      setCompanyFiles((items) => items.filter((item) => item.id !== fileId));
+      showSuccess("Arquivo removido.");
+    } catch (err) {
+      showError(err);
+    }
+  }
   async function saveLeadData(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -185,6 +210,7 @@ export function LeadOperations({ company }: { company: Company }) {
       });
       setNotes((items) => [note, ...items]);
       target?.reset();
+      setNoteBody("");
       showSuccess("Observação salva.");
     } catch (err) {
       showError(err);
@@ -223,6 +249,7 @@ export function LeadOperations({ company }: { company: Company }) {
         void Notification.requestPermission();
       }
       target?.reset();
+      setTaskDescription("");
       showSuccess("Tarefa criada.");
     } catch (err) {
       showError(err);
@@ -248,6 +275,7 @@ export function LeadOperations({ company }: { company: Company }) {
       });
       setContacts((items) => [contact, ...items]);
       target.reset();
+      setContactNotes("");
       showSuccess("Decisor salvo.");
     } catch (err) {
       showError(err);
@@ -271,6 +299,7 @@ export function LeadOperations({ company }: { company: Company }) {
       });
       setCommunications((items) => [comm, ...items]);
       target.reset();
+      setCommunicationBody("");
       showSuccess("Interação registrada.");
     } catch (err) {
       showError(err);
@@ -292,6 +321,7 @@ export function LeadOperations({ company }: { company: Company }) {
       });
       setCommunications((items) => [response.communication, ...items]);
       target.reset();
+      setEmailBody("");
       showSuccess("E-mail enviado e registrado no histórico.");
     } catch (err) {
       showError(err);
@@ -353,6 +383,49 @@ export function LeadOperations({ company }: { company: Company }) {
     }
   }
 
+
+  async function saveProposalVersion(type: string, content: string) {
+    const version = await api<ProposalVersion>("/proposals/versions", {
+      method: "POST",
+      body: JSON.stringify({
+        lead_id: company.id,
+        content,
+        service_type: type,
+        generated_by: generationType.toLowerCase().includes("ia") ? "ai" : "user"
+      })
+    });
+    setProposalVersions((items) => [version, ...items]);
+    return version;
+  }
+
+  async function openProposalVersion(versionNumber: number) {
+    try {
+      const version = await api<ProposalVersion>(`/proposals/leads/${company.id}/${versionNumber}`);
+      setPreviewVersion(version);
+    } catch (err) {
+      showError(err);
+    }
+  }
+
+  async function restoreProposalVersion(versionNumber: number) {
+    try {
+      const version = await api<ProposalVersion>(`/proposals/leads/${company.id}/${versionNumber}`);
+      setEditor(version.content || "");
+      setTab("ia");
+      showSuccess(`Versão ${version.version_number} restaurada no editor.`);
+    } catch (err) {
+      showError(err);
+    }
+  }
+
+  async function downloadProposalVersion(versionNumber: number) {
+    try {
+      const version = await api<ProposalVersion>(`/proposals/leads/${company.id}/${versionNumber}`);
+      await downloadPdf(`Versão ${version.version_number} - ${version.service_type || "Proposta"}`, version.content || "", `nodere-${company.name}-v${version.version_number}.pdf`);
+    } catch (err) {
+      showError(err);
+    }
+  }
   async function saveDocument(type: string) {
     if (!editor.trim()) return showError(new Error("Gere ou escreva um texto antes de salvar."));
     try {
@@ -363,21 +436,21 @@ export function LeadOperations({ company }: { company: Company }) {
         body: JSON.stringify({ type, title, content: editor, fileName })
       });
       setDocuments((items) => [document, ...items]);
-      downloadPdf(title, editor, fileName);
+      if (type === "proposta" || type === "contrato") await saveProposalVersion(type, editor);
+      await downloadPdf(title, editor, fileName);
       showSuccess("Documento salvo e PDF baixado.");
     } catch (err) {
       showError(err);
     }
   }
 
-  function downloadPdf(title: string, content: string, fileName?: string) {
-    const blob = buildSimplePdf(title, content);
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName || `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`;
-    link.click();
-    URL.revokeObjectURL(url);
+  async function downloadPdf(title: string, content: string, fileName?: string) {
+    await downloadNoderePdf({
+      title,
+      subtitle: `${lead.name} · ${lead.category || "Sem segmento"}`,
+      body: content,
+      fileName: fileName || `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`
+    });
   }
 
   function copy(text: string) {
@@ -477,7 +550,8 @@ export function LeadOperations({ company }: { company: Company }) {
             <select name="type" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm">
               {["Observação", "Ligação", "WhatsApp", "Email", "Reunião", "Objeção", "Interno"].map((item) => <option key={item}>{item}</option>)}
             </select>
-            <textarea name="body" rows={8} placeholder="Escreva uma observação real do atendimento..." className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
+            <input type="hidden" name="body" value={noteBody} />
+            <RichTextEditor value={noteBody} onChange={setNoteBody} minHeight={220} placeholder="Escreva uma observação real do atendimento..." />
             <button className="btn-action px-4 py-2 text-sm"><Save className="h-4 w-4" />Salvar observação</button>
           </form>
           <div className="space-y-3">
@@ -487,7 +561,7 @@ export function LeadOperations({ company }: { company: Company }) {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs text-cyan">{note.type || "Observação"} · {new Date(note.createdAt).toLocaleString("pt-BR")}</p>
-                    <p className="mt-2 whitespace-pre-wrap text-sm text-slate-200">{note.body}</p>
+                    <div className="mt-3"><RichTextPreview value={note.body} /></div>
                   </div>
                   <button onClick={() => deleteNote(note.id)} className="rounded-md border border-line p-2 text-slate-400 hover:text-red-300" aria-label="Excluir observação"><Trash2 className="h-4 w-4" /></button>
                 </div>
@@ -501,7 +575,8 @@ export function LeadOperations({ company }: { company: Company }) {
         <div className="mt-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
           <form onSubmit={addTask} className="space-y-3">
             <input name="title" required placeholder="Título da tarefa" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-            <textarea name="description" rows={4} placeholder="Descrição" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+            <input type="hidden" name="description" value={taskDescription} />
+            <RichTextEditor value={taskDescription} onChange={setTaskDescription} minHeight={150} placeholder="Descrição" />
             <div className="grid gap-3 sm:grid-cols-3">
               <label className="space-y-1 text-xs text-slate-400 sm:col-span-3 xl:col-span-1">
                 Data e hora do lembrete
@@ -541,7 +616,8 @@ export function LeadOperations({ company }: { company: Company }) {
               <input name="whatsapp" placeholder="WhatsApp celular" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
               <input name="linkedinUrl" placeholder="LinkedIn URL" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
             </div>
-            <textarea name="notes" rows={4} placeholder="Notas sobre o decisor" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+            <input type="hidden" name="notes" value={contactNotes} />
+            <RichTextEditor value={contactNotes} onChange={setContactNotes} minHeight={150} placeholder="Notas sobre o decisor" />
             <button className="btn-action px-4 py-2 text-sm"><Plus className="h-4 w-4" />Salvar decisor</button>
           </form>
           <div className="space-y-3">
@@ -579,14 +655,16 @@ export function LeadOperations({ company }: { company: Company }) {
               </div>
               <input name="subject" placeholder="Assunto" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
               <input name="sentAt" type="datetime-local" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <textarea name="body" rows={5} placeholder="Conteúdo da interação" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <input type="hidden" name="body" value={communicationBody} />
+              <RichTextEditor value={communicationBody} onChange={setCommunicationBody} minHeight={170} placeholder="Conteúdo da interação" />
               <button className="btn-action px-4 py-2 text-sm"><Save className="h-4 w-4" />Registrar interação</button>
             </form>
             <form onSubmit={sendEmail} className="space-y-3 rounded-lg border border-cyan/30 bg-cyan/5 p-4">
               <p className="text-sm font-semibold text-white">Enviar e-mail real via SMTP</p>
               <input name="to" type="email" required defaultValue={(lead as any).emailPrincipal || ""} placeholder="cliente@empresa.com.br" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
               <input name="subject" required placeholder="Assunto do e-mail" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <textarea name="body" required rows={5} defaultValue={editor || ""} placeholder="Mensagem" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <input type="hidden" name="body" value={emailBody || editor} />
+              <RichTextEditor value={emailBody || editor} onChange={setEmailBody} minHeight={170} placeholder="Mensagem" />
               <button className="inline-flex items-center gap-2 rounded-lg bg-cyan px-4 py-2 text-sm font-semibold text-ink"><MessageCircle className="h-4 w-4" />Enviar e registrar</button>
               <p className="text-xs text-slate-400">Se SMTP não estiver configurado no Render, o backend retorna aviso claro e nada é enviado.</p>
             </form>
@@ -635,7 +713,7 @@ export function LeadOperations({ company }: { company: Company }) {
             <input value={instruction} placeholder="Instrução adicional para a IA" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" onChange={(event) => setInstruction(event.target.value)} />
             <button onClick={generateWithAi} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"><Sparkles className="h-4 w-4" />{loading ? "Gerando" : "Gerar com IA"}</button>
           </div>
-          <textarea value={editor} onChange={(event) => setEditor(event.target.value)} rows={14} placeholder="O texto gerado ou editado aparece aqui. Você pode alterar antes de salvar, copiar, virar PDF ou usar no WhatsApp." className="w-full rounded-lg border border-line bg-ink px-4 py-3 text-sm leading-6 outline-none focus:border-electric" />
+          <RichTextEditor value={editor} onChange={setEditor} minHeight={360} placeholder="O texto gerado ou editado aparece aqui. Você pode alterar antes de salvar, copiar, virar PDF ou usar no WhatsApp." />
           <div className="flex flex-wrap gap-2">
             <button onClick={() => copy(editor)} className="inline-flex items-center gap-2 rounded-lg border border-line bg-ink px-4 py-2 text-sm text-white"><Copy className="h-4 w-4" />Copiar</button>
             <button onClick={() => setEditor("")} className="inline-flex items-center gap-2 rounded-lg border border-line bg-ink px-4 py-2 text-sm text-white"><Trash2 className="h-4 w-4" />Limpar</button>
@@ -704,7 +782,7 @@ export function LeadOperations({ company }: { company: Company }) {
                 <p className="font-semibold text-white">{document.title}</p>
                 <p className="mt-1 text-xs text-slate-400">{document.type} · {new Date(document.createdAt).toLocaleString("pt-BR")}</p>
               </div>
-              <button onClick={() => downloadPdf(document.title, document.content, document.fileName)} className="inline-flex items-center justify-center gap-2 rounded-lg border border-line px-4 py-2 text-sm text-white"><Download className="h-4 w-4" />Baixar PDF</button>
+              <button onClick={() => void downloadPdf(document.title, document.content, document.fileName)} className="inline-flex items-center justify-center gap-2 rounded-lg border border-line px-4 py-2 text-sm text-white"><Download className="h-4 w-4" />Baixar PDF</button>
             </div>
           ))}
         </div>
@@ -712,7 +790,7 @@ export function LeadOperations({ company }: { company: Company }) {
 
       {tab === "whatsapp" && (
         <div className="mt-5 space-y-4">
-          <textarea value={whatsappText} onChange={(event) => setEditor(event.target.value)} rows={8} className="w-full rounded-lg border border-line bg-ink px-4 py-3 text-sm leading-6" />
+          <RichTextEditor value={whatsappText} onChange={setEditor} minHeight={220} placeholder="Mensagem para WhatsApp" />
           <div className="flex flex-wrap gap-2">
             <button onClick={() => copy(whatsappText)} className="inline-flex items-center gap-2 rounded-lg border border-line bg-ink px-4 py-2 text-sm text-white"><Copy className="h-4 w-4" />Copiar mensagem</button>
             {isValidBrazilMobileWhatsapp(lead.whatsapp) ? (
@@ -721,6 +799,23 @@ export function LeadOperations({ company }: { company: Company }) {
               <span className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-2 text-sm text-amber-100">Informe um WhatsApp celular válido. Telefone fixo fica somente no campo Telefone.</span>
             )}
             <button onClick={() => saveDocument("template_whatsapp")} className="btn-action px-4 py-2 text-sm"><Plus className="h-4 w-4" />Salvar como template</button>
+          </div>
+        </div>
+      )}
+
+      {previewVersion && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="max-h-[86vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-line bg-panel shadow-glow">
+            <div className="flex items-center justify-between border-b border-line p-4">
+              <div>
+                <p className="font-semibold text-white">Versão {previewVersion.version_number}</p>
+                <p className="text-xs text-slate-400">{previewVersion.service_type || "Proposta"} · {new Date(previewVersion.created_at).toLocaleString("pt-BR")}</p>
+              </div>
+              <button onClick={() => setPreviewVersion(null)} className="rounded-lg border border-line px-3 py-2 text-sm text-white">Fechar</button>
+            </div>
+            <div className="max-h-[70vh] overflow-y-auto p-5">
+              <RichTextPreview value={previewVersion.content || ""} />
+            </div>
           </div>
         </div>
       )}
@@ -756,4 +851,9 @@ function Field({ name, label, defaultValue, placeholder, required }: { name: str
     </label>
   );
 }
+
+
+
+
+
 

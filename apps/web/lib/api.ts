@@ -482,6 +482,8 @@ export interface CatalogItem {
   category: string;
   subcategory?: string;
   brand?: string;
+  image_url?: string;
+  images?: string[];
   type: "product" | "service";
   status: "active" | "inactive";
   description_short: string;
@@ -539,6 +541,8 @@ export function createCatalogItem(payload: {
   category: string;
   subcategory?: string;
   brand?: string;
+  image_url?: string;
+  images?: string[];
   type: "product" | "service";
   descriptionShort: string;
   descriptionFull?: string;
@@ -628,4 +632,5 @@ export function getSocialStatus() {
     mlabs: { configured: boolean; type: string; url: string; message: string };
   }>("/marketing/social/status", undefined, { platforms: [], mlabs: { configured: true, type: "workflow_shortcut", url: "https://app.mlabs.com.br", message: "Atalho operacional." } });
 }
+
 

@@ -40,8 +40,10 @@ import { randomUUID } from "node:crypto";
 import { parse as parseCsvSync } from "csv-parse/sync";
 import * as XLSX from "xlsx";
 import nodemailer from "nodemailer";
+import multer from "multer";
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 12 * 1024 * 1024 } });
 const embeddedLogoDataUri = loadNodereLogoDataUri();
 
 const companyUpdateSchema = z.object({
@@ -225,6 +227,111 @@ router.patch("/:id", async (req, res, next) => {
   } catch (err) { return next(err); }
 });
 
+
+router.post("/:id/logo", upload.single("logo"), async (req, res, next) => {
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    const companyId = String(req.params.id);
+    const company = await getCompanyAsync(companyId, workspaceId);
+    if (!company) return res.status(404).json({ message: "Empresa não encontrada." });
+    const file = req.file;
+    if (!file) return res.status(400).json({ message: "Envie um arquivo de imagem no campo logo." });
+    if (!file.mimetype.startsWith("image/")) return res.status(422).json({ message: "O logo precisa ser uma imagem." });
+
+    const sb = requireSupabase();
+    const storagePath = `${workspaceId}/${company.id}/logo-${randomUUID()}-${safeStorageFileName(file.originalname || "logo.png")}`;
+    const { error: uploadError } = await sb.storage.from("client-logos").upload(storagePath, file.buffer, {
+      contentType: file.mimetype,
+      upsert: true
+    });
+    if (uploadError) return res.status(500).json({ message: "Não foi possível enviar o logo. Verifique se o bucket client-logos existe no Supabase Storage.", detail: uploadError.message });
+
+    const publicUrl = getPublicStorageUrl("client-logos", storagePath);
+    const updated = await updateCompany(company.id, { logoUrl: publicUrl } as any, workspaceId);
+    await addNote(company.id, `Logo da empresa atualizado: ${file.originalname}`, workspaceId).catch(() => undefined);
+    return res.status(201).json({ logoUrl: publicUrl, company: updated ?? { ...company, logoUrl: publicUrl } });
+  } catch (error) { return next(error); }
+});
+
+router.get("/:id/files", async (req, res, next) => {
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    const companyId = String(req.params.id);
+    const company = await getCompanyAsync(companyId, workspaceId);
+    if (!company) return res.status(404).json({ message: "Empresa não encontrada." });
+    const { data, error } = await requireSupabase()
+      .from("company_files")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .eq("company_id", String(req.params.id))
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return res.json((data ?? []).map(mapCompanyFileRow));
+  } catch (error) { return next(error); }
+});
+
+router.post("/:id/files", upload.single("file"), async (req, res, next) => {
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    const companyId = String(req.params.id);
+    const company = await getCompanyAsync(companyId, workspaceId);
+    if (!company) return res.status(404).json({ message: "Empresa não encontrada." });
+    const file = req.file;
+    if (!file) return res.status(400).json({ message: "Envie um arquivo no campo file." });
+
+    const sb = requireSupabase();
+    const storagePath = `${workspaceId}/${company.id}/${randomUUID()}-${safeStorageFileName(file.originalname || "arquivo")}`;
+    const { error: uploadError } = await sb.storage.from("client-files").upload(storagePath, file.buffer, {
+      contentType: file.mimetype || "application/octet-stream",
+      upsert: false
+    });
+    if (uploadError) return res.status(500).json({ message: "Não foi possível enviar o arquivo. Verifique se o bucket client-files existe no Supabase Storage.", detail: uploadError.message });
+
+    const row = {
+      id: randomUUID(),
+      workspace_id: workspaceId,
+      company_id: company.id,
+      filename: file.originalname || "arquivo",
+      storage_path: storagePath,
+      file_url: getPublicStorageUrl("client-files", storagePath),
+      file_type: file.mimetype || "application/octet-stream",
+      file_size: file.size,
+      uploaded_by: getSessionUserId(req) || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    const { data, error } = await sb.from("company_files").insert(row).select("*").single();
+    if (error) throw error;
+    await addNote(company.id, `Arquivo anexado: ${row.filename}`, workspaceId).catch(() => undefined);
+    return res.status(201).json(mapCompanyFileRow(data));
+  } catch (error) { return next(error); }
+});
+
+router.delete("/:id/files/:fileId", async (req, res, next) => {
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    const sb = requireSupabase();
+    const { data, error } = await sb
+      .from("company_files")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .eq("company_id", String(req.params.id))
+      .eq("id", req.params.fileId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return res.status(404).json({ message: "Arquivo não encontrado." });
+    await sb.storage.from("client-files").remove([String(data.storage_path)]);
+    const { error: deleteError } = await sb
+      .from("company_files")
+      .delete()
+      .eq("workspace_id", workspaceId)
+      .eq("company_id", String(req.params.id))
+      .eq("id", req.params.fileId);
+    if (deleteError) throw deleteError;
+    await addNote(String(req.params.id), `Arquivo removido: ${data.filename}`, workspaceId).catch(() => undefined);
+    return res.json({ ok: true });
+  } catch (error) { return next(error); }
+});
 router.post("/:id/analyze", async (req, res, next) => {
   try {
   const company = getCompany(req.params.id);
@@ -339,7 +446,8 @@ router.post("/:id/notes", async (req, res, next) => {
 router.post("/:id/enrich-external", async (req, res, next) => {
   try {
     const workspaceId = getRequestWorkspaceId(req);
-    const company = await getCompanyAsync(req.params.id, workspaceId);
+    const companyId = String(req.params.id);
+    const company = await getCompanyAsync(companyId, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
     const enrichment = await enrichCompanyExternal(company);
     const updated = await import("../services/companyStore.js").then(({ updateCompany }) =>
@@ -363,7 +471,8 @@ router.post("/:id/enrich-external", async (req, res, next) => {
 router.get("/:id/enrich", async (req, res, next) => {
   try {
     const workspaceId = getRequestWorkspaceId(req);
-    const company = await getCompanyAsync(req.params.id, workspaceId);
+    const companyId = String(req.params.id);
+    const company = await getCompanyAsync(companyId, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
     await updateCompany(company.id, { enrichmentStatus: "running" as any }, workspaceId);
     const result = await enrichCnpj(company);
@@ -378,7 +487,8 @@ router.get("/:id/enrich", async (req, res, next) => {
 router.get("/:id/notes", async (req, res, next) => {
   try {
     const workspaceId = getRequestWorkspaceId(req);
-    const company = await getCompanyAsync(req.params.id, workspaceId);
+    const companyId = String(req.params.id);
+    const company = await getCompanyAsync(companyId, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
     return res.json(await listNotes(req.params.id, workspaceId));
   } catch (err) { return next(err); }
@@ -392,7 +502,7 @@ router.get("/:id/contacts", async (req, res, next) => {
       .from("company_contacts")
       .select("*")
       .eq("workspace_id", workspaceId)
-      .eq("company_id", req.params.id)
+      .eq("company_id", String(req.params.id))
       .order("created_at", { ascending: false });
     if (error) throw error;
     return res.json(data ?? []);
@@ -455,7 +565,7 @@ router.patch("/:id/contacts/:contactId", async (req, res, next) => {
       .from("company_contacts")
       .update(row)
       .eq("workspace_id", getRequestWorkspaceId(req))
-      .eq("company_id", req.params.id)
+      .eq("company_id", String(req.params.id))
       .eq("id", req.params.contactId)
       .select("*")
       .single();
@@ -470,7 +580,7 @@ router.delete("/:id/contacts/:contactId", async (req, res, next) => {
       .from("company_contacts")
       .delete()
       .eq("workspace_id", getRequestWorkspaceId(req))
-      .eq("company_id", req.params.id)
+      .eq("company_id", String(req.params.id))
       .eq("id", req.params.contactId);
     if (error) throw error;
     return res.json({ ok: true });
@@ -480,7 +590,8 @@ router.delete("/:id/contacts/:contactId", async (req, res, next) => {
 router.delete("/:id/notes/:noteId", async (req, res, next) => {
   try {
     const workspaceId = getRequestWorkspaceId(req);
-    const company = await getCompanyAsync(req.params.id, workspaceId);
+    const companyId = String(req.params.id);
+    const company = await getCompanyAsync(companyId, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
     return res.json(await removeNote(req.params.id, req.params.noteId, workspaceId));
   } catch (err) { return next(err); }
@@ -489,7 +600,8 @@ router.delete("/:id/notes/:noteId", async (req, res, next) => {
 router.get("/:id/tasks", async (req, res, next) => {
   try {
     const workspaceId = getRequestWorkspaceId(req);
-    const company = await getCompanyAsync(req.params.id, workspaceId);
+    const companyId = String(req.params.id);
+    const company = await getCompanyAsync(companyId, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
     return res.json(await listTasks(req.params.id, workspaceId));
   } catch (err) { return next(err); }
@@ -501,7 +613,7 @@ router.get("/:id/communications", async (req, res, next) => {
       .from("communications")
       .select("*")
       .eq("workspace_id", getRequestWorkspaceId(req))
-      .eq("company_id", req.params.id)
+      .eq("company_id", String(req.params.id))
       .order("sent_at", { ascending: false });
     if (error) throw error;
     return res.json(data ?? []);
@@ -545,7 +657,7 @@ router.delete("/:id/communications/:commId", async (req, res, next) => {
       .from("communications")
       .delete()
       .eq("workspace_id", getRequestWorkspaceId(req))
-      .eq("company_id", req.params.id)
+      .eq("company_id", String(req.params.id))
       .eq("id", req.params.commId);
     if (error) throw error;
     return res.json({ ok: true });
@@ -567,7 +679,8 @@ router.post("/:id/email", async (req, res, next) => {
       contactId: z.string().optional().nullable()
     }).parse(req.body);
     const workspaceId = getRequestWorkspaceId(req);
-    const company = await getCompanyAsync(req.params.id, workspaceId);
+    const companyId = String(req.params.id);
+    const company = await getCompanyAsync(companyId, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
     const transporter = nodemailer.createTransport({
       host: config.smtp.host,
@@ -608,7 +721,7 @@ router.get("/:id/contracts", async (req, res, next) => {
       .from("company_contracts")
       .select("*, catalog_items(*)")
       .eq("workspace_id", getRequestWorkspaceId(req))
-      .eq("company_id", req.params.id)
+      .eq("company_id", String(req.params.id))
       .order("created_at", { ascending: false });
     if (error) throw error;
     return res.json(data ?? []);
@@ -656,7 +769,8 @@ router.post("/:id/tasks", async (req, res, next) => {
       channel: z.string().optional().nullable()
     }).parse(req.body);
     const workspaceId = getRequestWorkspaceId(req);
-    const company = await getCompanyAsync(req.params.id, workspaceId);
+    const companyId = String(req.params.id);
+    const company = await getCompanyAsync(companyId, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
     const task = await createTask(req.params.id, {
       title: body.title,
@@ -689,7 +803,8 @@ router.patch("/:id/tasks/:taskId", async (req, res, next) => {
 router.get("/:id/documents", async (req, res, next) => {
   try {
     const workspaceId = getRequestWorkspaceId(req);
-    const company = await getCompanyAsync(req.params.id, workspaceId);
+    const companyId = String(req.params.id);
+    const company = await getCompanyAsync(companyId, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
     return res.json(await listDocuments(req.params.id, workspaceId));
   } catch (err) { return next(err); }
@@ -704,7 +819,8 @@ router.post("/:id/documents", async (req, res, next) => {
       fileName: z.string().optional()
     }).parse(req.body);
     const workspaceId = getRequestWorkspaceId(req);
-    const company = await getCompanyAsync(req.params.id, workspaceId);
+    const companyId = String(req.params.id);
+    const company = await getCompanyAsync(companyId, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
     const document = await createDocument(req.params.id, body, workspaceId);
     await addNote(req.params.id, `Documento salvo: ${document.title}`, workspaceId);
@@ -847,7 +963,8 @@ router.post("/:id/diagnosis", async (req, res, next) => {
 router.get("/:id/export-pdf", async (req, res, next) => {
   try {
   const workspaceId = getRequestWorkspaceId(req);
-  const company = await getCompanyAsync(req.params.id, workspaceId);
+  const companyId = String(req.params.id);
+    const company = await getCompanyAsync(companyId, workspaceId);
   if (!company) {
     console.error("[PDF] Company not found. ID:", req.params.id, "Workspace:", workspaceId);
     return res.status(404).json({ error: "Empresa não encontrada neste workspace." });
@@ -919,12 +1036,18 @@ router.get("/:id/export-pdf", async (req, res, next) => {
 <meta charset="UTF-8">
 <title>Relatório — ${escapeHtml(company.name)}</title>
 <style>
-  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 24px 24px 72px; color: #111827; background: #FFFFFF; }
+  @page { margin: 18mm 14mm 18mm; }
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 88px 24px 72px; color: #111827; background: #FFFFFF; }
+  .pdf-header { position: fixed; left: 24px; right: 24px; top: 16px; height: 56px; display:grid; grid-template-columns: 150px 1fr 150px; align-items:center; border-bottom:1px solid #d1d5db; background:#FFFFFF; z-index:2; }
+  .pdf-header img { width:44px; height:44px; object-fit:contain; }
+  .pdf-header-title { text-align:center; color:#1E6FDB; font-weight:800; font-size:14px; }
+  .pdf-header-date { text-align:right; color:#4b5563; font-size:11px; }
   .brand { display:flex; align-items:center; gap:16px; background:#FFFFFF; border:2px solid #1E6FDB; border-radius:12px; padding:18px; margin-bottom:20px; color:#111827; }
   .brand img { width:92px; height:auto; object-fit:contain; border-radius:10px; }
   .brand-title { font-size:24px; font-weight:800; letter-spacing:0.02em; color:#1E6FDB; }
   .brand-sub { color:#1E6FDB; font-size:11px; text-transform:uppercase; letter-spacing:0.22em; margin-top:3px; }
-  .print-footer { position: fixed; left: 24px; right: 24px; bottom: 18px; border-top: 1px solid #d1d5db; padding-top: 8px; color: #6b7280; font-size: 11px; text-align: center; background: #FFFFFF; }
+  .print-footer { position: fixed; left: 24px; right: 24px; bottom: 18px; border-top: 1px solid #d1d5db; padding-top: 8px; color: #6b7280; font-size: 11px; background: #FFFFFF; display:flex; justify-content:space-between; }
+  .print-footer .page::after { content: "Página " counter(page); }
   h1 { font-size: 22px; color: #111827; border-bottom: 2px solid #1E6FDB; padding-bottom: 8px; }
   h2 { font-size: 16px; color: #111827; margin-top: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
   h3 { font-size: 14px; color: #334155; }
@@ -937,10 +1060,17 @@ router.get("/:id/export-pdf", async (req, res, next) => {
   li.missing { color: #dc2626; }
   .copy-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; font-size: 13px; white-space: pre-wrap; }
   .note { color: #94a3b8; font-style: italic; }
+  .page-number:after { content: counter(page); }
+  .page-total:after { content: counter(pages); }
   @media print { body { padding: 0 0 72px; } .print-footer { bottom: 0; } }
 </style>
 </head>
 <body>
+  <header class="pdf-header">
+    <img src="${embeddedLogoDataUri}" alt="NODERE">
+    <div class="pdf-header-title">Relatório Comercial NODERE</div>
+    <div class="pdf-header-date">${formatPtBrDate(new Date().toISOString())}</div>
+  </header>
   <div class="brand">
     <img src="${embeddedLogoDataUri}" alt="NODERE">
     <div>
@@ -1001,9 +1131,10 @@ router.get("/:id/export-pdf", async (req, res, next) => {
 
   ${diagHtml}
 
-  <p class="meta" style="margin-top:40px;border-top:1px solid #e2e8f0;padding-top:12px;">
-    Relatório gerado por NODERE Intelligence · ${new Date().toISOString()}
-  </p>
+  <footer class="print-footer">
+    <span>Gerado pelo NODERE Intelligence · nodere.com.br</span>
+    <span>Página <span class="page-number"></span> de <span class="page-total"></span></span>
+  </footer>
 </body>
 </html>`;
 
@@ -1260,6 +1391,44 @@ function normalizeWhatsapp(phone: string) {
   return "";
 }
 
+
+function safeStorageFileName(value: string) {
+  const cleaned = String(value || "arquivo")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+  return cleaned || "arquivo";
+}
+
+
+async function ensureStorageBucket(bucket: string) {
+  const sb = requireSupabase();
+  const { data } = await sb.storage.getBucket(bucket);
+  if (data) return;
+  await sb.storage.createBucket(bucket, { public: true }).catch(() => undefined);
+}
+function getPublicStorageUrl(bucket: string, storagePath: string) {
+  const { data } = requireSupabase().storage.from(bucket).getPublicUrl(storagePath);
+  return data.publicUrl;
+}
+
+function mapCompanyFileRow(row: Record<string, unknown>) {
+  return {
+    id: row.id as string,
+    workspaceId: row.workspace_id as string,
+    companyId: row.company_id as string,
+    filename: row.filename as string,
+    storagePath: row.storage_path as string,
+    fileUrl: row.file_url as string,
+    fileType: row.file_type as string | undefined,
+    fileSize: row.file_size as number | undefined,
+    uploadedBy: row.uploaded_by as string | undefined,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string | undefined
+  };
+}
 function requireSupabase() {
   const sb = getSupabase();
   if (!sb) {
@@ -1270,5 +1439,9 @@ function requireSupabase() {
   }
   return sb;
 }
+
+
+
+
 
 

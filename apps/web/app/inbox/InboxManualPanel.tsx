@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { Archive, MessageCircle, Plus, Send } from "lucide-react";
+import { RichTextEditor, RichTextPreview } from "@/components/RichTextEditor";
 import { getApiBaseUrl } from "@/lib/apiBase";
 
 const API_URL = getApiBaseUrl();
@@ -22,6 +23,7 @@ export function InboxManualPanel({ initialConversations }: { initialConversation
   const [conversations, setConversations] = useState(initialConversations);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [manualMessage, setManualMessage] = useState("");
 
   async function createConversation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,6 +40,7 @@ export function InboxManualPanel({ initialConversations }: { initialConversation
       });
       setConversations((items) => [conversation, ...items.filter((item) => item.phone !== conversation.phone)]);
       target?.reset();
+      setManualMessage("");
       setMessage("Conversa manual criada.");
       setError(null);
     } catch (err) {
@@ -73,7 +76,8 @@ export function InboxManualPanel({ initialConversations }: { initialConversation
         <div className="mt-4 grid gap-3 md:grid-cols-[180px_1fr_2fr_auto]">
           <input name="phone" required placeholder="WhatsApp/telefone" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
           <input name="companyName" placeholder="Empresa/lead" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-          <input name="message" required placeholder="Cole ou escreva a conversa/mensagem" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+          <input type="hidden" name="message" value={manualMessage} required />
+          <div className="md:col-span-2"><RichTextEditor value={manualMessage} onChange={setManualMessage} minHeight={150} placeholder="Cole ou escreva a conversa/mensagem" /></div>
           <button className="rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white">Salvar</button>
         </div>
         <p className="mt-3 text-xs text-slate-500">Uso manual enquanto WhatsApp Cloud API/webhook não estiver configurado.</p>
@@ -99,7 +103,7 @@ export function InboxManualPanel({ initialConversations }: { initialConversation
                   <div>
                     <p className="font-semibold text-white">{conv.companyName || conv.phone}</p>
                     <p className="mt-1 text-xs text-slate-500">{conv.phone} · {conv.status}</p>
-                    {lastMessage && <p className="mt-3 rounded-md bg-ink px-3 py-2 text-sm text-slate-300">{lastMessage.body}</p>}
+                    {lastMessage && <div className="mt-3 rounded-md bg-ink px-3 py-2"><RichTextPreview value={lastMessage.body} /></div>}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={() => reply(conv.phone, text)} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-xs text-white"><Send className="h-4 w-4" />Responder</button>
@@ -115,3 +119,4 @@ export function InboxManualPanel({ initialConversations }: { initialConversation
     </section>
   );
 }
+

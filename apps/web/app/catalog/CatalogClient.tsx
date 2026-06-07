@@ -1,8 +1,9 @@
 "use client";
 
 import { FormEvent, ReactNode, useEffect, useState } from "react";
-import { PackageOpen, Plus } from "lucide-react";
+import { ImageIcon, PackageOpen, Plus, Upload } from "lucide-react";
 import { CatalogItem, createCatalogItem, getCatalogItems } from "@/lib/api";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { SEGMENTS } from "@/constants/segments";
 
 export function CatalogClient() {
@@ -32,7 +33,7 @@ export function CatalogClient() {
     const text = (name: string) => String(form.get(name) || "").trim();
     const num = (name: string) => Number(form.get(name) || 0);
     try {
-      await createCatalogItem({
+      const created = await createCatalogItem({
         code: text("code") || undefined,
         name: text("name"),
         commercialName: text("commercialName"),
@@ -123,6 +124,13 @@ export function CatalogClient() {
           </label>
           <Input name="subcategory" label="Subcategoria" />
           <Input name="brand" label="Marca" />
+          <label className="block xl:col-span-2">
+            <span className="text-xs font-semibold text-slate-400">Imagem principal</span>
+            <span className="mt-1 flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-cyan/40 bg-cyan/5 px-3 py-3 text-sm font-semibold text-cyan hover:bg-cyan/10">
+              <Upload className="h-4 w-4" /> Enviar imagem do produto/serviço
+              <input name="image" type="file" accept="image/*" className="hidden" />
+            </span>
+          </label>
         </CatalogSection>
 
         <CatalogSection title="2. Descrição e marketing">
@@ -197,6 +205,7 @@ export function CatalogClient() {
             <table className="w-full min-w-[760px] text-left text-sm">
               <thead className="bg-white/5 text-xs uppercase tracking-wide text-slate-400">
                 <tr>
+                  <th className="px-4 py-3">Imagem</th>
                   <th className="px-4 py-3">Código</th>
                   <th className="px-4 py-3">Nome</th>
                   <th className="px-4 py-3">Tipo</th>
@@ -208,6 +217,11 @@ export function CatalogClient() {
               <tbody>
                 {items.map((item) => (
                   <tr key={item.id} className="border-t border-line">
+                    <td className="px-4 py-3">
+                      <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-line bg-ink">
+                        {item.image_url ? <img src={item.image_url} alt={item.name} className="h-full w-full object-cover" /> : <ImageIcon className="h-5 w-5 text-cyan" />}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 font-mono text-cyan">{item.code}</td>
                     <td className="px-4 py-3 font-semibold text-white">{item.name}</td>
                     <td className="px-4 py-3 text-slate-300">{item.type === "service" ? "Serviço" : "Produto"}</td>
@@ -244,10 +258,14 @@ function Input({ name, label, type = "text", required, step, placeholder }: { na
 }
 
 function Textarea({ name, label, required }: { name: string; label: string; required?: boolean }) {
+  const [value, setValue] = useState("");
   return (
     <label className="block md:col-span-2">
       <span className="text-xs font-semibold text-slate-400">{label}</span>
-      <textarea name={name} required={required} className="mt-1 min-h-24 w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm outline-none focus:border-electric" />
+      <input type="hidden" name={name} value={value} required={required} />
+      <div className="mt-1"><RichTextEditor value={value} onChange={setValue} minHeight={150} /></div>
     </label>
   );
 }
+
+

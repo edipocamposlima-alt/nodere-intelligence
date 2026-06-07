@@ -3,8 +3,10 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { getSupabase } from "../db/supabase.js";
 import { getRequestWorkspaceId } from "../middleware/session.js";
+import multer from "multer";
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 12 * 1024 * 1024 } });
 
 router.get("/", async (req, res, next) => {
   try {
@@ -44,6 +46,40 @@ router.post("/", async (req, res, next) => {
   }
 });
 
+
+router.post("/:id/images", upload.single("image"), async (req, res, next) => {
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    const file = req.file;
+    if (!file) return res.status(400).json({ message: "Envie uma imagem no campo image." });
+    if (!file.mimetype.startsWith("image/")) return res.status(422).json({ message: "O arquivo precisa ser uma imagem." });
+    const sb = requireSupabase();
+    const storagePath = `${workspaceId}/${String(req.params.id)}/${randomUUID()}-${safeStorageFileName(file.originalname || "catalogo.png")}`;
+    const { error: uploadError } = await sb.storage.from("catalog-images").upload(storagePath, file.buffer, {
+      contentType: file.mimetype,
+      upsert: false
+    });
+    if (uploadError) return res.status(500).json({ message: "Não foi possível enviar a imagem. Verifique se o bucket catalog-images existe no Supabase Storage.", detail: uploadError.message });
+    const imageUrl = getPublicStorageUrl("catalog-images", storagePath);
+    const { data: current, error: loadError } = await sb
+      .from("catalog_items")
+      .select("images")
+      .eq("workspace_id", workspaceId)
+      .eq("id", req.params.id)
+      .maybeSingle();
+    if (loadError) throw loadError;
+    const images = Array.isArray(current?.images) ? [...current.images, imageUrl] : [imageUrl];
+    const { data, error } = await sb
+      .from("catalog_items")
+      .update({ image_url: imageUrl, images, updated_at: new Date().toISOString() })
+      .eq("workspace_id", workspaceId)
+      .eq("id", req.params.id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return res.status(201).json(data);
+  } catch (error) { return next(error); }
+});
 router.patch("/:id", async (req, res, next) => {
   try {
     const body = catalogSchema.partial().parse(req.body);
@@ -193,6 +229,28 @@ function prefixFor(category: string, type: "product" | "service") {
   return type === "service" ? "SRV" : "PRD";
 }
 
+
+function safeStorageFileName(value: string) {
+  const cleaned = String(value || "arquivo")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+  return cleaned || "arquivo";
+}
+
+
+async function ensureStorageBucket(bucket: string) {
+  const sb = requireSupabase();
+  const { data } = await sb.storage.getBucket(bucket);
+  if (data) return;
+  await sb.storage.createBucket(bucket, { public: true }).catch(() => undefined);
+}
+function getPublicStorageUrl(bucket: string, storagePath: string) {
+  const { data } = requireSupabase().storage.from(bucket).getPublicUrl(storagePath);
+  return data.publicUrl;
+}
 function requireSupabase() {
   const sb = getSupabase();
   if (!sb) {
@@ -205,3 +263,7 @@ function requireSupabase() {
 }
 
 export default router;
+
+
+
+

@@ -7,53 +7,10 @@ import { CheckCircle2, Download, ExternalLink, FileText, MessageCircle, Save, Se
 import { Company } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
 import { addCompanyNote, getCompanies } from "@/lib/api";
+import { downloadNoderePdf } from "@/lib/pdf";
 
 const whatsappMessage =
   "Ola, tudo bem? Estive analisando a presenca digital da sua empresa no Google e identifiquei algumas oportunidades que podem ajudar voces a gerar mais contatos e melhorar o posicionamento online. Posso te mostrar rapidamente?";
-
-function pdfEscape(value: string) {
-  return value.replace(/[\\()]/g, "\\$&").replace(/[^\x20-\x7EÀ-ÿ]/g, " ");
-}
-
-function buildSimplePdf(title: string, body: string) {
-  const lines = [title, "", ...body.split(/\r?\n/)].flatMap((line) => {
-    const clean = line.trim();
-    if (clean.length <= 86) return [clean];
-    return clean.match(/.{1,86}(\s|$)/g)?.map((chunk) => chunk.trim()) ?? [clean];
-  }).slice(0, 58);
-
-  const logo = [
-    "1 1 1 rg 0 0 595 842 re f",
-    "0.12 0.44 0.86 rg 50 785 44 44 re f",
-    "1 1 1 rg BT /F2 24 Tf 63 798 Td (N) Tj ET",
-    "0.07 0.09 0.14 rg BT /F2 24 Tf 108 806 Td (NODERE) Tj ET",
-    "0.12 0.44 0.86 rg BT /F1 8 Tf 110 792 Td (INTELLIGENCE) Tj ET",
-    "0.12 0.44 0.86 rg 50 770 495 1 re f"
-  ].join("\n");
-  const text = lines.map((line, index) => `0.07 0.09 0.14 rg BT /F1 10 Tf 50 ${735 - index * 13} Td (${pdfEscape(line)}) Tj ET`).join("\n");
-  const footer = "0.22 0.25 0.32 rg BT /F1 8 Tf 50 34 Td (Gerado pelo NODERE Intelligence · nodere.com.br · Pagina 1) Tj ET";
-  const stream = `q\n${logo}\n${text}\n${footer}\nQ`;
-  const objects = [
-    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
-    "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
-    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >> endobj",
-    "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
-    "5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> endobj",
-    `6 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj`
-  ];
-  let pdf = "%PDF-1.4\n";
-  const offsets = [0];
-  for (const object of objects) {
-    offsets.push(pdf.length);
-    pdf += `${object}\n`;
-  }
-  const xref = pdf.length;
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  for (const offset of offsets.slice(1)) pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
-  pdf += `trailer << /Root 1 0 R /Size ${objects.length + 1} >>\nstartxref\n${xref}\n%%EOF`;
-  return new Blob([pdf], { type: "application/pdf" });
-}
-
 
 function isValidBrazilMobileWhatsapp(value?: string) {
   const digits = String(value || "").replace(/\D/g, "");
@@ -193,7 +150,7 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
     downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `nodere-empresas-${Date.now()}.csv`);
   }
 
-  function exportPdf() {
+  async function exportPdf() {
     const list = (selectedCompanies.length ? selectedCompanies : visibleCompanies).slice(0, 50);
     const content = [
       "NODERE Intelligence",
@@ -207,7 +164,12 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
         ""
       ])
     ].join("\n");
-    downloadBlob(buildSimplePdf("Relatorio NODERE", content), `relatorio-nodere-${Date.now()}.pdf`);
+    await downloadNoderePdf({
+      title: "Relatório NODERE",
+      subtitle: `Empresas exportadas em ${new Date().toLocaleString("pt-BR")}`,
+      body: content,
+      fileName: `relatorio-nodere-${Date.now()}.pdf`
+    });
   }
 
   function downloadBlob(blob: Blob, fileName: string) {

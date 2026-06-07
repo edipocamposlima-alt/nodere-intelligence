@@ -45,6 +45,7 @@ create table if not exists nodere_companies (
   phone text,
   whatsapp text,
   website text,
+  logo_url text,
   instagram text,
   facebook text,
   linkedin text,
@@ -134,6 +135,7 @@ create table if not exists nodere_app_settings (
 
 -- Migração segura para bancos que já tinham as tabelas antes do multiusuário.
 alter table nodere_companies add column if not exists workspace_id text not null default 'default';
+alter table nodere_companies add column if not exists logo_url text;
 alter table nodere_companies add column if not exists cnpj text;
 alter table nodere_companies add column if not exists legal_name text;
 alter table nodere_companies add column if not exists razao_social text;
@@ -380,6 +382,8 @@ create table if not exists catalog_items (
   category text not null,
   subcategory text,
   brand text,
+  image_url text,
+  images text[] not null default '{}',
   type text not null check (type in ('product','service')),
   status text not null default 'active' check (status in ('active','inactive')),
   description_short text not null default '',
@@ -536,4 +540,27 @@ create index if not exists idx_download_logs_workspace on download_logs(workspac
 -- Phase 2: custom segments per workspace
 alter table nodere_workspaces add column if not exists custom_segments text[] not null default '{}';
 alter table workspaces add column if not exists custom_segments text[] not null default '{}';
+
+
+-- Phase 3: arquivos e logos por empresa
+create table if not exists company_files (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  company_id text not null references nodere_companies(id) on delete cascade,
+  filename text not null,
+  storage_path text not null,
+  file_url text not null,
+  file_type text,
+  file_size bigint,
+  uploaded_by text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_company_files_company on company_files(workspace_id, company_id, created_at desc);
+
+
+
+alter table catalog_items add column if not exists image_url text;
+alter table catalog_items add column if not exists images text[] not null default '{}';
 

@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { BellRing, CalendarCheck2, CalendarClock, CalendarDays, Check, Filter, Phone, Plus, RefreshCcw, Trash2 } from "lucide-react";
 import { CalendarEvent, createCalendarEvent, deleteCalendarEvent, getCalendarEvents, updateCalendarEvent } from "@/lib/api";
+import { RichTextEditor, RichTextPreview } from "@/components/RichTextEditor";
 
 const eventTypes = [
   { value: "follow-up", label: "Follow-up", color: "from-blue-500 to-cyan-400", icon: CalendarClock },
@@ -28,6 +29,7 @@ export function CalendarClient() {
   const [message, setMessage] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("pendente");
+  const [notesDraft, setNotesDraft] = useState("");
 
   useEffect(() => {
     void refresh();
@@ -64,9 +66,10 @@ export function CalendarClient() {
         status: "pendente",
         startAt,
         endAt,
-        notes: String(form.get("notes") || "")
+        notes: notesDraft
       });
       event.currentTarget.reset();
+      setNotesDraft("");
       await refresh();
       setMessage("Evento criado e salvo no banco.");
       requestLocalNotificationPermission();
@@ -165,7 +168,8 @@ export function CalendarClient() {
           </label>
           <label className="block md:col-span-2">
             <span className="text-sm font-semibold text-slate-300">Notas</span>
-            <textarea name="notes" placeholder="Contexto, combinados, objeções ou próximo passo" className="mt-2 min-h-24 w-full rounded-lg border border-line bg-ink px-3 py-3 text-sm outline-none focus:border-cyan" />
+            <input type="hidden" name="notes" value={notesDraft} />
+            <div className="mt-2"><RichTextEditor value={notesDraft} onChange={setNotesDraft} minHeight={150} placeholder="Contexto, combinados, objeções ou próximo passo" /></div>
           </label>
         </div>
         <button disabled={saving} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-electric px-5 py-3 text-sm font-black text-white shadow-glow disabled:opacity-60 md:w-auto">
@@ -225,7 +229,7 @@ export function CalendarClient() {
                   </div>
                   <p className="mt-3 text-sm text-slate-300">{new Date(item.start_at).toLocaleString("pt-BR")}</p>
                   {item.channel && <p className="mt-1 text-xs text-cyan">Canal: {item.channel}</p>}
-                  {item.notes && <p className="mt-2 line-clamp-3 text-sm text-slate-400">{item.notes}</p>}
+                  {item.notes && <div className="mt-2 line-clamp-3"><RichTextPreview value={item.notes} /></div>}
                   <div className="mt-4 flex flex-wrap gap-2">
                     {item.status !== "concluido" && (
                       <button onClick={() => completeEvent(item)} className="inline-flex items-center gap-1 rounded-lg border border-emerald-400/40 bg-emerald-500/15 px-3 py-2 text-xs font-bold text-emerald-200">
@@ -254,3 +258,4 @@ function requestLocalNotificationPermission() {
     void Notification.requestPermission();
   }
 }
+

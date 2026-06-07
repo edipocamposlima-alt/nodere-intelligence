@@ -124,13 +124,14 @@ export interface OperationDocument {
 // ─── Supabase helpers ────────────────────────────────────────────────────────
 
 function toRow(c: Company, workspaceId = "default", includeWorkspace = workspaceColumnAvailable): Record<string, unknown> {
-  const { id, name, category, city, state, address, phone, whatsapp, website,
+  const { id, name, category, city, state, address, phone, whatsapp, website, logoUrl,
     instagram, facebook, linkedin, youtube, rating, reviewCount, mapsUrl, cnpj, legalName,
     latitude, longitude, status, score, opportunityLevel, enrichmentStatus,
     lastContactAt, detectedOpportunities, suggestions, createdAt, updatedAt,
     notes, ...rest } = c;
   const row: Record<string, unknown> = {
     id, name, category, city, state, address, phone, whatsapp, website,
+    logo_url: logoUrl,
     instagram, facebook, linkedin, youtube, rating,
     review_count: reviewCount,
     maps_url: mapsUrl,
@@ -163,6 +164,7 @@ function toUpdateRow(updates: Partial<Company>): Record<string, unknown> {
     ["phone", "phone"],
     ["whatsapp", "whatsapp"],
     ["website", "website"],
+    ["logoUrl", "logo_url"],
     ["instagram", "instagram"],
     ["facebook", "facebook"],
     ["linkedin", "linkedin"],
@@ -214,6 +216,7 @@ function fromRow(row: Record<string, unknown>): Company {
     phone: row.phone as string | undefined,
     whatsapp: row.whatsapp as string | undefined,
     website: row.website as string | undefined,
+    logoUrl: row.logo_url as string | undefined,
     instagram: row.instagram as string | undefined,
     facebook: row.facebook as string | undefined,
     linkedin: row.linkedin as string | undefined,
@@ -799,5 +802,11 @@ function generateMockSearch(input: SearchRequest): Company[] {
     return { ...base, ...calculateOpportunityScore(base) };
   });
 }
+
+
+
+
+
+
 
 

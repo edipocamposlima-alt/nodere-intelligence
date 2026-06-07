@@ -14,6 +14,7 @@ import {
   getReportTimeline
 } from "@/lib/api";
 import type { ForecastReport, MonthlyTrend, PipelineReport } from "@/lib/types";
+import { downloadNoderePdf } from "@/lib/pdf";
 
 type Summary = Awaited<ReturnType<typeof getReportSummary>>;
 type Funnel = Awaited<ReturnType<typeof getReportFunnel>>;
@@ -86,6 +87,44 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
 
   const hasData = (summary?.total_companies || 0) > 0;
 
+  async function exportReportsPdf() {
+    const body = [
+      `Período: ${period}`,
+      `Agrupamento: ${groupBy}`,
+      "",
+      "Resumo executivo",
+      `Empresas: ${summary?.total_companies ?? 0}`,
+      `Leads no CRM: ${summary?.total_leads_in_crm ?? 0}`,
+      `Score médio: ${summary?.avg_score ?? 0}/100`,
+      `Conversão: ${summary?.conversion_rate ?? 0}%`,
+      `Créditos usados: ${summary?.credits_used ?? 0}`,
+      "",
+      "Funil",
+      ...funnel.stages.map((stage) => `- ${stage.name}: ${stage.count}`),
+      "",
+      "Segmentos",
+      ...segments.segments.map((item) => `- ${item.segment}: ${item.count}`),
+      "",
+      "Cidades",
+      ...cities.cities.map((item) => `- ${item.city}${item.state ? `/${item.state}` : ""}: ${item.count}`),
+      "",
+      "Origem",
+      ...origins.origins.map((item) => `- ${item.source}: ${item.count}`),
+      "",
+      intelligence ? "Inteligência digital" : "",
+      intelligence ? `Com site: ${intelligence.pct_with_site}%` : "",
+      intelligence ? `Google Ads: ${intelligence.pct_with_google_ads}%` : "",
+      intelligence ? `WhatsApp: ${intelligence.pct_with_whatsapp}%` : ""
+    ].filter(Boolean).join("\n");
+    await downloadNoderePdf({
+      title: "Relatórios executivos NODERE",
+      subtitle: "CRM, funil, origem e inteligência digital",
+      body,
+      fileName: `relatorio-executivo-nodere-${Date.now()}.pdf`
+    });
+  }
+
+
   return (
     <div className="space-y-6 p-4 md:p-8">
       <section className="rounded-xl border border-line bg-panel/90 p-5 print:border-0 print:bg-white">
@@ -108,7 +147,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
               <option value="week">Semanal</option>
               <option value="month">Mensal</option>
             </select>
-            <button onClick={() => window.print()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-electric px-4 py-2 text-xs font-bold text-white">
+            <button onClick={() => void exportReportsPdf()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-electric px-4 py-2 text-xs font-bold text-white">
               <Download className="h-4 w-4" />
               Exportar PDF
             </button>
@@ -238,3 +277,5 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
     </div>
   );
 }
+
+

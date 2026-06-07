@@ -29,6 +29,7 @@ export interface Company {
   phone?: string;
   whatsapp?: string;
   website?: string;
+  logoUrl?: string;
   instagram?: string;
   facebook?: string;
   linkedin?: string;
@@ -225,6 +226,7 @@ export interface DigitalAudit {
   companyId: string;
   companyName: string;
   website?: string;
+  logoUrl?: string;
   scan: WebsiteScan | null;
   maturityScore: number;
   commercialScore: number;
@@ -439,3 +441,4 @@ export interface DashboardMetrics {
   pipeline: Record<string, number>;
   topOpportunities: Company[];
 }
+
