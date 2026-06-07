@@ -11,10 +11,10 @@ import {
   getReportOrigin,
   getReportSegments,
   getReportSummary,
-  getReportTimeline
+  getReportTimeline,
+  downloadReportPdf
 } from "@/lib/api";
 import type { ForecastReport, MonthlyTrend, PipelineReport } from "@/lib/types";
-import { downloadNoderePdf } from "@/lib/pdf";
 
 type Summary = Awaited<ReturnType<typeof getReportSummary>>;
 type Funnel = Awaited<ReturnType<typeof getReportFunnel>>;
@@ -52,6 +52,10 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
   const [cities, setCities] = useState<Cities>({ cities: [] });
   const [origins, setOrigins] = useState<Origins>({ origins: [] });
   const [intelligence, setIntelligence] = useState<Intelligence | null>(null);
+  const [funnelMin, setFunnelMin] = useState(0);
+  const [segmentLimit, setSegmentLimit] = useState(8);
+  const [cityLimit, setCityLimit] = useState(10);
+  const [originLimit, setOriginLimit] = useState(8);
 
   useEffect(() => {
     let alive = true;
@@ -86,42 +90,13 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
   }, [period, groupBy]);
 
   const hasData = (summary?.total_companies || 0) > 0;
+  const filteredFunnel = funnel.stages.filter((stage) => stage.count >= funnelMin);
+  const filteredSegments = segments.segments.slice(0, segmentLimit);
+  const filteredCities = cities.cities.slice(0, cityLimit);
+  const filteredOrigins = origins.origins.slice(0, originLimit);
 
   async function exportReportsPdf() {
-    const body = [
-      `Período: ${period}`,
-      `Agrupamento: ${groupBy}`,
-      "",
-      "Resumo executivo",
-      `Empresas: ${summary?.total_companies ?? 0}`,
-      `Leads no CRM: ${summary?.total_leads_in_crm ?? 0}`,
-      `Score médio: ${summary?.avg_score ?? 0}/100`,
-      `Conversão: ${summary?.conversion_rate ?? 0}%`,
-      `Créditos usados: ${summary?.credits_used ?? 0}`,
-      "",
-      "Funil",
-      ...funnel.stages.map((stage) => `- ${stage.name}: ${stage.count}`),
-      "",
-      "Segmentos",
-      ...segments.segments.map((item) => `- ${item.segment}: ${item.count}`),
-      "",
-      "Cidades",
-      ...cities.cities.map((item) => `- ${item.city}${item.state ? `/${item.state}` : ""}: ${item.count}`),
-      "",
-      "Origem",
-      ...origins.origins.map((item) => `- ${item.source}: ${item.count}`),
-      "",
-      intelligence ? "Inteligência digital" : "",
-      intelligence ? `Com site: ${intelligence.pct_with_site}%` : "",
-      intelligence ? `Google Ads: ${intelligence.pct_with_google_ads}%` : "",
-      intelligence ? `WhatsApp: ${intelligence.pct_with_whatsapp}%` : ""
-    ].filter(Boolean).join("\n");
-    await downloadNoderePdf({
-      title: "Relatórios executivos NODERE",
-      subtitle: "CRM, funil, origem e inteligência digital",
-      body,
-      fileName: `relatorio-executivo-nodere-${Date.now()}.pdf`
-    });
+    await downloadReportPdf(period, groupBy);
   }
 
 
@@ -191,10 +166,17 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
               </div>
             </div>
             <div className="rounded-xl border border-line bg-panel/90 p-5">
-              <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-white"><Gauge className="h-4 w-4 text-cyan" /> Funil</h3>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-white"><Gauge className="h-4 w-4 text-cyan" /> Funil</h3>
+                <select value={funnelMin} onChange={(event) => setFunnelMin(Number(event.target.value))} className="rounded-lg border border-line bg-ink px-3 py-2 text-xs font-bold text-white">
+                  <option value={0}>Todas as etapas</option>
+                  <option value={1}>Com leads</option>
+                  <option value={5}>5+ leads</option>
+                </select>
+              </div>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={funnel.stages} layout="vertical" margin={{ left: 12, right: 16 }}>
+                  <BarChart data={filteredFunnel} layout="vertical" margin={{ left: 12, right: 16 }}>
                     <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
                     <XAxis type="number" stroke="#94A3B8" allowDecimals={false} />
                     <YAxis type="category" dataKey="name" stroke="#94A3B8" width={110} fontSize={11} />
@@ -208,20 +190,27 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
 
           <section className="grid gap-5 xl:grid-cols-2">
             <div className="rounded-xl border border-line bg-panel/90 p-5">
-              <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-white"><PieIcon className="h-4 w-4 text-cyan" /> Segmentos</h3>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-white"><PieIcon className="h-4 w-4 text-cyan" /> Segmentos</h3>
+                <select value={segmentLimit} onChange={(event) => setSegmentLimit(Number(event.target.value))} className="rounded-lg border border-line bg-ink px-3 py-2 text-xs font-bold text-white">
+                  <option value={5}>Top 5</option>
+                  <option value={8}>Top 8</option>
+                  <option value={15}>Top 15</option>
+                </select>
+              </div>
               <div className="grid gap-4 md:grid-cols-[260px_1fr]">
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={segments.segments} dataKey="count" nameKey="segment" outerRadius={90}>
-                        {segments.segments.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
+                      <Pie data={filteredSegments} dataKey="count" nameKey="segment" outerRadius={90}>
+                        {filteredSegments.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
                       </Pie>
                       <Tooltip contentStyle={{ background: "#0B1220", border: "1px solid #1E293B", color: "#fff" }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
                 <div className="space-y-2">
-                  {segments.segments.slice(0, 8).map((item, index) => (
+                  {filteredSegments.map((item, index) => (
                     <div key={item.segment} className="flex items-center justify-between rounded-lg border border-line bg-ink px-3 py-2 text-sm">
                       <span className="truncate text-slate-300"><span className="mr-2 inline-block h-2 w-2 rounded-full" style={{ background: COLORS[index % COLORS.length] }} />{item.segment}</span>
                       <span className="font-bold text-white">{item.count}</span>
@@ -231,12 +220,19 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
               </div>
             </div>
             <div className="rounded-xl border border-line bg-panel/90 p-5">
-              <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-white"><PieIcon className="h-4 w-4 text-cyan" /> Origem dos leads</h3>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-white"><PieIcon className="h-4 w-4 text-cyan" /> Origem dos leads</h3>
+                <select value={originLimit} onChange={(event) => setOriginLimit(Number(event.target.value))} className="rounded-lg border border-line bg-ink px-3 py-2 text-xs font-bold text-white">
+                  <option value={5}>Top 5</option>
+                  <option value={8}>Top 8</option>
+                  <option value={20}>Todas</option>
+                </select>
+              </div>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={origins.origins} dataKey="count" nameKey="source" outerRadius={90} label>
-                      {origins.origins.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
+                    <Pie data={filteredOrigins} dataKey="count" nameKey="source" outerRadius={90} label>
+                      {filteredOrigins.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
                     <Tooltip contentStyle={{ background: "#0B1220", border: "1px solid #1E293B", color: "#fff" }} />
                   </PieChart>
@@ -247,9 +243,16 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
 
           <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
             <div className="rounded-xl border border-line bg-panel/90 p-5">
-              <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-white"><MapPin className="h-4 w-4 text-cyan" /> Top cidades</h3>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-white"><MapPin className="h-4 w-4 text-cyan" /> Top cidades</h3>
+                <select value={cityLimit} onChange={(event) => setCityLimit(Number(event.target.value))} className="rounded-lg border border-line bg-ink px-3 py-2 text-xs font-bold text-white">
+                  <option value={5}>Top 5</option>
+                  <option value={10}>Top 10</option>
+                  <option value={15}>Top 15</option>
+                </select>
+              </div>
               <div className="space-y-2">
-                {cities.cities.map((item) => (
+                {filteredCities.map((item) => (
                   <div key={`${item.city}-${item.state}`} className="flex justify-between rounded-lg border border-line bg-ink px-3 py-2 text-sm">
                     <span className="text-slate-300">{item.city}{item.state ? `/${item.state}` : ""}</span>
                     <span className="font-bold text-white">{item.count}</span>

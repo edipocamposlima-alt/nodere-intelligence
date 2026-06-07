@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 import { config } from "../config.js";
+import { getSupabase } from "../db/supabase.js";
 import { extractBearerToken, issueSessionToken, verifySessionToken } from "../services/adminSession.js";
 import { authenticateUser, createWorkspaceUser, listWorkspaceUsers, updateWorkspaceUser } from "../services/userStore.js";
 
@@ -24,6 +26,7 @@ const apiKeyFields = [
 type ApiKeyField = (typeof apiKeyFields)[number];
 
 const runtimeApiSettings = new Map<ApiKeyField, { masked: string; updatedAt: string }>();
+const memoryRoles = new Map<string, Array<{ id: string; workspace_id: string; name: string; description?: string; permissions: Record<string, unknown>; color: string; created_at: string; updated_at: string }>>();
 
 function requireAdmin(request: any, response: any, next: any) {
   const session = request.session || verifySessionToken(extractBearerToken(request.headers.authorization));
@@ -112,6 +115,87 @@ function applyRuntimeValue(field: ApiKeyField, value: string) {
   }
 }
 
+function generateTemporaryPassword() {
+  return `Nd-${randomUUID().replace(/-/g, "").slice(0, 10)}!`;
+}
+
+async function listCustomRoles(workspaceId: string) {
+  const sb = getSupabase();
+  if (!sb) return memoryRoles.get(workspaceId) || [];
+  const { data, error } = await sb
+    .from("custom_roles")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+async function createCustomRole(workspaceId: string, input: { name: string; description?: string; permissions?: Record<string, unknown>; color?: string }) {
+  const now = new Date().toISOString();
+  const row = {
+    id: randomUUID(),
+    workspace_id: workspaceId,
+    name: input.name.trim(),
+    description: input.description?.trim() || "",
+    permissions: input.permissions || {},
+    color: input.color || "#1E6FDB",
+    created_at: now,
+    updated_at: now
+  };
+  const sb = getSupabase();
+  if (!sb) {
+    const items = memoryRoles.get(workspaceId) || [];
+    memoryRoles.set(workspaceId, [...items, row]);
+    return row;
+  }
+  const { data, error } = await sb.from("custom_roles").insert(row).select("*").single();
+  if (error) throw error;
+  return data;
+}
+
+async function updateCustomRole(workspaceId: string, roleId: string, input: { name?: string; description?: string; permissions?: Record<string, unknown>; color?: string }) {
+  const fields = {
+    ...(input.name !== undefined ? { name: input.name.trim() } : {}),
+    ...(input.description !== undefined ? { description: input.description.trim() } : {}),
+    ...(input.permissions !== undefined ? { permissions: input.permissions } : {}),
+    ...(input.color !== undefined ? { color: input.color } : {}),
+    updated_at: new Date().toISOString()
+  };
+  const sb = getSupabase();
+  if (!sb) {
+    const items = memoryRoles.get(workspaceId) || [];
+    const next = items.map((item) => item.id === roleId ? { ...item, ...fields } : item);
+    memoryRoles.set(workspaceId, next);
+    return next.find((item) => item.id === roleId) || null;
+  }
+  const { data, error } = await sb.from("custom_roles").update(fields).eq("workspace_id", workspaceId).eq("id", roleId).select("*").maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+async function deleteCustomRole(workspaceId: string, roleId: string) {
+  const sb = getSupabase();
+  if (!sb) {
+    memoryRoles.set(workspaceId, (memoryRoles.get(workspaceId) || []).filter((item) => item.id !== roleId));
+    return;
+  }
+  const { error } = await sb.from("custom_roles").delete().eq("workspace_id", workspaceId).eq("id", roleId);
+  if (error) throw error;
+}
+
+async function listAuditRows(workspaceId: string) {
+  const sb = getSupabase();
+  if (!sb) return { activityLogs: [], downloadLogs: [] };
+  const [activity, downloads] = await Promise.all([
+    sb.from("activity_logs").select("*").eq("workspace_id", workspaceId).order("created_at", { ascending: false }).limit(80),
+    sb.from("download_logs").select("*").eq("workspace_id", workspaceId).order("created_at", { ascending: false }).limit(80)
+  ]);
+  if (activity.error) throw activity.error;
+  if (downloads.error) throw downloads.error;
+  return { activityLogs: activity.data || [], downloadLogs: downloads.data || [] };
+}
+
 router.post("/login", async (request, response, next) => {
   const body = z.object({
     email: z.string().email(),
@@ -170,10 +254,41 @@ router.post("/users", requireAdmin, async (request: any, response, next) => {
       name: z.string().min(2),
       email: z.string().email(),
       password: z.string().min(8),
-      role: z.enum(["owner", "admin", "operator", "viewer"]).default("operator")
+      role: z.enum(["owner", "admin", "operator", "viewer"]).default("operator"),
+      customRoleId: z.string().nullable().optional(),
+      status: z.string().optional(),
+      visibilityLevel: z.string().optional(),
+      modulePermissions: z.record(z.unknown()).optional()
     }).parse(request.body);
     const user = await createWorkspaceUser(request.admin.workspaceId || "default", body);
     response.status(201).json({ user, message: "Usuário criado. Ele já pode acessar a plataforma pelo login." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/users/invite", requireAdmin, async (request: any, response, next) => {
+  try {
+    const body = z.object({
+      name: z.string().min(2),
+      email: z.string().email(),
+      role: z.enum(["owner", "admin", "operator", "viewer"]).default("operator"),
+      customRoleId: z.string().nullable().optional(),
+      status: z.string().default("active"),
+      visibilityLevel: z.string().default("read_edit"),
+      modulePermissions: z.record(z.unknown()).optional(),
+      password: z.string().min(8).optional()
+    }).parse(request.body);
+    const temporaryPassword = body.password || generateTemporaryPassword();
+    const user = await createWorkspaceUser(request.admin.workspaceId || "default", {
+      ...body,
+      password: temporaryPassword
+    });
+    response.status(201).json({
+      user,
+      temporaryPassword,
+      message: "Usuário criado. Compartilhe a senha temporária por canal seguro e peça troca no primeiro acesso."
+    });
   } catch (error) {
     next(error);
   }
@@ -185,11 +300,71 @@ router.patch("/users/:id", requireAdmin, async (request: any, response, next) =>
       name: z.string().min(2).optional(),
       password: z.string().min(8).optional(),
       role: z.enum(["owner", "admin", "operator", "viewer"]).optional(),
-      active: z.boolean().optional()
+      active: z.boolean().optional(),
+      customRoleId: z.string().nullable().optional(),
+      status: z.string().optional(),
+      visibilityLevel: z.string().optional(),
+      modulePermissions: z.record(z.unknown()).optional()
     }).parse(request.body);
     const user = await updateWorkspaceUser(request.admin.workspaceId || "default", request.params.id, body);
     if (!user) return response.status(404).json({ message: "Usuário não encontrado nesta conta." });
     response.json({ user, message: "Usuário atualizado." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/roles", requireAdmin, async (request: any, response, next) => {
+  try {
+    response.json({ roles: await listCustomRoles(request.admin.workspaceId || "default") });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/roles", requireAdmin, async (request: any, response, next) => {
+  try {
+    const body = z.object({
+      name: z.string().min(2),
+      description: z.string().optional(),
+      permissions: z.record(z.unknown()).optional(),
+      color: z.string().optional()
+    }).parse(request.body);
+    const role = await createCustomRole(request.admin.workspaceId || "default", body);
+    response.status(201).json({ role, message: "Cargo criado." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/roles/:id", requireAdmin, async (request: any, response, next) => {
+  try {
+    const body = z.object({
+      name: z.string().min(2).optional(),
+      description: z.string().optional(),
+      permissions: z.record(z.unknown()).optional(),
+      color: z.string().optional()
+    }).parse(request.body);
+    const role = await updateCustomRole(request.admin.workspaceId || "default", request.params.id, body);
+    if (!role) return response.status(404).json({ message: "Cargo não encontrado." });
+    response.json({ role, message: "Cargo atualizado." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/roles/:id", requireAdmin, async (request: any, response, next) => {
+  try {
+    await deleteCustomRole(request.admin.workspaceId || "default", request.params.id);
+    response.json({ ok: true, message: "Cargo removido." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/audit", requireAdmin, async (request: any, response, next) => {
+  try {
+    response.json(await listAuditRows(request.admin.workspaceId || "default"));
   } catch (error) {
     next(error);
   }

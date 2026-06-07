@@ -1,6 +1,7 @@
 import { Company, ForecastReport, MonthlyTrend, PipelineReport, PipelineStageSummary } from "../types.js";
 import { listCompaniesAsync } from "./companyStore.js";
 import { getOperators, getOperatorRanking } from "./operators.js";
+import { listWorkspaceUsers } from "./userStore.js";
 
 const STAGE_META: Record<string, { probability: number; avgValue: number }> = {
   "Novo Lead": { probability: 0.05, avgValue: 1000 },
@@ -223,18 +224,37 @@ export async function getIntelligenceReport(workspaceId = "default", period = "3
 }
 
 export async function getOperatorsReport(workspaceId = "default") {
-  const [operators, ranking] = await Promise.all([getOperators(workspaceId), getOperatorRanking(workspaceId)]);
-  return operators.map((operator) => {
+  const [users, operators, ranking, companies] = await Promise.all([
+    listWorkspaceUsers(workspaceId).catch(() => []),
+    getOperators(workspaceId),
+    getOperatorRanking(workspaceId),
+    listCompaniesAsync(workspaceId)
+  ]);
+  const people = users.length
+    ? users.map((user) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      createdAt: user.lastActiveAt || user.updatedAt || user.createdAt
+    }))
+    : operators;
+
+  return people.map((operator) => {
     const metrics = ranking.find((item) => item.operatorId === operator.id);
+    const owned = companies.filter((company) => (company as any).ownerId === operator.id || (company as any).operatorId === operator.id);
+    const contacted = owned.filter((company) => company.status && company.status !== "Novo Lead").length;
+    const closed = owned.filter((company) => company.status === "Fechado").length;
+    const decided = owned.filter((company) => company.status === "Fechado" || company.status === "Perdido").length;
     return {
       user_id: operator.id,
       name: operator.name,
       email: operator.email,
       role: operator.role,
-      leads_created: metrics?.leadsEnriched ?? 0,
-      followups_done: metrics?.contactsMade ?? 0,
-      leads_closed: metrics?.dealsClosed ?? 0,
-      conversion_rate: metrics?.conversionRate ?? 0,
+      leads_created: metrics?.leadsEnriched ?? owned.length,
+      followups_done: metrics?.contactsMade ?? contacted,
+      leads_closed: metrics?.dealsClosed ?? closed,
+      conversion_rate: metrics?.conversionRate ?? (decided > 0 ? Math.round((closed / decided) * 100) / 100 : 0),
       last_active: operator.createdAt
     };
   });

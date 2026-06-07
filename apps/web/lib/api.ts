@@ -388,6 +388,49 @@ export function getReportIntelligence(period = "30d") {
   }>(`/reports/intelligence?period=${encodeURIComponent(period)}`);
 }
 
+export function getReportOperators() {
+  return api<Array<{
+    user_id: string;
+    name: string;
+    email?: string;
+    role?: string;
+    leads_created: number;
+    followups_done: number;
+    leads_closed: number;
+    conversion_rate: number;
+    last_active?: string;
+  }>>("/reports/operators", undefined, []);
+}
+
+export async function downloadReportPdf(period = "30d", groupBy = "day") {
+  const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
+  const response = await fetch(`${API_URL}/reports/pdf`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {})
+    },
+    body: JSON.stringify({ period, groupBy }),
+    cache: "no-store"
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new ApiRequestError(payload.message || payload.error || `API retornou HTTP ${response.status}`, response.status);
+  }
+  const blob = await response.blob();
+  const disposition = response.headers.get("content-disposition") || "";
+  const match = disposition.match(/filename="?([^"]+)"?/i);
+  const fileName = match?.[1] || `relatorio-nodere-${Date.now()}.pdf`;
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function getAuditLog(limit = 100) {
   return api<AuditLogEvent[]>(`/audit?limit=${limit}`, undefined, []);
 }

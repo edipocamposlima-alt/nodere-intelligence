@@ -10,6 +10,11 @@ export interface PlatformUser {
   email: string;
   role: SessionRole;
   active: boolean;
+  customRoleId?: string | null;
+  status?: string;
+  lastActiveAt?: string | null;
+  visibilityLevel?: string;
+  modulePermissions?: Record<string, unknown>;
   createdAt: string;
   updatedAt?: string;
 }
@@ -21,6 +26,11 @@ interface PlatformUserRow {
   email: string;
   role: SessionRole;
   active: boolean;
+  custom_role_id?: string | null;
+  status?: string;
+  last_active_at?: string | null;
+  visibility_level?: string;
+  module_permissions?: Record<string, unknown>;
   password_hash: string;
   created_at: string;
   updated_at?: string;
@@ -33,6 +43,9 @@ function isUserSchemaMissing(error: unknown) {
   const text = error instanceof Error ? error.message : JSON.stringify(error);
   return text.includes("nodere_workspaces") ||
     text.includes("nodere_platform_users") ||
+    text.includes("custom_role_id") ||
+    text.includes("visibility_level") ||
+    text.includes("module_permissions") ||
     text.includes("Could not find the table") ||
     text.includes("42P01");
 }
@@ -49,6 +62,11 @@ function toPublic(row: PlatformUserRow): PlatformUser {
     email: row.email,
     role: row.role,
     active: row.active,
+    customRoleId: row.custom_role_id ?? null,
+    status: row.status || (row.active ? "active" : "inactive"),
+    lastActiveAt: row.last_active_at ?? null,
+    visibilityLevel: row.visibility_level || "read_edit",
+    modulePermissions: row.module_permissions || {},
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
@@ -90,6 +108,9 @@ export async function ensureDefaultAdminUser() {
     email,
     role: "owner",
     active: true,
+    status: "active",
+    visibility_level: "full",
+    module_permissions: {},
     password_hash: hashPassword(config.admin.password),
     created_at: now,
     updated_at: now
@@ -154,10 +175,10 @@ export async function listWorkspaceUsers(workspaceId: string) {
   await ensureDefaultAdminUser();
   if (hasSupabase() && userSchemaAvailable) {
     const sb = getSupabase()!;
-    const { data, error } = await sb
-      .from("nodere_platform_users")
-      .select("id, workspace_id, name, email, role, active, created_at, updated_at")
-      .eq("workspace_id", workspaceId)
+      const { data, error } = await sb
+        .from("nodere_platform_users")
+        .select("*")
+        .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: true });
     if (error) {
       if (isUserSchemaMissing(error)) {
@@ -172,7 +193,7 @@ export async function listWorkspaceUsers(workspaceId: string) {
   return [...memoryUsers.values()].filter((u) => u.workspace_id === workspaceId).map(toPublic);
 }
 
-export async function createWorkspaceUser(workspaceId: string, input: { name: string; email: string; password: string; role: SessionRole }) {
+export async function createWorkspaceUser(workspaceId: string, input: { name: string; email: string; password: string; role: SessionRole; customRoleId?: string | null; status?: string; visibilityLevel?: string; modulePermissions?: Record<string, unknown> }) {
   await ensureDefaultAdminUser();
   if (hasSupabase() && !userSchemaAvailable && process.env.NODE_ENV === "production") {
     const error = new Error("Schema de usuários não aplicado no Supabase. Execute apps/api/src/db/schema.sql antes de criar usuários.") as Error & { status?: number; code?: string };
@@ -187,7 +208,11 @@ export async function createWorkspaceUser(workspaceId: string, input: { name: st
     name: input.name.trim(),
     email: normalizeEmail(input.email),
     role: normalizeRole(input.role),
-    active: true,
+    active: input.status ? input.status !== "inactive" : true,
+    custom_role_id: input.customRoleId || null,
+    status: input.status || "active",
+    visibility_level: input.visibilityLevel || "read_edit",
+    module_permissions: input.modulePermissions || {},
     password_hash: hashPassword(input.password),
     created_at: now,
     updated_at: now
@@ -224,11 +249,18 @@ export async function createWorkspaceUser(workspaceId: string, input: { name: st
   return toPublic(row);
 }
 
-export async function updateWorkspaceUser(workspaceId: string, userId: string, input: { name?: string; role?: SessionRole; active?: boolean; password?: string }) {
+export async function updateWorkspaceUser(workspaceId: string, userId: string, input: { name?: string; role?: SessionRole; active?: boolean; password?: string; customRoleId?: string | null; status?: string; visibilityLevel?: string; modulePermissions?: Record<string, unknown> }) {
   const fields: Partial<PlatformUserRow> = { updated_at: new Date().toISOString() };
   if (input.name !== undefined) fields.name = input.name.trim();
   if (input.role !== undefined) fields.role = normalizeRole(input.role);
   if (input.active !== undefined) fields.active = Boolean(input.active);
+  if (input.customRoleId !== undefined) fields.custom_role_id = input.customRoleId || null;
+  if (input.status !== undefined) {
+    fields.status = input.status;
+    fields.active = input.status !== "inactive" && input.status !== "restricted";
+  }
+  if (input.visibilityLevel !== undefined) fields.visibility_level = input.visibilityLevel;
+  if (input.modulePermissions !== undefined) fields.module_permissions = input.modulePermissions;
   if (input.password) fields.password_hash = hashPassword(input.password);
 
   if (hasSupabase() && userSchemaAvailable) {
@@ -238,7 +270,7 @@ export async function updateWorkspaceUser(workspaceId: string, userId: string, i
       .update(fields)
       .eq("workspace_id", workspaceId)
       .eq("id", userId)
-      .select("id, workspace_id, name, email, role, active, created_at, updated_at")
+      .select("*")
       .maybeSingle();
     if (error) throw error;
     return data ? toPublic(data as unknown as PlatformUserRow) : null;
@@ -265,7 +297,7 @@ export async function getPlatformUserByEmail(emailInput: string) {
     const sb = getSupabase()!;
     const { data, error } = await sb
       .from("nodere_platform_users")
-      .select("id, workspace_id, name, email, role, active, created_at, updated_at")
+      .select("*")
       .eq("email", email)
       .eq("active", true)
       .maybeSingle();
@@ -298,6 +330,9 @@ export async function ensureSupabaseAuthUser(input: { authUserId: string; email:
     email,
     role: "owner",
     active: true,
+    status: "active",
+    visibility_level: "full",
+    module_permissions: {},
     password_hash: hashPassword(randomUUID()),
     created_at: now,
     updated_at: now

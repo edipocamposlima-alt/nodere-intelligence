@@ -33,6 +33,21 @@ create table if not exists nodere_platform_users (
 create index if not exists idx_platform_users_workspace on nodere_platform_users(workspace_id);
 create index if not exists idx_platform_users_email on nodere_platform_users(lower(email));
 
+-- Fase 4: cargos personalizados e limites de acesso administrativo.
+create table if not exists custom_roles (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  name text not null,
+  description text,
+  permissions jsonb not null default '{}',
+  color text not null default '#1E6FDB',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (workspace_id, name)
+);
+
+create index if not exists idx_custom_roles_workspace on custom_roles(workspace_id);
+
 -- Empresas / leads
 create table if not exists nodere_companies (
   id text primary key,
@@ -171,6 +186,12 @@ end $$;
 alter table nodere_platform_users
   add constraint nodere_platform_users_role_check check (role in ('owner', 'admin', 'operator', 'viewer'));
 
+alter table nodere_platform_users add column if not exists custom_role_id text;
+alter table nodere_platform_users add column if not exists status text not null default 'active';
+alter table nodere_platform_users add column if not exists last_active_at timestamptz;
+alter table nodere_platform_users add column if not exists visibility_level text not null default 'read_edit';
+alter table nodere_platform_users add column if not exists module_permissions jsonb not null default '{}';
+
 -- Compatibilidade opcional com Supabase Auth/RLS para a fase SaaS comercial.
 create table if not exists workspaces (
   id uuid primary key default gen_random_uuid(),
@@ -190,6 +211,13 @@ create table if not exists workspace_members (
   invited_at timestamptz not null default now(),
   primary key (workspace_id, user_id)
 );
+
+alter table workspace_members add column if not exists name text;
+alter table workspace_members add column if not exists custom_role_id text;
+alter table workspace_members add column if not exists status text not null default 'active';
+alter table workspace_members add column if not exists last_active_at timestamptz;
+alter table workspace_members add column if not exists visibility_level text not null default 'read_edit';
+alter table workspace_members add column if not exists module_permissions jsonb not null default '{}';
 
 create index if not exists idx_companies_workspace on nodere_companies(workspace_id);
 create index if not exists idx_companies_owner on nodere_companies(workspace_id, owner_id);

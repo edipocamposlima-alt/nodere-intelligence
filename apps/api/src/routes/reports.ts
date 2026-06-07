@@ -1,5 +1,9 @@
 import { Router } from "express";
+import fs from "node:fs";
+import path from "node:path";
+import PDFDocument from "pdfkit";
 import { getRequestWorkspaceId } from "../middleware/session.js";
+import { getSupabase } from "../db/supabase.js";
 import {
   getPipelineReport,
   getForecastReport,
@@ -17,6 +21,34 @@ import {
 } from "../services/reports.js";
 
 const router = Router();
+
+
+function formatBRL(value: number) {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+}
+
+function writeMetric(doc: PDFKit.PDFDocument, label: string, value: string | number) {
+  const x = doc.x;
+  const y = doc.y;
+  doc.roundedRect(x, y, 165, 62, 10).strokeColor("#D7E6FF").lineWidth(0.7).stroke();
+  doc.fillColor("#64748B").fontSize(8).text(label, x + 12, y + 11, { width: 140 });
+  doc.fillColor("#0A0F1E").fontSize(20).text(String(value), x + 12, y + 28, { width: 140 });
+  doc.x = x + 180;
+  doc.y = y;
+}
+
+async function logReportDownload(workspaceId: string, userId: string | undefined, fileName: string, metadata: Record<string, unknown>) {
+  const sb = getSupabase();
+  if (!sb) return;
+  await sb.from("download_logs").insert({
+    workspace_id: workspaceId,
+    user_id: userId || null,
+    file_type: "report_pdf",
+    file_name: fileName,
+    metadata
+  });
+}
+
 
 router.get("/pipeline", async (req, res, next) => {
   try {
@@ -118,6 +150,108 @@ router.get("/performance", async (req, res, next) => {
 router.get("/operators", async (req, res, next) => {
   try {
     res.json(await getOperatorsReport(getRequestWorkspaceId(req)));
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+router.post("/pdf", async (req: any, res, next) => {
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    const period = typeof req.body?.period === "string" ? req.body.period : String(req.query.period || "30d");
+    const groupBy = typeof req.body?.groupBy === "string" ? req.body.groupBy : String(req.query.group_by || "day");
+    const [summary, funnel, segments, timeline, operators, intelligence] = await Promise.all([
+      getSummaryReport(workspaceId, period),
+      getFunnelReport(workspaceId),
+      getSegmentsReport(workspaceId, period),
+      getTimelineReport(workspaceId, period, groupBy),
+      getOperatorsReport(workspaceId),
+      getIntelligenceReport(workspaceId, period)
+    ]);
+
+    const fileName = `relatorio-nodere-${Date.now()}.pdf`;
+    const doc = new PDFDocument({ size: "A4", margin: 42, bufferPages: true, info: { Title: "Relatorio NODERE", Author: "NODERE Intelligence" } });
+    const chunks: Buffer[] = [];
+    doc.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+    doc.on("end", async () => {
+      await logReportDownload(workspaceId, req.session?.userId || req.admin?.userId, fileName, {
+        period,
+        groupBy,
+        totalCompanies: summary.total_companies,
+        generatedAt: new Date().toISOString()
+      }).catch(() => undefined);
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename=\"${fileName}\"`);
+      res.send(Buffer.concat(chunks));
+    });
+
+    const logoCandidates = [
+      path.resolve(process.cwd(), "../web/public/nodere-wordmark.png"),
+      path.resolve(process.cwd(), "apps/web/public/nodere-wordmark.png"),
+      path.resolve(process.cwd(), "public/nodere-wordmark.png")
+    ];
+    const logoPath = logoCandidates.find((candidate) => fs.existsSync(candidate));
+
+    doc.rect(0, 0, doc.page.width, 110).fill("#0A0F1E");
+    if (logoPath) {
+      doc.image(logoPath, 42, 25, { width: 165 });
+    } else {
+      doc.fillColor("#FFFFFF").fontSize(22).text("NODERE", 42, 34);
+    }
+    doc.fillColor("#94A3B8").fontSize(9).text("Relatorio comercial gerado pelo NODERE Intelligence", 42, 78);
+    doc.fillColor("#FFFFFF").fontSize(11).text(`Periodo: ${period}`, 420, 35, { align: "right" });
+    doc.fillColor("#94A3B8").fontSize(8).text(new Date().toLocaleString("pt-BR"), 420, 55, { align: "right" });
+
+    doc.y = 140;
+    doc.fillColor("#0A0F1E").fontSize(18).text("Resumo executivo");
+    doc.moveDown(0.8);
+    writeMetric(doc, "Empresas no CRM", summary.total_companies);
+    writeMetric(doc, "Score medio", summary.avg_score);
+    writeMetric(doc, "Conversao", `${summary.conversion_rate}%`);
+    doc.x = 42;
+    doc.y += 78;
+    writeMetric(doc, "Novos no periodo", summary.new_this_period);
+    writeMetric(doc, "Com site", `${intelligence.pct_with_site}%`);
+    writeMetric(doc, "Com WhatsApp", `${intelligence.pct_with_whatsapp}%`);
+
+    doc.x = 42;
+    doc.y += 88;
+    doc.fillColor("#0A0F1E").fontSize(15).text("Funil comercial");
+    doc.moveDown(0.5);
+    funnel.stages.forEach((stage) => {
+      doc.fillColor("#1E293B").fontSize(10).text(`${stage.name}: ${stage.count} lead(s) - ${stage.pct_of_total}% do total`);
+    });
+
+    doc.moveDown(1);
+    doc.fillColor("#0A0F1E").fontSize(15).text("Segmentos principais");
+    doc.moveDown(0.5);
+    segments.segments.slice(0, 8).forEach((segment) => {
+      doc.fillColor("#1E293B").fontSize(10).text(`${segment.segment}: ${segment.count} empresa(s), score medio ${segment.avg_score}`);
+    });
+
+    if (doc.y > 650) doc.addPage();
+    doc.moveDown(1);
+    doc.fillColor("#0A0F1E").fontSize(15).text("Linha do tempo");
+    doc.moveDown(0.5);
+    timeline.data.slice(-12).forEach((point) => {
+      doc.fillColor("#1E293B").fontSize(10).text(`${point.date}: ${point.count} novo(s) lead(s)`);
+    });
+
+    doc.moveDown(1);
+    doc.fillColor("#0A0F1E").fontSize(15).text("Operadores");
+    doc.moveDown(0.5);
+    operators.slice(0, 12).forEach((operator) => {
+      doc.fillColor("#1E293B").fontSize(10).text(`${operator.name} (${operator.role}): ${operator.leads_created} lead(s), ${operator.followups_done} atividade(s), ${operator.leads_closed} fechado(s)`);
+    });
+
+    const pages = doc.bufferedPageRange();
+    for (let i = 0; i < pages.count; i += 1) {
+      doc.switchToPage(i);
+      doc.fillColor("#64748B").fontSize(8).text(`NODERE Intelligence - pagina ${i + 1}/${pages.count}`, 42, doc.page.height - 38, { align: "center" });
+    }
+
+    doc.end();
   } catch (error) {
     next(error);
   }
