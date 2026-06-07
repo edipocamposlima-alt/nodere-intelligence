@@ -15,10 +15,17 @@ export const dynamic = "force-dynamic";
 const whatsappMessage =
   "Ola, tudo bem? Estive analisando a presenca digital da sua empresa no Google e identifiquei algumas oportunidades que podem ajudar voces a gerar mais contatos e melhorar o posicionamento online. Posso te mostrar rapidamente?";
 
+function externalUrl(value?: string) {
+  const clean = String(value || "").trim();
+  if (!clean) return "";
+  return /^https?:\/\//i.test(clean) ? clean : `https://${clean}`;
+}
+
 function linkedinSearchUrl(name: string) {
   const query = String(name || "")
     .replace(/https?:\/\/\S+/gi, "")
     .replace(/\b(?:www\.)?[\w-]+\.(?:com|com\.br|net|org|br|io|app)\b/gi, "")
+    .replace(/\.(com|com\.br|net|org|io|br)(\s|$)/gi, " ")
     .trim();
   return `https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(query)}`;
 }
@@ -67,7 +74,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                 Exportar PDF
               </a>
               {company.website && (
-                <a href={company.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
+                <a href={externalUrl(company.website)} target="_blank" rel="noopener noreferrer" className="btn-action">
                   <Globe2 className="h-4 w-4" />
                   Site
                 </a>
@@ -91,7 +98,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                 </a>
               )}
               {company.linkedin && (
-                <a href={company.linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
+                <a href={externalUrl(company.linkedin)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
                   <Linkedin className="h-4 w-4" />
                   LinkedIn
                 </a>
@@ -261,3 +268,5 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
     </div>
   );
 }
+
+

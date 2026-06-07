@@ -299,7 +299,10 @@ async function dbUpsert(items: Company[], workspaceId = "default"): Promise<void
       continue;
     }
     if (markMissingCompanyColumn(error)) continue;
-    throw error;
+    console.error("[COMPANIES] Supabase insert error:", JSON.stringify(error, null, 2));
+    console.error("[COMPANIES] Workspace ID:", workspaceId);
+    console.error("[COMPANIES] Data attempted:", JSON.stringify(rows, null, 2));
+    throw new Error("Erro ao salvar empresa: " + ((error as any)?.message || String(error)));
   }
   throw new Error("Nao foi possivel persistir empresas: schema Supabase tem colunas incompatíveis demais. Aplique apps/api/src/db/schema.sql.");
 }
@@ -319,7 +322,11 @@ async function dbUpdateFields(id: string, fields: Record<string, unknown>, works
       continue;
     }
     if (markMissingCompanyColumn(error)) continue;
-    throw error;
+    console.error("[COMPANIES] Supabase update error:", JSON.stringify(error, null, 2));
+    console.error("[COMPANIES] Workspace ID:", workspaceId);
+    console.error("[COMPANIES] Company ID:", id);
+    console.error("[COMPANIES] Data attempted:", JSON.stringify(nextFields, null, 2));
+    throw new Error("Erro ao atualizar empresa: " + ((error as any)?.message || String(error)));
   }
   throw new Error("Nao foi possivel atualizar empresa: schema Supabase tem colunas incompatíveis demais. Aplique apps/api/src/db/schema.sql.");
 }
@@ -792,3 +799,5 @@ function generateMockSearch(input: SearchRequest): Company[] {
     return { ...base, ...calculateOpportunityScore(base) };
   });
 }
+
+

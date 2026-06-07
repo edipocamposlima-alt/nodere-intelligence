@@ -54,7 +54,7 @@ export function ExternalSearchTabs() {
   }
 
   const linkedInUrls = useMemo(() => {
-    const companyKeywords = [linkedinQuery.companyName, linkedinQuery.city, linkedinQuery.state, linkedinQuery.country].filter(Boolean).join(" ");
+    const companyKeywords = cleanCompanyNameOnly(linkedinQuery.companyName);
     const personKeywords = [linkedinQuery.personName, linkedinQuery.title, linkedinQuery.companyName, linkedinQuery.city, linkedinQuery.state, linkedinQuery.country].filter(Boolean).join(" ");
     const jobLocation = [linkedinQuery.city, linkedinQuery.state, linkedinQuery.country].filter(Boolean).join(", ");
     return {
@@ -198,4 +198,12 @@ function labelFor(key: string) {
     revenueRange: "Receita"
   };
   return labels[key] || key;
+}
+
+function cleanCompanyNameOnly(value: string) {
+  return String(value || "")
+    .replace(/https?:\/\/\S+/gi, "")
+    .replace(/\b(?:www\.)?[\w-]+\.(?:com|com\.br|net|org|br|io|app)\b/gi, "")
+    .replace(/\.(com|com\.br|net|org|io|br)(\s|$)/gi, " ")
+    .trim();
 }

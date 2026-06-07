@@ -13,9 +13,11 @@ function missingSupabaseAuthVars() {
 }
 
 export function assertSupabaseAuthConfig() {
-  const missing = missingSupabaseAuthVars();
-  if (missing.length) {
-    throw new Error(`Supabase Auth não configurado no frontend. Variável ausente: ${missing.join(", ")}. Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY no build.`);
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    throw new Error("[NODERE] NEXT_PUBLIC_SUPABASE_URL is not set. Check your environment variables.");
+  }
+  if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    throw new Error("[NODERE] NEXT_PUBLIC_SUPABASE_ANON_KEY is not set. Check your environment variables.");
   }
 }
 
@@ -92,3 +94,6 @@ export async function updatePasswordWithRecoveryToken(token: string, password: s
   }
   return payload as { user?: { email?: string } };
 }
+
+
+

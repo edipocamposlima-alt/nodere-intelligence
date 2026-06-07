@@ -23,7 +23,8 @@ function pdfEscape(value: string) {
 function linkedinSearchUrl(name: string) {
   const query = String(name || "")
     .replace(/https?:\/\/\S+/gi, "")
-    .replace(/\b(?:www\.)?[\w-]+\.(?:com|com\.br|net|org|br|io|app)\b/gi, "")
+    .replace(/\b(?:www\.)?[\w-]+\.(?:com|com\.br|net|org|io|app)\b/gi, "")
+    .replace(/\.(com|com\.br|net|org|io|br)(\s|$)/gi, " ")
     .trim();
   return `https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(query)}`;
 }
@@ -741,3 +742,4 @@ function Field({ name, label, defaultValue, placeholder, required }: { name: str
     </label>
   );
 }
+

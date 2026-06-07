@@ -832,8 +832,8 @@ router.get("/:id/export-pdf", async (req, res, next) => {
   const workspaceId = getRequestWorkspaceId(req);
   const company = await getCompanyAsync(req.params.id, workspaceId);
   if (!company) {
-    console.warn("NODERE company PDF lookup failed", { companyId: req.params.id, workspaceId });
-    return res.status(404).json({ message: "Company not found" });
+    console.error("[PDF] Company not found. ID:", req.params.id, "Workspace:", workspaceId);
+    return res.status(404).json({ error: "Empresa não encontrada neste workspace." });
   }
 
   const diagnosis = getCachedDiagnosis(req.params.id);
@@ -902,13 +902,14 @@ router.get("/:id/export-pdf", async (req, res, next) => {
 <meta charset="UTF-8">
 <title>Relatório — ${escapeHtml(company.name)}</title>
 <style>
-  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 24px; color: #1e293b; }
-  .brand { display:flex; align-items:center; gap:16px; background:#0A0F1E; border-radius:12px; padding:18px; margin-bottom:20px; color:#fff; }
-  .brand img { width:76px; height:auto; object-fit:contain; border-radius:10px; }
-  .brand-title { font-size:24px; font-weight:800; letter-spacing:0.02em; }
-  .brand-sub { color:#42D7FF; font-size:11px; text-transform:uppercase; letter-spacing:0.22em; margin-top:3px; }
-  h1 { font-size: 22px; color: #0f172a; border-bottom: 2px solid #0ea5e9; padding-bottom: 8px; }
-  h2 { font-size: 16px; color: #0f172a; margin-top: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 24px 24px 72px; color: #111827; background: #FFFFFF; }
+  .brand { display:flex; align-items:center; gap:16px; background:#FFFFFF; border:2px solid #1E6FDB; border-radius:12px; padding:18px; margin-bottom:20px; color:#111827; }
+  .brand img { width:92px; height:auto; object-fit:contain; border-radius:10px; }
+  .brand-title { font-size:24px; font-weight:800; letter-spacing:0.02em; color:#1E6FDB; }
+  .brand-sub { color:#1E6FDB; font-size:11px; text-transform:uppercase; letter-spacing:0.22em; margin-top:3px; }
+  .print-footer { position: fixed; left: 24px; right: 24px; bottom: 18px; border-top: 1px solid #d1d5db; padding-top: 8px; color: #6b7280; font-size: 11px; text-align: center; background: #FFFFFF; }
+  h1 { font-size: 22px; color: #111827; border-bottom: 2px solid #1E6FDB; padding-bottom: 8px; }
+  h2 { font-size: 16px; color: #111827; margin-top: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
   h3 { font-size: 14px; color: #334155; }
   section { margin-bottom: 24px; }
   .score { font-size: 48px; font-weight: bold; color: #0ea5e9; }
@@ -919,7 +920,7 @@ router.get("/:id/export-pdf", async (req, res, next) => {
   li.missing { color: #dc2626; }
   .copy-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; font-size: 13px; white-space: pre-wrap; }
   .note { color: #94a3b8; font-style: italic; }
-  @media print { body { padding: 0; } }
+  @media print { body { padding: 0 0 72px; } .print-footer { bottom: 0; } }
 </style>
 </head>
 <body>
@@ -1024,8 +1025,11 @@ function escapeHtml(value: unknown) {
 function loadNodereLogoDataUri() {
   const candidates = [
     path.join(process.cwd(), "public", "nodere-logo.png"),
+    path.join(process.cwd(), "public", "nodere-wordmark.png"),
     path.join(process.cwd(), "..", "web", "public", "nodere-logo.png"),
-    path.join(process.cwd(), "..", "..", "apps", "web", "public", "nodere-logo.png")
+    path.join(process.cwd(), "..", "web", "public", "nodere-wordmark.png"),
+    path.join(process.cwd(), "..", "..", "apps", "web", "public", "nodere-logo.png"),
+    path.join(process.cwd(), "..", "..", "apps", "web", "public", "nodere-wordmark.png")
   ];
   const found = candidates.find((candidate) => existsSync(candidate));
   if (!found) {
@@ -1249,3 +1253,5 @@ function requireSupabase() {
   }
   return sb;
 }
+
+
