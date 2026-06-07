@@ -28,14 +28,17 @@ export class AdminFetchError extends Error {
 }
 
 export async function adminFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+  const token = getAdminToken();
+  const useLocalProxy = path.startsWith("/admin/");
+  const response = await fetch(useLocalProxy ? `/api${path}` : `${getApiBaseUrl()}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${getAdminToken()}`,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {})
     },
-    cache: "no-store"
+    cache: "no-store",
+    credentials: useLocalProxy ? "include" : options.credentials
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {

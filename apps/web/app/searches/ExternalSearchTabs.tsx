@@ -46,8 +46,16 @@ export function ExternalSearchTabs() {
       setResults(response.results);
       setMessage(`${response.count} resultado(s) retornado(s) pelo Apollo.io.`);
     } catch (error) {
-      setWarning(error instanceof ApiRequestError ? error.message : error instanceof Error ? error.message : "Falha ao consultar Apollo.io.");
-      setMessage("Apollo.io nao retornou resultados. Verifique chave, plano e permissoes no provedor.");
+      if (error instanceof ApiRequestError && error.status === 503) {
+        setWarning("Apollo.io ainda não está configurado. Cadastre APOLLO_API_KEY no backend/Admin para ativar a busca real.");
+        setMessage("Integração Apollo.io pendente de configuração.");
+      } else if (error instanceof ApiRequestError && error.status === 403) {
+        setWarning("Apollo.io recusou este endpoint. Verifique se o plano/API da conta permite busca de empresas e pessoas.");
+        setMessage("Apollo.io conectado, mas sem permissão para esta consulta.");
+      } else {
+        setWarning(error instanceof ApiRequestError ? error.message : error instanceof Error ? error.message : "Falha ao consultar Apollo.io.");
+        setMessage("Apollo.io nao retornou resultados. Verifique chave, plano e permissoes no provedor.");
+      }
     } finally {
       setLoading(false);
     }

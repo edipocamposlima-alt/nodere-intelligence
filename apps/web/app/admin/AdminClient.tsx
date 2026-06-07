@@ -1,10 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Activity, CheckCircle2, Copy, KeyRound, LogOut, ShieldCheck, SlidersHorizontal, Trash2, UserCog, UserPlus, UsersRound } from "lucide-react";
-import { AdminFetchError, adminFetch, clearAdminToken, getAdminToken } from "@/lib/adminAuth";
+import { AdminFetchError, adminFetch, clearAdminToken } from "@/lib/adminAuth";
 
 const fields = [
   "GOOGLE_PLACES_API_KEY",
@@ -98,12 +97,8 @@ export function AdminClient() {
   const activeUsers = useMemo(() => users.filter((user) => user.active), [users]);
 
   async function load() {
-    if (!getAdminToken()) {
-      setMessage("Faça login como administrador.");
-      return;
-    }
     try {
-      await adminFetch("/admin/session");
+      await adminFetch("/admin/status");
       const [data, userData, roleData, auditData] = await Promise.all([
         adminFetch<{ keys: ApiKeyStatus[] }>("/admin/api-keys"),
         adminFetch<{ users: AdminUser[] }>("/admin/users"),
@@ -119,10 +114,12 @@ export function AdminClient() {
       setMessage("Painel administrativo conectado.");
     } catch (error) {
       setAuthorized(false);
-      if (error instanceof AdminFetchError && [401, 403].includes(error.status)) {
+      if (error instanceof AdminFetchError && error.status === 403) {
+        setMessage("Acesso negado. Seu perfil não tem permissão de administrador.");
+      } else if (error instanceof AdminFetchError && error.status === 401) {
         clearAdminToken();
         void fetch("/api/auth/session", { method: "DELETE" });
-        setMessage("Sessão administrativa expirada. Entre novamente para acessar o painel.");
+        setMessage("Sessão expirada. Faça login novamente para acessar o painel.");
       } else {
         setMessage(error instanceof Error && error.message !== "Unexpected error" ? error.message : "Não foi possível carregar o painel administrativo agora. Faça login novamente ou tente em instantes.");
       }
@@ -229,7 +226,7 @@ export function AdminClient() {
       <div className="p-4 md:p-8">
         <div className="rounded-xl border border-line bg-panel p-6">
           <p className="text-white">{message}</p>
-          <Link href="/login" className="mt-4 inline-flex rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white">Entrar</Link>
+          <p className="mt-3 text-sm text-slate-400">Use uma conta com perfil Owner ou Administrador para liberar esta área.</p>
         </div>
       </div>
     );

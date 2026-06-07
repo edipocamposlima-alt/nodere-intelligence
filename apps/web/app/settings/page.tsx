@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { SettingsClient } from "./SettingsClient";
+
+export const metadata: Metadata = { title: "Configurações" };
 
 export default function SettingsPage() {
   return (

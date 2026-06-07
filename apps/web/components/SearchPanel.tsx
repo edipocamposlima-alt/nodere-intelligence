@@ -302,7 +302,7 @@ function GoogleMapPanel({
   useEffect(() => {
     if (!open || !mapRef.current) return;
     if (!mapsKey) {
-      setMapMessage("Configure NEXT_PUBLIC_GOOGLE_MAPS_KEY na Vercel para exibir o Google Maps com marcadores reais.");
+      setMapMessage("Mapa não disponível no momento.");
       return;
     }
     let cancelled = false;

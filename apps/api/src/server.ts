@@ -354,6 +354,7 @@ app.use("/api/backup", backupRouter);
 app.use("/api/billing", billingRouter);
 app.use("/api/proposals", proposalsRouter);
 app.use("/api/push", pushRouter);
+app.use("/api/notifications", pushRouter);
 app.use("/api/developer", developerRouter);
 app.use("/api/admin/verticals", verticalsRouter);
 app.use("/v1", publicApiRouter);

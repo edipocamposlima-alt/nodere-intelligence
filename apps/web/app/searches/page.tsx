@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { Clock, Database, RefreshCw, Search } from "lucide-react";
 import { SearchPanel } from "@/components/SearchPanel";
 import { getSearchHistory, getEnrichmentQueue, getCredits } from "@/lib/api";
 import { RerunButton } from "./RerunButton";
 import { CsvImportPanel } from "./CsvImportPanel";
 import { ExternalSearchTabs } from "./ExternalSearchTabs";
+
+export const metadata: Metadata = { title: "Busca" };
 
 export default async function SearchesPage() {
   const [history, queue, credits] = await Promise.all([getSearchHistory(), getEnrichmentQueue(), getCredits()]);

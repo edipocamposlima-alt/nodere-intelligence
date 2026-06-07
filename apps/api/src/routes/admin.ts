@@ -35,6 +35,12 @@ function requireAdmin(request: any, response: any, next: any) {
   return next();
 }
 
+function getAdminSession(request: any) {
+  const session = request.session || verifySessionToken(extractBearerToken(request.headers.authorization));
+  if (!session || !["owner", "admin"].includes(session.role)) return null;
+  return session;
+}
+
 function maskValue(value = "") {
   const text = String(value || "");
   if (!text) return "";
@@ -239,6 +245,27 @@ router.post("/login", async (request, response, next) => {
 
 router.get("/session", requireAdmin, (request: any, response) => {
   response.json({ user: { email: request.admin.email, name: request.admin.name || config.admin.name, role: request.admin.role, workspaceId: request.admin.workspaceId, userId: request.admin.userId } });
+});
+
+router.get("/status", (request: any, response) => {
+  const session = getAdminSession(request);
+  if (!session) {
+    return response.status(403).json({
+      ok: false,
+      message: "Acesso negado. Seu perfil não tem permissão de administrador."
+    });
+  }
+
+  return response.json({
+    ok: true,
+    user: {
+      email: session.email,
+      name: session.name || config.admin.name,
+      role: session.role,
+      workspaceId: session.workspaceId,
+      userId: session.userId
+    }
+  });
 });
 
 router.get("/users", requireAdmin, async (request: any, response, next) => {

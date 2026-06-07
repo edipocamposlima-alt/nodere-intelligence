@@ -103,8 +103,11 @@ router.post("/apollo", async (req, res, next) => {
   try {
     if (!config.enrichment.apolloApiKey) {
       return res.status(503).json({
+        configured: false,
         code: "APOLLO_NOT_CONFIGURED",
-        message: "Apollo.io não configurado. Defina APOLLO_API_KEY no Render/Admin para executar busca real."
+        message: "Apollo.io não está configurado neste workspace. Defina APOLLO_API_KEY no Render/Admin para executar busca real.",
+        results: [],
+        count: 0
       });
     }
 

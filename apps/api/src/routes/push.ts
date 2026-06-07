@@ -6,6 +6,17 @@ import { getSupabase } from "../db/supabase.js";
 
 const router = Router();
 
+router.get("/status", (_req, res) => {
+  const available = Boolean(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
+  res.json({
+    available,
+    status: available ? "available" : "not_configured",
+    message: available
+      ? "Notificações push disponíveis."
+      : "Notificações push indisponíveis no momento. Configure VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY para ativar envio real."
+  });
+});
+
 router.post("/subscribe", requireWorkspaceSession, async (req, res, next) => {
   try {
     const body = z.object({

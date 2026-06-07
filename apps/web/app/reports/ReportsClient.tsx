@@ -40,6 +40,16 @@ function Card({ label, value, sub }: { label: string; value: string; sub?: strin
   );
 }
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs = 5000): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => reject(new Error("Relatórios demoraram mais que o esperado. Tente novamente em instantes.")), timeoutMs);
+    promise
+      .then(resolve)
+      .catch(reject)
+      .finally(() => window.clearTimeout(timeout));
+  });
+}
+
 export function ReportsClient(_legacy: { pipeline: PipelineReport | null; forecast: ForecastReport | null; trends: MonthlyTrend[] }) {
   const [period, setPeriod] = useState("30d");
   const [groupBy, setGroupBy] = useState("day");
@@ -61,7 +71,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
     let alive = true;
     setLoading(true);
     setError("");
-    Promise.all([
+    withTimeout(Promise.all([
       getReportSummary(period),
       getReportFunnel(period),
       getReportTimeline(period, groupBy),
@@ -69,7 +79,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
       getReportCities(period),
       getReportOrigin(period),
       getReportIntelligence(period)
-    ])
+    ]))
       .then(([nextSummary, nextFunnel, nextTimeline, nextSegments, nextCities, nextOrigins, nextIntelligence]) => {
         if (!alive) return;
         setSummary(nextSummary);

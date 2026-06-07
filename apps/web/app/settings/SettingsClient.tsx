@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Bell, CheckCircle2, Code2, Download, FileText, Palette, Save, Server, ShieldCheck, Smartphone, Stamp, UsersRound } from "lucide-react";
 import { getBackendRootUrl } from "@/lib/apiBase";
 import { getPublicSettings, savePublicSettings } from "@/lib/api";
-import { getAdminToken } from "@/lib/adminAuth";
+import { AdminFetchError, adminFetch, getAdminToken } from "@/lib/adminAuth";
 
 const STORAGE_KEY = "nodere_settings";
 const BACKEND_ROOT_URL = getBackendRootUrl();
@@ -98,6 +98,27 @@ function applySettings(settings: Settings) {
   document.body.style.fontFamily = `${font}, Inter, system-ui, sans-serif`;
 }
 
+function normalizeAuditEvent(row: Record<string, unknown>): AuditEvent {
+  return {
+    id: String(row.id || crypto.randomUUID()),
+    category: typeof row.category === "string" ? row.category : typeof row.entity_type === "string" ? row.entity_type : undefined,
+    action: typeof row.action === "string" ? row.action : "Evento administrativo",
+    description: typeof row.description === "string" ? row.description : typeof row.entity_id === "string" ? row.entity_id : undefined,
+    operatorId: typeof row.user_id === "string" ? row.user_id : undefined,
+    at: typeof row.created_at === "string" ? row.created_at : typeof row.at === "string" ? row.at : new Date().toISOString()
+  };
+}
+
+function normalizeDownloadLog(row: Record<string, unknown>): DownloadLog {
+  return {
+    id: String(row.id || crypto.randomUUID()),
+    userId: typeof row.user_id === "string" ? row.user_id : typeof row.userId === "string" ? row.userId : undefined,
+    fileType: typeof row.file_type === "string" ? row.file_type : typeof row.fileType === "string" ? row.fileType : "arquivo",
+    fileName: typeof row.file_name === "string" ? row.file_name : typeof row.fileName === "string" ? row.fileName : undefined,
+    createdAt: typeof row.created_at === "string" ? row.created_at : typeof row.createdAt === "string" ? row.createdAt : new Date().toISOString()
+  };
+}
+
 export function SettingsClient() {
   const [settings, setSettings] = useState<Settings>(defaults);
   const [status, setStatus] = useState<string>("Preferências carregadas localmente.");
@@ -107,6 +128,8 @@ export function SettingsClient() {
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
   const [downloadLogs, setDownloadLogs] = useState<DownloadLog[]>([]);
   const [adminPanelsStatus, setAdminPanelsStatus] = useState("");
+  const [pushAvailable, setPushAvailable] = useState(false);
+  const [pushStatus, setPushStatus] = useState("Não testado");
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -127,7 +150,8 @@ export function SettingsClient() {
         setStatus(error instanceof Error ? error.message : "Não foi possível carregar preferências do backend.");
       });
 
-    void loadAdminPanels(next.backendUrl);
+    void loadAdminPanels();
+    void checkPushStatus(next.backendUrl);
   }, []);
 
   function update<K extends keyof Settings>(key: K, value: Settings[K]) {
@@ -168,6 +192,13 @@ export function SettingsClient() {
 
   async function enablePush() {
     try {
+      const root = settings.backendUrl.replace(/\/$/, "");
+      const statusResponse = await fetch(`${root}/api/notifications/status`, { cache: "no-store" });
+      const statusPayload = await statusResponse.json().catch(() => ({}));
+      if (!statusResponse.ok || statusPayload.available === false) {
+        setPushStatus(statusPayload.message || "Notificações push indisponíveis no momento.");
+        throw new Error("Notificações push ainda não estão configuradas no servidor.");
+      }
       if (!("Notification" in window) || !("serviceWorker" in navigator)) throw new Error("Este navegador não suporta push.");
       const permission = await Notification.requestPermission();
       if (permission !== "granted") throw new Error("Permissão de notificação negada.");
@@ -183,6 +214,19 @@ export function SettingsClient() {
       setAdminMessage(payload.message || "Push configurado.");
     } catch (error) {
       setAdminMessage(error instanceof Error ? error.message : "Não foi possível habilitar push.");
+    }
+  }
+
+  async function checkPushStatus(backendUrl = settings.backendUrl) {
+    try {
+      const response = await fetch(`${backendUrl.replace(/\/$/, "")}/api/notifications/status`, { cache: "no-store" });
+      const payload = await response.json().catch(() => ({}));
+      const available = response.ok && payload.available === true;
+      setPushAvailable(available);
+      setPushStatus(payload.message || (available ? "Notificações push disponíveis." : "Notificações push indisponíveis no momento."));
+    } catch {
+      setPushAvailable(false);
+      setPushStatus("Não foi possível verificar notificações push agora.");
     }
   }
 
@@ -204,28 +248,23 @@ export function SettingsClient() {
     }
   }
 
-  async function loadAdminPanels(backendUrl = settings.backendUrl) {
-    const token = getAdminToken();
-    if (!token) return;
+  async function loadAdminPanels() {
     setAdminPanelsStatus("Carregando usuários e auditoria...");
-    const root = backendUrl.replace(/\/$/, "");
-    const headers = { Authorization: `Bearer ${token}` };
     try {
-      const [usersResponse, auditResponse, downloadsResponse] = await Promise.all([
-        fetch(`${root}/api/admin/users`, { headers, cache: "no-store" }),
-        fetch(`${root}/api/audit?limit=50`, { headers, cache: "no-store" }),
-        fetch(`${root}/api/audit/downloads?limit=50`, { headers, cache: "no-store" })
+      const [usersPayload, auditPayload] = await Promise.all([
+        adminFetch<{ users: SettingsUser[] }>("/admin/users"),
+        adminFetch<{ activityLogs: Array<Record<string, unknown>>; downloadLogs: Array<Record<string, unknown>> }>("/admin/audit")
       ]);
-      const usersPayload = await usersResponse.json().catch(() => ({ users: [] }));
-      const auditPayload = await auditResponse.json().catch(() => []);
-      const downloadPayload = await downloadsResponse.json().catch(() => []);
-      if (!usersResponse.ok) throw new Error(usersPayload.message || `Usuários HTTP ${usersResponse.status}`);
       setAdminUsers(Array.isArray(usersPayload.users) ? usersPayload.users : []);
-      setAuditEvents(Array.isArray(auditPayload) ? auditPayload : []);
-      setDownloadLogs(Array.isArray(downloadPayload) ? downloadPayload : []);
+      setAuditEvents(Array.isArray(auditPayload.activityLogs) ? auditPayload.activityLogs.map(normalizeAuditEvent) : []);
+      setDownloadLogs(Array.isArray(auditPayload.downloadLogs) ? auditPayload.downloadLogs.map(normalizeDownloadLog) : []);
       setAdminPanelsStatus("Usuários e auditoria carregados.");
     } catch (error) {
-      setAdminPanelsStatus(error instanceof Error ? error.message : "Não foi possível carregar usuários/auditoria.");
+      if (error instanceof AdminFetchError && [401, 403].includes(error.status)) {
+        setAdminPanelsStatus("Área restrita a Owner/Admin. Faça login com permissão administrativa para ver usuários e auditoria.");
+      } else {
+        setAdminPanelsStatus("Não foi possível carregar usuários/auditoria agora. Tente novamente em instantes.");
+      }
     }
   }
 
@@ -271,9 +310,9 @@ export function SettingsClient() {
             <h3 className="font-semibold text-white">Notificações push</h3>
           </div>
           <p className="mt-2 text-sm leading-6 text-slate-400">
-            Requer VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY no Render e assinatura do navegador.
+            {pushStatus}
           </p>
-          <button type="button" onClick={enablePush} className="mt-3 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:border-electric">
+          <button type="button" disabled={!pushAvailable} title={!pushAvailable ? "Configure VAPID no backend para ativar push real." : "Ativar notificações neste navegador"} onClick={enablePush} className="mt-3 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:border-electric disabled:cursor-not-allowed disabled:opacity-50">
             Habilitar notificações
           </button>
         </div>
@@ -302,7 +341,7 @@ export function SettingsClient() {
             </div>
             <p className="mt-2 text-sm text-slate-400">Somente Owner/Admin. Cada usuário acessa o workspace da própria conta.</p>
             <div className="mt-4 max-h-80 space-y-2 overflow-y-auto pr-1">
-              {adminUsers.length === 0 && <p className="rounded-lg border border-line bg-ink p-3 text-sm text-slate-400">Nenhum usuário retornado ou sessão admin ausente.</p>}
+              {adminUsers.length === 0 && <p className="rounded-lg border border-line bg-ink p-3 text-sm text-slate-400">Usuários disponíveis apenas para contas Owner/Admin.</p>}
               {adminUsers.map((user) => (
                 <div key={user.id} className="rounded-lg border border-line bg-ink p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">

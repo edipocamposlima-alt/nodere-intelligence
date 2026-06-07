@@ -6,7 +6,10 @@ import { AppShell } from "@/components/AppShell";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://nodere.com.br"),
-  title: "NODERE Intelligence",
+  title: {
+    default: "NODERE",
+    template: "%s | NODERE"
+  },
   description: "Sistema de prospeccao inteligente para Google Ads e Google Meu Negocio",
   manifest: "/manifest.json",
   icons: {
