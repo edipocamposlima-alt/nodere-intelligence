@@ -1,48 +1,124 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { BellRing, CalendarCheck2, CalendarClock, CalendarDays, Check, Filter, Phone, Plus, RefreshCcw, Trash2 } from "lucide-react";
-import { CalendarEvent, createCalendarEvent, deleteCalendarEvent, getCalendarEvents, updateCalendarEvent } from "@/lib/api";
+import { Calendar, dateFnsLocalizer, SlotInfo, View } from "react-big-calendar";
+import { format, getDay, parse, startOfWeek } from "date-fns";
+import { ptBR } from "date-fns/locale/pt-BR";
+import { BellRing, CalendarDays, Check, Clock, Edit3, Megaphone, Phone, Plus, Trash2, X } from "lucide-react";
+import { CalendarEvent, createCalendarEvent, deleteCalendarEvent, getCalendarEvents, getCompanies, updateCalendarEvent } from "@/lib/api";
+import { Company } from "@/lib/types";
 import { RichTextEditor, RichTextPreview } from "@/components/RichTextEditor";
 
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek: () => startOfWeek(new Date(), { locale: ptBR }),
+  getDay,
+  locales: { "pt-BR": ptBR }
+});
+
 const eventTypes = [
-  { value: "follow-up", label: "Follow-up", color: "from-blue-500 to-cyan-400", icon: CalendarClock },
-  { value: "meeting", label: "Reunião", color: "from-purple-500 to-fuchsia-400", icon: CalendarDays },
-  { value: "task", label: "Tarefa", color: "from-amber-400 to-yellow-300", icon: CalendarCheck2 },
-  { value: "call", label: "Ligação", color: "from-emerald-500 to-lime-400", icon: Phone },
-  { value: "internal", label: "Interno", color: "from-slate-500 to-slate-300", icon: Filter },
-  { value: "content_post", label: "Postagem/Conteúdo", color: "from-pink-500 to-rose-400", icon: BellRing }
+  { value: "reuniao", label: "Reunião", color: "#8B5CF6", icon: CalendarDays },
+  { value: "followup", label: "Follow-up", color: "#3B82F6", icon: Clock },
+  { value: "tarefa", label: "Tarefa", color: "#EAB308", icon: Check },
+  { value: "ligacao", label: "Ligação", color: "#22C55E", icon: Phone },
+  { value: "interno", label: "Interno", color: "#6B7280", icon: BellRing },
+  { value: "postagem", label: "Postagem", color: "#EC4899", icon: Megaphone }
 ];
+
+const aliases: Record<string, string> = {
+  "follow-up": "followup",
+  meeting: "reuniao",
+  task: "tarefa",
+  call: "ligacao",
+  internal: "interno",
+  content_post: "postagem"
+};
 
 const priorities = [
-  { value: "high", label: "Alta", color: "bg-rose-500 text-white" },
-  { value: "medium", label: "Média", color: "bg-amber-400 text-slate-950" },
-  { value: "low", label: "Baixa", color: "bg-emerald-500 text-white" }
+  { value: "alta", label: "Alta", color: "bg-rose-500 text-white" },
+  { value: "media", label: "Média", color: "bg-amber-400 text-slate-950" },
+  { value: "baixa", label: "Baixa", color: "bg-emerald-500 text-white" }
 ];
 
-const channels = ["WhatsApp", "E-mail", "Ligação", "Reunião", "Visita", "Outro"];
+const priorityAliases: Record<string, string> = { high: "alta", medium: "media", low: "baixa" };
+const messages = {
+  today: "Hoje",
+  previous: "Anterior",
+  next: "Próximo",
+  month: "Mês",
+  week: "Semana",
+  day: "Dia",
+  agenda: "Agenda",
+  date: "Data",
+  time: "Hora",
+  event: "Evento",
+  noEventsInRange: "Nenhum evento neste período.",
+  showMore: (total: number) => `+${total} mais`
+};
 
-export function CalendarClient() {
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+type CalendarItem = CalendarEvent & { start: Date; end: Date; resource: CalendarEvent };
+
+function normalizeType(value?: string) {
+  return aliases[String(value || "")] || value || "followup";
+}
+
+function normalizePriority(value?: string) {
+  return priorityAliases[String(value || "")] || value || "media";
+}
+
+function toInputDate(value?: string | Date) {
+  const date = value ? new Date(value) : new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+export function CalendarClient({
+  companyId,
+  compact = false,
+  defaultType = "followup",
+  lockedType
+}: {
+  companyId?: string;
+  compact?: boolean;
+  defaultType?: string;
+  lockedType?: string;
+}) {
+  const [events, setEvents] = useState<CalendarItem[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<SlotInfo | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [notes, setNotes] = useState("");
+  const [typeFilter, setTypeFilter] = useState(lockedType || "");
   const [statusFilter, setStatusFilter] = useState("pendente");
-  const [notesDraft, setNotesDraft] = useState("");
+  const [view, setView] = useState<View>("month");
 
   useEffect(() => {
     void refresh();
-  }, [typeFilter, statusFilter]);
+    getCompanies().then(setCompanies).catch(() => setCompanies([]));
+  }, [companyId, lockedType, typeFilter, statusFilter]);
 
   async function refresh() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (typeFilter) params.set("type", typeFilter);
+      if (companyId) params.set("company_id", companyId);
+      if (lockedType) params.set("type", lockedType);
+      else if (typeFilter) params.set("type", typeFilter);
       if (statusFilter) params.set("status", statusFilter);
-      const query = params.toString() ? `?${params.toString()}` : "";
-      setEvents(await getCalendarEvents(query));
+      const data = await getCalendarEvents(params.toString() ? `?${params.toString()}` : "");
+      setEvents(data.map((event) => ({
+        ...event,
+        type: normalizeType(event.type),
+        priority: normalizePriority(event.priority),
+        start: new Date(event.start_at),
+        end: new Date(event.end_at),
+        resource: event
+      })));
       setMessage("");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Falha ao carregar calendário.");
@@ -51,211 +127,179 @@ export function CalendarClient() {
     }
   }
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+  function openNew(slot?: SlotInfo) {
+    setSelectedSlot(slot || null);
+    setSelectedEvent(null);
+    setNotes("");
+    setShowModal(true);
+  }
+
+  function openEdit(event: CalendarItem) {
+    setSelectedEvent(event.resource);
+    setSelectedSlot(null);
+    setNotes(event.resource.notes || "");
+    setShowModal(true);
+  }
+
+  async function saveEvent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const startAt = String(form.get("startAt") || "");
-    const endAt = String(form.get("endAt") || startAt);
+    const payload = {
+      title: String(form.get("title") || ""),
+      type: lockedType || String(form.get("type") || defaultType),
+      priority: String(form.get("priority") || "media"),
+      companyId: String(form.get("companyId") || companyId || "") || undefined,
+      channel: String(form.get("channel") || ""),
+      status: String(form.get("status") || "pendente"),
+      startAt: new Date(String(form.get("startAt") || "")).toISOString(),
+      endAt: new Date(String(form.get("endAt") || "")).toISOString(),
+      notes
+    };
     setSaving(true);
     try {
-      await createCalendarEvent({
-        title: String(form.get("title") || "Follow-up"),
-        type: String(form.get("type") || "follow-up"),
-        priority: String(form.get("priority") || "medium"),
-        channel: String(form.get("channel") || "WhatsApp"),
-        status: "pendente",
-        startAt,
-        endAt,
-        notes: notesDraft
-      });
-      event.currentTarget.reset();
-      setNotesDraft("");
+      if (selectedEvent) await updateCalendarEvent(selectedEvent.id, payload);
+      else await createCalendarEvent(payload);
+      setShowModal(false);
+      setSelectedEvent(null);
+      setSelectedSlot(null);
       await refresh();
-      setMessage("Evento criado e salvo no banco.");
+      setMessage(selectedEvent ? "Evento atualizado." : "Evento criado.");
       requestLocalNotificationPermission();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Falha ao criar evento.");
+      setMessage(error instanceof Error ? error.message : "Falha ao salvar evento.");
     } finally {
       setSaving(false);
     }
   }
 
-  async function completeEvent(item: CalendarEvent) {
-    try {
-      await updateCalendarEvent(item.id, { status: "concluido" });
-      await refresh();
-      setMessage("Evento marcado como concluído.");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Não foi possível concluir o evento.");
-    }
+  async function markDone() {
+    if (!selectedEvent) return;
+    await updateCalendarEvent(selectedEvent.id, { status: "concluido" });
+    setShowModal(false);
+    await refresh();
   }
 
-  async function removeEvent(item: CalendarEvent) {
-    if (!window.confirm(`Excluir o evento "${item.title}"?`)) return;
-    try {
-      await deleteCalendarEvent(item.id);
-      await refresh();
-      setMessage("Evento excluído.");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Não foi possível excluir o evento.");
-    }
+  async function removeEvent() {
+    if (!selectedEvent || !confirm(`Excluir "${selectedEvent.title}"?`)) return;
+    await deleteCalendarEvent(selectedEvent.id);
+    setShowModal(false);
+    await refresh();
   }
 
-  const grouped = useMemo(() => {
-    const now = new Date();
-    const todayEnd = new Date(now);
-    todayEnd.setHours(23, 59, 59, 999);
-    return {
-      late: events.filter((item) => item.status !== "concluido" && new Date(item.start_at) < now),
-      today: events.filter((item) => {
-        const date = new Date(item.start_at);
-        return item.status !== "concluido" && date >= now && date <= todayEnd;
-      }),
-      next: events.filter((item) => new Date(item.start_at) > todayEnd)
-    };
-  }, [events]);
+  const upcoming = useMemo(() => events.filter((event) => event.end >= new Date()).slice(0, 6), [events]);
+  const height = compact ? 420 : "calc(100vh - 260px)";
 
   return (
-    <main className="space-y-6">
-      <section className="rounded-2xl border border-line bg-panel/90 p-6 shadow-glow">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="flex items-center gap-2 text-sm font-semibold text-cyan">
-              <CalendarDays className="h-4 w-4" />
-              Calendário comercial
-            </p>
-            <h1 className="mt-2 text-2xl font-black text-white">Agenda e follow-ups</h1>
-            <p className="text-sm text-slate-300">Crie compromissos reais, acompanhe atrasados e alimente o sininho com lembretes do dia.</p>
+    <main className={compact ? "space-y-4" : "space-y-6 p-4 md:p-8"}>
+      {!compact && (
+        <section className="rounded-2xl border border-line bg-panel/90 p-6 shadow-glow">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="flex items-center gap-2 text-sm font-semibold text-cyan"><CalendarDays className="h-4 w-4" /> Calendário comercial</p>
+              <h1 className="mt-2 text-2xl font-black text-white">Agenda interativa</h1>
+              <p className="text-sm text-slate-300">Mês, semana, dia e agenda em português, com eventos ligados a empresas.</p>
+            </div>
+            <button onClick={() => openNew()} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-electric px-5 py-3 text-sm font-black text-white shadow-glow">
+              <Plus className="h-4 w-4" /> Novo evento
+            </button>
           </div>
-          <button onClick={refresh} className="inline-flex items-center gap-2 rounded-lg border border-line px-4 py-2 text-sm font-semibold text-slate-200 hover:border-cyan hover:text-cyan">
-            <RefreshCcw className="h-4 w-4" />
-            Atualizar
-          </button>
-        </div>
-      </section>
+        </section>
+      )}
 
-      <form onSubmit={onSubmit} className="rounded-2xl border border-line bg-panel/80 p-4">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-300">Título</span>
-            <input name="title" required placeholder="Ex: Retomar proposta com decisor" className="mt-2 w-full rounded-lg border border-line bg-ink px-3 py-3 text-sm outline-none focus:border-cyan" />
-          </label>
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-300">Tipo</span>
-            <select name="type" className="mt-2 w-full rounded-lg border border-line bg-ink px-3 py-3 text-sm outline-none focus:border-cyan">
+      <section className="rounded-2xl border border-line bg-panel/80 p-4">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          {lockedType ? (
+            <span className="rounded-lg border border-pink-400/40 bg-pink-500/15 px-3 py-2 text-sm font-bold text-pink-100">
+              {eventTypes.find((type) => type.value === lockedType)?.label || lockedType}
+            </span>
+          ) : (
+            <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-white">
+              <option value="">Todos os tipos</option>
               {eventTypes.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
             </select>
-          </label>
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-300">Prioridade</span>
-            <select name="priority" className="mt-2 w-full rounded-lg border border-line bg-ink px-3 py-3 text-sm outline-none focus:border-cyan">
-              {priorities.map((priority) => <option key={priority.value} value={priority.value}>{priority.label}</option>)}
-            </select>
-          </label>
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-300">Canal</span>
-            <select name="channel" className="mt-2 w-full rounded-lg border border-line bg-ink px-3 py-3 text-sm outline-none focus:border-cyan">
-              {channels.map((channel) => <option key={channel} value={channel}>{channel}</option>)}
-            </select>
-          </label>
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-300">Data e hora inicial</span>
-            <input name="startAt" required type="datetime-local" className="mt-2 w-full rounded-lg border border-line bg-ink px-3 py-3 text-sm outline-none focus:border-cyan" />
-          </label>
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-300">Data e hora final</span>
-            <input name="endAt" required type="datetime-local" className="mt-2 w-full rounded-lg border border-line bg-ink px-3 py-3 text-sm outline-none focus:border-cyan" />
-          </label>
-          <label className="block md:col-span-2">
-            <span className="text-sm font-semibold text-slate-300">Notas</span>
-            <input type="hidden" name="notes" value={notesDraft} />
-            <div className="mt-2"><RichTextEditor value={notesDraft} onChange={setNotesDraft} minHeight={150} placeholder="Contexto, combinados, objeções ou próximo passo" /></div>
-          </label>
-        </div>
-        <button disabled={saving} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-electric px-5 py-3 text-sm font-black text-white shadow-glow disabled:opacity-60 md:w-auto">
-          <Plus className="h-4 w-4" />
-          {saving ? "Salvando..." : "Criar lembrete"}
-        </button>
-      </form>
-
-      <section className="grid gap-3 rounded-2xl border border-line bg-panel/80 p-4 md:grid-cols-3">
-        <label className="block">
-          <span className="text-sm font-semibold text-slate-300">Filtrar por tipo</span>
-          <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="mt-2 w-full rounded-lg border border-line bg-ink px-3 py-3 text-sm">
-            <option value="">Todos os tipos</option>
-            {eventTypes.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
-          </select>
-        </label>
-        <label className="block">
-          <span className="text-sm font-semibold text-slate-300">Status</span>
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="mt-2 w-full rounded-lg border border-line bg-ink px-3 py-3 text-sm">
+          )}
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-white">
             <option value="pendente">Pendentes</option>
             <option value="concluido">Concluídos</option>
             <option value="">Todos</option>
           </select>
-        </label>
-        <div className="rounded-xl border border-cyan/30 bg-cyan/10 p-3 text-sm text-cyan">
-          <p className="font-bold">Sininho operacional</p>
-          <p className="mt-1 text-cyan/80">Atrasados: {grouped.late.length} · Hoje: {grouped.today.length} · Próximos: {grouped.next.length}</p>
+          {compact && <button onClick={() => openNew()} className="rounded-lg bg-electric px-4 py-2 text-sm font-bold text-white">Novo evento</button>}
+          {loading && <span className="text-sm text-slate-400">Carregando...</span>}
+        </div>
+        <div className="calendar-shell overflow-hidden rounded-xl border border-line bg-white p-2 text-slate-950">
+          <Calendar<CalendarItem>
+            localizer={localizer}
+            events={events}
+            startAccessor="start"
+            endAccessor="end"
+            style={{ height }}
+            messages={messages}
+            culture="pt-BR"
+            view={view}
+            onView={setView}
+            selectable
+            onSelectSlot={(slot) => openNew(slot)}
+            onSelectEvent={openEdit}
+            eventPropGetter={(event) => ({ style: { backgroundColor: eventTypes.find((type) => type.value === normalizeType(event.type))?.color || "#3B82F6", border: "none" } })}
+          />
         </div>
       </section>
 
+      {compact && (
+        <section className="rounded-2xl border border-line bg-panel/80 p-4">
+          <h3 className="font-bold text-white">Próximos eventos deste cliente</h3>
+          <div className="mt-3 space-y-2">
+            {upcoming.length === 0 && <p className="text-sm text-slate-400">Nenhum próximo evento.</p>}
+            {upcoming.map((event) => (
+              <button key={event.id} onClick={() => openEdit(event)} className="w-full rounded-lg border border-line bg-ink p-3 text-left">
+                <p className="font-semibold text-white">{event.title}</p>
+                <p className="text-xs text-slate-400">{new Date(event.start_at).toLocaleString("pt-BR")}</p>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
       {message && <p className="rounded-lg border border-cyan/30 bg-cyan/10 px-4 py-3 text-sm text-cyan">{message}</p>}
 
-      <section className="rounded-2xl border border-line bg-panel/80 p-4">
-        <h2 className="text-lg font-bold text-white">Eventos</h2>
-        {loading ? (
-          <p className="mt-4 text-sm text-slate-400">Carregando...</p>
-        ) : events.length === 0 ? (
-          <p className="mt-4 rounded-xl border border-dashed border-line bg-ink/70 p-5 text-sm text-slate-400">Nenhum evento encontrado para os filtros selecionados. Crie um lembrete para aparecer no calendário e no sininho.</p>
-        ) : (
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {events.map((item) => {
-              const type = eventTypes.find((entry) => entry.value === item.type) ?? eventTypes[0];
-              const priority = priorities.find((entry) => entry.value === item.priority) ?? priorities[1];
-              const Icon = type.icon;
-              const done = item.status === "concluido";
-              return (
-                <article key={item.id} className={`rounded-xl border border-line bg-ink p-4 ${done ? "opacity-60" : ""}`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <span className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${type.color} px-3 py-1 text-xs font-black text-white`}>
-                        <Icon className="h-3.5 w-3.5" />
-                        {type.label}
-                      </span>
-                      <h3 className={`mt-3 truncate font-bold text-white ${done ? "line-through" : ""}`}>{item.title}</h3>
-                    </div>
-                    <span className={`rounded-full px-2 py-1 text-xs font-bold ${priority.color}`}>{priority.label}</span>
-                  </div>
-                  <p className="mt-3 text-sm text-slate-300">{new Date(item.start_at).toLocaleString("pt-BR")}</p>
-                  {item.channel && <p className="mt-1 text-xs text-cyan">Canal: {item.channel}</p>}
-                  {item.notes && <div className="mt-2 line-clamp-3"><RichTextPreview value={item.notes} /></div>}
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {item.status !== "concluido" && (
-                      <button onClick={() => completeEvent(item)} className="inline-flex items-center gap-1 rounded-lg border border-emerald-400/40 bg-emerald-500/15 px-3 py-2 text-xs font-bold text-emerald-200">
-                        <Check className="h-3.5 w-3.5" />
-                        Concluir
-                      </button>
-                    )}
-                    <button onClick={() => removeEvent(item)} className="inline-flex items-center gap-1 rounded-lg border border-rose-400/40 bg-rose-500/15 px-3 py-2 text-xs font-bold text-rose-200">
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Excluir
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </section>
+      {showModal && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
+          <form onSubmit={saveEvent} className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-line bg-panel p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-white">{selectedEvent ? "Editar evento" : "Novo evento"}</h2>
+                <p className="text-sm text-slate-400">Registre compromissos, follow-ups, tarefas ou postagens.</p>
+              </div>
+              <button type="button" onClick={() => setShowModal(false)} className="rounded-lg border border-line p-2 text-slate-300"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <label className="space-y-2 text-sm text-slate-300">Título<input required name="title" defaultValue={selectedEvent?.title || ""} className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white outline-none focus:border-cyan" /></label>
+              <label className="space-y-2 text-sm text-slate-300">Tipo<select name="type" defaultValue={normalizeType(selectedEvent?.type || lockedType || defaultType)} disabled={Boolean(lockedType)} className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white disabled:opacity-70">{eventTypes.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}</select></label>
+              <label className="space-y-2 text-sm text-slate-300">Prioridade<select name="priority" defaultValue={normalizePriority(selectedEvent?.priority)} className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white">{priorities.map((priority) => <option key={priority.value} value={priority.value}>{priority.label}</option>)}</select></label>
+              <label className="space-y-2 text-sm text-slate-300">Empresa<select name="companyId" defaultValue={selectedEvent?.company_id || companyId || ""} disabled={Boolean(companyId)} className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white"><option value="">Sem empresa vinculada</option>{companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>
+              <label className="space-y-2 text-sm text-slate-300">Início<input required type="datetime-local" name="startAt" defaultValue={toInputDate(selectedEvent?.start_at || selectedSlot?.start)} className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white" /></label>
+              <label className="space-y-2 text-sm text-slate-300">Fim<input required type="datetime-local" name="endAt" defaultValue={toInputDate(selectedEvent?.end_at || selectedSlot?.end || selectedSlot?.start)} className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white" /></label>
+              <label className="space-y-2 text-sm text-slate-300">Canal<input name="channel" defaultValue={selectedEvent?.channel || "WhatsApp"} className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white" /></label>
+              <label className="space-y-2 text-sm text-slate-300">Status<select name="status" defaultValue={selectedEvent?.status || "pendente"} className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white"><option value="pendente">Pendente</option><option value="concluido">Concluído</option><option value="cancelado">Cancelado</option></select></label>
+              <div className="md:col-span-2"><p className="mb-2 text-sm text-slate-300">Notas</p><RichTextEditor value={notes} onChange={setNotes} minHeight={170} placeholder="Contexto, combinados, objeções ou próximo passo" /></div>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-electric px-5 py-3 text-sm font-black text-white"><Edit3 className="h-4 w-4" /> {saving ? "Salvando..." : "Salvar"}</button>
+              {selectedEvent && <button type="button" onClick={() => void markDone()} className="rounded-xl bg-emerald-500 px-5 py-3 text-sm font-black text-white">Concluir</button>}
+              {selectedEvent && <button type="button" onClick={() => void removeEvent()} className="inline-flex items-center gap-2 rounded-xl bg-rose-500 px-5 py-3 text-sm font-black text-white"><Trash2 className="h-4 w-4" /> Excluir</button>}
+            </div>
+          </form>
+        </div>
+      )}
     </main>
   );
 }
 
-function requestLocalNotificationPermission() {
-  if (typeof window === "undefined" || !("Notification" in window)) return;
-  if (Notification.permission === "default") {
-    void Notification.requestPermission();
-  }
+export function CompanyMiniCalendar({ companyId }: { companyId: string }) {
+  return <CalendarClient companyId={companyId} compact />;
 }
 
+function requestLocalNotificationPermission() {
+  if (typeof window === "undefined" || !("Notification" in window)) return;
+  if (Notification.permission === "default") void Notification.requestPermission();
+}

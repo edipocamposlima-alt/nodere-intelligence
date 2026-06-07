@@ -34,6 +34,7 @@ router.post("/", async (req, res, next) => {
       id: randomUUID(),
       workspace_id: getRequestWorkspaceId(req),
       company_id: body.companyId,
+      contact_id: body.contactId,
       title: body.title,
       type: body.type,
       priority: body.priority,
@@ -88,9 +89,10 @@ router.delete("/:id", async (req, res, next) => {
 
 const eventSchema = z.object({
   companyId: z.string().optional().nullable(),
+  contactId: z.string().optional().nullable(),
   title: z.string().min(2),
-  type: z.string().default("follow-up"),
-  priority: z.string().default("medium"),
+  type: z.string().default("followup"),
+  priority: z.string().default("media"),
   startAt: z.string(),
   endAt: z.string(),
   notes: z.string().optional().nullable(),
@@ -103,6 +105,7 @@ const eventSchema = z.object({
 function mapEventUpdate(input: Partial<z.infer<typeof eventSchema>>) {
   const row: Record<string, unknown> = {};
   if (input.companyId !== undefined) row.company_id = input.companyId;
+  if (input.contactId !== undefined) row.contact_id = input.contactId;
   if (input.title !== undefined) row.title = input.title;
   if (input.type !== undefined) row.type = input.type;
   if (input.priority !== undefined) row.priority = input.priority;

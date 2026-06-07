@@ -9,7 +9,7 @@ const primaryItems = [
   { href: "/", label: "Início", icon: BarChart3, bg: "linear-gradient(135deg,#0284C7,#38BDF8)" },
   { href: "/searches", label: "Busca", icon: Search, bg: "linear-gradient(135deg,#0891B2,#22D3EE)" },
   { href: "/crm", label: "CRM", icon: KanbanSquare, bg: "linear-gradient(135deg,#7C3AED,#C084FC)" },
-  { href: "/calendar", label: "Calendário", icon: CalendarDays, bg: "linear-gradient(135deg,#D97706,#FDE047)" }
+  { href: "/calendario", label: "Calendário", icon: CalendarDays, bg: "linear-gradient(135deg,#D97706,#FDE047)" }
 ];
 
 const drawerItems = [

@@ -465,6 +465,7 @@ export function savePipelineSettings(pipeline: { stages: string[]; stageColors: 
 export interface CalendarEvent {
   id: string;
   company_id?: string;
+  contact_id?: string;
   title: string;
   type: string;
   priority: string;
@@ -483,6 +484,7 @@ export function getCalendarEvents(params = "") {
 
 export function createCalendarEvent(payload: {
   companyId?: string;
+  contactId?: string;
   title: string;
   type: string;
   priority: string;
@@ -499,6 +501,7 @@ export function createCalendarEvent(payload: {
 
 export function updateCalendarEvent(id: string, payload: Partial<{
   companyId: string | null;
+  contactId: string | null;
   title: string;
   type: string;
   priority: string;
@@ -515,6 +518,50 @@ export function updateCalendarEvent(id: string, payload: Partial<{
 
 export function deleteCalendarEvent(id: string) {
   return api<{ ok: boolean }>(`/calendar/${id}`, { method: "DELETE" });
+}
+
+export interface InboxMessage {
+  id: string;
+  company_id?: string;
+  contact_id?: string;
+  type: "whatsapp" | "email" | "ligacao" | "reuniao" | "interno" | "manual";
+  direction: "inbound" | "outbound" | "manual";
+  status: "unread" | "read" | "flagged" | "resolved";
+  subject?: string;
+  body?: string;
+  phone_from?: string;
+  phone_to?: string;
+  flag_color?: string;
+  sent_by?: string;
+  sent_at?: string;
+  created_at?: string;
+  metadata?: Record<string, unknown>;
+  company?: Company;
+}
+
+export function getInboxMessages(params = "") {
+  return api<{ messages: InboxMessage[]; total: number; page: number; limit: number }>(`/inbox${params}`, undefined, { messages: [], total: 0, page: 1, limit: 50 });
+}
+
+export function createInboxMessage(payload: Partial<InboxMessage> & {
+  body: string;
+  companyId?: string;
+  contactId?: string;
+  phoneFrom?: string;
+  phoneTo?: string;
+  flagColor?: string;
+  sentBy?: string;
+  sentAt?: string;
+}) {
+  return api<InboxMessage>("/inbox", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function updateInboxMessage(id: string, payload: Partial<Pick<InboxMessage, "status" | "flag_color" | "body" | "subject">>) {
+  return api<InboxMessage>(`/inbox/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
+}
+
+export function getInboxUnreadCount() {
+  return api<{ unread: number }>("/inbox/unread-count", undefined, { unread: 0 });
 }
 
 export interface CatalogItem {
@@ -636,7 +683,7 @@ export function createCatalogItem(payload: {
 export interface MessageTemplate {
   id: string;
   name: string;
-  channel: "whatsapp" | "email" | "linkedin";
+  channel: "whatsapp" | "email" | "linkedin" | "instagram_dm";
   subject?: string;
   body: string;
   variables?: string[];
@@ -657,8 +704,16 @@ export function getMarketingTemplates() {
   return api<MessageTemplate[]>("/marketing/templates", undefined, []);
 }
 
-export function createMarketingTemplate(payload: { name: string; channel: "whatsapp" | "email" | "linkedin"; subject?: string; body: string; variables?: string[] }) {
+export function createMarketingTemplate(payload: { name: string; channel: "whatsapp" | "email" | "linkedin" | "instagram_dm"; subject?: string; body: string; variables?: string[] }) {
   return api<MessageTemplate>("/marketing/templates", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function updateMarketingTemplate(id: string, payload: Partial<{ name: string; channel: "whatsapp" | "email" | "linkedin" | "instagram_dm"; subject?: string; body: string; variables?: string[] }>) {
+  return api<MessageTemplate>(`/marketing/templates/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
+}
+
+export function deleteMarketingTemplate(id: string) {
+  return api<{ ok: boolean }>(`/marketing/templates/${id}`, { method: "DELETE" });
 }
 
 export function getCampaigns() {

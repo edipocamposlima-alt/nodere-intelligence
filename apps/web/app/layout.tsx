@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
+import "react-big-calendar/lib/css/react-big-calendar.css";
 import { AppShell } from "@/components/AppShell";
 
 export const metadata: Metadata = {

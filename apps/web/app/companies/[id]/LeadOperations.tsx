@@ -7,6 +7,7 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 import { updateCompany as saveCompanyData } from "@/lib/api";
 import { downloadNoderePdf } from "@/lib/pdf";
 import { RichTextEditor, RichTextPreview } from "@/components/RichTextEditor";
+import { CompanyMiniCalendar } from "@/app/calendar/CalendarClient";
 
 const API_URL = getApiBaseUrl();
 
@@ -594,6 +595,7 @@ export function LeadOperations({ company }: { company: Company }) {
             <button className="btn-action px-4 py-2 text-sm"><CalendarClock className="h-4 w-4" />Criar follow-up</button>
           </form>
           <div className="space-y-3">
+            <CompanyMiniCalendar companyId={company.id} />
             {tasks.length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhum follow-up agendado.</p>}
             {tasks.map((task) => (
               <button key={task.id} onClick={() => completeTask(task)} className="block w-full rounded-lg border border-line bg-ink p-4 text-left hover:border-electric/60">

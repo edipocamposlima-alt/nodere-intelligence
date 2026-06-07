@@ -40,7 +40,7 @@ router.post("/templates", async (req, res, next) => {
   try {
     const body = z.object({
       name: z.string().min(2),
-      channel: z.enum(["whatsapp", "email", "linkedin"]).default("whatsapp"),
+      channel: z.enum(["whatsapp", "email", "linkedin", "instagram_dm"]).default("whatsapp"),
       subject: z.string().optional().nullable(),
       body: z.string().min(2),
       variables: z.array(z.string()).optional()
@@ -49,6 +49,43 @@ router.post("/templates", async (req, res, next) => {
     const { data, error } = await requireSupabase().from("message_templates").insert(row).select("*").single();
     if (error) throw error;
     return res.status(201).json(data);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.patch("/templates/:id", async (req, res, next) => {
+  try {
+    const body = z.object({
+      name: z.string().min(2).optional(),
+      channel: z.enum(["whatsapp", "email", "linkedin", "instagram_dm"]).optional(),
+      subject: z.string().optional().nullable(),
+      body: z.string().min(2).optional(),
+      variables: z.array(z.string()).optional()
+    }).parse(req.body);
+    const { data, error } = await requireSupabase()
+      .from("message_templates")
+      .update({ ...body, updated_at: new Date().toISOString() })
+      .eq("workspace_id", getRequestWorkspaceId(req))
+      .eq("id", req.params.id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return res.json(data);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.delete("/templates/:id", async (req, res, next) => {
+  try {
+    const { error } = await requireSupabase()
+      .from("message_templates")
+      .delete()
+      .eq("workspace_id", getRequestWorkspaceId(req))
+      .eq("id", req.params.id);
+    if (error) throw error;
+    return res.json({ ok: true });
   } catch (error) {
     return next(error);
   }

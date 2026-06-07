@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { Bell, CreditCard, Search, X } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { getInboxUnreadCount } from "@/lib/api";
 import { getAdminToken } from "@/lib/adminAuth";
 import { useAuth } from "@/context/AuthProvider";
 
@@ -56,6 +57,7 @@ export function Header() {
   const [prefs, setPrefs] = useState<UserPrefs>(defaultPrefs);
   const [globalQuery, setGlobalQuery] = useState("");
   const [credits, setCredits] = useState<number | null>(null);
+  const [unreadInbox, setUnreadInbox] = useState(0);
   const [brandName, setBrandName] = useState("NODERE Intelligence");
   const pathname = usePathname();
   const router = useRouter();
@@ -74,6 +76,8 @@ export function Header() {
     if (path.startsWith("/admin")) return "Administrador";
     if (path.startsWith("/intelligence") || path.startsWith("/ia")) return "Inteligência comercial";
     if (path.startsWith("/inbox")) return "Caixa de entrada";
+    if (path.startsWith("/calendar") || path.startsWith("/calendario")) return "Calendário comercial";
+    if (path.startsWith("/marketing")) return "Marketing";
     if (path.startsWith("/billing")) return "Faturamento";
     return "Dashboard Executivo";
   }, [pathname]);
@@ -142,6 +146,24 @@ export function Header() {
     }
     void loadTasks();
     const timer = window.setInterval(loadTasks, 1000 * 60 * 5);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadUnreadInbox() {
+      try {
+        const payload = await getInboxUnreadCount();
+        if (!cancelled) setUnreadInbox(payload.unread || 0);
+      } catch {
+        if (!cancelled) setUnreadInbox(0);
+      }
+    }
+    void loadUnreadInbox();
+    const timer = window.setInterval(loadUnreadInbox, 1000 * 60);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
@@ -250,15 +272,20 @@ export function Header() {
               aria-label="Notificações"
             >
               <Bell className="h-5 w-5" />
-              {alerts.length > 0 && (
+              {alerts.length + unreadInbox > 0 && (
                 <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-warning px-1 text-[10px] font-bold text-ink">
-                  {alerts.length}
+                  {alerts.length + unreadInbox}
                 </span>
               )}
             </button>
             {open && (
               <div className="absolute right-0 mt-2 w-80 rounded-lg border border-line bg-panel p-3 shadow-glow">
                 <p className="text-sm font-semibold text-white">Lembretes e follow-ups</p>
+                {unreadInbox > 0 && (
+                  <Link href="/inbox" className="mt-3 block rounded-md border border-emerald-400/40 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-100 hover:border-emerald-300">
+                    {unreadInbox} mensagem{unreadInbox === 1 ? "" : "s"} não lida{unreadInbox === 1 ? "" : "s"} no Inbox
+                  </Link>
+                )}
                 {alerts.length === 0 ? (
                   <p className="mt-3 text-sm text-slate-400">Nenhum lembrete vencido ou para hoje.</p>
                 ) : (

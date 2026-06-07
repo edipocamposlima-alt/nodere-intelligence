@@ -592,3 +592,43 @@ create index if not exists idx_company_files_company on company_files(workspace_
 alter table catalog_items add column if not exists image_url text;
 alter table catalog_items add column if not exists images text[] not null default '{}';
 
+-- Fase 5: calendario, inbox e marketing persistentes.
+alter table calendar_events add column if not exists contact_id text;
+alter table calendar_events add column if not exists metadata jsonb not null default '{}';
+alter table calendar_events drop constraint if exists calendar_events_type_check;
+alter table calendar_events drop constraint if exists calendar_events_priority_check;
+alter table calendar_events drop constraint if exists calendar_events_status_check;
+alter table calendar_events
+  add constraint calendar_events_type_check check (type in ('reuniao','followup','follow-up','meeting','tarefa','task','ligacao','call','interno','internal','postagem','content_post'));
+alter table calendar_events
+  add constraint calendar_events_priority_check check (priority in ('alta','media','baixa','high','medium','low'));
+alter table calendar_events
+  add constraint calendar_events_status_check check (status in ('pendente','concluido','cancelado','rascunho','Rascunho'));
+
+alter table inbox_messages add column if not exists company_id text;
+alter table inbox_messages add column if not exists contact_id text;
+alter table inbox_messages add column if not exists type text not null default 'whatsapp';
+alter table inbox_messages add column if not exists subject text;
+alter table inbox_messages add column if not exists body text;
+alter table inbox_messages add column if not exists flag_color text;
+alter table inbox_messages add column if not exists sent_by text;
+alter table inbox_messages add column if not exists sent_at timestamptz not null default now();
+alter table inbox_messages add column if not exists metadata jsonb not null default '{}';
+alter table inbox_messages alter column content drop not null;
+alter table inbox_messages drop constraint if exists inbox_messages_direction_check;
+alter table inbox_messages drop constraint if exists inbox_messages_type_check;
+alter table inbox_messages drop constraint if exists inbox_messages_status_check;
+alter table inbox_messages
+  add constraint inbox_messages_direction_check check (direction in ('inbound','outbound','manual'));
+alter table inbox_messages
+  add constraint inbox_messages_type_check check (type in ('whatsapp','email','ligacao','reuniao','interno','manual'));
+alter table inbox_messages
+  add constraint inbox_messages_status_check check (status in ('unread','read','flagged','resolved'));
+
+alter table message_templates drop constraint if exists message_templates_channel_check;
+alter table message_templates
+  add constraint message_templates_channel_check check (channel in ('whatsapp','email','linkedin','instagram_dm'));
+
+create index if not exists idx_calendar_events_company on calendar_events(workspace_id, company_id, start_at);
+create index if not exists idx_inbox_messages_company on inbox_messages(workspace_id, company_id, created_at desc);
+

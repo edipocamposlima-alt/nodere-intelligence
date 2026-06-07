@@ -13,7 +13,7 @@ const items = [
   { href: "/crm", label: "CRM / Funil", icon: KanbanSquare, hex: "#A855F7", bg: "linear-gradient(135deg,#7C3AED,#C084FC)" },
   { href: "/intelligence", label: "Inteligência", icon: Zap, hex: "#FACC15", bg: "linear-gradient(135deg,#EAB308,#F97316)" },
   { href: "/inbox", label: "Caixa de entrada", icon: Inbox, hex: "#10B981", bg: "linear-gradient(135deg,#059669,#34D399)" },
-  { href: "/calendar", label: "Calendário", icon: CalendarDays, hex: "#F59E0B", bg: "linear-gradient(135deg,#D97706,#FDE047)" },
+  { href: "/calendario", label: "Calendário", icon: CalendarDays, hex: "#F59E0B", bg: "linear-gradient(135deg,#D97706,#FDE047)" },
   { href: "/automations", label: "Automações", icon: Workflow, hex: "#E879F9", bg: "linear-gradient(135deg,#C026D3,#F0ABFC)" },
   { href: "/operators", label: "Operadores", icon: Users, hex: "#6366F1", bg: "linear-gradient(135deg,#4F46E5,#818CF8)" },
   { href: "/reports", label: "Relatórios", icon: LineChart, hex: "#84CC16", bg: "linear-gradient(135deg,#65A30D,#A3E635)" },
