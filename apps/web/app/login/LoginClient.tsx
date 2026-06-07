@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { LockKeyhole, Mail } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { setAdminToken } from "@/lib/adminAuth";
 import { hasSupabaseAuthConfig, sendPasswordRecovery, signInWithPassword } from "@/lib/supabaseAuthRest";
@@ -28,19 +27,28 @@ export function LoginClient() {
         const auth = await signInWithPassword(email, password);
         if (!auth.access_token) throw new Error("Supabase não retornou token de sessão.");
         setAdminToken(auth.access_token);
-        await fetch("/api/auth/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: auth.access_token }) });
+        await fetch("/api/auth/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ access_token: auth.access_token })
+        });
         router.push(searchParams.get("next") || "/");
         return;
       }
+
       const response = await fetch(`${getApiBaseUrl()}/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.message || "Nao foi possivel entrar.");
+      if (!response.ok) throw new Error(payload.message || "Não foi possível entrar.");
       setAdminToken(payload.token);
-      await fetch("/api/auth/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: payload.token }) });
+      await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ access_token: payload.token })
+      });
       router.push(searchParams.get("next") || "/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao fazer login.");
@@ -54,8 +62,9 @@ export function LoginClient() {
     setError("");
     setNotice("");
     try {
-      await sendPasswordRecovery(email);
-      setNotice("Enviamos o link de recuperação para o e-mail informado.");
+      if (!email.trim()) throw new Error("Informe seu e-mail para receber a recuperação de senha.");
+      const result = await sendPasswordRecovery(email);
+      setNotice(result.message || "E-mail de recuperação enviado.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao enviar recuperação.");
     } finally {
@@ -64,55 +73,55 @@ export function LoginClient() {
   }
 
   return (
-    <div className="min-h-screen bg-ink">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-5 py-10">
-        <section className="rounded-xl border border-line bg-panel/95 p-6 shadow-glow">
-          <div className="mb-6 flex justify-center">
-            <Image src="/nodere-wordmark.png" alt="NODERE" width={360} height={120} priority className="h-auto w-full max-w-xs rounded-xl object-contain" />
-          </div>
-          <h2 className="text-xl font-semibold text-white">Entrar no NODERE</h2>
-          <p className="mt-1 text-sm text-slate-400">
-            {hasSupabaseAuthConfig() ? "Acesso seguro via Supabase Auth." : "Modo fallback: use o e-mail e senha configurados no Render."}
-          </p>
-          <form onSubmit={submit} className="mt-6 space-y-4">
-            <label className="block">
-              <span className="text-sm text-slate-300">E-mail</span>
-              <div className="mt-2 flex items-center gap-2 rounded-lg border border-line bg-ink px-3 py-3">
-                <Mail className="h-4 w-4 text-slate-500" />
-                <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" className="w-full bg-transparent text-sm outline-none" />
-              </div>
-            </label>
-            <label className="block">
-              <span className="text-sm text-slate-300">Senha</span>
-              <div className="mt-2 flex items-center gap-2 rounded-lg border border-line bg-ink px-3 py-3">
-                <LockKeyhole className="h-4 w-4 text-slate-500" />
-                <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" className="w-full bg-transparent text-sm outline-none" />
-              </div>
-            </label>
-            {error && <p className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-red-300">{error}</p>}
-            {notice && <p className="rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm text-emerald-200">{notice}</p>}
-            <button disabled={loading} className="w-full rounded-lg bg-electric px-4 py-3 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-60">
-              {loading ? "Entrando..." : "Entrar"}
-            </button>
-            <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-              <button type="button" onClick={recoverPassword} className="text-cyan hover:text-white">
-                Esqueci minha senha
-              </button>
-              <Link href="/register" className="text-slate-300 hover:text-white">
-                Criar conta
-              </Link>
-            </div>
-            <p className="text-xs leading-5 text-slate-500">
-              Ao entrar, você concorda com os <Link href="/terms" className="text-cyan">Termos</Link> e a <Link href="/privacy" className="text-cyan">Política de Privacidade</Link>.
-            </p>
-          </form>
-          <div className="mt-6 flex justify-center gap-2 text-xs text-slate-500">
-            <Link href="/terms" className="hover:text-cyan">Termos de uso</Link>
-            <span>·</span>
-            <Link href="/privacy" className="hover:text-cyan">Política de privacidade</Link>
-          </div>
-        </section>
-      </div>
-    </div>
+    <main className="grid min-h-screen place-items-center bg-gray-950 px-5 py-10 text-white">
+      <section className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950/92 p-6 shadow-glow">
+        <div className="mb-7 flex justify-center">
+          <Image src="/nodere-wordmark.png" alt="NODERE" width={360} height={120} priority className="h-auto w-full max-w-xs object-contain" />
+        </div>
+        <h1 className="text-center text-2xl font-semibold text-white">Entrar no NODERE</h1>
+        <form onSubmit={submit} className="mt-7 space-y-4">
+          <label className="block">
+            <span className="text-sm font-medium text-slate-200">E-mail</span>
+            <input
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              type="email"
+              required
+              autoComplete="email"
+              className="mt-2 min-h-12 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-white outline-none focus:border-[#1E6FDB]"
+            />
+          </label>
+          <label className="block">
+            <span className="text-sm font-medium text-slate-200">Senha</span>
+            <input
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              type="password"
+              required
+              autoComplete="current-password"
+              className="mt-2 min-h-12 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-white outline-none focus:border-[#1E6FDB]"
+            />
+          </label>
+          {error && <p className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{error}</p>}
+          {notice && <p className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">{notice}</p>}
+          <button disabled={loading} className="min-h-12 w-full rounded-lg bg-[#1E6FDB] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1557B0] disabled:opacity-60">
+            {loading ? "Entrando..." : "Entrar"}
+          </button>
+        </form>
+        <div className="mt-5 space-y-3 text-center text-sm">
+          <button type="button" onClick={recoverPassword} className="block w-full text-cyan hover:text-white">
+            Esqueci minha senha
+          </button>
+          <Link href="/register" className="block text-slate-300 hover:text-white">
+            Criar conta
+          </Link>
+        </div>
+        <footer className="mt-7 text-center text-xs text-slate-500">
+          <Link href="/terms" className="hover:text-cyan">Termos de uso</Link>
+          <span className="px-2">·</span>
+          <Link href="/privacy" className="hover:text-cyan">Política de privacidade</Link>
+        </footer>
+      </section>
+    </main>
   );
 }

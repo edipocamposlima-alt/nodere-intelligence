@@ -305,6 +305,8 @@ textarea {
   background: var(--nodere-primary);
   color: #ffffff !important;
   font-weight: 700;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
   transition: border-color 160ms ease, filter 160ms ease, transform 160ms ease;
 }
 
@@ -322,6 +324,8 @@ textarea {
   background: #374151;
   color: #ffffff !important;
   font-weight: 700;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
   transition: border-color 160ms ease, filter 160ms ease, transform 160ms ease;
 }
 
@@ -353,6 +357,8 @@ textarea {
   background: var(--nodere-primary);
   color: #ffffff !important;
   font-weight: 800;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
   transition: border-color 160ms ease, filter 160ms ease, transform 160ms ease;
 }
 
@@ -370,6 +376,8 @@ textarea {
   background: #374151;
   color: #ffffff !important;
   font-weight: 700;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
   transition: border-color 160ms ease, filter 160ms ease, transform 160ms ease;
 }
 
@@ -377,6 +385,14 @@ textarea {
   border-color: #cbd5e1;
   background: #e5e7eb;
   color: #111827 !important;
+}
+
+@media (prefers-color-scheme: light) {
+  .btn-secondary-action {
+    background-color: #E5E7EB;
+    color: #111827 !important;
+    border-color: #D1D5DB;
+  }
 }
 .nodere-grid {
   background-image:
@@ -414,3 +430,6 @@ textarea {
 :root[data-theme="light"] .shadow-glow {
   box-shadow: 0 18px 52px rgba(30, 111, 219, 0.16);
 }
+
+
+

@@ -10,8 +10,8 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: [
-      { url: "/nodere-logo-192.png", sizes: "32x32", type: "image/png" },
-      { url: "/nodere-logo-192.png", sizes: "192x192", type: "image/png" }
+      { url: "/nodere-logo-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/nodere-logo-512.png", sizes: "512x512", type: "image/png" }
     ],
     apple: "/nodere-logo-192.png"
   },
@@ -38,8 +38,9 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="NODERE" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/nodere-logo-192.png" />
         <link rel="apple-touch-icon" href="/nodere-logo-192.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/nodere-logo-192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/nodere-logo-512.png" />
       </head>
       <body>
         <AppShell>{children}</AppShell>

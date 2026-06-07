@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiBaseUrl } from "@/lib/apiBase";
 
-const COOKIE_NAME = "nodere_session";
+const COOKIE_NAMES = ["nodere_session", "nodere-session"];
 
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get(COOKIE_NAME)?.value;
+  const token = COOKIE_NAMES.map((name) => request.cookies.get(name)?.value).find(Boolean);
   if (!token) {
     return NextResponse.json({ message: "Sessão ausente." }, { status: 401 });
   }
@@ -19,10 +19,13 @@ export async function GET(request: NextRequest) {
   }
 
   const payload = await response.json();
+  const displayName = payload.user?.name || payload.members?.find?.((member: { email?: string }) => member.email === payload.user?.email)?.name;
   return NextResponse.json({
     user: {
       id: payload.user?.id ?? payload.user?.userId,
       email: payload.user?.email,
+      name: displayName,
+      avatar_url: payload.user?.avatar_url,
       role: payload.user?.role ?? "operator"
     },
     workspace: {

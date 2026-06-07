@@ -2,20 +2,58 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Bell, CreditCard, Search, ShieldCheck } from "lucide-react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { Bell, CreditCard, Search, X } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { getAdminToken } from "@/lib/adminAuth";
 import { useAuth } from "@/context/AuthProvider";
 
 type CompanyListItem = { id: string; name: string };
 type TaskItem = { id: string; title: string; dueAt?: string; status: string; companyId: string; companyName: string };
+type UserPrefs = {
+  theme: "dark" | "light";
+  fontSize: "small" | "normal" | "large";
+  density: "compact" | "comfortable" | "large";
+  avatarUrl: string;
+};
 
 const API_URL = getApiBaseUrl();
+const PREFS_KEY = "nodere_user_preferences";
+const SETTINGS_KEY = "nodere_settings";
+
+const defaultPrefs: UserPrefs = {
+  theme: "dark",
+  fontSize: "normal",
+  density: "compact",
+  avatarUrl: ""
+};
+
+function readPrefs(): UserPrefs {
+  if (typeof window === "undefined") return defaultPrefs;
+  try {
+    return { ...defaultPrefs, ...JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") };
+  } catch {
+    return defaultPrefs;
+  }
+}
+
+function applyPrefs(prefs: UserPrefs) {
+  if (typeof window === "undefined") return;
+  const root = document.documentElement;
+  root.dataset.theme = prefs.theme;
+  root.dataset.fontSize = prefs.fontSize;
+  root.dataset.density = prefs.density;
+  const currentSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...currentSettings, mode: prefs.theme, layoutDensity: prefs.density }));
+  localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+  window.dispatchEvent(new Event("nodere:theme-change"));
+}
 
 export function Header() {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [open, setOpen] = useState(false);
+  const [showPrefsModal, setShowPrefsModal] = useState(false);
+  const [prefs, setPrefs] = useState<UserPrefs>(defaultPrefs);
   const [globalQuery, setGlobalQuery] = useState("");
   const [credits, setCredits] = useState<number | null>(null);
   const [brandName, setBrandName] = useState("NODERE Intelligence");
@@ -42,6 +80,9 @@ export function Header() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const stored = readPrefs();
+    setPrefs(stored);
+    applyPrefs(stored);
     setGlobalQuery(new URLSearchParams(window.location.search).get("q") ?? "");
   }, [pathname]);
 
@@ -116,6 +157,10 @@ export function Header() {
       .sort((a, b) => new Date(a.dueAt || 0).getTime() - new Date(b.dueAt || 0).getTime());
   }, [tasks]);
 
+  const displayName = user?.name || user?.email || "Usuário";
+  const avatarUrl = prefs.avatarUrl || user?.avatar_url || "";
+  const initial = (user?.name || user?.email || "U").charAt(0).toUpperCase();
+
   function submitGlobalSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const query = globalQuery.trim();
@@ -124,6 +169,20 @@ export function Header() {
       return;
     }
     router.push(`/companies?q=${encodeURIComponent(query)}`);
+  }
+
+  function updatePrefs(next: Partial<UserPrefs>) {
+    const merged = { ...prefs, ...next };
+    setPrefs(merged);
+    applyPrefs(merged);
+  }
+
+  function handleAvatarUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => updatePrefs({ avatarUrl: String(reader.result || "") });
+    reader.readAsDataURL(file);
   }
 
   return (
@@ -162,10 +221,25 @@ export function Header() {
               {credits}
             </Link>
           )}
-          <Link href="/admin" className="inline-flex items-center gap-2 rounded-lg border border-electric/40 bg-electric/10 px-3 py-2 text-sm font-semibold text-blue-200 hover:bg-electric/20" title={workspace?.name || "Workspace NODERE"}>
-            <ShieldCheck className="h-4 w-4" />
-            <span className="max-w-36 truncate">{user?.email || "Conta NODERE"}</span>
-          </Link>
+
+          <button
+            type="button"
+            className="flex items-center gap-2 rounded-lg border border-line bg-white/5 px-2 py-1.5 text-left hover:border-electric/60 hover:bg-electric/10"
+            onClick={() => setShowPrefsModal(true)}
+            title="Preferências"
+          >
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt={displayName} className="h-8 w-8 rounded-full object-cover" />
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white">
+                {initial}
+              </div>
+            )}
+            <span className="hidden max-w-36 truncate text-sm font-medium text-slate-100 md:block">{displayName}</span>
+            <span aria-hidden="true" title="Preferências">⚙️</span>
+          </button>
+
           <button onClick={logout} className="hidden rounded-lg border border-line px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white sm:inline-flex">
             Sair
           </button>
@@ -202,6 +276,57 @@ export function Header() {
           </div>
         </div>
       </div>
+
+      {showPrefsModal && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 px-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+          <section className="w-full max-w-lg rounded-2xl border border-line bg-panel p-5 shadow-glow">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-white">Preferências rápidas</h2>
+                <p className="text-sm text-slate-400">Tema, leitura, densidade e foto ficam salvos neste navegador.</p>
+              </div>
+              <button type="button" onClick={() => setShowPrefsModal(false)} className="rounded-lg border border-line p-2 text-slate-300 hover:text-white" aria-label="Fechar preferências">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="text-sm font-medium text-slate-300">Tema</span>
+                <select value={prefs.theme} onChange={(event) => updatePrefs({ theme: event.target.value as UserPrefs["theme"] })} className="mt-2 min-h-11 w-full rounded-lg border border-line bg-ink px-3 text-sm outline-none">
+                  <option value="dark">Escuro</option>
+                  <option value="light">Claro</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium text-slate-300">Fonte</span>
+                <select value={prefs.fontSize} onChange={(event) => updatePrefs({ fontSize: event.target.value as UserPrefs["fontSize"] })} className="mt-2 min-h-11 w-full rounded-lg border border-line bg-ink px-3 text-sm outline-none">
+                  <option value="small">Pequena</option>
+                  <option value="normal">Normal</option>
+                  <option value="large">Grande</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium text-slate-300">Densidade</span>
+                <select value={prefs.density} onChange={(event) => updatePrefs({ density: event.target.value as UserPrefs["density"] })} className="mt-2 min-h-11 w-full rounded-lg border border-line bg-ink px-3 text-sm outline-none">
+                  <option value="compact">Compacto</option>
+                  <option value="comfortable">Confortável</option>
+                  <option value="large">Amplo</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium text-slate-300">Foto</span>
+                <input type="file" accept="image/*" onChange={handleAvatarUpload} className="mt-2 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              </label>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={() => updatePrefs({ ...defaultPrefs, avatarUrl })} className="btn-secondary-action px-4 py-2 text-sm">Restaurar</button>
+              <button type="button" onClick={() => setShowPrefsModal(false)} className="btn-action px-4 py-2 text-sm">Salvar</button>
+            </div>
+          </section>
+        </div>
+      )}
     </header>
   );
 }

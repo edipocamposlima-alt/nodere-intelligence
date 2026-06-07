@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 type AuthUser = {
   id?: string;
   email?: string;
+  name?: string;
+  avatar_url?: string;
   role?: "owner" | "admin" | "operator" | "viewer";
 };
 

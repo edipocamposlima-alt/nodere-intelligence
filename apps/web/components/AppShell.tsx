@@ -19,11 +19,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     return (
       <>
         {children}
-        <footer className="bg-ink px-4 py-6 text-center text-xs text-slate-500">
-          <a className="hover:text-cyan" href="/terms">Termos de uso</a>
-          <span className="px-2">·</span>
-          <a className="hover:text-cyan" href="/privacy">Política de privacidade</a>
-        </footer>
         <ThemeRuntime />
       </>
     );
@@ -49,3 +44,4 @@ export function AppShell({ children }: { children: ReactNode }) {
     </AuthProvider>
   );
 }
+
