@@ -3,6 +3,7 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { getSupabase } from "../db/supabase.js";
 import { getRequestWorkspaceId } from "../middleware/session.js";
+import { logRequestMetric } from "../services/metricsStore.js";
 
 const router = Router();
 
@@ -49,6 +50,9 @@ router.post("/", async (req, res, next) => {
     };
     const { data, error } = await requireSupabase().from("calendar_events").insert(row).select("*").single();
     if (error) throw error;
+    if (String(body.type).toLowerCase() === "reuniao" || String(body.type).toLowerCase() === "meeting") {
+      logRequestMetric(req, "meeting_scheduled", row.id, { companyId: body.companyId || null, startAt: body.startAt });
+    }
     return res.status(201).json(data);
   } catch (error) {
     return next(error);

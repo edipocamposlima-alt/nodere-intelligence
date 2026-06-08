@@ -413,6 +413,7 @@ export interface SequenceInstance {
   id: string;
   companyId: string;
   companyName: string;
+  companyEmail?: string;
   templateId: string;
   templateName: string;
   activatedAt: string;

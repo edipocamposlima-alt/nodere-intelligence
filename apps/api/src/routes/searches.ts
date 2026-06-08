@@ -7,6 +7,7 @@ import { listSearchHistory, saveSearch, getSearch, touchSearch } from "../db/sea
 import { calculateOpportunityScore } from "../services/scoring.js";
 import { config } from "../config.js";
 import { markOnboardingStep } from "../services/onboardingStore.js";
+import { logRequestMetric } from "../services/metricsStore.js";
 
 const router = Router();
 const apolloSearchSchema = z.object({
@@ -226,6 +227,11 @@ router.post("/", async (req, res, next) => {
       companyIds,
       workspaceId
     );
+    logRequestMetric(req, "search_performed", null, {
+      query: [input.companyName, input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" "),
+      resultCount: result.companies.length,
+      source: result.source
+    });
 
     res.status(201).json({
       search: {
@@ -263,6 +269,12 @@ router.post("/:id/rerun", async (req, res, next) => {
     const companyIds = result.companies.map((c) => c.id);
     await consumeSearch(`${saved.segment} em ${saved.city} (rerun)`, workspaceId);
     await touchSearch(saved.id, result.companies.length, result.source, companyIds, workspaceId);
+    logRequestMetric(req, "search_performed", null, {
+      query: `${saved.segment} em ${saved.city}`,
+      resultCount: result.companies.length,
+      source: result.source,
+      rerun: true
+    });
 
     return res.json({
       search: {

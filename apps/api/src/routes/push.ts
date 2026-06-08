@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { getRequestWorkspaceId, requireWorkspaceSession } from "../middleware/session.js";
 import { getSupabase } from "../db/supabase.js";
+import { getVapidPublicKey } from "../services/pushService.js";
 
 const router = Router();
 
@@ -15,6 +16,12 @@ router.get("/status", (_req, res) => {
       ? "Notificações push disponíveis."
       : "Notificações push indisponíveis no momento. Configure VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY para ativar envio real."
   });
+});
+
+router.get("/vapid-public-key", (_req, res) => {
+  const publicKey = getVapidPublicKey();
+  if (!publicKey) return res.status(503).json({ error: "Push not configured" });
+  return res.json({ publicKey });
 });
 
 router.post("/subscribe", requireWorkspaceSession, async (req, res, next) => {

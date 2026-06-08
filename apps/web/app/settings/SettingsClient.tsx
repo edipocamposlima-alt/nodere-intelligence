@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Bell, CheckCircle2, Code2, Download, FileText, Palette, Save, Server, ShieldCheck, Smartphone, Stamp, UsersRound } from "lucide-react";
+import { Bell, CheckCircle2, Code2, Download, FileText, Mail, Palette, Save, Server, ShieldCheck, Smartphone, Stamp, UsersRound } from "lucide-react";
 import { getBackendRootUrl } from "@/lib/apiBase";
 import { getPublicSettings, savePublicSettings } from "@/lib/api";
 import { AdminFetchError, adminFetch, getAdminToken } from "@/lib/adminAuth";
@@ -130,6 +130,15 @@ export function SettingsClient() {
   const [adminPanelsStatus, setAdminPanelsStatus] = useState("");
   const [pushAvailable, setPushAvailable] = useState(false);
   const [pushStatus, setPushStatus] = useState("Não testado");
+  const [smtpSettings, setSmtpSettings] = useState({
+    host: "",
+    port: "587",
+    user: "",
+    pass: "",
+    fromName: "NODERE Intelligence",
+    fromEmail: ""
+  });
+  const [smtpStatus, setSmtpStatus] = useState("Não testado");
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -203,8 +212,16 @@ export function SettingsClient() {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") throw new Error("Permissão de notificação negada.");
       const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
-      if (!subscription) throw new Error("VAPID_PUBLIC_KEY precisa estar configurada no frontend para criar assinatura push.");
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        const keyResponse = await fetch(`${root}/api/push/vapid-public-key`, { cache: "no-store" });
+        if (!keyResponse.ok) throw new Error("Chave pública VAPID indisponível no backend.");
+        const { publicKey } = await keyResponse.json();
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey)
+        });
+      }
       const response = await fetch(`${settings.backendUrl.replace(/\/$/, "")}/api/push/subscribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAdminToken()}` },
@@ -245,6 +262,29 @@ export function SettingsClient() {
       setAdminMessage("Chave de API criada.");
     } catch (error) {
       setAdminMessage(error instanceof Error ? error.message : "Erro ao gerar chave.");
+    }
+  }
+
+  async function testSmtp() {
+    setSmtpStatus("Testando SMTP...");
+    try {
+      const response = await fetch(`${settings.backendUrl.replace(/\/$/, "")}/api/settings/test-smtp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAdminToken()}` },
+        body: JSON.stringify({
+          host: smtpSettings.host,
+          port: smtpSettings.port,
+          user: smtpSettings.user,
+          pass: smtpSettings.pass,
+          fromName: smtpSettings.fromName,
+          from: smtpSettings.fromEmail
+        })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.message || `HTTP ${response.status}`);
+      setSmtpStatus(payload.message || "Conexão SMTP verificada.");
+    } catch (error) {
+      setSmtpStatus(error instanceof Error ? error.message : "Falha ao testar SMTP.");
     }
   }
 
@@ -300,9 +340,14 @@ export function SettingsClient() {
           <p className="mt-2 text-sm leading-6 text-slate-400">
             Gere chaves para parceiros consumirem <code className="text-cyan">/v1/leads</code> e <code className="text-cyan">/v1/search</code>. Somente Owner/Admin.
           </p>
-          <button type="button" onClick={generateApiKey} className="mt-3 rounded-lg border border-cyan/40 bg-cyan/10 px-4 py-2 text-sm font-semibold text-cyan hover:bg-cyan/20">
-            Gerar chave de API
-          </button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" onClick={generateApiKey} className="rounded-lg border border-cyan/40 bg-cyan/10 px-4 py-2 text-sm font-semibold text-cyan hover:bg-cyan/20">
+              Gerar chave de API
+            </button>
+            <a href={`${settings.backendUrl.replace(/\/$/, "")}/docs`} target="_blank" rel="noreferrer" className="rounded-lg border border-line bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:border-electric">
+              Ver documentação completa da API →
+            </a>
+          </div>
         </div>
         <div className="rounded-lg border border-line bg-panel/90 p-5">
           <div className="flex items-center gap-2">
@@ -324,6 +369,30 @@ export function SettingsClient() {
           <p className="mt-2 text-sm leading-6 text-slate-400">
             Disponível no plano Agency via <code className="text-cyan">/api/workspace/branding</code>. Configure nome, domínio, logo e cor principal do workspace.
           </p>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-line bg-panel/90 p-5">
+        <div className="flex items-center gap-2">
+          <Mail className="h-4 w-4 text-cyan" />
+          <h3 className="font-semibold text-white">SMTP para automações</h3>
+        </div>
+        <p className="mt-2 text-sm leading-6 text-slate-400">
+          Teste credenciais SMTP de envio real. Em produção, salve os valores finais no Render como <code className="text-cyan">SMTP_HOST</code>, <code className="text-cyan">SMTP_USER</code>, <code className="text-cyan">SMTP_PASS</code> e <code className="text-cyan">SMTP_FROM</code>.
+        </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <input value={smtpSettings.host} onChange={(event) => setSmtpSettings((current) => ({ ...current, host: event.target.value }))} placeholder="SMTP Host" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+          <input value={smtpSettings.port} onChange={(event) => setSmtpSettings((current) => ({ ...current, port: event.target.value }))} placeholder="SMTP Port" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+          <input value={smtpSettings.user} onChange={(event) => setSmtpSettings((current) => ({ ...current, user: event.target.value }))} placeholder="SMTP User" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+          <input type="password" value={smtpSettings.pass} onChange={(event) => setSmtpSettings((current) => ({ ...current, pass: event.target.value }))} placeholder="SMTP Password" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+          <input value={smtpSettings.fromName} onChange={(event) => setSmtpSettings((current) => ({ ...current, fromName: event.target.value }))} placeholder="From name" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+          <input value={smtpSettings.fromEmail} onChange={(event) => setSmtpSettings((current) => ({ ...current, fromEmail: event.target.value }))} placeholder="From email" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <button type="button" onClick={testSmtp} className="rounded-lg border border-cyan/40 bg-cyan/10 px-4 py-2 text-sm font-semibold text-cyan hover:bg-cyan/20">
+            Testar conexão SMTP
+          </button>
+          <span className="text-sm text-slate-400">{smtpStatus}</span>
         </div>
       </section>
 
@@ -499,4 +568,11 @@ export function SettingsClient() {
       </div>
     </form>
   );
+}
+
+function urlBase64ToUint8Array(value: string) {
+  const padding = "=".repeat((4 - (value.length % 4)) % 4);
+  const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
 }

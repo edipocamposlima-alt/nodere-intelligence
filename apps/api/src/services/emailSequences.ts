@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { config } from "../config.js";
 import { EmailSequenceTemplate, SequenceInstance, SequenceStep } from "../types.js";
+import { sendAutomationEmail } from "./emailSender.js";
 
 // Built-in sequence templates
 export const SEQUENCE_TEMPLATES: EmailSequenceTemplate[] = [
@@ -99,7 +100,8 @@ function fillTemplate(text: string, vars: Record<string, string>): string {
 export function activateSequence(
   companyId: string,
   companyName: string,
-  templateId: string
+  templateId: string,
+  companyEmail?: string
 ): SequenceInstance {
   const template = SEQUENCE_TEMPLATES.find((t) => t.id === templateId);
   if (!template) throw new Error(`Template not found: ${templateId}`);
@@ -110,6 +112,7 @@ export function activateSequence(
     id,
     companyId,
     companyName,
+    companyEmail,
     templateId,
     templateName: template.name,
     activatedAt: new Date().toISOString(),
@@ -205,7 +208,19 @@ export async function sendSequenceEmail(
 export async function processDueSteps(): Promise<void> {
   const due = getDueInstances();
   for (const { instance, step } of due) {
-    // email steps get logged; actual send requires caller to pass recipient email
+    if (step.channel === "email") {
+      const recipient = instance.companyEmail;
+      if (!recipient) {
+        console.warn(`[sequences] email step skipped for ${instance.companyName}: lead has no email.`);
+      } else {
+        const result = await sendAutomationEmail({
+          to: recipient,
+          subject: fillTemplate(step.subject ?? "Contato comercial", { empresa: instance.companyName }),
+          body: fillTemplate(step.body, { empresa: instance.companyName })
+        });
+        console.log(`[sequences] email step ${step.stepIndex} for ${instance.companyName}: ${result.sent ? "sent" : result.reason}`);
+      }
+    }
     advanceInstance(instance.id);
     console.log(`[sequences] processed step ${step.stepIndex} (${step.channel}) for ${instance.companyName}`);
   }

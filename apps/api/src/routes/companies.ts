@@ -37,6 +37,7 @@ import { activateSequence, getInstancesByCompany } from "../services/emailSequen
 import { enrichCnpj } from "../services/cnpjEnrichment.js";
 import { getSupabase } from "../db/supabase.js";
 import { markOnboardingStep } from "../services/onboardingStore.js";
+import { logRequestMetric } from "../services/metricsStore.js";
 import { randomUUID } from "node:crypto";
 import { parse as parseCsvSync } from "csv-parse/sync";
 import * as XLSX from "xlsx";
@@ -245,6 +246,7 @@ router.post("/", async (req, res, next) => {
     } as any;
     await saveCompanies([company], workspaceId);
     await markOnboardingStep(workspaceId, "crm").catch(() => undefined);
+    logRequestMetric(req, "company_saved", company.id, { source: "manual", status: company.status });
     return res.status(201).json(company);
   } catch (err) { return next(err); }
 });
@@ -260,8 +262,13 @@ router.get("/:id", async (req, res, next) => {
 router.patch("/:id", async (req, res, next) => {
   try {
     const body = companyUpdateSchema.parse(req.body);
-    const company = await updateCompany(req.params.id, normalizeCompanyPatch(body) as any, getRequestWorkspaceId(req));
+    const workspaceId = getRequestWorkspaceId(req);
+    const before = await getCompanyAsync(req.params.id, workspaceId).catch(() => null);
+    const company = await updateCompany(req.params.id, normalizeCompanyPatch(body) as any, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
+    if (body.status !== undefined && before?.status !== company.status) {
+      logRequestMetric(req, "crm_stage_changed", req.params.id, { from: before?.status || null, to: company.status });
+    }
     return res.json(company);
   } catch (err) { return next(err); }
 });
@@ -448,6 +455,9 @@ router.post("/import", async (req, res, next) => {
     }
     await saveCompanies(imported, workspaceId);
     if (imported.length > 0) await markOnboardingStep(workspaceId, "crm").catch(() => undefined);
+    for (const item of imported) {
+      logRequestMetric(req, "company_saved", item.id, { source: "import", fileName: parsed.fileName || null });
+    }
     await logDownload(workspaceId, getSessionUserId(req), "import", parsed.fileName || "importacao-empresas", {
       imported: imported.length,
       duplicates: duplicates.length,
@@ -469,8 +479,13 @@ router.get("/:id/enrichment", (req, res) => {
 router.patch("/:id/status", async (req, res, next) => {
   try {
     const body = z.object({ status: z.string() }).parse(req.body);
-    const company = await updateStatus(req.params.id, body.status as never, getRequestWorkspaceId(req));
+    const workspaceId = getRequestWorkspaceId(req);
+    const before = await getCompanyAsync(req.params.id, workspaceId).catch(() => null);
+    const company = await updateStatus(req.params.id, body.status as never, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
+    if (before?.status !== company.status) {
+      logRequestMetric(req, "crm_stage_changed", req.params.id, { from: before?.status || null, to: company.status });
+    }
     return res.json(company);
   } catch (err) { return next(err); }
 });
@@ -688,6 +703,7 @@ router.post("/:id/communications", async (req, res, next) => {
     const { data, error } = await requireSupabase().from("communications").insert(row).select("*").single();
     if (error) throw error;
     await addNote(req.params.id, `Interação registrada: ${body.type}${body.subject ? ` — ${body.subject}` : ""}`, workspaceId);
+    logRequestMetric(req, "communication_logged", req.params.id, { type: body.type, direction: body.direction });
     return res.status(201).json(data);
   } catch (error) { return next(error); }
 });
@@ -752,6 +768,7 @@ router.post("/:id/email", async (req, res, next) => {
     const { data, error } = await requireSupabase().from("communications").insert(row).select("*").single();
     if (error) throw error;
     await addNote(req.params.id, `E-mail enviado para ${body.to}: ${body.subject}`, workspaceId);
+    logRequestMetric(req, "communication_logged", req.params.id, { type: "email", to: body.to });
     return res.status(201).json({ communication: data, messageId: sent.messageId });
   } catch (error) { return next(error); }
 });
@@ -996,6 +1013,7 @@ router.post("/:id/diagnosis", async (req, res, next) => {
     const result = await generateCommercialDiagnosis(company);
     cacheDiagnosis(result);
     await markOnboardingStep(getRequestWorkspaceId(req), "proposal").catch(() => undefined);
+    logRequestMetric(req, "proposal_generated", req.params.id, { type: "diagnosis" });
     return res.json(result);
   } catch (error) {
     return next(error);
@@ -1197,7 +1215,8 @@ router.post("/:id/sequences", (req, res) => {
   const body = z.object({ templateId: z.string() }).parse(req.body);
   const company = getCompany(req.params.id);
   if (!company) return res.status(404).json({ message: "Company not found" });
-  const instance = activateSequence(company.id, company.name, body.templateId);
+  const email = (company as any).emailPrincipal || (company as any).email || "";
+  const instance = activateSequence(company.id, company.name, body.templateId, email);
   return res.status(201).json(instance);
 });
 

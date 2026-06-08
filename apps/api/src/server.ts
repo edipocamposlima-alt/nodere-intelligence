@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
+import swaggerUi from "swagger-ui-express";
 import { ZodError } from "zod";
 import { config } from "./config.js";
 import companiesRouter from "./routes/companies.js";
@@ -32,14 +33,18 @@ import crmRouter from "./routes/crm.js";
 import onboardingRouter from "./routes/onboarding.js";
 import { processDueSteps } from "./services/emailSequences.js";
 import { requireAuth } from "./middleware/auth.js";
-import { attachSession, getRequestWorkspaceId } from "./middleware/session.js";
+import { attachSession, getRequestWorkspaceId, requireWorkspaceRole } from "./middleware/session.js";
 import { getSupabase, hasSupabase } from "./db/supabase.js";
 import { searchCompaniesWithMeta } from "./services/companyStore.js";
 import { getAppSettings, savePipelineSettings, savePreferences } from "./services/settingsStore.js";
 import { scanWebsite } from "./services/websiteScanner.js";
 import { callAI, getAiProviderHealth } from "./services/ai.js";
+import { configureWebPush } from "./services/pushService.js";
+import { createSmtpTransport } from "./services/emailSender.js";
+import { swaggerSpec } from "./swagger.js";
 
 const app = express();
+configureWebPush();
 
 const allowedOrigins = new Set([
   config.webOrigin,
@@ -86,16 +91,25 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true, name: "NODERE Intelligence API" });
 });
 
-app.get("/api/health", async (_req, res) => {
+app.get("/api/health", (_req, res) => {
   res.json({
     ok: true,
     status: "ok",
+    timestamp: new Date().toISOString(),
+    version: "1.0.0",
     name: "NODERE Intelligence API",
     googlePlacesConfigured: Boolean(config.google.placesKey),
     pageSpeedConfigured: Boolean(config.google.pageSpeedKey),
     openaiConfigured: Boolean(config.openai.apiKey),
-    supabaseConfigured: Boolean(config.supabase.url && config.supabase.serviceRoleKey),
-    providers: await getAiProviderHealth()
+    supabaseConfigured: Boolean(config.supabase.url && config.supabase.serviceRoleKey)
+  });
+});
+
+app.get("/api/health/providers", async (_req, res) => {
+  res.json({
+    ok: true,
+    providers: await getAiProviderHealth(),
+    backendTime: new Date().toISOString()
   });
 });
 
@@ -214,6 +228,24 @@ app.patch("/api/settings/pipeline", async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+});
+
+app.post("/api/settings/test-smtp", requireWorkspaceRole("owner", "admin"), async (req, res) => {
+  const host = typeof req.body?.host === "string" ? req.body.host.trim() : "";
+  const port = Number(req.body?.port || 587);
+  const user = typeof req.body?.user === "string" ? req.body.user.trim() : "";
+  const pass = typeof req.body?.pass === "string" ? req.body.pass : "";
+  const transport = createSmtpTransport({ host, port, user, pass });
+  if (!transport) {
+    return res.status(400).json({ ok: false, message: "Informe SMTP Host, User e Password para testar." });
+  }
+  try {
+    await transport.verify();
+    return res.json({ ok: true, message: "Conexão SMTP verificada com sucesso." });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Falha desconhecida na conexão SMTP.";
+    return res.status(400).json({ ok: false, message: `Falha na conexão: ${message}` });
   }
 });
 
@@ -360,19 +392,10 @@ app.use("/api/notifications", pushRouter);
 app.use("/api/developer", developerRouter);
 app.use("/api/admin/verticals", verticalsRouter);
 app.use("/v1", publicApiRouter);
-app.get("/docs", (_req, res) => {
-  res.type("html").send(`<!doctype html><title>NODERE API</title><body style="font-family:sans-serif;background:#0A0F1E;color:white;padding:32px"><h1>NODERE Public API</h1><p>Use <code>X-NODERE-API-Key</code>.</p><pre>${JSON.stringify({
-    openapi: "3.0.0",
-    info: { title: "NODERE Public API", version: "1.0.0" },
-    paths: {
-      "/v1/leads": { get: { summary: "List leads" }, post: { summary: "Create lead" } },
-      "/v1/leads/{id}": { patch: { summary: "Update lead" } },
-      "/v1/leads/{id}/stage": { patch: { summary: "Move lead stage" } },
-      "/v1/leads/{id}/notes": { post: { summary: "Add note" } },
-      "/v1/search": { get: { summary: "Search companies" } }
-    }
-  }, null, 2)}</pre></body>`);
-});
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: "NODERE Intelligence API",
+  customCss: ".swagger-ui .topbar{background:#0A0F1E}.swagger-ui .topbar-wrapper img{display:none}.swagger-ui .topbar-wrapper:before{content:'NODERE API';color:#fff;font-weight:700;font-size:18px}"
+}));
 
 app.use("/api", requireAuth);
 
@@ -398,4 +421,15 @@ setInterval(() => { processDueSteps().catch(console.error); }, 5 * 60 * 1000);
 
 app.listen(config.port, () => {
   console.log(`NODERE Intelligence API running on http://localhost:${config.port}`);
+  if (process.env.NODE_ENV === "production" && process.env.RENDER_EXTERNAL_URL) {
+    const pingUrl = `${process.env.RENDER_EXTERNAL_URL.replace(/\/+$/, "")}/api/health`;
+    setInterval(async () => {
+      try {
+        const response = await fetch(pingUrl);
+        console.log("[KEEPALIVE] Ping:", response.status);
+      } catch (error) {
+        console.warn("[KEEPALIVE] Ping failed:", error instanceof Error ? error.message : error);
+      }
+    }, 10 * 60 * 1000);
+  }
 });

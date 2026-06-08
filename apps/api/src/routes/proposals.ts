@@ -5,6 +5,7 @@ import { getRequestWorkspaceId, requireWorkspaceRole } from "../middleware/sessi
 import { getSupabase } from "../db/supabase.js";
 import { getCompanyAsync } from "../services/companyStore.js";
 import { callAI } from "../services/ai.js";
+import { logRequestMetric } from "../services/metricsStore.js";
 
 const router = Router();
 
@@ -146,6 +147,10 @@ router.post("/generate", async (req, res, next) => {
       const ai = await callAI("Você é consultor comercial NODERE. Melhore a proposta mantendo dados reais e tom profissional.", rendered);
       rendered = ai.content;
     }
+    logRequestMetric(req, "proposal_generated", lead.id, {
+      templateId: body.template_id,
+      enhanced: Boolean(body.enhance)
+    });
     res.json({ content: rendered, template, leadId: lead.id });
   } catch (error) {
     next(error);
@@ -167,6 +172,11 @@ router.post("/versions", async (req, res, next) => {
     const row = { id: randomUUID(), workspace_id: workspaceId, version_number: (count ?? 0) + 1, ...body };
     const { data, error } = await sb.from("proposal_versions").insert(row).select("*").single();
     if (error) throw error;
+    logRequestMetric(req, "proposal_generated", body.lead_id, {
+      serviceType: body.service_type || null,
+      generatedBy: body.generated_by,
+      version: row.version_number
+    });
     res.status(201).json(data);
   } catch (error) {
     next(error);

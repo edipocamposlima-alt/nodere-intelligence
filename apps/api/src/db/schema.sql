@@ -197,6 +197,20 @@ create table if not exists onboarding_steps (
 
 create index if not exists idx_onboarding_steps_workspace on onboarding_steps(workspace_id);
 
+create table if not exists user_metrics (
+  id uuid primary key default gen_random_uuid(),
+  workspace_id text not null,
+  user_id text not null,
+  action text not null,
+  entity_id text,
+  metadata jsonb not null default '{}',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists user_metrics_workspace_user on user_metrics(workspace_id, user_id);
+create index if not exists user_metrics_action on user_metrics(action, created_at);
+alter table user_metrics enable row level security;
+
 do $$
 begin
   if exists (

@@ -2,6 +2,7 @@ import { Company, ForecastReport, MonthlyTrend, PipelineReport, PipelineStageSum
 import { listCompaniesAsync } from "./companyStore.js";
 import { getOperators, getOperatorRanking } from "./operators.js";
 import { listWorkspaceUsers } from "./userStore.js";
+import { getUserMetrics } from "./metricsStore.js";
 
 const STAGE_META: Record<string, { probability: number; avgValue: number }> = {
   "Novo Lead": { probability: 0.05, avgValue: 1000 },
@@ -240,11 +241,13 @@ export async function getIntelligenceReport(workspaceId = "default", period = "3
 }
 
 export async function getOperatorsReport(workspaceId = "default") {
-  const [users, operators, ranking, companies] = await Promise.all([
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const [users, operators, ranking, companies, userMetrics] = await Promise.all([
     listWorkspaceUsers(workspaceId).catch(() => []),
     getOperators(workspaceId),
     getOperatorRanking(workspaceId),
-    listCompaniesAsync(workspaceId)
+    listCompaniesAsync(workspaceId),
+    getUserMetrics(workspaceId, since)
   ]);
   const people = users.length
     ? users.map((user) => ({
@@ -257,20 +260,32 @@ export async function getOperatorsReport(workspaceId = "default") {
     : operators;
 
   return people.map((operator) => {
-    const metrics = ranking.find((item) => item.operatorId === operator.id);
+    const legacyMetrics = ranking.find((item) => item.operatorId === operator.id);
+    const eventRows = userMetrics.filter((item) => item.user_id === operator.id || item.user_id === operator.email);
     const owned = companies.filter((company) => (company as any).ownerId === operator.id || (company as any).operatorId === operator.id);
     const contacted = owned.filter((company) => company.status && company.status !== "Novo Lead").length;
     const closed = owned.filter((company) => company.status === "Fechado").length;
     const decided = owned.filter((company) => company.status === "Fechado" || company.status === "Perdido").length;
+    const searches = eventRows.filter((item) => item.action === "search_performed").length;
+    const companiesSaved = eventRows.filter((item) => item.action === "company_saved").length;
+    const meetings = eventRows.filter((item) => item.action === "meeting_scheduled").length;
+    const proposals = eventRows.filter((item) => item.action === "proposal_generated").length;
+    const communications = eventRows.filter((item) => item.action === "communication_logged").length;
+    const dealsClosed = eventRows.filter((item) => item.action === "crm_stage_changed" && (item.metadata as any)?.to === "Cliente").length;
     return {
       user_id: operator.id,
       name: operator.name,
       email: operator.email,
       role: operator.role,
-      leads_created: metrics?.leadsEnriched ?? owned.length,
-      followups_done: metrics?.contactsMade ?? contacted,
-      leads_closed: metrics?.dealsClosed ?? closed,
-      conversion_rate: metrics?.conversionRate ?? (decided > 0 ? Math.round((closed / decided) * 100) / 100 : 0),
+      searches,
+      companies_saved: companiesSaved,
+      meetings,
+      proposals,
+      deals_closed: dealsClosed,
+      leads_created: companiesSaved || legacyMetrics?.leadsEnriched || owned.length,
+      followups_done: communications || legacyMetrics?.contactsMade || contacted,
+      leads_closed: dealsClosed || legacyMetrics?.dealsClosed || closed,
+      conversion_rate: legacyMetrics?.conversionRate ?? (decided > 0 ? Math.round((closed / decided) * 100) / 100 : 0),
       last_active: operator.createdAt
     };
   });
