@@ -36,6 +36,7 @@ import { requireAuth } from "./middleware/auth.js";
 import { attachSession, getRequestWorkspaceId, requireWorkspaceRole } from "./middleware/session.js";
 import { getSupabase, hasSupabase } from "./db/supabase.js";
 import { searchCompaniesWithMeta } from "./services/companyStore.js";
+import { GoogleApiError } from "./services/google.js";
 import { getAppSettings, savePipelineSettings, savePreferences } from "./services/settingsStore.js";
 import { scanWebsite } from "./services/websiteScanner.js";
 import { callAI, getAiProviderHealth } from "./services/ai.js";
@@ -310,6 +311,8 @@ app.get("/api/pagespeed", async (req, res, next) => {
     const url = typeof req.query.url === "string" ? req.query.url.trim() : "";
     if (!config.google.pageSpeedKey) {
       return res.json({
+        score: null,
+        error: "PageSpeed indisponível",
         status: "not_configured",
         message: "GOOGLE_PAGESPEED_API_KEY ausente no backend.",
         pageSpeedConfigured: false
@@ -322,8 +325,21 @@ app.get("/api/pagespeed", async (req, res, next) => {
         pageSpeedConfigured: true
       });
     }
-    const scan = await scanWebsite(url);
+    let scan;
+    try {
+      scan = await scanWebsite(url);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Falha ao executar PageSpeed.";
+      return res.status(502).json({
+        score: null,
+        error: "PageSpeed indisponível",
+        status: "error",
+        message,
+        pageSpeedConfigured: true
+      });
+    }
     return res.json({
+      score: scan.pageSpeed,
       status: "connected",
       pageSpeedConfigured: true,
       result: {
@@ -358,6 +374,17 @@ app.get("/api/places/search", async (req, res, next) => {
     const result = await searchCompaniesWithMeta(input, getRequestWorkspaceId(req));
     return res.json(result);
   } catch (error) {
+    if (error instanceof GoogleApiError) {
+      return res.status(error.status || 503).json({
+        error: error.message,
+        message: error.message,
+        code: error.code,
+        reason: error.reason,
+        activationUrl: error.activationUrl,
+        companies: [],
+        source: "google"
+      });
+    }
     return next(error);
   }
 });
@@ -410,6 +437,7 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
   const rawStatus = (error as { status?: unknown }).status;
   const status = typeof rawStatus === "number" && rawStatus >= 100 && rawStatus <= 599 ? rawStatus : 500;
   return res.status(status).json({
+    error: message,
     message,
     code: (error as { code?: string }).code,
     reason: (error as { reason?: string }).reason,

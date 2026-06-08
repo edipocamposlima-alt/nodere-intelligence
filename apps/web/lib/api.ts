@@ -7,11 +7,17 @@ const USER_TOKEN_KEY = "nodere_admin_token";
 
 export class ApiRequestError extends Error {
   status?: number;
+  code?: string;
+  payload?: unknown;
 
-  constructor(message: string, status?: number) {
+  constructor(message: string, status?: number, payload?: unknown) {
     super(message);
     this.name = "ApiRequestError";
     this.status = status;
+    this.payload = payload;
+    if (payload && typeof payload === "object" && "code" in payload) {
+      this.code = String((payload as { code?: unknown }).code || "");
+    }
   }
 }
 
@@ -44,13 +50,15 @@ async function api<T>(path: string, options?: RequestInit, fallback?: T): Promis
 
     if (!response.ok) {
       let detail = "";
+      let payload: unknown;
       try {
-        const payload = await response.json();
-        detail = payload?.message || payload?.error || "";
+        payload = await response.json();
+        const data = payload as { message?: string; error?: string; code?: string };
+        detail = data?.message || data?.error || "";
       } catch {
         detail = "";
       }
-      throw new ApiRequestError(detail || `API retornou HTTP ${response.status}`, response.status);
+      throw new ApiRequestError(detail || `API retornou HTTP ${response.status}`, response.status, payload);
     }
     return (await response.json()) as T;
   } catch (error) {
@@ -522,6 +530,31 @@ export function getIntegrations() {
     message?: string;
     missingEnv?: string[];
   }>>("/integrations", undefined, []);
+}
+
+export function getIntegrationsStatus() {
+  return api<{
+    readyForRealSearch: boolean;
+    configured: number;
+    total: number;
+    checkedAt: string;
+    integrations: Array<{
+      key?: string;
+      name: string;
+      configured: boolean;
+      status?: "ok" | "not_configured" | "error" | "timeout";
+      required: boolean;
+      capability?: string;
+      message?: string;
+      missingEnv?: string[];
+    }>;
+  }>("/integrations/status", undefined, {
+    readyForRealSearch: false,
+    configured: 0,
+    total: 0,
+    checkedAt: new Date().toISOString(),
+    integrations: []
+  });
 }
 
 export function getPublicSettings() {

@@ -33,9 +33,21 @@ export class GoogleApiError extends Error {
 }
 
 export async function searchGooglePlaces(input: SearchRequest): Promise<Company[]> {
+  console.log("[PLACES] Search request", {
+    hasKey: Boolean(config.google.placesKey),
+    companyName: input.companyName || null,
+    segment: input.segment || null,
+    keyword: input.keyword || null,
+    city: input.city || null,
+    state: input.state || null,
+    country: input.country || "BR",
+    limit: input.limit || null,
+    hasLocationBias: isFiniteNumber(input.lat) && isFiniteNumber(input.lng) && isFiniteNumber(input.radiusKm)
+  });
+
   if (!config.google.placesKey) {
-    throw new GoogleApiError("Chave Google Places não configurada. Defina GOOGLE_API_KEY ou GOOGLE_PLACES_API_KEY no Render.", {
-      status: 0,
+    throw new GoogleApiError("Google Places indisponível: configure GOOGLE_PLACES_API_KEY ou GOOGLE_PLACES_KEY no backend/Render.", {
+      status: 503,
       code: "KEY_NOT_CONFIGURED",
       reason: "missingKey"
     });
@@ -97,27 +109,36 @@ async function searchGooglePlacesNearby(input: SearchRequest): Promise<Company[]
   const placesKey = config.google.placesKey;
   if (!placesKey || !isFiniteNumber(input.lat) || !isFiniteNumber(input.lng) || !isFiniteNumber(input.radiusKm)) return [];
   const query = [input.companyName, input.segment, input.keyword].filter(Boolean).join(" ") || "empresa";
-  const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Goog-Api-Key": placesKey,
-      "X-Goog-FieldMask":
-        "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.googleMapsUri,places.primaryTypeDisplayName,places.location"
-    },
-    body: JSON.stringify({
-      textQuery: query,
-      maxResultCount: Math.min(Math.max(input.limit ?? 20, 1), 20),
-      locationBias: {
-        circle: {
-          center: { latitude: input.lat, longitude: input.lng },
-          radius: Math.min(Math.max((input.radiusKm ?? 5) * 1000, 100), 50000)
-        }
+  let response: Response;
+  try {
+    response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": placesKey,
+        "X-Goog-FieldMask":
+          "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.googleMapsUri,places.primaryTypeDisplayName,places.location"
       },
-      languageCode: input.country && input.country !== "BR" ? "en" : "pt-BR",
-      regionCode: input.country || "BR"
-    })
-  });
+      body: JSON.stringify({
+        textQuery: query,
+        maxResultCount: Math.min(Math.max(input.limit ?? 20, 1), 20),
+        locationBias: {
+          circle: {
+            center: { latitude: input.lat, longitude: input.lng },
+            radius: Math.min(Math.max((input.radiusKm ?? 5) * 1000, 100), 50000)
+          }
+        },
+        languageCode: input.country && input.country !== "BR" ? "en" : "pt-BR",
+        regionCode: input.country || "BR"
+      })
+    });
+  } catch (error) {
+    throw new GoogleApiError(`Google Places indisponível: ${error instanceof Error ? error.message : "falha de rede"}`, {
+      status: 502,
+      code: "GOOGLE_PLACES_UNREACHABLE",
+      reason: "network"
+    });
+  }
   if (!response.ok) throw await buildGoogleApiError(response, "Google Places Nearby");
   const payload = (await response.json()) as { places?: GooglePlace[] };
   return (payload.places ?? []).map((place) => {
@@ -134,21 +155,30 @@ async function searchGooglePlacesBatch(query: string, input: SearchRequest, maxR
   const placesKey = config.google.placesKey;
   if (!placesKey) return [];
 
-  const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Goog-Api-Key": placesKey,
-      "X-Goog-FieldMask":
-        "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.googleMapsUri,places.primaryTypeDisplayName,places.location"
-    },
-    body: JSON.stringify({
-      textQuery: query,
-      languageCode: input.country && input.country !== "BR" ? "en" : "pt-BR",
-      regionCode: input.country || "BR",
-      maxResultCount
-    })
-  });
+  let response: Response;
+  try {
+    response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": placesKey,
+        "X-Goog-FieldMask":
+          "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.googleMapsUri,places.primaryTypeDisplayName,places.location"
+      },
+      body: JSON.stringify({
+        textQuery: query,
+        languageCode: input.country && input.country !== "BR" ? "en" : "pt-BR",
+        regionCode: input.country || "BR",
+        maxResultCount
+      })
+    });
+  } catch (error) {
+    throw new GoogleApiError(`Google Places indisponível: ${error instanceof Error ? error.message : "falha de rede"}`, {
+      status: 502,
+      code: "GOOGLE_PLACES_UNREACHABLE",
+      reason: "network"
+    });
+  }
 
   if (!response.ok) {
     throw await buildGoogleApiError(response, "Google Places");
@@ -252,6 +282,14 @@ async function buildGoogleApiError(response: Response, serviceName: string) {
   const errorInfo = details.find((item: any) => item["@type"] === "type.googleapis.com/google.rpc.ErrorInfo");
   const activationUrl = errorInfo?.metadata?.activationUrl;
   const message = payload?.error?.message ?? `${serviceName} failed with status ${response.status}`;
+  console.error("[PLACES] Google API error", {
+    serviceName,
+    httpStatus: response.status,
+    googleStatus: payload?.error?.status,
+    reason: errorInfo?.reason,
+    activationUrl,
+    message
+  });
 
   return new GoogleApiError(message, {
     status: response.status,

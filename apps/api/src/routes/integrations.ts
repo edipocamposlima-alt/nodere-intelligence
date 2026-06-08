@@ -18,6 +18,18 @@ router.get("/health", (_req, res) => {
   });
 });
 
+router.get("/status", (_req, res) => {
+  const integrations = getIntegrationStatus();
+  res.json({
+    ok: true,
+    readyForRealSearch: integrations.filter((item) => item.required).every((item) => item.configured),
+    configured: integrations.filter((item) => item.configured).length,
+    total: integrations.length,
+    checkedAt: new Date().toISOString(),
+    integrations
+  });
+});
+
 router.get("/bling/connect", (_req, res) => {
   if (!config.marketplace.blingClientId || !config.marketplace.blingClientSecret) {
     return res.status(503).json({

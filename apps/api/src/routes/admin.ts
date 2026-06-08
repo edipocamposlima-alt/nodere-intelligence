@@ -30,7 +30,12 @@ const memoryRoles = new Map<string, Array<{ id: string; workspace_id: string; na
 
 function requireAdmin(request: any, response: any, next: any) {
   const session = request.session || verifySessionToken(extractBearerToken(request.headers.authorization));
-  if (!session || !["owner", "admin"].includes(session.role)) return response.status(401).json({ message: "Sessao administrativa invalida ou expirada." });
+  if (!session || !["owner", "admin"].includes(session.role)) {
+    return response.status(401).json({
+      message: "Sessão administrativa expirada. Entre novamente com uma conta Owner ou Administrador.",
+      code: "ADMIN_SESSION_REQUIRED"
+    });
+  }
   request.admin = session;
   return next();
 }
@@ -266,6 +271,58 @@ router.get("/status", (request: any, response) => {
       userId: session.userId
     }
   });
+});
+
+router.post("/fix-owner-role", requireAdmin, async (request: any, response, next) => {
+  try {
+    const sb = getSupabase();
+    if (!sb) {
+      return response.status(503).json({
+        ok: false,
+        message: "Supabase não configurado. Não foi possível corrigir perfis persistentes."
+      });
+    }
+
+    const workspaceId = request.admin.workspaceId || "default";
+    const workspaceResult = await sb
+      .from("nodere_workspaces")
+      .select("id, owner_email")
+      .eq("id", workspaceId)
+      .maybeSingle();
+    if (workspaceResult.error) throw workspaceResult.error;
+
+    const ownerEmail = String(workspaceResult.data?.owner_email || request.admin.email || "").trim().toLowerCase();
+    const updates: Array<Record<string, unknown>> = [];
+    if (ownerEmail) {
+      const ownerUpdate = await sb
+        .from("nodere_platform_users")
+        .update({ role: "owner", active: true, status: "active", updated_at: new Date().toISOString() })
+        .eq("workspace_id", workspaceId)
+        .ilike("email", ownerEmail)
+        .select("id,email,role");
+      if (ownerUpdate.error) throw ownerUpdate.error;
+      updates.push(...(ownerUpdate.data || []));
+    }
+
+    const currentUserUpdate = await sb
+      .from("nodere_platform_users")
+      .update({ role: request.admin.role === "admin" ? "admin" : "owner", active: true, status: "active", updated_at: new Date().toISOString() })
+      .eq("workspace_id", workspaceId)
+      .eq("id", request.admin.userId)
+      .select("id,email,role");
+    if (currentUserUpdate.error) throw currentUserUpdate.error;
+    updates.push(...(currentUserUpdate.data || []));
+
+    return response.json({
+      ok: true,
+      workspaceId,
+      fixed: updates.length,
+      users: updates,
+      message: updates.length ? "Perfis Owner/Admin revisados com sucesso." : "Nenhum usuário persistente encontrado para atualizar."
+    });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 router.get("/users", requireAdmin, async (request: any, response, next) => {

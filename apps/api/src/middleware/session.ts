@@ -40,6 +40,11 @@ export function getRequestWorkspaceId(request: Request) {
   return ((request as any).session?.workspaceId as string | undefined) || "default";
 }
 
+export function isPrivilegedSession(request: Request) {
+  const role = (request as any).session?.role;
+  return role === "owner" || role === "admin";
+}
+
 export function requireWorkspaceSession(request: Request, response: Response, next: NextFunction) {
   if (!(request as any).session) {
     return response.status(401).json({ error: "Unauthorized", message: "Login obrigatório." });

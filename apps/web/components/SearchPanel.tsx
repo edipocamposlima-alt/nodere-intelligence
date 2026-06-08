@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, LocateFixed, MapPin, Search, Sparkles } from "lucide-react";
-import { geocodeAddress, getSavedCompanyIds, getWorkspaceSegments, saveWorkspaceSegment, searchCompanies, searchCompanyByCnpj } from "@/lib/api";
+import { ApiRequestError, geocodeAddress, getSavedCompanyIds, getWorkspaceSegments, saveWorkspaceSegment, searchCompanies, searchCompanyByCnpj } from "@/lib/api";
 import { Company } from "@/lib/types";
 import { CompanyTable } from "./CompanyTable";
 import { COUNTRIES, SEGMENTS } from "@/constants/segments";
@@ -169,7 +169,7 @@ export function SearchPanel() {
     } catch (error) {
       if (activeSearchId.current !== searchId) return;
       setResults([]);
-      setWarning(error instanceof Error ? error.message : "Falha ao buscar empresas.");
+      setWarning(formatSearchError(error));
       setMessage("Não foi possível concluir a busca.");
     } finally {
       if (activeSearchId.current === searchId) setLoading(false);
@@ -322,6 +322,22 @@ export function SearchPanel() {
   );
 }
 
+function formatSearchError(error: unknown) {
+  if (error instanceof ApiRequestError) {
+    if (error.code === "KEY_NOT_CONFIGURED") {
+      return "Google Places indisponível: configure GOOGLE_PLACES_API_KEY no backend/Admin ou Render.";
+    }
+    if (error.code === "PERMISSION_DENIED" || error.message.includes("API key not valid")) {
+      return "A chave Google Places configurada no backend foi rejeitada. Verifique permissões, billing e API Places no Google Cloud.";
+    }
+    if (error.code === "GOOGLE_PLACES_UNREACHABLE") {
+      return "Não foi possível conectar ao Google Places pelo backend. Verifique rede, Render e logs da API.";
+    }
+    return error.message || `Backend retornou HTTP ${error.status}.`;
+  }
+  return error instanceof Error ? error.message : "Falha ao buscar empresas.";
+}
+
 function GoogleMapPanel({
   open,
   query,
@@ -345,7 +361,7 @@ function GoogleMapPanel({
   useEffect(() => {
     if (!open || !mapRef.current) return;
     if (!mapsKey) {
-      setMapMessage("Mapa não disponível no momento.");
+      setMapMessage("Mapa indisponível no momento.");
       return;
     }
     let cancelled = false;

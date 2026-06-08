@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { existsSync, readFileSync } from "node:fs";
 import * as path from "node:path";
-import { getRequestWorkspaceId } from "../middleware/session.js";
+import { getRequestWorkspaceId, isPrivilegedSession } from "../middleware/session.js";
 import {
   addNote,
   createDocument,
@@ -383,7 +383,9 @@ router.post("/:id/analyze", async (req, res, next) => {
   const company = getCompany(req.params.id);
   if (!company) return res.status(404).json({ message: "Company not found" });
   if (!company.website) return res.status(422).json({ message: "Company has no website to analyze" });
-  await consumeEnrichment(company.name, getRequestWorkspaceId(req));
+  if (!isPrivilegedSession(req)) {
+    await consumeEnrichment(company.name, getRequestWorkspaceId(req));
+  }
   const job = queueEnrichment(company.id, company.name);
   return res.status(202).json({ message: "Enrichment queued", job });
   } catch (error) {

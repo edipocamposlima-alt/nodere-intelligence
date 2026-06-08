@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getRequestWorkspaceId } from "../middleware/session.js";
+import { getRequestWorkspaceId, isPrivilegedSession } from "../middleware/session.js";
 import { searchCompaniesWithMeta } from "../services/companyStore.js";
 import { consumeSearch } from "../services/credits.js";
 import { listSearchHistory, saveSearch, getSearch, touchSearch } from "../db/searchHistory.js";
@@ -107,6 +107,7 @@ router.post("/apollo", async (req, res, next) => {
       return res.status(503).json({
         configured: false,
         code: "APOLLO_NOT_CONFIGURED",
+        error: "Apollo.io não configurado. Configure sua chave em Integrações.",
         message: "Apollo.io não está configurado neste workspace. Defina APOLLO_API_KEY no Render/Admin para executar busca real.",
         results: [],
         count: 0
@@ -208,7 +209,9 @@ router.post("/", async (req, res, next) => {
   try {
     const input = searchSchema.parse(req.body);
     const workspaceId = getRequestWorkspaceId(req);
-    await consumeSearch([input.companyName, input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" "), workspaceId);
+    if (!isPrivilegedSession(req)) {
+      await consumeSearch([input.companyName, input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" "), workspaceId);
+    }
     const result = await searchCompaniesWithMeta(input, workspaceId);
     const companyIds = result.companies.map((c) => c.id);
     if (result.companies.length > 0) {
@@ -267,7 +270,9 @@ router.post("/:id/rerun", async (req, res, next) => {
     }
 
     const companyIds = result.companies.map((c) => c.id);
-    await consumeSearch(`${saved.segment} em ${saved.city} (rerun)`, workspaceId);
+    if (!isPrivilegedSession(req)) {
+      await consumeSearch(`${saved.segment} em ${saved.city} (rerun)`, workspaceId);
+    }
     await touchSearch(saved.id, result.companies.length, result.source, companyIds, workspaceId);
     logRequestMetric(req, "search_performed", null, {
       query: `${saved.segment} em ${saved.city}`,

@@ -1,9 +1,17 @@
 import { AlertTriangle, CheckCircle2, CircleDashed, XCircle } from "lucide-react";
 import { getBackendRootUrl } from "@/lib/apiBase";
-import { getIntegrations } from "@/lib/api";
+import { getIntegrationsStatus } from "@/lib/api";
 
 export default async function IntegrationsPage() {
-  const integrations = await getIntegrations();
+  const status = await withTimeout(getIntegrationsStatus(), 5000).catch((error) => ({
+    readyForRealSearch: false,
+    configured: 0,
+    total: 0,
+    checkedAt: new Date().toISOString(),
+    integrations: [],
+    error: error instanceof Error ? error.message : "Não foi possível carregar integrações."
+  }));
+  const integrations = status.integrations;
   const backendRoot = getBackendRootUrl();
 
   return (
@@ -11,6 +19,16 @@ export default async function IntegrationsPage() {
       <div>
         <h2 className="text-2xl font-semibold text-white">Integrações</h2>
         <p className="mt-1 text-sm text-slate-400">Configure as chaves no `.env` para ativar dados reais.</p>
+        {"error" in status && status.error && (
+          <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+            {String(status.error)}
+          </p>
+        )}
+        {!("error" in status) && (
+          <p className="mt-3 text-xs text-slate-500">
+            {status.configured}/{status.total} integrações configuradas · última verificação {new Date(status.checkedAt).toLocaleString("pt-BR")}
+          </p>
+        )}
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {integrations.map((integration) => {
@@ -72,6 +90,18 @@ export default async function IntegrationsPage() {
       </div>
     </div>
   );
+}
+
+async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout>;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => reject(new Error("Backend demorou mais de 5s para retornar o status das integrações.")), ms);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    clearTimeout(timeout!);
+  }
 }
 
 function getStatusMeta(status: string, required: boolean) {

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getQueueStatus, queueEnrichment, getJobByCompany } from "../services/enrichmentQueue.js";
 import { getCompany } from "../services/companyStore.js";
 import { consumeEnrichment } from "../services/credits.js";
-import { getRequestWorkspaceId } from "../middleware/session.js";
+import { getRequestWorkspaceId, isPrivilegedSession } from "../middleware/session.js";
 
 const router = Router();
 
@@ -29,7 +29,9 @@ router.post("/company/:id", async (req, res, next) => {
     return res.status(422).json({ message: "Company has no website to analyze" });
   }
 
-  await consumeEnrichment(company.name, getRequestWorkspaceId(req));
+  if (!isPrivilegedSession(req)) {
+    await consumeEnrichment(company.name, getRequestWorkspaceId(req));
+  }
   const job = queueEnrichment(company.id, company.name);
   return res.status(202).json(job);
   } catch (error) {
