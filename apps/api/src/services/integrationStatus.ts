@@ -40,11 +40,15 @@ export function getIntegrationStatus() {
     {
       key: "google_maps",
       name: "Google Maps API",
-      configured: Boolean(config.google.mapsKey),
-      status: statusFromConfig(Boolean(config.google.mapsKey)),
+      configured: Boolean(config.google.mapsKey || config.google.placesKey),
+      status: statusFromConfig(Boolean(config.google.mapsKey || config.google.placesKey)),
       required: true,
       capability: "Gera links, coordenadas e contexto local dos leads.",
-      message: config.google.mapsKey ? "Chave carregada no backend." : "Configure GOOGLE_MAPS_API_KEY no backend."
+      message: config.google.mapsKey
+        ? "Chave Maps carregada no backend."
+        : config.google.placesKey
+          ? "Operando com dados de localização do Google Places e mapa visual incorporado sem chave pública."
+          : "Configure GOOGLE_MAPS_API_KEY ou GOOGLE_PLACES_API_KEY no backend."
     },
     {
       key: "google_business_profile",

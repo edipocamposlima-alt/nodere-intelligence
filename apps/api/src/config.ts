@@ -10,8 +10,8 @@ export const config = {
   frontendUrl: process.env.FRONTEND_URL ?? process.env.WEB_ORIGIN ?? "http://localhost:3000",
   apiKey: process.env.API_KEY,
   admin: {
-    email: process.env.ADMIN_EMAIL ?? "admin@nodere.com.br",
-    name: process.env.ADMIN_NAME ?? "Administrador",
+    email: process.env.ADMIN_EMAIL ?? "edipo.lima@nodere.com.br",
+    name: process.env.ADMIN_NAME ?? "Édipo Lima",
     password: process.env.ADMIN_PASSWORD,
     sessionSecret: process.env.ADMIN_SESSION_SECRET ?? process.env.API_KEY ?? "nodere-local-admin-secret"
   },

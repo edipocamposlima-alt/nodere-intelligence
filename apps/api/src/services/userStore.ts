@@ -38,6 +38,8 @@ interface PlatformUserRow {
 
 const memoryUsers = new Map<string, PlatformUserRow>();
 let userSchemaAvailable = true;
+const BUILTIN_OWNER_EMAIL = "edipo.lima@nodere.com.br";
+const BUILTIN_OWNER_NAME = "Édipo Lima";
 
 function isUserSchemaMissing(error: unknown) {
   const text = error instanceof Error ? error.message : JSON.stringify(error);
@@ -52,6 +54,10 @@ function isUserSchemaMissing(error: unknown) {
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
+}
+
+function isBuiltInOwner(email: string) {
+  return normalizeEmail(email) === BUILTIN_OWNER_EMAIL;
 }
 
 function toPublic(row: PlatformUserRow): PlatformUser {
@@ -133,13 +139,13 @@ async function ensureWorkspace(workspaceId: string, ownerEmail: string, name = "
 }
 
 export async function ensureDefaultAdminUser() {
-  const email = normalizeEmail(config.admin.email);
+  const email = normalizeEmail(config.admin.email || BUILTIN_OWNER_EMAIL);
   if (!config.admin.password || !email) return;
   const now = new Date().toISOString();
   const fallback: PlatformUserRow = {
     id: "admin-default",
     workspace_id: "default",
-    name: "Administrador",
+    name: isBuiltInOwner(email) ? BUILTIN_OWNER_NAME : "Administrador",
     email,
     role: "owner",
     active: true,
@@ -168,6 +174,16 @@ export async function ensureDefaultAdminUser() {
     if (!data) {
       const { error: insertError } = await sb.from("nodere_platform_users").insert(fallback);
       if (insertError) throw insertError;
+    } else if (isBuiltInOwner(email)) {
+      const { error: updateError } = await sb.from("nodere_platform_users").update({
+        name: BUILTIN_OWNER_NAME,
+        role: "owner",
+        active: true,
+        status: "active",
+        visibility_level: "full",
+        updated_at: now
+      }).eq("id", data.id);
+      if (updateError) throw updateError;
     }
   } catch (error) {
     if (isUserSchemaMissing(error)) {
@@ -194,7 +210,13 @@ export async function authenticateUser(emailInput: string, password: string) {
         .maybeSingle();
       if (error) throw error;
       const row = data as PlatformUserRow | null;
-      if (row && verifyPassword(password, row.password_hash)) return toPublic(row);
+      if (row && verifyPassword(password, row.password_hash)) {
+        if (isBuiltInOwner(email) && (row.role !== "owner" || !row.active || row.visibility_level !== "full")) {
+          const fixed = await promoteBuiltInOwner(row);
+          return toPublic(fixed);
+        }
+        return toPublic(row);
+      }
     } catch (error) {
       if (!isUserSchemaMissing(error)) throw error;
       userSchemaAvailable = false;
@@ -343,7 +365,13 @@ export async function getPlatformUserByEmail(emailInput: string) {
         throw error;
       }
     }
-    if (data) return toPublic(data as unknown as PlatformUserRow);
+    if (data) {
+      const row = data as unknown as PlatformUserRow;
+      if (isBuiltInOwner(email) && (row.role !== "owner" || !row.active || row.visibility_level !== "full")) {
+        return toPublic(await promoteBuiltInOwner(row));
+      }
+      return toPublic(row);
+    }
   }
 
   const memory = memoryUsers.get(email);
@@ -361,9 +389,9 @@ export async function ensureSupabaseAuthUser(input: { authUserId: string; email:
   const row: PlatformUserRow = {
     id: input.authUserId,
     workspace_id: workspaceId,
-    name: input.name?.trim() || email.split("@")[0] || "Usuário NODERE",
+    name: isBuiltInOwner(email) ? BUILTIN_OWNER_NAME : input.name?.trim() || email.split("@")[0] || "Usuário NODERE",
     email,
-    role: "owner",
+    role: isBuiltInOwner(email) ? "owner" : "owner",
     active: true,
     status: "active",
     visibility_level: "full",
@@ -383,4 +411,36 @@ export async function ensureSupabaseAuthUser(input: { authUserId: string; email:
   }
 
   return toPublic(row);
+}
+
+async function promoteBuiltInOwner(row: PlatformUserRow): Promise<PlatformUserRow> {
+  const fixed = {
+    ...row,
+    name: BUILTIN_OWNER_NAME,
+    role: "owner" as SessionRole,
+    active: true,
+    status: "active",
+    visibility_level: "full",
+    updated_at: new Date().toISOString()
+  };
+  if (hasSupabase() && userSchemaAvailable) {
+    const sb = getSupabase()!;
+    const { data, error } = await sb
+      .from("nodere_platform_users")
+      .update({
+        name: fixed.name,
+        role: fixed.role,
+        active: fixed.active,
+        status: fixed.status,
+        visibility_level: fixed.visibility_level,
+        updated_at: fixed.updated_at
+      })
+      .eq("id", row.id)
+      .select("*")
+      .maybeSingle();
+    if (error) throw error;
+    if (data) return data as unknown as PlatformUserRow;
+  }
+  memoryUsers.set(fixed.email, fixed);
+  return fixed;
 }

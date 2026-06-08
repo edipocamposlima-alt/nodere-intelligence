@@ -357,6 +357,10 @@ function GoogleMapPanel({
   const [mapMessage, setMapMessage] = useState<string | null>(null);
   const mapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
   const mappedCompanies = useMemo(() => results.filter((company) => Number.isFinite(company.latitude) && Number.isFinite(company.longitude)), [results]);
+  const embedQuery = focusedId
+    ? results.find((company) => company.id === focusedId)?.address || results.find((company) => company.id === focusedId)?.name || query
+    : query;
+  const embedUrl = `https://www.google.com/maps?q=${encodeURIComponent(embedQuery || "Brasil")}&output=embed`;
 
   useEffect(() => {
     if (!open || !mapRef.current) return;
@@ -436,7 +440,18 @@ function GoogleMapPanel({
           </div>
           <span className="truncate text-xs text-slate-400">{query}</span>
         </div>
-        <div ref={mapRef} className="h-[360px] w-full bg-ink" />
+        {mapsKey ? (
+          <div ref={mapRef} className="h-[360px] w-full bg-ink" />
+        ) : (
+          <iframe
+            title="Google Maps visual"
+            src={embedUrl}
+            className="h-[360px] w-full border-0 bg-ink"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        )}
+        {!mapsKey && <p className="border-t border-line px-4 py-3 text-xs text-slate-400">Mapa visual por incorporação Google. Para pins interativos avançados, configure NEXT_PUBLIC_GOOGLE_MAPS_KEY na Vercel/GitHub.</p>}
         {mapMessage && <p className="border-t border-line px-4 py-3 text-xs text-amber-100">{mapMessage}</p>}
       </div>
       <div className="rounded-lg border border-line bg-panel/90 p-4">

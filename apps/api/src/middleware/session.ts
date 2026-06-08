@@ -23,6 +23,7 @@ export async function attachSession(request: Request, _response: Response, next:
         });
         (request as any).session = {
           email: user.email,
+          name: user.name,
           role: user.role,
           workspaceId: user.workspaceId,
           userId: user.id,

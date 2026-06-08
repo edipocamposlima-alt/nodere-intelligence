@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getRequestWorkspaceId, requireWorkspaceRole, requireWorkspaceSession } from "../middleware/session.js";
+import { getRequestWorkspaceId, isPrivilegedSession, requireWorkspaceRole, requireWorkspaceSession } from "../middleware/session.js";
 import { getSupabase } from "../db/supabase.js";
 import { ensureSupabaseAuthUser, listWorkspaceUsers } from "../services/userStore.js";
 import { getCreditStatus } from "../services/credits.js";
@@ -32,7 +32,21 @@ router.get("/me", requireWorkspaceSession, async (req, res, next) => {
         name: "Workspace NODERE",
         plan: "trial"
       },
-      credits: await getCreditStatus(workspaceId),
+      credits: isPrivilegedSession(req)
+        ? {
+            total: 999999,
+            used: 0,
+            remaining: 999999,
+            plan: "Owner/Admin",
+            expires_at: null,
+            trial_expires_at: null,
+            renewal_at: null,
+            resetAt: "",
+            blocked: false,
+            trialExpired: false,
+            privileged: true
+          }
+        : await getCreditStatus(workspaceId),
       members
     });
   } catch (error) {

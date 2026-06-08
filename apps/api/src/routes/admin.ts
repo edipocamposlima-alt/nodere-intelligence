@@ -235,13 +235,15 @@ router.post("/login", async (request, response, next) => {
       });
     }
 
-    if (body.email.toLowerCase() !== config.admin.email.toLowerCase() || body.password !== config.admin.password) {
+    const loginEmail = body.email.toLowerCase();
+    const allowedAdminEmails = new Set([config.admin.email.toLowerCase(), "edipo.lima@nodere.com.br"]);
+    if (!allowedAdminEmails.has(loginEmail) || body.password !== config.admin.password) {
       return response.status(401).json({ message: "Login ou senha invalidos." });
     }
 
     return response.json({
-      token: issueSessionToken({ email: body.email, name: config.admin.name, role: "owner", workspaceId: "default", userId: "admin-default" }),
-      user: { email: body.email, name: config.admin.name, role: "owner", workspaceId: "default" }
+      token: issueSessionToken({ email: body.email, name: loginEmail === "edipo.lima@nodere.com.br" ? "Édipo Lima" : config.admin.name, role: "owner", workspaceId: "default", userId: "admin-default" }),
+      user: { email: body.email, name: loginEmail === "edipo.lima@nodere.com.br" ? "Édipo Lima" : config.admin.name, role: "owner", workspaceId: "default" }
     });
   } catch (error) {
     return next(error);
