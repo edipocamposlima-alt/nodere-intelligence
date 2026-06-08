@@ -70,6 +70,14 @@ export function getCompanies() {
   return api<Company[]>("/companies");
 }
 
+export function searchCompanyOptions(q: string, limit = 10) {
+  return api<{ companies: Array<Pick<Company, "id" | "name" | "category" | "city" | "state" | "status" | "score">> }>(
+    `/companies/search?q=${encodeURIComponent(q)}&limit=${encodeURIComponent(String(limit))}`,
+    undefined,
+    { companies: [] }
+  );
+}
+
 export function getSavedCompanyIds() {
   return api<string[]>("/companies/saved-ids", undefined, []);
 }
@@ -479,7 +487,16 @@ export function getAuditLog(limit = 100) {
 }
 
 export function getIntegrations() {
-  return api<Array<{ key?: string; name: string; configured: boolean; required: boolean; capability?: string }>>("/integrations", undefined, []);
+  return api<Array<{
+    key?: string;
+    name: string;
+    configured: boolean;
+    status?: "ok" | "not_configured" | "error" | "timeout";
+    required: boolean;
+    capability?: string;
+    message?: string;
+    missingEnv?: string[];
+  }>>("/integrations", undefined, []);
 }
 
 export function getPublicSettings() {

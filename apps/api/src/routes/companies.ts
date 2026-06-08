@@ -136,6 +136,41 @@ router.get("/saved-ids", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.get("/search", async (req, res, next) => {
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    const query = String(req.query.q || "").trim();
+    const limit = Math.max(1, Math.min(Number(req.query.limit || 10), 30));
+    const normalizedQuery = normalizeSearchText(query);
+    const companies = await listCompaniesAsync(workspaceId);
+    const filtered = normalizedQuery
+      ? companies.filter((company) => {
+          const haystack = normalizeSearchText([
+            company.name,
+            company.legalName,
+            company.category,
+            company.city,
+            company.state,
+            company.cnpj
+          ].filter(Boolean).join(" "));
+          return haystack.includes(normalizedQuery);
+        })
+      : companies;
+
+    res.json({
+      companies: filtered.slice(0, limit).map((company) => ({
+        id: company.id,
+        name: company.name,
+        category: company.category,
+        city: company.city,
+        state: company.state,
+        status: company.status,
+        score: company.score
+      }))
+    });
+  } catch (err) { next(err); }
+});
+
 router.get("/import/template", (_req, res) => {
   const headers = [
     "name",
@@ -1370,6 +1405,15 @@ function normalizeColumn(value: string) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_|_$/g, "");
+}
+
+function normalizeSearchText(value: string) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function cleanDigits(value: string) {

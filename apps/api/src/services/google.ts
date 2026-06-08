@@ -174,7 +174,7 @@ function buildQueryVariants(input: SearchRequest, query: string) {
 function normalizePlace(place: GooglePlace, input: SearchRequest): Company {
   const phone = normalizePhone(place.nationalPhoneNumber);
   const digital = {
-    hasGoogleAds: false,
+    hasGoogleAds: null,
     hasDescription: false,
     hasRecentPhotos: false,
     hasRecentPosts: false,

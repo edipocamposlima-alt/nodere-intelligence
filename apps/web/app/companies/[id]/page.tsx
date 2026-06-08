@@ -46,11 +46,11 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
     getCompanyIntelligence(id).catch(() => null)
   ]);
 
-  const checks: [string, boolean][] = [
+  const checks: [string, boolean | null][] = [
     ["Site", Boolean(company.website)],
     ["SSL", Boolean(company.hasSsl)],
     ["Responsivo", Boolean(company.isResponsive)],
-    ["Google Ads", Boolean(company.hasGoogleAds)],
+    ["Google Ads", company.hasGoogleAds ?? null],
     ["Meta Pixel", Boolean(company.metaPixel)],
     ["GTM", Boolean(company.googleTagManager || company.gtmContainerId)],
     ["GA4", Boolean(company.hasGA4)],
@@ -194,7 +194,9 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
             <div className="mt-4 grid grid-cols-2 gap-2">
               {checks.map(([label, ok]) => (
                 <div key={label} className="rounded-md border border-line bg-ink px-3 py-2 text-sm">
-                  <span className={ok ? "text-emerald-300" : "text-red-300"}>{ok ? "Ativo" : "Ausente"}</span>
+                  <span className={ok === true ? "text-emerald-300" : ok === false ? "text-red-300" : "text-slate-400"}>
+                    {ok === true ? "Ativo" : ok === false ? "Ausente" : "Não verificado"}
+                  </span>
                   <p className="mt-1 text-slate-400">{label}</p>
                 </div>
               ))}

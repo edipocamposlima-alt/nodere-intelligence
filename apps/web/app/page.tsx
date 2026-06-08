@@ -77,7 +77,7 @@ export default async function DashboardPage() {
           <div>
             <Image src="/nodere-wordmark.png" alt="NODERE Intelligence" width={360} height={120} priority className="h-auto w-full max-w-sm rounded-xl object-contain" />
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
-              Central comercial para busca de empresas, CRM, funil, WhatsApp, propostas e inteligencia operacional.
+              Central comercial para busca de empresas, CRM, funil, WhatsApp, propostas e inteligência operacional.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm md:min-w-72">
@@ -86,7 +86,7 @@ export default async function DashboardPage() {
               <p className="mt-1 text-2xl font-semibold text-white">{metrics.totalCompanies}</p>
             </div>
             <div className="rounded-lg border border-line bg-ink p-3">
-              <p className="text-slate-400">Score medio</p>
+              <p className="text-slate-400">Score médio</p>
               <p className="mt-1 text-2xl font-semibold text-white">{metrics.averageScore}</p>
             </div>
           </div>
@@ -256,3 +256,4 @@ function DashboardBarPanel({ title, rows, accent }: { title: string; rows: Array
     </div>
   );
 }
+

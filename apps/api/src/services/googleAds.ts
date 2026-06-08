@@ -57,7 +57,7 @@ export function assessAdsReadiness(company: Company, scan?: WebsiteScan | null):
   if (!hasGA4 && !hasPixel) recommendations.push("Priorize a instalação de GA4 + Meta Pixel antes de qualquer investimento em mídia paga.");
   if (!hasConversionTracking) recommendations.push("Sem eventos de conversão ativos, o algoritmo do Google não pode otimizar lances automaticamente.");
   if (pageSpeed > 0 && pageSpeed < 50) recommendations.push(`PageSpeed ${pageSpeed}/100 está crítico. Cada segundo extra de carregamento reduz a taxa de conversão em ~7%.`);
-  if (!company.hasGoogleAds) recommendations.push("Empresa sem sinal de Google Ads ativo — oportunidade de captura de mercado antes dos concorrentes.");
+  if (company.hasGoogleAds === false) recommendations.push("Empresa sem sinal de Google Ads ativo — oportunidade de captura de mercado antes dos concorrentes.");
   if ((company.rating ?? 5) < 4.0) recommendations.push("Avaliação baixa no Google pode afetar o Quality Score. Melhore a reputação antes de escalar investimento.");
 
   let score = 0;

@@ -73,7 +73,7 @@ export const mockCompanies: Company[] = [
     opportunityLevel: "Alta",
     detectedOpportunities: [
       "Menos de 50 avaliacoes em segmento altamente competitivo.",
-      "Nao foram detectados Google Ads ativos.",
+      "Não foram detectados Google Ads ativos.",
       "Site lento para mobile segundo PageSpeed."
     ],
     suggestions: [
@@ -85,7 +85,7 @@ export const mockCompanies: Company[] = [
       {
         id: "note-001",
         companyId: "cmp-002",
-        body: "Contato inicial feito. Retornar com diagnostico visual.",
+        body: "Contato inicial feito. Retornar com diagnóstico visual.",
         createdAt: "2026-05-21T14:10:00.000Z"
       }
     ],
@@ -112,3 +112,4 @@ export const mockDashboard: DashboardMetrics = {
   },
   topOpportunities: mockCompanies
 };
+

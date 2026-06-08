@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Check, GripVertical, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { Company, CrmStatus } from "@/lib/types";
-import { getPublicSettings, savePipelineSettings, updateCompanyStatus } from "@/lib/api";
+import { getPublicSettings, savePipelineSettings, updateCompany, updateCompanyStatus } from "@/lib/api";
 
 const STAGES_STORAGE_KEY = "nodere_pipeline_stages";
 const STAGE_COLORS_STORAGE_KEY = "nodere_pipeline_stage_colors";
@@ -58,6 +58,12 @@ function readableTextColor(hex: string) {
   return luminance > 0.64 ? "#06111F" : "#FFFFFF";
 }
 
+function isValidBrazilianMobile(phone?: string) {
+  const digits = String(phone || "").replace(/\D/g, "");
+  const local = digits.startsWith("55") ? digits.slice(2) : digits;
+  return local.length === 11 && local[2] === "9";
+}
+
 export function CrmBoard({ companies }: { companies: Company[] }) {
   const [items, setItems] = useState(companies);
   const [query, setQuery] = useState("");
@@ -69,6 +75,9 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
   const [editingStage, setEditingStage] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
   const [stageColors, setStageColors] = useState<Record<string, string>>(defaultStageColors);
+  const [editingWhatsapp, setEditingWhatsapp] = useState<Record<string, boolean>>({});
+  const [whatsappDrafts, setWhatsappDrafts] = useState<Record<string, string>>({});
+  const [whatsappErrors, setWhatsappErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     try {
@@ -218,6 +227,30 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
 
   function formatBRL(value: number) {
     return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  }
+
+  async function saveWhatsapp(company: Company) {
+    const draft = whatsappDrafts[company.id] ?? company.whatsapp ?? "";
+    if (!isValidBrazilianMobile(draft)) {
+      setWhatsappErrors((current) => ({
+        ...current,
+        [company.id]: "Número inválido. Celulares brasileiros têm 11 dígitos e o 3º dígito deve ser 9."
+      }));
+      return;
+    }
+    setWhatsappErrors((current) => ({ ...current, [company.id]: "" }));
+    try {
+      const updated = await updateCompany(company.id, { whatsapp: draft });
+      setItems((current) => current.map((item) => item.id === company.id ? { ...item, ...updated, whatsapp: draft } : item));
+      setEditingWhatsapp((current) => ({ ...current, [company.id]: false }));
+      setMessage("WhatsApp corrigido no CRM.");
+      setTimeout(() => setMessage(null), 2500);
+    } catch (error) {
+      setWhatsappErrors((current) => ({
+        ...current,
+        [company.id]: error instanceof Error ? error.message : "Não foi possível salvar o WhatsApp."
+      }));
+    }
   }
 
   function staleInfo(company: Company) {
@@ -385,6 +418,36 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
                         <span className="font-semibold text-cyan">{company.score}</span>
                       </div>
                       {stale && <p className="mt-2 rounded-md bg-black/20 px-2 py-1 text-[11px] font-semibold text-amber-100">{stale.label}</p>}
+                      {company.whatsapp && !isValidBrazilianMobile(company.whatsapp) && (
+                        <div className="mt-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingWhatsapp((current) => ({ ...current, [company.id]: true }));
+                              setWhatsappDrafts((current) => ({ ...current, [company.id]: company.whatsapp ?? "" }));
+                            }}
+                            className="rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-[11px] font-semibold text-amber-100 hover:bg-warning/20"
+                            title="Clique para corrigir"
+                          >
+                            WhatsApp inválido — clique para corrigir
+                          </button>
+                          {editingWhatsapp[company.id] && (
+                            <div className="mt-2 space-y-2">
+                              <input
+                                value={whatsappDrafts[company.id] ?? ""}
+                                onChange={(event) => setWhatsappDrafts((current) => ({ ...current, [company.id]: event.target.value }))}
+                                placeholder="(XX) 9XXXX-XXXX"
+                                className="w-full rounded-md border border-line bg-panel px-2 py-1 text-xs text-white outline-none focus:border-electric"
+                              />
+                              <div className="flex gap-2">
+                                <button type="button" onClick={() => void saveWhatsapp(company)} className="rounded-md bg-cyan px-2 py-1 text-[11px] font-semibold text-ink">Salvar</button>
+                                <button type="button" onClick={() => setEditingWhatsapp((current) => ({ ...current, [company.id]: false }))} className="rounded-md border border-line px-2 py-1 text-[11px] text-slate-300">Cancelar</button>
+                              </div>
+                              {whatsappErrors[company.id] && <p className="text-[11px] text-red-300">{whatsappErrors[company.id]}</p>}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </article>
                   );
                 })}

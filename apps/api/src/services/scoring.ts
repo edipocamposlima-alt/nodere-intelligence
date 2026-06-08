@@ -27,19 +27,19 @@ export function calculateOpportunityScore(company: ScoreInput) {
 
   if (company.hasGoogleAds === false) {
     score += 14;
-    opportunities.push("Nao foram detectados sinais de Google Ads.");
-    suggestions.push("Oferecer campanha de pesquisa para buscas de alta intencao.");
+    opportunities.push("Não foram detectados sinais de Google Ads.");
+    suggestions.push("Oferecer campanha de pesquisa para buscas de alta intenção.");
   }
 
   if (!company.whatsapp) {
     score += 8;
-    opportunities.push("WhatsApp nao aparece como canal claro de contato.");
-    suggestions.push("Adicionar WhatsApp Business e rastreamento de conversoes.");
+    opportunities.push("WhatsApp não aparece como canal claro de contato.");
+    suggestions.push("Adicionar WhatsApp Business e rastreamento de conversões.");
   }
 
   if (company.hasDescription === false) {
     score += 8;
-    opportunities.push("Perfil Google sem descricao otimizada.");
+    opportunities.push("Perfil Google sem descrição otimizada.");
   }
 
   if (company.hasRecentPhotos === false) {
@@ -54,13 +54,13 @@ export function calculateOpportunityScore(company: ScoreInput) {
 
   if (company.respondsReviews === false) {
     score += 7;
-    opportunities.push("Empresa nao responde avaliacoes com frequencia.");
+    opportunities.push("Empresa não responde avaliações com frequência.");
   }
 
   if (company.pageSpeed !== undefined && company.pageSpeed > 0 && company.pageSpeed < 60) {
     score += 8;
     opportunities.push("Site lento no mobile segundo PageSpeed.");
-    suggestions.push("Otimizar velocidade e experiencia mobile antes de escalar midia.");
+    suggestions.push("Otimizar velocidade e experiência mobile antes de escalar mídia.");
   }
 
   const normalized = Math.min(100, score);

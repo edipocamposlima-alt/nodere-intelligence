@@ -154,7 +154,12 @@ export function InboxClient() {
           </div>
           <div className="mt-4 max-h-[58vh] space-y-2 overflow-y-auto pr-1">
             {loading && <p className="text-sm text-slate-400">Carregando mensagens...</p>}
-            {!loading && filtered.length === 0 && <p className="rounded-lg border border-line bg-panel p-4 text-sm text-slate-400">Nenhuma interação encontrada.</p>}
+            {!loading && filtered.length === 0 && (
+              <InboxEmptyState
+                compact
+                onRegister={() => setOpenModal(true)}
+              />
+            )}
             {filtered.map((item) => (
               <button key={item.id} onClick={() => setSelectedId(item.id)} className={`w-full rounded-xl border p-3 text-left transition ${selected?.id === item.id ? "border-emerald-300 bg-emerald-400/10" : "border-line bg-panel/80 hover:border-cyan/60"}`}>
                 <div className="flex items-center justify-between gap-3">
@@ -189,9 +194,7 @@ export function InboxClient() {
                 </article>
               </>
             ) : (
-              <div className="grid flex-1 place-items-center text-center text-slate-400">
-                <p>Selecione uma interação ou registre uma nova.</p>
-              </div>
+              <InboxEmptyState onRegister={() => setOpenModal(true)} />
             )}
           </div>
           <aside className="border-t border-line bg-ink/60 p-5 lg:border-l lg:border-t-0">
@@ -242,5 +245,32 @@ export function InboxClient() {
         </div>
       )}
     </main>
+  );
+}
+
+function InboxEmptyState({ compact = false, onRegister }: { compact?: boolean; onRegister: () => void }) {
+  return (
+    <div className={`rounded-2xl border border-dashed border-emerald-400/35 bg-emerald-400/5 ${compact ? "p-4" : "m-auto max-w-xl p-6 text-center"}`}>
+      <div className={`flex ${compact ? "items-start gap-3" : "flex-col items-center gap-3"}`}>
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-emerald-400/15 text-emerald-200">
+          <MessageCircle className="h-5 w-5" />
+        </span>
+        <div className={compact ? "" : "space-y-1"}>
+          <p className="font-bold text-white">Nenhuma interação registrada ainda</p>
+          <p className="mt-1 text-sm leading-5 text-slate-400">
+            Registre manualmente uma conversa, ligação ou email para criar histórico comercial. A sincronização automática do WhatsApp depende da Cloud API configurada no backend.
+          </p>
+        </div>
+      </div>
+      <div className={`mt-4 flex flex-wrap gap-2 ${compact ? "" : "justify-center"}`}>
+        <button onClick={onRegister} className="btn-action px-4 py-2 text-sm">
+          <Plus className="h-4 w-4" />
+          Registrar interação
+        </button>
+        <Link href="/integrations" className="btn-secondary-action px-4 py-2 text-sm">
+          Configurar WhatsApp
+        </Link>
+      </div>
+    </div>
   );
 }

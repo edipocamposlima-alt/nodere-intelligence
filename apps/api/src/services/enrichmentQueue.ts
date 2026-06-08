@@ -71,6 +71,7 @@ async function processJob(job: EnrichmentJob) {
       isResponsive: scan.isResponsive,
       pageSpeed: scan.pageSpeed,
       metaPixel: scan.hasMetaPixel,
+      hasGoogleAds: scan.hasGoogleAds,
       googleTagManager: scan.hasGTM,
       googleAnalytics: scan.hasGA4 || (scan as any).googleAnalytics,
       seoBasics: scan.hasTitle && scan.hasMetaDescription,

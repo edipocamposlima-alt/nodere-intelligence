@@ -17,7 +17,8 @@ export default async function IntelligencePage() {
   const withPixel = companies.filter((c) => c.metaPixel);
   const withConversions = companies.filter((c) => c.hasConversionEvents);
   const withGTM = companies.filter((c) => c.googleTagManager || c.gtmContainerId);
-  const withAds = companies.filter((c) => c.hasGoogleAds);
+  const withAds = companies.filter((c) => c.hasGoogleAds === true);
+  const adsUnknown = companies.filter((c) => c.hasGoogleAds === null || c.hasGoogleAds === undefined);
 
   const avgPaidScore = withWebsite.length
     ? Math.round(withWebsite.reduce((s, c) => s + (c.paidTrafficScore ?? 0), 0) / withWebsite.length)
@@ -32,7 +33,8 @@ export default async function IntelligencePage() {
     { label: "Com Meta Pixel", value: withPixel.length, total: companies.length, color: "text-indigo-300" },
     { label: "Com conversões", value: withConversions.length, total: companies.length, color: "text-violet-300" },
     { label: "Com GTM", value: withGTM.length, total: companies.length, color: "text-emerald-300" },
-    { label: "Com Google Ads", value: withAds.length, total: companies.length, color: "text-amber-300" }
+    { label: "Com Google Ads", value: withAds.length, total: companies.length, color: "text-amber-300" },
+    { label: "Google Ads não verificado", value: adsUnknown.length, total: companies.length, color: "text-slate-300" }
   ];
 
   return (
@@ -100,6 +102,7 @@ export default async function IntelligencePage() {
               { label: "Sem Meta Pixel", count: companies.length - withPixel.length, priority: "high" },
               { label: "Sem eventos de conversão", count: companies.length - withConversions.length, priority: "high" },
               { label: "Sem GTM", count: companies.length - withGTM.length, priority: "medium" },
+              { label: "Google Ads não verificado", count: adsUnknown.length, priority: "medium" },
               { label: "Sem site", count: companies.length - withWebsite.length, priority: "high" }
             ]
               .filter((g) => g.count > 0)

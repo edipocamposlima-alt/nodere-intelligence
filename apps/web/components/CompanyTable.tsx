@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, Download, ExternalLink, FileText, MessageCircle, Save, Search, Trash2, X } from "lucide-react";
 import { Company } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
-import { addCompanyNote, getCompanies } from "@/lib/api";
+import { addCompanyNote, getCompanies, updateCompany } from "@/lib/api";
 import { downloadNoderePdf } from "@/lib/pdf";
 
 const whatsappMessage =
@@ -17,6 +17,10 @@ function isValidBrazilMobileWhatsapp(value?: string) {
   if (!digits) return false;
   const local = digits.startsWith("55") ? digits.slice(2) : digits;
   return local.length === 11 && local[2] === "9";
+}
+
+function hasInvalidWhatsapp(company: Company) {
+  return Boolean(company.whatsapp) && !isValidBrazilMobileWhatsapp(company.whatsapp);
 }
 
 function normalizeSearch(value: unknown) {
@@ -60,6 +64,10 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
   const [saved, setSaved] = useState<Record<string, "saving" | "saved" | "error">>({});
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [invalidWhatsappOnly, setInvalidWhatsappOnly] = useState(false);
+  const [editingWhatsapp, setEditingWhatsapp] = useState<Record<string, boolean>>({});
+  const [whatsappDrafts, setWhatsappDrafts] = useState<Record<string, string>>({});
+  const [whatsappErrors, setWhatsappErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setBaseCompanies(companies);
@@ -90,9 +98,9 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
   }, [baseCompanies.length]);
 
   useEffect(() => {
-    setVisibleCompanies(baseCompanies.filter((company) => companyMatchesQuery(company, query)));
+    setVisibleCompanies(baseCompanies.filter((company) => companyMatchesQuery(company, query) && (!invalidWhatsappOnly || hasInvalidWhatsapp(company))));
     setSelected({});
-  }, [baseCompanies, query]);
+  }, [baseCompanies, query, invalidWhatsappOnly]);
 
   useEffect(() => {
     setQuery(initialQuery);
@@ -186,6 +194,29 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
     router.push("/companies");
   }
 
+  async function saveWhatsapp(company: Company) {
+    const draft = whatsappDrafts[company.id] ?? company.whatsapp ?? "";
+    if (!isValidBrazilMobileWhatsapp(draft)) {
+      setWhatsappErrors((current) => ({
+        ...current,
+        [company.id]: "Número inválido. Celulares brasileiros têm 11 dígitos e o 3º dígito deve ser 9."
+      }));
+      return;
+    }
+    setWhatsappErrors((current) => ({ ...current, [company.id]: "" }));
+    try {
+      const updated = await updateCompany(company.id, { whatsapp: draft });
+      setBaseCompanies((items) => items.map((item) => item.id === company.id ? { ...item, ...updated, whatsapp: draft } : item));
+      setEditingWhatsapp((current) => ({ ...current, [company.id]: false }));
+      setMessages((current) => ({ ...current, [company.id]: "WhatsApp corrigido." }));
+    } catch (error) {
+      setWhatsappErrors((current) => ({
+        ...current,
+        [company.id]: error instanceof Error ? error.message : "Não foi possível salvar o WhatsApp."
+      }));
+    }
+  }
+
   return (
     <div className="overflow-hidden rounded-lg border border-line bg-panel/90">
       <div className="flex flex-col gap-3 border-b border-line p-3">
@@ -225,6 +256,13 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
           </button>
           <button onClick={exportPdf} disabled={visibleCompanies.length === 0} className="btn-primary px-3 py-2 text-xs">
             <FileText className="h-4 w-4" />PDF
+          </button>
+          <button
+            type="button"
+            onClick={() => setInvalidWhatsappOnly((value) => !value)}
+            className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${invalidWhatsappOnly ? "bg-warning text-ink" : "border border-warning/40 bg-warning/10 text-amber-100 hover:bg-warning/20"}`}
+          >
+            Mostrar apenas leads com WhatsApp inválido
           </button>
         </div>
       </div>
@@ -317,7 +355,17 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
                       </a>
                     )}
                     {company.whatsapp && !isValidBrazilMobileWhatsapp(company.whatsapp) && (
-                      <span className="rounded-lg border border-warning/30 bg-warning/10 px-2 py-2 text-[11px] text-amber-100" title="Telefone fixo não é WhatsApp">WhatsApp inválido</span>
+                      <button
+                        type="button"
+                        className="rounded-lg border border-warning/30 bg-warning/10 px-2 py-2 text-[11px] text-amber-100 transition hover:bg-warning/20"
+                        title="Clique para corrigir"
+                        onClick={() => {
+                          setEditingWhatsapp((current) => ({ ...current, [company.id]: true }));
+                          setWhatsappDrafts((current) => ({ ...current, [company.id]: company.whatsapp ?? "" }));
+                        }}
+                      >
+                        WhatsApp inválido — clique para corrigir
+                      </button>
                     )}
                     {company.mapsUrl && (
                       <a target="_blank" href={company.mapsUrl} className="rounded-lg border border-line bg-white/5 p-2 text-slate-300 hover:text-white" aria-label="Abrir Google Maps">
@@ -325,6 +373,19 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
                       </a>
                     )}
                   </div>
+                  {editingWhatsapp[company.id] && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <input
+                        value={whatsappDrafts[company.id] ?? ""}
+                        onChange={(event) => setWhatsappDrafts((current) => ({ ...current, [company.id]: event.target.value }))}
+                        placeholder="(XX) 9XXXX-XXXX"
+                        className="min-w-[180px] flex-1 rounded-lg border border-line bg-ink px-3 py-2 text-xs text-white outline-none focus:border-electric"
+                      />
+                      <button type="button" onClick={() => void saveWhatsapp(company)} className="btn-action px-3 py-2 text-xs">Salvar</button>
+                      <button type="button" onClick={() => setEditingWhatsapp((current) => ({ ...current, [company.id]: false }))} className="btn-secondary px-3 py-2 text-xs">Cancelar</button>
+                      {whatsappErrors[company.id] && <p className="w-full text-xs text-red-300">{whatsappErrors[company.id]}</p>}
+                    </div>
+                  )}
                   {messages[company.id] && (
                     <p className={`mt-2 text-xs ${saved[company.id] === "error" ? "text-red-300" : "text-emerald-300"}`}>
                       {messages[company.id]}

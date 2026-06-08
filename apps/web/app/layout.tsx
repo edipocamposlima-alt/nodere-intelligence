@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "NODERE Intelligence",
-    description: "CRM SaaS para prospeccao, Google Ads e inteligencia comercial.",
+    description: "CRM SaaS para prospeccao, Google Ads e inteligência comercial.",
     url: "https://nodere.com.br",
     siteName: "NODERE Intelligence",
     images: [{ url: "/nodere-logo.png", width: 512, height: 512, alt: "NODERE" }],
@@ -52,3 +52,4 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     </html>
   );
 }
+

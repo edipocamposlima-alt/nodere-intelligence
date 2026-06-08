@@ -41,7 +41,7 @@ export interface Company {
   latitude?: number;
   longitude?: number;
   distanceKm?: number;
-  hasGoogleAds?: boolean;
+  hasGoogleAds?: boolean | null;
   hasDescription?: boolean;
   hasRecentPhotos?: boolean;
   hasRecentPosts?: boolean;
@@ -158,6 +158,7 @@ export interface WebsiteScan {
   metaPixelId?: string;
   hasConversionEvents: boolean;
   conversionEvents: string[];
+  hasGoogleAds?: boolean | null;
   hasTitle: boolean;
   titleText?: string;
   hasMetaDescription: boolean;

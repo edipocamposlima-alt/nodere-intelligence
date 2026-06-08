@@ -12,11 +12,13 @@ export async function scanWebsite(url?: string): Promise<WebsiteScan> {
 
   let html = "";
   try {
-    const res = await fetch(normalizedUrl, { signal: AbortSignal.timeout(8000) });
+    const res = await fetch(normalizedUrl, { signal: AbortSignal.timeout(5000) });
     html = await res.text();
   } catch {
     return scan;
   }
+
+  scan.hasGoogleAds = detectGoogleAds(html);
 
   // Responsiveness
   scan.isResponsive = /name=["']viewport["']/i.test(html);
@@ -164,6 +166,7 @@ function emptyScan(url: string, scannedAt: string): WebsiteScan {
     hasGA4: false,
     hasGTM: false,
     hasMetaPixel: false,
+    hasGoogleAds: null,
     hasConversionEvents: false,
     conversionEvents: [],
     hasTitle: false,
@@ -179,6 +182,20 @@ function emptyScan(url: string, scannedAt: string): WebsiteScan {
     commercialScore: 0,
     paidTrafficScore: 0
   };
+}
+
+function detectGoogleAds(html: string): boolean | null {
+  if (!html) return null;
+  const normalized = html.toLowerCase();
+  if (
+    normalized.includes("googleads.g.doubleclick.net") ||
+    normalized.includes("pagead2.googlesyndication.com") ||
+    /AW-[A-Z0-9-]+/i.test(html) ||
+    (/gtag/i.test(html) && /AW-[A-Z0-9-]+/i.test(html))
+  ) {
+    return true;
+  }
+  return null;
 }
 
 export function extractSocialUrl(html: string, domain: string, blocklist: string[]): string | undefined {

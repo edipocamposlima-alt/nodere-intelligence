@@ -46,7 +46,7 @@ export interface Company {
   revenueRange?: string;
   decisionMakers?: DecisionMaker[];
   enrichmentSources?: string[];
-  hasGoogleAds?: boolean;
+  hasGoogleAds?: boolean | null;
   hasDescription?: boolean;
   hasRecentPhotos?: boolean;
   hasRecentPosts?: boolean;
@@ -142,6 +142,7 @@ export interface WebsiteScan {
   metaPixelId?: string;
   hasConversionEvents: boolean;
   conversionEvents: string[];
+  hasGoogleAds?: boolean | null;
   hasTitle: boolean;
   titleText?: string;
   hasMetaDescription: boolean;
