@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { Plan, PlanId, BillingStatus, UsageEvent, UsageEventType } from "../types.js";
 import { config } from "../config.js";
 import { appendAuditLog } from "./auditLog.js";
+import { getSupabase } from "../db/supabase.js";
 
 export const PLANS: Plan[] = [
   {
@@ -69,6 +70,14 @@ export function getPlans(): Plan[] {
   return PLANS;
 }
 
+export function getPlanLinks() {
+  return {
+    starter: config.stripe.paymentLinks.starter || null,
+    pro: config.stripe.paymentLinks.pro || null,
+    agency: config.stripe.paymentLinks.agency || null
+  };
+}
+
 export function getBillingStatus(): BillingStatus {
   const plan = PLANS.find((p) => p.id === billingState.planId) ?? PLANS[0];
   return {
@@ -124,10 +133,64 @@ export async function createPortalSession(customerId: string): Promise<string> {
   return session.url;
 }
 
+export async function saveBillingWaitlist(input: { email: string; plan?: string; workspaceId?: string | null }) {
+  const sb = getSupabase();
+  if (!sb) {
+    const error = new Error("Banco de dados não configurado para salvar interesse em faturamento.") as Error & { status?: number; code?: string };
+    error.status = 503;
+    error.code = "PERSISTENCE_UNAVAILABLE";
+    throw error;
+  }
+  const { data, error } = await sb.from("billing_waitlist").insert({
+    email: input.email.trim().toLowerCase(),
+    plan: input.plan || null,
+    workspace_id: input.workspaceId || null
+  }).select("id, email, plan, created_at").single();
+  if (error) throw error;
+  return data;
+}
+
+async function activateWorkspacePlan(workspaceId: string, planId: string, renewalAt?: string | null) {
+  const plan = PLANS.find((item) => item.id === planId && item.id !== "demo");
+  if (!plan) return;
+  const sb = getSupabase();
+  if (!sb) return;
+  const updates = {
+    plan: plan.id,
+    credits: plan.monthlyCredits,
+    credits_used: 0,
+    plan_started_at: new Date().toISOString(),
+    plan_renews_at: renewalAt || null,
+    expires_at: renewalAt || null,
+    updated_at: new Date().toISOString()
+  };
+  const { error } = await sb.from("nodere_workspaces").update(updates).eq("id", workspaceId);
+  if (error && (String(error.message || "").includes("credits_used") || String(error.message || "").includes("plan_"))) {
+    await sb.from("nodere_workspaces").update({
+      plan: plan.id,
+      credits: plan.monthlyCredits,
+      expires_at: renewalAt || null,
+      updated_at: new Date().toISOString()
+    }).eq("id", workspaceId);
+  }
+}
+
 export async function handleStripeWebhook(rawBody: Buffer, signature: string) {
-  if (!config.stripe.secretKey || !config.stripe.webhookSecret) throw new Error("Stripe não configurado");
+  if (!config.stripe.secretKey || !config.stripe.webhookSecret) return "stripe_not_configured";
   const stripe = new Stripe(config.stripe.secretKey);
   const event = stripe.webhooks.constructEvent(rawBody, signature, config.stripe.webhookSecret);
+
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const workspaceId = session.metadata?.workspace_id || session.client_reference_id || undefined;
+    const planId = session.metadata?.plan || session.metadata?.plan_id || undefined;
+    if (workspaceId && planId) {
+      await activateWorkspacePlan(workspaceId, planId);
+      appendAuditLog("billing", "checkout_completed", `Checkout concluído para plano ${planId}`, {
+        metadata: { workspaceId, planId, checkoutSessionId: session.id }
+      });
+    }
+  }
 
   if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated") {
     const sub = event.data.object as Stripe.Subscription;
@@ -143,6 +206,8 @@ export async function handleStripeWebhook(rawBody: Buffer, signature: string) {
       stripeSubscriptionId: sub.id,
       subscriptionStatus: sub.status
     };
+    const workspaceId = sub.metadata?.workspace_id || sub.metadata?.workspaceId || undefined;
+    if (workspaceId) await activateWorkspacePlan(workspaceId, plan.id, billingState.resetAt);
     appendAuditLog("billing", `subscription_${event.type.split(".")[2]}`, `Assinatura ${plan.name} — ${sub.status}`, {
       metadata: { planId: plan.id, subscriptionId: sub.id }
     });

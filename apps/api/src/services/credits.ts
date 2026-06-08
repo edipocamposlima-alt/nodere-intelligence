@@ -2,12 +2,15 @@ import { CreditAccount } from "../types.js";
 import { getSupabase, hasSupabase } from "../db/supabase.js";
 
 const TRIAL_CREDITS = 20;
+const TRIAL_DAYS = 14;
 const COST_SEARCH = 1;
 const COST_ENRICHMENT = 1;
 
 type WorkspaceCredits = CreditAccount & {
   total: number;
-  expiresAt: string;
+  expiresAt: string | null;
+  trialExpiresAt: string | null;
+  renewalAt: string | null;
   log: Array<{ type: string; amount: number; description: string; at: string }>;
 };
 
@@ -20,13 +23,18 @@ export async function getCredits(workspaceId = "default"): Promise<CreditAccount
 
 export async function getCreditStatus(workspaceId = "default") {
   const account = await ensureAccount(workspaceId);
+  const trialExpired = account.plan === "trial" && Boolean(account.trialExpiresAt) && new Date(account.trialExpiresAt!).getTime() < Date.now();
   return {
     total: account.total,
     used: account.used,
     remaining: account.balance,
     plan: account.plan,
     expires_at: account.expiresAt,
-    resetAt: account.resetAt
+    trial_expires_at: account.trialExpiresAt,
+    renewal_at: account.renewalAt,
+    resetAt: account.renewalAt || "",
+    blocked: account.balance <= 0 || trialExpired,
+    trialExpired
   };
 }
 
@@ -44,8 +52,9 @@ export function consumeCredit(type = "manual", description = "Uso operacional", 
 
 async function consume(amount: number, type: string, description: string, workspaceId: string) {
   const account = await ensureAccount(workspaceId);
-  if (new Date(account.expiresAt).getTime() < Date.now() || account.balance <= 0) {
-    const err = new Error("Créditos esgotados — faça upgrade") as Error & { status?: number; code?: string };
+  const trialExpired = account.plan === "trial" && Boolean(account.trialExpiresAt) && new Date(account.trialExpiresAt!).getTime() < Date.now();
+  if (trialExpired || account.balance <= 0) {
+    const err = new Error(trialExpired ? "Trial expirado — escolha um plano para continuar buscando empresas." : "Créditos esgotados — faça upgrade") as Error & { status?: number; code?: string };
     err.status = 402;
     err.code = "CREDITS_EXHAUSTED";
     throw err;
@@ -71,8 +80,10 @@ async function ensureAccount(workspaceId: string) {
       balance: TRIAL_CREDITS,
       used: 0,
       plan: "trial",
-      resetAt: nextResetDate(),
+      resetAt: "",
       expiresAt: trialExpiryDate(),
+      trialExpiresAt: trialExpiryDate(),
+      renewalAt: null,
       log: []
     });
   }
@@ -84,21 +95,25 @@ async function loadPersistedAccount(workspaceId: string): Promise<WorkspaceCredi
   if (!sb) return null;
   const { data, error } = await sb
     .from("nodere_workspaces")
-    .select("id, plan, credits, expires_at")
+    .select("*")
     .eq("id", workspaceId)
     .maybeSingle();
   if (error || !data) return null;
   const plan = String(data.plan ?? "trial");
   const total = plan === "agency" ? 999999 : plan === "pro" ? 600 : plan === "starter" ? 200 : TRIAL_CREDITS;
   const balance = Math.max(0, Number(data.credits ?? TRIAL_CREDITS));
-  const used = Math.max(0, total - balance);
+  const used = Math.max(0, Number(data.credits_used ?? (total - balance)));
+  const trialExpiresAt = String(data.trial_expires_at ?? data.expires_at ?? trialExpiryDate());
+  const renewalAt = plan === "trial" ? null : String(data.plan_renews_at ?? data.expires_at ?? "");
   return {
     total,
     balance,
     used,
     plan,
-    resetAt: nextResetDate(),
-    expiresAt: String(data.expires_at ?? trialExpiryDate()),
+    resetAt: renewalAt || "",
+    expiresAt: plan === "trial" ? trialExpiresAt : renewalAt,
+    trialExpiresAt,
+    renewalAt,
     log: []
   };
 }
@@ -106,21 +121,21 @@ async function loadPersistedAccount(workspaceId: string): Promise<WorkspaceCredi
 async function persistAccount(workspaceId: string, account: WorkspaceCredits) {
   const sb = getSupabase();
   if (!sb) return;
-  await sb.from("nodere_workspaces").update({
+  const { error } = await sb.from("nodere_workspaces").update({
     credits: account.balance,
+    credits_used: account.used,
     updated_at: new Date().toISOString()
   }).eq("id", workspaceId);
-}
-
-function nextResetDate() {
-  const d = new Date();
-  d.setMonth(d.getMonth() + 1, 1);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
+  if (error && String(error.message || "").includes("credits_used")) {
+    await sb.from("nodere_workspaces").update({
+      credits: account.balance,
+      updated_at: new Date().toISOString()
+    }).eq("id", workspaceId);
+  }
 }
 
 function trialExpiryDate() {
   const d = new Date();
-  d.setDate(d.getDate() + 30);
+  d.setDate(d.getDate() + TRIAL_DAYS);
   return d.toISOString();
 }

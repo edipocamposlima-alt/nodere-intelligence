@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Clock, Database, RefreshCw, Search } from "lucide-react";
 import { SearchPanel } from "@/components/SearchPanel";
-import { getSearchHistory, getEnrichmentQueue, getCredits } from "@/lib/api";
+import { CreditsBadge } from "@/components/CreditsBadge";
+import { getSearchHistory, getEnrichmentQueue } from "@/lib/api";
 import { RerunButton } from "./RerunButton";
 import { CsvImportPanel } from "./CsvImportPanel";
 import { ExternalSearchTabs } from "./ExternalSearchTabs";
@@ -9,7 +10,7 @@ import { ExternalSearchTabs } from "./ExternalSearchTabs";
 export const metadata: Metadata = { title: "Busca" };
 
 export default async function SearchesPage() {
-  const [history, queue, credits] = await Promise.all([getSearchHistory(), getEnrichmentQueue(), getCredits()]);
+  const [history, queue] = await Promise.all([getSearchHistory(), getEnrichmentQueue()]);
 
   return (
     <div className="space-y-8 p-4 md:p-8">
@@ -20,11 +21,7 @@ export default async function SearchesPage() {
         </div>
 
         <div className="flex gap-3">
-          <div className="rounded-lg border border-line bg-panel/90 px-4 py-3 text-center">
-            <p className="text-xs text-slate-400">Créditos</p>
-            <p className="mt-1 text-2xl font-semibold text-white">{credits.balance}</p>
-            <p className="text-xs text-slate-500">{credits.plan}</p>
-          </div>
+          <CreditsBadge />
           <div className="rounded-lg border border-line bg-panel/90 px-4 py-3 text-center">
             <p className="text-xs text-slate-400">Enriquecendo</p>
             <p className="mt-1 text-2xl font-semibold text-white">{queue.pending + queue.running}</p>

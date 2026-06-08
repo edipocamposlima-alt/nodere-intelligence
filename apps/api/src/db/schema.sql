@@ -12,7 +12,12 @@ create table if not exists nodere_workspaces (
   owner_email text not null,
   plan text not null default 'trial',
   credits integer not null default 20,
-  expires_at timestamptz default (now() + interval '30 days'),
+  credits_used integer not null default 0,
+  expires_at timestamptz default (now() + interval '14 days'),
+  trial_started_at timestamptz default now(),
+  trial_expires_at timestamptz default (now() + interval '14 days'),
+  plan_started_at timestamptz,
+  plan_renews_at timestamptz,
   onboarding_completed boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -167,6 +172,11 @@ alter table nodere_operators add column if not exists workspace_id text not null
 alter table nodere_operator_goals add column if not exists workspace_id text not null default 'default';
 alter table nodere_app_settings add column if not exists workspace_id text not null default 'default';
 alter table nodere_workspaces add column if not exists onboarding_completed boolean not null default false;
+alter table nodere_workspaces add column if not exists credits_used integer not null default 0;
+alter table nodere_workspaces add column if not exists trial_started_at timestamptz default now();
+alter table nodere_workspaces add column if not exists trial_expires_at timestamptz default (now() + interval '14 days');
+alter table nodere_workspaces add column if not exists plan_started_at timestamptz;
+alter table nodere_workspaces add column if not exists plan_renews_at timestamptz;
 alter table nodere_workspaces add column if not exists wl_domain text;
 alter table nodere_workspaces add column if not exists wl_name text;
 alter table nodere_workspaces add column if not exists wl_logo_url text;
@@ -199,7 +209,12 @@ create table if not exists workspaces (
   name text not null,
   plan text not null default 'trial',
   credits integer not null default 20,
-  credits_expires_at timestamptz default (now() + interval '30 days'),
+  credits_used integer not null default 0,
+  credits_expires_at timestamptz default (now() + interval '14 days'),
+  trial_started_at timestamptz default now(),
+  trial_expires_at timestamptz default (now() + interval '14 days'),
+  plan_started_at timestamptz,
+  plan_renews_at timestamptz,
   onboarding_completed boolean not null default false,
   created_at timestamptz not null default now()
 );
@@ -226,6 +241,23 @@ create index if not exists idx_searches_workspace on nodere_searches(workspace_i
 create index if not exists idx_operators_workspace on nodere_operators(workspace_id);
 create index if not exists idx_app_settings_workspace on nodere_app_settings(workspace_id);
 create index if not exists idx_workspaces_wl_domain on nodere_workspaces(wl_domain);
+
+alter table workspaces add column if not exists credits_used integer not null default 0;
+alter table workspaces add column if not exists trial_started_at timestamptz default now();
+alter table workspaces add column if not exists trial_expires_at timestamptz default (now() + interval '14 days');
+alter table workspaces add column if not exists plan_started_at timestamptz;
+alter table workspaces add column if not exists plan_renews_at timestamptz;
+
+create table if not exists billing_waitlist (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  plan text,
+  workspace_id text,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_billing_waitlist_workspace on billing_waitlist(workspace_id);
+create index if not exists idx_billing_waitlist_created on billing_waitlist(created_at desc);
 
 -- Estruturas solicitadas no roadmap SaaS. Elas são seguras para aplicar
 -- incrementalmente: não removem dados existentes e permitem ativar as telas

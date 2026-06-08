@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { BarChart3, Building2, CalendarDays, CircleHelp, CreditCard, Inbox, KanbanSquare, LineChart, Megaphone, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
-import { getBillingStatus } from "@/lib/api";
+import { useCredits } from "@/context/CreditsProvider";
 
 const items = [
   { href: "/", label: "Início", icon: BarChart3, hex: "#0EA5E9", bg: "linear-gradient(135deg,#0284C7,#38BDF8)" },
@@ -27,11 +26,11 @@ const items = [
 ];
 
 export function Sidebar() {
-  const [billing, setBilling] = useState<Awaited<ReturnType<typeof getBillingStatus>> | null>(null);
-
-  useEffect(() => {
-    getBillingStatus().then(setBilling).catch(() => setBilling(null));
-  }, []);
+  const { credits, daysLeft, trialExpired } = useCredits();
+  const total = credits?.total || 0;
+  const remaining = credits?.remaining || 0;
+  const used = credits?.used || 0;
+  const progress = total > 0 ? Math.min(100, (remaining / total) * 100) : 0;
 
   return (
     <aside className="hidden min-h-screen w-72 border-r border-line bg-ink/90 p-5 lg:block">
@@ -58,19 +57,21 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {billing && (
+      {credits && (
         <div className="mt-6 rounded-lg border border-line bg-white/[0.03] p-4">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>Créditos — {billing.plan.name}</span>
-            <span className="font-medium text-white">{billing.balance.toLocaleString("pt-BR")}</span>
+            <span>Créditos — {credits.plan}</span>
+            <span className="font-medium text-white">{remaining.toLocaleString("pt-BR")} / {total.toLocaleString("pt-BR")}</span>
           </div>
           <div className="mt-2 h-1.5 rounded-full bg-white/10">
             <div
-              className="h-1.5 rounded-full bg-cyan transition-all"
-              style={{ width: `${Math.min(100, (billing.balance / billing.plan.monthlyCredits) * 100)}%` }}
+              className={`h-1.5 rounded-full transition-all ${trialExpired || remaining <= 0 ? "bg-rose-400" : remaining <= 5 ? "bg-amber-300" : "bg-cyan"}`}
+              style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="mt-1.5 text-[11px] text-slate-600">{billing.used} usados este mês</p>
+          <p className="mt-1.5 text-[11px] text-slate-500">
+            {used} usados{credits.plan === "trial" && daysLeft !== null ? ` · Trial ${trialExpired ? "expirado" : `vence em ${Math.max(0, daysLeft)} dia(s)`}` : ""}
+          </p>
         </div>
       )}
 

@@ -1,11 +1,13 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, LocateFixed, MapPin, Search, Sparkles } from "lucide-react";
 import { geocodeAddress, getSavedCompanyIds, getWorkspaceSegments, saveWorkspaceSegment, searchCompanies, searchCompanyByCnpj } from "@/lib/api";
 import { Company } from "@/lib/types";
 import { CompanyTable } from "./CompanyTable";
 import { COUNTRIES, SEGMENTS } from "@/constants/segments";
+import { useCredits } from "@/context/CreditsProvider";
 
 type SearchMode = "places" | "cnpj" | "global";
 const ADD_SEGMENT = "__add_segment__";
@@ -41,7 +43,9 @@ export function SearchPanel() {
   const [customSegment, setCustomSegment] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [mapOpen, setMapOpen] = useState(true);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const activeSearchId = useRef(0);
+  const { credits, trialExpired } = useCredits();
 
   const allSegments = useMemo(() => Array.from(new Set([...SEGMENTS, ...segments])).sort((a, b) => a.localeCompare(b)), [segments]);
 
@@ -87,6 +91,12 @@ export function SearchPanel() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (credits && (credits.blocked || credits.remaining <= 0 || trialExpired)) {
+      setUpgradeOpen(true);
+      setWarning("Seu trial expirou ou os créditos acabaram. O CRM continua liberado, mas novas buscas exigem upgrade.");
+      setMessage("Busca bloqueada por créditos.");
+      return;
+    }
     const searchId = Date.now();
     activeSearchId.current = searchId;
     setLoading(true);
@@ -275,6 +285,39 @@ export function SearchPanel() {
         onFocus={setFocusedMapCompany}
       />
       {results.length > 0 && <CompanyTable companies={results} />}
+      {upgradeOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-line bg-panel p-6 shadow-glow">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-lg font-semibold text-white">Ative um plano para continuar buscando</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  O acesso ao CRM, empresas salvas e histórico continua funcionando. Para novas buscas no Google Places, escolha um plano ou solicite ativação comercial.
+                </p>
+              </div>
+              <button type="button" onClick={() => setUpgradeOpen(false)} className="rounded-lg border border-line px-3 py-1 text-sm text-slate-300 hover:text-white">
+                Fechar
+              </button>
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              {[
+                ["Starter", "200 créditos", "R$ 97/mês"],
+                ["Pro", "600 créditos", "R$ 197/mês"],
+                ["Agency", "Ilimitado", "R$ 397/mês"]
+              ].map(([name, creditsLabel, price]) => (
+                <div key={name} className="rounded-xl border border-line bg-ink/80 p-4">
+                  <p className="font-semibold text-white">{name}</p>
+                  <p className="mt-1 text-xs text-cyan">{creditsLabel}</p>
+                  <p className="mt-2 text-sm text-slate-300">{price}</p>
+                </div>
+              ))}
+            </div>
+            <Link href="/billing" className="mt-5 inline-flex w-full items-center justify-center rounded-lg bg-cyan px-4 py-3 text-sm font-semibold text-ink transition hover:bg-cyan/90">
+              Ver planos e ativar
+            </Link>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

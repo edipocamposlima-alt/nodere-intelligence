@@ -89,12 +89,47 @@ function verifyPassword(password: string, stored: string) {
 async function ensureWorkspace(workspaceId: string, ownerEmail: string, name = "Agência Digital") {
   if (!hasSupabase()) return;
   const sb = getSupabase()!;
-  await sb.from("nodere_workspaces").upsert({
+  const now = new Date();
+  const expiresAt = new Date(now);
+  expiresAt.setDate(expiresAt.getDate() + 14);
+
+  const { data } = await sb.from("nodere_workspaces").select("id").eq("id", workspaceId).maybeSingle();
+  if (data?.id) {
+    await sb.from("nodere_workspaces").update({
+      name,
+      owner_email: ownerEmail,
+      updated_at: now.toISOString()
+    }).eq("id", workspaceId);
+    return;
+  }
+
+  const baseWorkspace = {
     id: workspaceId,
     name,
     owner_email: ownerEmail,
-    updated_at: new Date().toISOString()
-  }, { onConflict: "id" });
+    plan: "trial",
+    credits: 20,
+    credits_used: 0,
+    expires_at: expiresAt.toISOString(),
+    trial_started_at: now.toISOString(),
+    trial_expires_at: expiresAt.toISOString(),
+    updated_at: now.toISOString()
+  };
+
+  const { error } = await sb.from("nodere_workspaces").insert(baseWorkspace);
+  if (error && (String(error.message || "").includes("credits_used") || String(error.message || "").includes("trial_"))) {
+    await sb.from("nodere_workspaces").insert({
+      id: workspaceId,
+      name,
+      owner_email: ownerEmail,
+      plan: "trial",
+      credits: 20,
+      expires_at: expiresAt.toISOString(),
+      updated_at: now.toISOString()
+    });
+  } else if (error) {
+    throw error;
+  }
 }
 
 export async function ensureDefaultAdminUser() {

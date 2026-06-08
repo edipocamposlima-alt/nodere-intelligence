@@ -6,8 +6,8 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { Bell, CreditCard, Search, X } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { getInboxUnreadCount } from "@/lib/api";
-import { getAdminToken } from "@/lib/adminAuth";
 import { useAuth } from "@/context/AuthProvider";
+import { useCredits } from "@/context/CreditsProvider";
 
 type CompanyListItem = { id: string; name: string };
 type TaskItem = { id: string; title: string; dueAt?: string; status: string; companyId: string; companyName: string };
@@ -59,12 +59,12 @@ export function Header() {
   const [showPrefsModal, setShowPrefsModal] = useState(false);
   const [prefs, setPrefs] = useState<UserPrefs>(defaultPrefs);
   const [globalQuery, setGlobalQuery] = useState("");
-  const [credits, setCredits] = useState<number | null>(null);
   const [unreadInbox, setUnreadInbox] = useState(0);
   const [brandName, setBrandName] = useState("NODERE Intelligence");
   const pathname = usePathname();
   const router = useRouter();
   const { user, workspace, logout } = useAuth();
+  const { credits } = useCredits();
 
   const pageTitle = useMemo(() => {
     const path = pathname || "/";
@@ -92,26 +92,6 @@ export function Header() {
     applyPrefs(stored);
     setGlobalQuery(new URLSearchParams(window.location.search).get("q") ?? "");
   }, [pathname]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    async function loadCredits() {
-      const token = getAdminToken();
-      if (!token) return;
-      try {
-        const response = await fetch(`${API_URL}/workspace/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store"
-        });
-        if (!response.ok) return;
-        const payload = await response.json();
-        setCredits(typeof payload.credits?.remaining === "number" ? payload.credits.remaining : null);
-      } catch {
-        setCredits(null);
-      }
-    }
-    void loadCredits();
-  }, []);
 
   useEffect(() => {
     async function loadBranding() {
@@ -231,20 +211,20 @@ export function Header() {
         </form>
 
         <div className="flex items-center gap-2">
-          {typeof credits === "number" && (
+          {credits && (
             <Link
               href="/billing"
               className={`hidden items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold sm:inline-flex ${
-                credits < 5
+                credits.remaining < 5 || credits.blocked
                   ? "border-rose-400/50 bg-rose-500/15 text-rose-200"
-                  : credits <= 10
+                  : credits.remaining <= 10
                     ? "border-amber-300/50 bg-amber-300/15 text-amber-100"
                     : "border-emerald-400/50 bg-emerald-400/15 text-emerald-100"
               }`}
-              title="Créditos disponíveis"
+              title={`Créditos: ${credits.remaining} / ${credits.total} (${credits.plan})`}
             >
               <CreditCard className="h-4 w-4" />
-              {credits}
+              {credits.remaining}
             </Link>
           )}
 

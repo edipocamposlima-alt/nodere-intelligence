@@ -244,6 +244,34 @@ export function getCredits() {
   return api<CreditAccount>("/credits", undefined, { balance: 0, used: 0, plan: "Sem plano ativo", resetAt: "" });
 }
 
+export type CreditStatus = {
+  total: number;
+  used: number;
+  remaining: number;
+  plan: string;
+  expires_at?: string | null;
+  trial_expires_at?: string | null;
+  renewal_at?: string | null;
+  resetAt?: string | null;
+  blocked?: boolean;
+  trialExpired?: boolean;
+};
+
+export function getCreditStatus() {
+  return api<CreditStatus>("/credits/status", undefined, {
+    total: 0,
+    used: 0,
+    remaining: 0,
+    plan: "Sem plano ativo",
+    expires_at: null,
+    trial_expires_at: null,
+    renewal_at: null,
+    resetAt: "",
+    blocked: true,
+    trialExpired: false
+  });
+}
+
 export function generateDiagnosis(companyId: string) {
   return api<CommercialDiagnosis>(`/companies/${companyId}/diagnosis`, { method: "POST" });
 }
@@ -299,6 +327,21 @@ export function getBillingStatus() {
 
 export function getBillingPlans() {
   return api<Plan[]>("/billing/plans", undefined, []);
+}
+
+export function getBillingPlanLinks() {
+  return api<{ starter: string | null; pro: string | null; agency: string | null }>("/billing/plan-links", undefined, {
+    starter: null,
+    pro: null,
+    agency: null
+  });
+}
+
+export function joinBillingWaitlist(payload: { email: string; plan?: "starter" | "pro" | "agency" }) {
+  return api<{ ok: boolean; item?: { id?: string; email?: string; plan?: string; created_at?: string } }>("/billing/waitlist", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
 }
 
 export function getUsageLog(limit = 100) {
