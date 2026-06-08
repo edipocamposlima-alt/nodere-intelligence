@@ -398,6 +398,34 @@ router.get("/audit", requireAdmin, async (request: any, response, next) => {
   }
 });
 
+router.post("/cleanup-demo-data", requireAdmin, async (request: any, response, next) => {
+  try {
+    const body = z.object({ confirm: z.string() }).parse(request.body);
+    if (body.confirm !== "CONFIRMO") {
+      return response.status(400).json({ error: "Confirmação necessária.", message: "Digite CONFIRMO para limpar dados demo/teste." });
+    }
+    const sb = getSupabase();
+    if (!sb) {
+      return response.status(503).json({ message: "Supabase não configurado. Limpeza segura exige banco persistente." });
+    }
+    const workspaceId = request.admin.workspaceId || "default";
+    const { data, error } = await sb
+      .from("nodere_companies")
+      .delete()
+      .eq("workspace_id", workspaceId)
+      .or("source.is.null,source.in.(demo,test)")
+      .select("id");
+    if (error) throw error;
+    response.json({
+      ok: true,
+      deleted: data?.length ?? 0,
+      message: `${data?.length ?? 0} registro(s) demo/teste removido(s) deste workspace.`
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.delete("/users/:id", requireAdmin, async (request: any, response, next) => {
   try {
     const user = await updateWorkspaceUser(request.admin.workspaceId || "default", request.params.id, { active: false });

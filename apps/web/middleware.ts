@@ -24,10 +24,16 @@ const PUBLIC_PATHS = [
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const session = request.cookies.get("nodere_session")?.value || request.cookies.get("nodere-session")?.value;
+
+  if (pathname === "/") {
+    if (session) return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.next();
+  }
+
   const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
   if (isPublic) return NextResponse.next();
 
-  const session = request.cookies.get("nodere_session")?.value || request.cookies.get("nodere-session")?.value;
   if (!session) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);

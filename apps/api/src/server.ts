@@ -29,6 +29,7 @@ import { developerRouter, publicApiRouter } from "./routes/developer.js";
 import verticalsRouter from "./routes/verticals.js";
 import webhooksRouter from "./routes/webhooks.js";
 import crmRouter from "./routes/crm.js";
+import onboardingRouter from "./routes/onboarding.js";
 import { processDueSteps } from "./services/emailSequences.js";
 import { requireAuth } from "./middleware/auth.js";
 import { attachSession, getRequestWorkspaceId } from "./middleware/session.js";
@@ -330,6 +331,7 @@ app.get("/api/places/search", async (req, res, next) => {
 });
 
 app.use("/api/admin", adminRouter);
+app.use("/api/onboarding", onboardingRouter);
 app.use("/api/workspace", workspaceRouter);
 app.use("/api/legal", legalRouter);
 app.use("/api/geocode", geocodeRouter);

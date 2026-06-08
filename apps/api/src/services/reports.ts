@@ -144,13 +144,29 @@ export async function getSummaryReport(workspaceId = "default", period = "30d") 
   const periodCompanies = filterByPeriod(companies, period);
   const decided = companies.filter((company) => company.status === "Fechado" || company.status === "Perdido").length;
   const closed = companies.filter((company) => company.status === "Fechado").length;
+  const funnelStages = ["Novo Lead", "Qualificação", "Em Atendimento", "Proposta", "Fechamento", "Cliente"];
+  const stageCounts = companies.reduce<Record<string, number>>((acc, company) => {
+    const stage = normalizeFunnelStage(company.status || "Novo Lead");
+    acc[stage] = (acc[stage] || 0) + 1;
+    return acc;
+  }, {});
+  const funnel = funnelStages.map((stage, index) => {
+    const count = stageCounts[stage] || 0;
+    const previousCount = index > 0 ? (stageCounts[funnelStages[index - 1]] || 0) : count;
+    return {
+      stage,
+      count,
+      conversion_from_prev: previousCount > 0 ? Math.round((count / previousCount) * 100) : 0
+    };
+  });
   return {
     total_companies: companies.length,
     total_leads_in_crm: companies.length,
     avg_score: companies.length ? Math.round(companies.reduce((sum, company) => sum + (company.score || 0), 0) / companies.length) : 0,
     conversion_rate: decided ? Math.round((closed / decided) * 10000) / 100 : 0,
     credits_used: 0,
-    new_this_period: periodCompanies.length
+    new_this_period: periodCompanies.length,
+    funnel
   };
 }
 
@@ -272,6 +288,15 @@ function groupBy<T>(items: T[], getKey: (item: T) => string) {
 function stageIndex(stage: string) {
   const index = STAGE_ORDER.indexOf(stage);
   return index === -1 ? STAGE_ORDER.length : index;
+}
+
+function normalizeFunnelStage(status: string) {
+  if (["Fechado", "Cliente"].includes(status)) return "Cliente";
+  if (["Fechamento", "Negociação"].includes(status)) return "Fechamento";
+  if (["Proposta", "Proposta enviada"].includes(status)) return "Proposta";
+  if (["Contatado", "Em Atendimento", "Aguardando retorno"].includes(status)) return "Em Atendimento";
+  if (["Qualificado", "Qualificação", "Diagnóstico", "Diagnóstico enviado", "Reunião marcada"].includes(status)) return "Qualificação";
+  return "Novo Lead";
 }
 
 function topCounts(companies: Company[], getKey: (company: Company) => string, field: "segment" | "city") {

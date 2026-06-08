@@ -84,6 +84,7 @@ export interface Company {
   suggestions: string[];
   notes: CrmNote[];
   lastContactAt?: string;
+  source?: "google_places" | "manual" | "import" | "demo" | "test" | "apollo" | "econodata" | "website";
   createdAt: string;
   updatedAt: string;
 }

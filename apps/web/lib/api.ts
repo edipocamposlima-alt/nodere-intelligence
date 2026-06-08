@@ -280,6 +280,30 @@ export function getCreditStatus() {
   });
 }
 
+export type OnboardingStatus = {
+  workspace_id?: string;
+  step_search_completed: boolean;
+  step_crm_completed: boolean;
+  step_proposal_completed: boolean;
+  completed_at?: string | null;
+};
+
+export function getOnboardingStatus() {
+  return api<OnboardingStatus>("/onboarding/status", undefined, {
+    step_search_completed: false,
+    step_crm_completed: false,
+    step_proposal_completed: false,
+    completed_at: null
+  });
+}
+
+export function markOnboardingStep(step: "search" | "crm" | "proposal") {
+  return api<OnboardingStatus>("/onboarding/step", {
+    method: "PATCH",
+    body: JSON.stringify({ step })
+  });
+}
+
 export function generateDiagnosis(companyId: string) {
   return api<CommercialDiagnosis>(`/companies/${companyId}/diagnosis`, { method: "POST" });
 }
@@ -404,6 +428,7 @@ export function getReportSummary(period = "30d") {
     conversion_rate: number;
     credits_used: number;
     new_this_period: number;
+    funnel?: Array<{ stage: string; count: number; conversion_from_prev: number }>;
   }>(`/reports/summary?period=${encodeURIComponent(period)}`);
 }
 

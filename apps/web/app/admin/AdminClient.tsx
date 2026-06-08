@@ -83,6 +83,8 @@ export function AdminClient() {
   const [activityLogs, setActivityLogs] = useState<AuditRow[]>([]);
   const [downloadLogs, setDownloadLogs] = useState<AuditRow[]>([]);
   const [temporaryPassword, setTemporaryPassword] = useState("");
+  const [cleanupConfirm, setCleanupConfirm] = useState("");
+  const [cleanupLoading, setCleanupLoading] = useState(false);
   const [userForm, setUserForm] = useState({
     name: "",
     email: "",
@@ -218,6 +220,23 @@ export function AdminClient() {
       setMessage("Cargo removido.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Erro ao remover cargo.");
+    }
+  }
+
+  async function cleanupDemoData() {
+    setCleanupLoading(true);
+    setMessage("");
+    try {
+      const payload = await adminFetch<{ deleted: number; message: string }>("/admin/cleanup-demo-data", {
+        method: "POST",
+        body: JSON.stringify({ confirm: cleanupConfirm })
+      });
+      setCleanupConfirm("");
+      setMessage(payload.message || `${payload.deleted} registro(s) removido(s).`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Erro ao limpar dados de demonstração.");
+    } finally {
+      setCleanupLoading(false);
     }
   }
 
@@ -392,10 +411,38 @@ export function AdminClient() {
       )}
 
       {activeTab === "audit" && (
-        <section className="grid gap-5 xl:grid-cols-2">
-          <AuditPanel title="Atividades" rows={activityLogs} empty="Nenhuma atividade registrada." />
-          <AuditPanel title="Downloads" rows={downloadLogs} empty="Nenhum download registrado." />
-        </section>
+        <div className="space-y-5">
+          <section className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-5">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-white">Limpar dados de demonstração</h2>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-rose-100/80">
+                  Remove somente empresas deste workspace com <code>source</code> nulo, <code>demo</code> ou <code>test</code>. Leads reais marcados como Google Places, manual ou importação são preservados.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <input
+                  value={cleanupConfirm}
+                  onChange={(event) => setCleanupConfirm(event.target.value)}
+                  placeholder="Digite CONFIRMO"
+                  className="rounded-lg border border-rose-400/40 bg-slate-950 px-3 py-3 text-sm text-white outline-none focus:border-rose-300"
+                />
+                <button
+                  onClick={() => void cleanupDemoData()}
+                  disabled={cleanupLoading || cleanupConfirm !== "CONFIRMO"}
+                  className="inline-flex items-center gap-2 rounded-lg bg-rose-500 px-4 py-3 text-sm font-bold text-white hover:bg-rose-400 disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {cleanupLoading ? "Limpando..." : "Limpar demo"}
+                </button>
+              </div>
+            </div>
+          </section>
+          <section className="grid gap-5 xl:grid-cols-2">
+            <AuditPanel title="Atividades" rows={activityLogs} empty="Nenhuma atividade registrada." />
+            <AuditPanel title="Downloads" rows={downloadLogs} empty="Nenhum download registrado." />
+          </section>
+        </div>
       )}
 
       {activeTab === "apis" && (

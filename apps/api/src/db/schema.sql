@@ -155,6 +155,7 @@ create table if not exists nodere_app_settings (
 
 -- Migração segura para bancos que já tinham as tabelas antes do multiusuário.
 alter table nodere_companies add column if not exists workspace_id text not null default 'default';
+alter table nodere_companies add column if not exists source text;
 alter table nodere_companies add column if not exists logo_url text;
 alter table nodere_companies add column if not exists cnpj text;
 alter table nodere_companies add column if not exists legal_name text;
@@ -182,6 +183,19 @@ alter table nodere_workspaces add column if not exists wl_name text;
 alter table nodere_workspaces add column if not exists wl_logo_url text;
 alter table nodere_workspaces add column if not exists wl_primary_color text;
 alter table nodere_workspaces add column if not exists wl_enabled boolean not null default false;
+
+create table if not exists onboarding_steps (
+  id uuid primary key default gen_random_uuid(),
+  workspace_id text not null unique,
+  step_search_completed boolean not null default false,
+  step_crm_completed boolean not null default false,
+  step_proposal_completed boolean not null default false,
+  completed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_onboarding_steps_workspace on onboarding_steps(workspace_id);
 
 do $$
 begin

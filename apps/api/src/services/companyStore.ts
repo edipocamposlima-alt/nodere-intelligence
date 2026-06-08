@@ -127,7 +127,7 @@ function toRow(c: Company, workspaceId = "default", includeWorkspace = workspace
   const { id, name, category, city, state, address, phone, whatsapp, website, logoUrl,
     instagram, facebook, linkedin, youtube, rating, reviewCount, mapsUrl, cnpj, legalName,
     latitude, longitude, status, score, opportunityLevel, enrichmentStatus,
-    lastContactAt, detectedOpportunities, suggestions, createdAt, updatedAt,
+    lastContactAt, source, detectedOpportunities, suggestions, createdAt, updatedAt,
     notes, ...rest } = c;
   const row: Record<string, unknown> = {
     id, name, category, city, state, address, phone, whatsapp, website,
@@ -141,6 +141,7 @@ function toRow(c: Company, workspaceId = "default", includeWorkspace = workspace
     opportunity_level: opportunityLevel,
     enrichment_status: enrichmentStatus ?? "none",
     last_contact_at: lastContactAt ?? null,
+    source,
     detected_opportunities: detectedOpportunities,
     suggestions,
     digital_signals: rest,
@@ -181,6 +182,7 @@ function toUpdateRow(updates: Partial<Company>): Record<string, unknown> {
     ["opportunityLevel", "opportunity_level"],
     ["enrichmentStatus", "enrichment_status"],
     ["lastContactAt", "last_contact_at"],
+    ["source", "source"],
     ["detectedOpportunities", "detected_opportunities"],
     ["suggestions", "suggestions"]
   ];
@@ -233,6 +235,7 @@ function fromRow(row: Record<string, unknown>): Company {
     opportunityLevel: (row.opportunity_level as Company["opportunityLevel"]) ?? "Baixa",
     enrichmentStatus: (row.enrichment_status as Company["enrichmentStatus"]) ?? "none",
     lastContactAt: row.last_contact_at as string | undefined,
+    source: row.source as Company["source"] | undefined,
     detectedOpportunities: (row.detected_opportunities as string[]) ?? [],
     suggestions: (row.suggestions as string[]) ?? [],
     notes: [],
@@ -482,7 +485,7 @@ export function getCompany(id: string): Company | undefined {
 
 export async function searchCompaniesWithMeta(input: SearchRequest, workspaceId = "default") {
   if (config.useMockData) {
-    const generated = generateMockSearch(input);
+    const generated = generateMockSearch(input).map((company) => ({ ...company, source: "demo" as const }));
     syncToMem(generated, workspaceId);
     if (hasSupabase()) await withPersistentWrite("salvar resultados demonstrativos", () => dbUpsert(generated, workspaceId), () => undefined);
     return { source: "mock" as const, companies: generated, warning: "Modo demonstrativo ativo (USE_MOCK_DATA=true)." };
@@ -490,7 +493,7 @@ export async function searchCompaniesWithMeta(input: SearchRequest, workspaceId 
 
   try {
     const generated = await searchGooglePlaces(input);
-    const withStatus = generated.map((c) => ({ ...c, enrichmentStatus: "pending" as const }));
+    const withStatus = generated.map((c) => ({ ...c, enrichmentStatus: "pending" as const, source: "google_places" as const }));
     syncToMem(withStatus, workspaceId);
     if (hasSupabase()) await withPersistentWrite("salvar resultados da busca", () => dbUpsert(withStatus, workspaceId), () => undefined);
     queueEnrichmentForAll(withStatus);

@@ -36,6 +36,7 @@ import { defaultProspectingMessage, sendWhatsappMessage } from "../services/what
 import { activateSequence, getInstancesByCompany } from "../services/emailSequences.js";
 import { enrichCnpj } from "../services/cnpjEnrichment.js";
 import { getSupabase } from "../db/supabase.js";
+import { markOnboardingStep } from "../services/onboardingStore.js";
 import { randomUUID } from "node:crypto";
 import { parse as parseCsvSync } from "csv-parse/sync";
 import * as XLSX from "xlsx";
@@ -207,6 +208,7 @@ router.post("/", async (req, res, next) => {
   try {
     const body = manualCompanySchema.parse(req.body);
     const workspaceId = getRequestWorkspaceId(req);
+    if (!workspaceId) return res.status(400).json({ error: "workspace_id não identificado na sessão." });
     const now = new Date().toISOString();
     const company = {
       id: `manual-${randomUUID()}`,
@@ -233,6 +235,7 @@ router.post("/", async (req, res, next) => {
       createdAt: now,
       updatedAt: now,
       origin: "Manual",
+      source: "manual",
       emailPrincipal: body.email || "",
       cep: body.cep || "",
       principalContact: body.principalContact || "",
@@ -241,6 +244,7 @@ router.post("/", async (req, res, next) => {
       temperature: body.temperature || "Morno"
     } as any;
     await saveCompanies([company], workspaceId);
+    await markOnboardingStep(workspaceId, "crm").catch(() => undefined);
     return res.status(201).json(company);
   } catch (err) { return next(err); }
 });
@@ -432,6 +436,7 @@ router.post("/import", async (req, res, next) => {
         emailPrincipal: email,
         website: String(get("website")).trim(),
         status: "Novo Lead",
+        source: "import",
         score: 50,
         opportunityLevel: "Media",
         detectedOpportunities: [],
@@ -442,6 +447,7 @@ router.post("/import", async (req, res, next) => {
       });
     }
     await saveCompanies(imported, workspaceId);
+    if (imported.length > 0) await markOnboardingStep(workspaceId, "crm").catch(() => undefined);
     await logDownload(workspaceId, getSessionUserId(req), "import", parsed.fileName || "importacao-empresas", {
       imported: imported.length,
       duplicates: duplicates.length,
@@ -989,6 +995,7 @@ router.post("/:id/diagnosis", async (req, res, next) => {
     if (!company) return res.status(404).json({ message: "Company not found" });
     const result = await generateCommercialDiagnosis(company);
     cacheDiagnosis(result);
+    await markOnboardingStep(getRequestWorkspaceId(req), "proposal").catch(() => undefined);
     return res.json(result);
   } catch (error) {
     return next(error);

@@ -1,259 +1,193 @@
 import Image from "next/image";
 import Link from "next/link";
-import { AlertTriangle, Building2, Camera, Globe2, KanbanSquare, MessageCircle, MousePointerClick, Search, Star, TrendingUp } from "lucide-react";
-import { CompanyTable } from "@/components/CompanyTable";
-import { getCompanies, getDashboard } from "@/lib/api";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { ArrowRight, CheckCircle2, LineChart, Search, Sparkles, Target, Workflow } from "lucide-react";
+import { getBillingPlanLinks } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
-  const [metrics, companiesResult] = await Promise.all([
-    getDashboard(),
-    getCompanies().then((companies) => ({ companies, error: "" })).catch((error) => ({
-      companies: [],
-      error: error instanceof Error ? error.message : "Não foi possível carregar leads persistidos."
-    }))
-  ]);
-  const companies = companiesResult.companies;
-  const segmentCounts = groupAndSort(companies.map((company) => company.category || "Sem segmento")).slice(0, 6);
-  const originCounts = groupAndSort(companies.map((company) => {
-    if (company.cnpj) return "CNPJ";
-    if (company.mapsUrl) return "Google Maps";
-    if (company.notes?.some((note) => note.body.toLowerCase().includes("manual"))) return "Manual";
-    return "CRM";
-  })).slice(0, 6);
-  const pipelineRows = Object.entries(metrics.pipeline)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 8);
-  const maxPipeline = Math.max(1, ...pipelineRows.map(([, total]) => total));
-  const recentActivities = companies
-    .flatMap((company) => (company.notes ?? []).map((note) => ({ ...note, companyName: company.name })))
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 10);
+const plans = [
+  {
+    id: "starter",
+    name: "Starter",
+    price: "R$ 97",
+    description: "Para validar prospecção local com controle simples.",
+    benefits: ["300 créditos/mês", "Busca Google Places", "CRM e diagnósticos essenciais"]
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    price: "R$ 197",
+    description: "Para operação comercial recorrente com IA.",
+    benefits: ["1.000 créditos/mês", "IA para abordagem e proposta", "PageSpeed e relatórios comerciais"],
+    featured: true
+  },
+  {
+    id: "agency",
+    name: "Agency",
+    price: "R$ 397",
+    description: "Para agências e times com alto volume.",
+    benefits: ["Créditos ampliados", "Funil CRM avançado", "Operação multiusuário e integrações"]
+  }
+];
 
-  const cards = [
-    { label: "Empresas encontradas", value: metrics.totalCompanies, icon: Building2, hex: "#0284C7", bg: "#E0F2FE" },
-    { label: "Baixa avaliação", value: metrics.lowRating, icon: Star, hex: "#F59E0B", bg: "#FEF3C7" },
-    { label: "Sem site", value: metrics.withoutWebsite, icon: Globe2, hex: "#7C3AED", bg: "#EDE9FE" },
-    { label: "Sem Google Ads", value: metrics.withoutGoogleAds, icon: MousePointerClick, hex: "#16A34A", bg: "#DCFCE7" },
-    { label: "Sem WhatsApp", value: metrics.withoutWhatsapp, icon: MessageCircle, hex: "#059669", bg: "#D1FAE5" },
-    { label: "Sem descrição", value: metrics.withoutDescription, icon: AlertTriangle, hex: "#DC2626", bg: "#FEE2E2" },
-    { label: "Sem fotos recentes", value: metrics.withoutRecentPhotos, icon: Camera, hex: "#DB2777", bg: "#FCE7F3" },
-    { label: "Leads quentes", value: metrics.hotLeads, icon: TrendingUp, hex: "#EA580C", bg: "#FFEDD5" }
-  ];
-  const actionItems = [
-    {
-      title: "Atacar leads quentes",
-      value: metrics.hotLeads,
-      detail: "Priorize contato consultivo hoje",
-      href: "/crm",
-      color: "from-orange-500 to-rose-500"
-    },
-    {
-      title: "Recuperar empresas sem site",
-      value: metrics.withoutWebsite,
-      detail: "Oferta direta: landing page + Google Ads",
-      href: "/searches",
-      color: "from-violet-500 to-blue-500"
-    },
-    {
-      title: "Baixa avaliação no Google",
-      value: metrics.lowRating,
-      detail: "Abordagem: reputação + perfil otimizado",
-      href: "/companies",
-      color: "from-amber-400 to-orange-600"
-    }
-  ];
+export default async function LandingPage() {
+  const cookieStore = await cookies();
+  const session = cookieStore.get("nodere_session")?.value || cookieStore.get("nodere-session")?.value;
+  if (session) redirect("/dashboard");
+
+  const planLinks = await getBillingPlanLinks().catch(() => ({ starter: null, pro: null, agency: null }));
 
   return (
-    <div className="space-y-8 p-4 md:p-8">
-      {companiesResult.error && (
-        <div className="rounded-lg border border-amber-400/40 bg-amber-500/10 p-4 text-sm leading-6 text-amber-100">
-          <strong>Persistência precisa de atenção:</strong> {companiesResult.error}
-        </div>
-      )}
-      <section className="rounded-lg border border-electric/25 bg-panel/90 p-5 shadow-glow">
-        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-          <div>
-            <Image src="/nodere-wordmark.png" alt="NODERE Intelligence" width={360} height={120} priority className="h-auto w-full max-w-sm rounded-xl object-contain" />
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
-              Central comercial para busca de empresas, CRM, funil, WhatsApp, propostas e inteligência operacional.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-3 text-sm md:min-w-72">
-            <div className="rounded-lg border border-line bg-ink p-3">
-              <p className="text-slate-400">CRM ativo</p>
-              <p className="mt-1 text-2xl font-semibold text-white">{metrics.totalCompanies}</p>
-            </div>
-            <div className="rounded-lg border border-line bg-ink p-3">
-              <p className="text-slate-400">Score médio</p>
-              <p className="mt-1 text-2xl font-semibold text-white">{metrics.averageScore}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map((card) => (
-          <div key={card.label} className="metric-card rounded-lg border border-line bg-panel/90 p-4 transition hover:-translate-y-0.5 hover:border-cyan/60 hover:shadow-[0_12px_32px_rgba(34,211,238,0.12)]">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-400">{card.label}</p>
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl shadow-[0_0_22px_rgba(56,189,248,0.18)]" style={{ background: `linear-gradient(135deg, ${card.hex}, ${card.bg})` }}>
-                <card.icon className="h-5 w-5 text-white drop-shadow" style={{ strokeWidth: 2.9 }} />
-              </span>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-white">{card.value}</p>
-          </div>
-        ))}
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-3">
-        {actionItems.map((item) => (
-          <Link key={item.title} href={item.href} className={`rounded-xl border border-white/10 bg-gradient-to-br ${item.color} p-5 text-white shadow-[0_18px_45px_rgba(0,0,0,0.18)] transition hover:-translate-y-1`}>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-white/75">Ação recomendada</p>
-            <div className="mt-4 flex items-end justify-between gap-4">
-              <div>
-                <p className="text-lg font-semibold">{item.title}</p>
-                <p className="mt-1 text-sm text-white/80">{item.detail}</p>
-              </div>
-              <span className="text-5xl font-black">{item.value}</span>
-            </div>
-          </Link>
-        ))}
-      </section>
-
-      <section className="grid gap-5 xl:grid-cols-[1fr_0.8fr_0.8fr]">
-        <Link href="/searches" className="rounded-lg border border-electric/30 bg-electric/10 p-5 transition hover:border-electric">
-          <Search className="h-5 w-5 text-cyan" />
-          <p className="mt-4 text-lg font-semibold text-white">Buscar empresas</p>
-          <p className="mt-2 text-sm leading-6 text-slate-400">Abra a busca dedicada para filtros, seleção em massa, CSV e PDF.</p>
-        </Link>
-        <Link href="/crm" className="rounded-lg border border-line bg-panel/90 p-5 transition hover:border-electric/60">
-          <KanbanSquare className="h-5 w-5 text-cyan" />
-          <p className="mt-4 text-lg font-semibold text-white">Abrir CRM</p>
-          <p className="mt-2 text-sm leading-6 text-slate-400">Gerencie leads no pipeline com etapas coloridas e drag and drop.</p>
-        </Link>
-        <div className="rounded-lg border border-line bg-panel/90 p-5">
-          <p className="text-sm font-medium text-white">Score médio de oportunidade</p>
-          <div className="mt-6 flex items-end gap-3">
-            <span className="text-6xl font-semibold text-white">{metrics.averageScore}</span>
-            <span className="pb-2 text-sm text-slate-500">/100</span>
-          </div>
-          <div className="mt-5 h-2 rounded-full bg-white/10">
-            <div className="h-2 rounded-full bg-electric" style={{ width: `${metrics.averageScore}%` }} />
-          </div>
-          <div className="mt-6 space-y-3">
-            {Object.entries(metrics.pipeline).map(([status, total]) => (
-              <div key={status} className="flex items-center justify-between text-sm">
-                <span className="text-slate-400">{status}</span>
-                <span className="font-medium text-white">{total}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-5 xl:grid-cols-3">
-        <DashboardBarPanel title="Leads por segmento" rows={segmentCounts} accent="#22D3EE" />
-        <DashboardBarPanel title="Origem dos leads" rows={originCounts} accent="#A855F7" />
-        <div className="rounded-lg border border-line bg-panel/90 p-5">
-          <p className="text-sm font-semibold text-white">Pipeline por etapa</p>
-          <div className="mt-4 space-y-3">
-            {pipelineRows.length === 0 && <p className="text-sm text-slate-500">Sem etapas com dados ainda.</p>}
-            {pipelineRows.map(([status, total]) => (
-              <div key={status}>
-                <div className="flex items-center justify-between gap-3 text-xs">
-                  <span className="truncate text-slate-400">{status}</span>
-                  <span className="font-semibold text-white">{total}</span>
-                </div>
-                <div className="mt-1 h-2 rounded-full bg-white/10">
-                  <div className="h-2 rounded-full bg-gradient-to-r from-cyan to-electric" style={{ width: `${Math.max(7, (total / maxPipeline) * 100)}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-5 xl:grid-cols-[1fr_0.8fr]">
-        <div className="rounded-lg border border-line bg-panel/90 p-5">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-white">Atividades recentes</h2>
-            <span className="rounded-full bg-cyan/10 px-2 py-1 text-xs font-bold text-cyan">{recentActivities.length}</span>
-          </div>
-          <div className="mt-4 space-y-3">
-            {recentActivities.length === 0 && (
-              <p className="rounded-lg border border-dashed border-line p-4 text-sm text-slate-500">
-                Sem atividades registradas. Ao salvar leads, notas, propostas ou follow-ups, o histórico aparece aqui.
-              </p>
-            )}
-            {recentActivities.map((activity) => (
-              <div key={activity.id} className="rounded-lg border border-line bg-ink p-3">
-                <p className="text-sm font-semibold text-white">{activity.companyName}</p>
-                <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">{activity.body}</p>
-                <p className="mt-2 text-xs text-slate-500">{new Date(activity.createdAt).toLocaleString("pt-BR")}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-lg border border-line bg-panel/90 p-5">
-          <h2 className="text-lg font-semibold text-white">Atalhos rápidos</h2>
-          <div className="mt-4 grid gap-3">
-            {[
-              ["Nova Busca", "/searches", "Buscar empresas reais no Google Places"],
-              ["Adicionar Lead", "/companies", "Cadastrar empresa manualmente"],
-              ["Ver CRM", "/crm", "Mover oportunidades no funil"],
-              ["Ver Relatórios", "/reports", "Analisar desempenho comercial"]
-            ].map(([label, href, description]) => (
-              <Link key={label} href={href} className="rounded-lg border border-line bg-ink p-3 transition hover:border-cyan hover:bg-cyan/10">
-                <p className="text-sm font-semibold text-white">{label}</p>
-                <p className="mt-1 text-xs text-slate-400">{description}</p>
+    <main className="min-h-screen bg-[#050B16] text-white">
+      <section className="relative overflow-hidden bg-[radial-gradient(circle_at_20%_20%,rgba(30,111,219,0.32),transparent_30%),linear-gradient(135deg,#050B16_0%,#0A0F1E_48%,#06162E_100%)]">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.06)_1px,transparent_1px)] bg-[size:64px_64px]" />
+        <div className="relative mx-auto flex min-h-[88vh] max-w-7xl flex-col px-5 py-8 md:px-8">
+          <header className="flex items-center justify-between gap-4">
+            <Image src="/nodere-wordmark.png" alt="NODERE Intelligence" width={260} height={86} priority className="h-auto w-44 object-contain md:w-64" />
+            <div className="flex items-center gap-3">
+              <Link href="/login" className="hidden rounded-xl border border-white/15 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-cyan/70 md:inline-flex">
+                Entrar
               </Link>
-            ))}
+              <Link href="/register" className="rounded-xl bg-cyan px-4 py-2 text-sm font-black text-slate-950 shadow-[0_0_28px_rgba(34,211,238,0.35)] hover:bg-cyan/90">
+                Começar grátis
+              </Link>
+            </div>
+          </header>
+
+          <div className="grid flex-1 items-center gap-10 py-16 lg:grid-cols-[1.05fr_0.95fr]">
+            <div>
+              <p className="inline-flex rounded-full border border-cyan/30 bg-cyan/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.22em] text-cyan">
+                Prospecção inteligente + CRM + IA
+              </p>
+              <h1 className="mt-6 max-w-4xl text-4xl font-black leading-tight tracking-tight md:text-6xl">
+                Encontre empresas que precisam dos seus serviços. Feche mais contratos.
+              </h1>
+              <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
+                Prospecção inteligente com diagnóstico digital, CRM e IA — tudo em uma plataforma.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link href="/register" className="inline-flex items-center gap-2 rounded-xl bg-cyan px-5 py-3 text-sm font-black text-slate-950 hover:bg-cyan/90">
+                  Começar grátis
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <a href="#funcionalidades" className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-white hover:border-cyan/70">
+                  Ver demonstração
+                </a>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-white/12 bg-white/[0.045] p-5 shadow-[0_30px_100px_rgba(0,0,0,0.38)] backdrop-blur">
+              <div className="rounded-2xl border border-cyan/25 bg-[#07111F] p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-400">Score médio de oportunidade</p>
+                    <p className="mt-2 text-6xl font-black">82</p>
+                  </div>
+                  <span className="rounded-2xl bg-emerald-400/15 px-3 py-2 text-sm font-black text-emerald-300">Alta intenção</span>
+                </div>
+                <div className="mt-8 grid gap-3">
+                  {["Academias sem site", "Clínicas com baixa avaliação", "Empresas sem Google Ads"].map((item, index) => (
+                    <div key={item} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
+                      <span className="font-semibold">{item}</span>
+                      <span className={index === 0 ? "text-cyan" : index === 1 ? "text-amber-300" : "text-emerald-300"}>
+                        {index === 0 ? "42 leads" : index === 1 ? "18 alertas" : "31 oportunidades"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Maiores oportunidades</h2>
-          <p className="text-sm text-slate-500">Ordenado por score comercial</p>
+      <section id="funcionalidades" className="mx-auto max-w-7xl px-5 py-16 md:px-8">
+        <div className="max-w-3xl">
+          <h2 className="text-3xl font-black">Prospecte empresas com baixo score digital e venda a solução certa</h2>
         </div>
-        <CompanyTable companies={companies} />
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {[
+            ["Score de oportunidade automatizado", Target],
+            ["Diagnóstico de presença digital em segundos", LineChart],
+            ["Funil CRM integrado com IA", Workflow]
+          ].map(([label, Icon]) => (
+            <div key={String(label)} className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+              <Icon className="h-7 w-7 text-cyan" />
+              <p className="mt-5 text-lg font-bold">{String(label)}</p>
+            </div>
+          ))}
+        </div>
       </section>
-    </div>
-  );
-}
 
-function groupAndSort(values: string[]) {
-  const groups = values.reduce<Record<string, number>>((acc, value) => {
-    const label = value?.trim() || "Sem informação";
-    acc[label] = (acc[label] || 0) + 1;
-    return acc;
-  }, {});
-  return Object.entries(groups).sort(([, a], [, b]) => b - a);
-}
+      <section className="mx-auto max-w-7xl px-5 py-12 md:px-8">
+        <h2 className="text-3xl font-black">Como funciona</h2>
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {[
+            ["1", "Busque empresas por segmento e cidade", Search],
+            ["2", "Receba um diagnóstico automático de presença digital", Sparkles],
+            ["3", "Gere abordagens comerciais com IA e feche negócios", CheckCircle2]
+          ].map(([step, title, Icon]) => (
+            <div key={String(step)} className="rounded-2xl border border-white/10 bg-[#081120] p-6">
+              <div className="flex items-center gap-3">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-cyan text-sm font-black text-slate-950">{String(step)}</span>
+                <Icon className="h-5 w-5 text-cyan" />
+              </div>
+              <p className="mt-5 text-lg font-bold">{String(title)}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-function DashboardBarPanel({ title, rows, accent }: { title: string; rows: Array<[string, number]>; accent: string }) {
-  const max = Math.max(1, ...rows.map(([, total]) => total));
-  return (
-    <div className="rounded-lg border border-line bg-panel/90 p-5">
-      <p className="text-sm font-semibold text-white">{title}</p>
-      <div className="mt-4 space-y-3">
-        {rows.length === 0 && <p className="text-sm text-slate-500">Sem dados suficientes ainda.</p>}
-        {rows.map(([label, total]) => (
-          <div key={label}>
-            <div className="flex items-center justify-between gap-3 text-xs">
-              <span className="truncate text-slate-400">{label}</span>
-              <span className="font-semibold text-white">{total}</span>
-            </div>
-            <div className="mt-1 h-2 rounded-full bg-white/10">
-              <div className="h-2 rounded-full" style={{ width: `${Math.max(8, (total / max) * 100)}%`, backgroundColor: accent }} />
-            </div>
+      <section className="mx-auto max-w-7xl px-5 py-16 md:px-8">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-black">Planos comerciais</h2>
+            <p className="mt-2 text-slate-400">Comece com a estrutura certa e evolua conforme a operação cresce.</p>
           </div>
-        ))}
-      </div>
-    </div>
+        </div>
+        <div className="mt-8 grid gap-5 md:grid-cols-3">
+          {plans.map((plan) => {
+            const checkoutUrl = planLinks[plan.id as keyof typeof planLinks];
+            return (
+              <div key={plan.id} className={`rounded-3xl border p-6 ${plan.featured ? "border-cyan bg-cyan/10 shadow-[0_0_50px_rgba(34,211,238,0.18)]" : "border-white/10 bg-white/[0.04]"}`}>
+                {plan.featured && <span className="rounded-full bg-cyan px-3 py-1 text-xs font-black text-slate-950">Mais escolhido</span>}
+                <h3 className="mt-4 text-2xl font-black">{plan.name}</h3>
+                <p className="mt-2 text-sm text-slate-400">{plan.description}</p>
+                <p className="mt-6 text-4xl font-black">{plan.price}<span className="text-base font-semibold text-slate-400">/mês</span></p>
+                <ul className="mt-6 space-y-3">
+                  {plan.benefits.map((benefit) => (
+                    <li key={benefit} className="flex items-start gap-2 text-sm text-slate-300">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan" />
+                      {benefit}
+                    </li>
+                  ))}
+                </ul>
+                {checkoutUrl ? (
+                  <a href={checkoutUrl} className="mt-7 inline-flex w-full justify-center rounded-xl bg-cyan px-4 py-3 text-sm font-black text-slate-950 hover:bg-cyan/90">
+                    Assinar agora
+                  </a>
+                ) : (
+                  <a href={`mailto:comercial@nodere.com.br?subject=${encodeURIComponent(`Tenho interesse no plano ${plan.name}`)}`} className="mt-7 inline-flex w-full justify-center rounded-xl border border-cyan/40 bg-cyan/10 px-4 py-3 text-sm font-black text-cyan hover:bg-cyan/20">
+                    Tenho interesse
+                  </a>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <footer className="border-t border-white/10 px-5 py-8 text-center text-sm text-slate-400">
+        <span>NODERE Intelligence</span>
+        <span className="px-2">|</span>
+        <Link href="/terms" className="hover:text-cyan">Termos de uso</Link>
+        <span className="px-2">|</span>
+        <Link href="/privacy" className="hover:text-cyan">Política de privacidade</Link>
+        <span className="px-2">|</span>
+        <a href="mailto:contato@nodere.com.br" className="hover:text-cyan">contato@nodere.com.br</a>
+      </footer>
+    </main>
   );
 }
-

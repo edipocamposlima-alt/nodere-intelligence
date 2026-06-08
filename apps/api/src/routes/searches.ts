@@ -6,6 +6,7 @@ import { consumeSearch } from "../services/credits.js";
 import { listSearchHistory, saveSearch, getSearch, touchSearch } from "../db/searchHistory.js";
 import { calculateOpportunityScore } from "../services/scoring.js";
 import { config } from "../config.js";
+import { markOnboardingStep } from "../services/onboardingStore.js";
 
 const router = Router();
 const apolloSearchSchema = z.object({
@@ -209,6 +210,9 @@ router.post("/", async (req, res, next) => {
     await consumeSearch([input.companyName, input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" "), workspaceId);
     const result = await searchCompaniesWithMeta(input, workspaceId);
     const companyIds = result.companies.map((c) => c.id);
+    if (result.companies.length > 0) {
+      await markOnboardingStep(workspaceId, "search").catch(() => undefined);
+    }
 
     const saved = await saveSearch(
       {
@@ -252,6 +256,9 @@ router.post("/:id/rerun", async (req, res, next) => {
       segment: saved.segment,
       keyword: saved.keyword
     }, workspaceId);
+    if (result.companies.length > 0) {
+      await markOnboardingStep(workspaceId, "search").catch(() => undefined);
+    }
 
     const companyIds = result.companies.map((c) => c.id);
     await consumeSearch(`${saved.segment} em ${saved.city} (rerun)`, workspaceId);
