@@ -146,7 +146,14 @@ export async function saveBillingWaitlist(input: { email: string; plan?: string;
     plan: input.plan || null,
     workspace_id: input.workspaceId || null
   }).select("id, email, plan, created_at").single();
-  if (error) throw error;
+  if (error) {
+    const unavailable = new Error(
+      "Tabela billing_waitlist ausente no Supabase. Aplique apps/api/src/db/schema.sql para ativar o formulário de interesse."
+    ) as Error & { status?: number; code?: string };
+    unavailable.status = 503;
+    unavailable.code = "BILLING_SCHEMA_UNAVAILABLE";
+    throw unavailable;
+  }
   return data;
 }
 
