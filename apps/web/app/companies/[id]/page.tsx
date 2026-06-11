@@ -38,13 +38,61 @@ function linkedinSearchUrl(name: string) {
   return `https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(query)}`;
 }
 
+function notInformed(value?: string | number | null) {
+  if (value === 0) return "0";
+  return value ? String(value) : "Não informado";
+}
+
+function CompanyLoadError({ id, message }: { id: string; message: string }) {
+  return (
+    <div className="space-y-6 p-4 md:p-8">
+      <section className="rounded-lg border border-danger/30 bg-danger/10 p-6">
+        <h2 className="text-xl font-semibold text-white">Não foi possível abrir a Ficha 360º</h2>
+        <p className="mt-2 text-sm leading-6 text-red-100">
+          A empresa foi encontrada, mas a ficha não carregou todos os dados neste momento. O sistema registrou o erro técnico e manteve a página estável.
+        </p>
+        <div className="mt-4 rounded-md border border-danger/20 bg-ink px-3 py-2 text-xs text-red-100">
+          <p>ID: {decodeURIComponent(id || "")}</p>
+          <p>Detalhe: {message || "Erro inesperado ao carregar a ficha."}</p>
+        </div>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <a href="/companies" className="rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">Voltar para empresas</a>
+          <a href="/crm" className="rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white">Abrir CRM</a>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default async function CompanyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [company, audit, intel] = await Promise.all([
-    getCompany(id),
-    getCompanyAudit(id).catch(() => null),
-    getCompanyIntelligence(id).catch(() => null)
-  ]);
+  let company;
+  let audit = null;
+  let intel = null;
+  try {
+    [company, audit, intel] = await Promise.all([
+      getCompany(id),
+      getCompanyAudit(id).catch((error) => {
+        console.warn("[company-page] audit unavailable", { id, message: error instanceof Error ? error.message : String(error) });
+        return null;
+      }),
+      getCompanyIntelligence(id).catch((error) => {
+        console.warn("[company-page] intelligence unavailable", { id, message: error instanceof Error ? error.message : String(error) });
+        return null;
+      })
+    ]);
+  } catch (error) {
+    console.error("[company-page] failed to load company", { id, message: error instanceof Error ? error.message : String(error) });
+    return <CompanyLoadError id={id} message={error instanceof Error ? error.message : String(error)} />;
+  }
+
+  if (!company) return <CompanyLoadError id={id} message="Empresa não localizada no CRM." />;
+
+  const detectedOpportunities = Array.isArray(company.detectedOpportunities) ? company.detectedOpportunities : [];
+  const suggestions = Array.isArray(company.suggestions) ? company.suggestions : [];
+  const notes = Array.isArray(company.notes) ? company.notes : [];
+  const companyName = company.name || "Empresa sem nome";
+  const companyId = encodeURIComponent(company.id);
 
   const checks: [string, boolean | null][] = [
     ["Site", Boolean(company.website)],
@@ -64,11 +112,11 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-2xl font-semibold text-white">{company.name}</h2>
+              <h2 className="text-2xl font-semibold text-white">{companyName}</h2>
               <StatusBadge value={company.opportunityLevel} />
             </div>
             <p className="mt-2 text-sm text-slate-400">
-              {company.category} · {company.address}
+              {notInformed(company.category)} · {notInformed(company.address)}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               {isValidBrazilMobileWhatsapp(company.whatsapp) && (
@@ -77,7 +125,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                   Chamar no WhatsApp
                 </a>
               )}
-              <a href={`${API_URL}/companies/${company.id}/export-pdf`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
+              <a href={`${API_URL}/companies/${companyId}/export-pdf`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
                 <FileText className="h-4 w-4" />
                 Exportar PDF
               </a>
@@ -112,7 +160,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                 </a>
               )}
               {!company.linkedin && (
-                <a href={linkedinSearchUrl(company.name)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-blue-400/40 bg-blue-500/15 px-4 py-2 text-sm text-blue-100">
+                <a href={linkedinSearchUrl(companyName)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-blue-400/40 bg-blue-500/15 px-4 py-2 text-sm text-blue-100">
                   <Linkedin className="h-4 w-4" />
                   Buscar empresa no LinkedIn
                 </a>
@@ -130,7 +178,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
           <div className="flex flex-wrap gap-3 lg:flex-col">
             <div className="rounded-lg border border-electric/30 bg-electric/10 px-5 py-4 text-center">
               <p className="text-xs text-slate-400">Oportunidade</p>
-              <p className="mt-1 text-5xl font-semibold text-white">{company.score}</p>
+              <p className="mt-1 text-5xl font-semibold text-white">{company.score ?? 0}</p>
             </div>
             {company.maturityScore !== undefined && (
               <div className="rounded-lg border border-line bg-panel/60 px-4 py-3 text-center">
@@ -178,7 +226,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                 ["Razão social", "não localizado em fonte pública"],
                 ["Decisor/responsável", "não localizado em fonte pública"],
                 ["E-mail público", "não localizado em fonte pública"],
-                ["LinkedIn", company.linkedin || linkedinSearchUrl(company.name)]
+                ["LinkedIn", company.linkedin || linkedinSearchUrl(companyName)]
               ].map(([label, value]) => (
                 <div key={label} className="rounded-md border border-line bg-ink px-3 py-2">
                   <p className="text-xs text-slate-500">{label}</p>
@@ -206,9 +254,9 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
           <div className="rounded-lg border border-line bg-panel/90 p-5">
             <h3 className="font-semibold text-white">Oportunidades detectadas</h3>
             <div className="mt-4 space-y-2">
-              {company.detectedOpportunities.length === 0
+              {detectedOpportunities.length === 0
                 ? <p className="text-sm text-slate-500">Nenhuma oportunidade detectada.</p>
-                : company.detectedOpportunities.map((item) => (
+                : detectedOpportunities.map((item) => (
                   <p key={item} className="rounded-md border border-danger/20 bg-danger/10 px-3 py-2 text-sm text-red-100">
                     {item}
                   </p>
@@ -219,9 +267,9 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
           <div className="rounded-lg border border-line bg-panel/90 p-5">
             <h3 className="font-semibold text-white">Sugestões comerciais</h3>
             <div className="mt-4 space-y-2">
-              {company.suggestions.length === 0
+              {suggestions.length === 0
                 ? <p className="text-sm text-slate-500">Sem sugestões no momento.</p>
-                : company.suggestions.map((item) => (
+                : suggestions.map((item) => (
                   <p key={item} className="rounded-md border border-electric/20 bg-electric/10 px-3 py-2 text-sm text-blue-100">
                     {item}
                   </p>
@@ -234,8 +282,8 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
           <div className="rounded-lg border border-line bg-panel/90 p-5">
             <h3 className="font-semibold text-white">Histórico CRM</h3>
             <div className="mt-4 space-y-3">
-              {company.notes.length === 0 && <p className="text-sm text-slate-500">Nenhuma observação registrada.</p>}
-              {company.notes.map((note) => (
+              {notes.length === 0 && <p className="text-sm text-slate-500">Nenhuma observação registrada.</p>}
+              {notes.map((note) => (
                 <p key={note.id} className="rounded-md border border-line bg-ink px-3 py-2 text-sm text-slate-300">
                   {note.body}
                 </p>

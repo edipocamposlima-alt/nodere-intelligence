@@ -70,7 +70,7 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
                   <td className="px-4 py-3">{company.status}</td>
                   <td className="px-4 py-3 text-slate-300">{company.city}/{company.state}</td>
                   <td className="px-4 py-3 text-slate-400">{company.lastContactAt ? new Date(company.lastContactAt).toLocaleDateString("pt-BR") : "Sem contato"}</td>
-                  <td className="px-4 py-3"><Link href={`/companies/${company.id}`} className="text-cyan">Abrir ficha</Link></td>
+                  <td className="px-4 py-3"><Link href={`/companies/${encodeURIComponent(company.id)}`} className="text-cyan">Abrir ficha</Link></td>
                 </tr>
               ))}
             </tbody>

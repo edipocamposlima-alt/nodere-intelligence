@@ -407,7 +407,7 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
                       <div className="flex items-start gap-2">
                         <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
                         <div className="min-w-0">
-                          <Link href={`/companies/${company.id}`} className="block truncate text-sm font-medium text-white hover:text-cyan">
+                          <Link href={`/companies/${encodeURIComponent(company.id)}`} className="block truncate text-sm font-medium text-white hover:text-cyan">
                             {company.name}
                           </Link>
                           <p className="mt-1 truncate text-xs text-slate-500">{company.category} · {company.city}/{company.state}</p>

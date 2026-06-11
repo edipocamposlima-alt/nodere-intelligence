@@ -275,7 +275,7 @@ export function Header() {
                 ) : (
                   <div className="mt-3 max-h-80 space-y-2 overflow-y-auto">
                     {alerts.slice(0, 8).map((task) => (
-                      <Link key={task.id} href={`/companies/${task.companyId}`} className="block rounded-md border border-line bg-ink px-3 py-2 hover:border-electric/60">
+                      <Link key={task.id} href={`/companies/${encodeURIComponent(task.companyId)}`} className="block rounded-md border border-line bg-ink px-3 py-2 hover:border-electric/60">
                         <p className="truncate text-sm font-medium text-white">{task.title}</p>
                         <p className="mt-1 truncate text-xs text-slate-400">{task.companyName} · {new Date(task.dueAt || "").toLocaleString("pt-BR")}</p>
                       </Link>

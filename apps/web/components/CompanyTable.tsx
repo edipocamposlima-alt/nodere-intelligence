@@ -310,7 +310,7 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
                   />
                 </td>
                 <td className="px-4 py-4">
-                  <Link href={`/companies/${company.id}`} className="font-medium text-white hover:text-cyan">
+                  <Link href={`/companies/${encodeURIComponent(company.id)}`} className="font-medium text-white hover:text-cyan">
                     {company.name}
                   </Link>
                   <p className="mt-1 text-xs text-slate-500">
@@ -340,7 +340,7 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
                       {saved[company.id] === "saved" ? <CheckCircle2 className="h-4 w-4" /> : <Save className="h-4 w-4" />}
                       {saved[company.id] === "saving" ? "Salvando" : saved[company.id] === "saved" ? "Salvo" : "Salvar lead"}
                     </button>
-                    <Link href={`/companies/${company.id}`} className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 text-xs font-semibold text-white hover:border-electric">
+                    <Link href={`/companies/${encodeURIComponent(company.id)}`} className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 text-xs font-semibold text-white hover:border-electric">
                       <FileText className="h-4 w-4" />
                       Ficha
                     </Link>

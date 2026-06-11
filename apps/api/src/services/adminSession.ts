@@ -12,6 +12,30 @@ export interface AdminSession {
   exp: number;
 }
 
+const BUILTIN_OWNER_EMAIL = "edipo.lima@nodere.com.br";
+const BUILTIN_OWNER_NAME = "Édipo Lima";
+
+function normalizeRole(role?: string): SessionRole {
+  return role === "owner" ? "owner" : role === "admin" ? "admin" : role === "viewer" ? "viewer" : "operator";
+}
+
+export function isBuiltInOwnerEmail(email?: string) {
+  return String(email || "").trim().toLowerCase() === BUILTIN_OWNER_EMAIL;
+}
+
+export function normalizeAdminSession(data: AdminSession): AdminSession {
+  const email = String(data.email || "").trim().toLowerCase();
+  const isBuiltInOwner = isBuiltInOwnerEmail(email);
+  return {
+    ...data,
+    email,
+    name: isBuiltInOwner ? BUILTIN_OWNER_NAME : data.name,
+    role: isBuiltInOwner ? "owner" : normalizeRole(data.role),
+    workspaceId: data.workspaceId || "default",
+    userId: isBuiltInOwner ? data.userId || "admin-default" : data.userId
+  };
+}
+
 function sign(payload: string) {
   return createHmac("sha256", config.admin.sessionSecret).update(payload).digest("base64url");
 }
@@ -35,11 +59,7 @@ export function verifySessionToken(token = ""): AdminSession | null {
   try {
     const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as AdminSession;
     if (!data.exp || data.exp < Date.now()) return null;
-    return {
-      ...data,
-      role: data.role === "owner" ? "owner" : data.role === "admin" ? "admin" : data.role === "viewer" ? "viewer" : "operator",
-      workspaceId: data.workspaceId || "default"
-    };
+    return normalizeAdminSession(data);
   } catch {
     return null;
   }

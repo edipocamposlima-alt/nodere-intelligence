@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { extractBearerToken, verifySessionToken } from "../services/adminSession.js";
+import { extractBearerToken, isBuiltInOwnerEmail, normalizeAdminSession, verifySessionToken } from "../services/adminSession.js";
 import { getSupabase, hasSupabase } from "../db/supabase.js";
 import { ensureSupabaseAuthUser } from "../services/userStore.js";
 
@@ -21,14 +21,14 @@ export async function attachSession(request: Request, _response: Response, next:
           email: data.user.email,
           name: String(data.user.user_metadata?.name || data.user.user_metadata?.full_name || "")
         });
-        (request as any).session = {
+        (request as any).session = normalizeAdminSession({
           email: user.email,
           name: user.name,
           role: user.role,
           workspaceId: user.workspaceId,
           userId: user.id,
           exp: Date.now() + 1000 * 60 * 30
-        };
+        });
       }
     } catch {
       // Invalid Supabase JWTs are ignored here; protected routes still return 401.
@@ -42,8 +42,9 @@ export function getRequestWorkspaceId(request: Request) {
 }
 
 export function isPrivilegedSession(request: Request) {
-  const role = (request as any).session?.role;
-  return role === "owner" || role === "admin";
+  const session = (request as any).session;
+  const role = session?.role;
+  return role === "owner" || role === "admin" || isBuiltInOwnerEmail(session?.email);
 }
 
 export function requireWorkspaceSession(request: Request, response: Response, next: NextFunction) {
@@ -57,9 +58,11 @@ export function requireWorkspaceRole(...roles: Array<"owner" | "admin" | "operat
   return (request: Request, response: Response, next: NextFunction) => {
     const session = (request as any).session;
     if (!session) return response.status(401).json({ error: "Unauthorized", message: "Login obrigatório." });
-    if (!roles.includes(session.role)) {
+    const effectiveRole = isBuiltInOwnerEmail(session.email) ? "owner" : session.role;
+    if (!roles.includes(effectiveRole)) {
       return response.status(403).json({ error: "Forbidden", message: "Você não tem permissão para esta ação." });
     }
+    session.role = effectiveRole;
     return next();
   };
 }

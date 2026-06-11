@@ -101,19 +101,27 @@ export function AdminClient() {
   async function load() {
     try {
       await adminFetch("/admin/status");
-      const [data, userData, roleData, auditData] = await Promise.all([
+      const [data, userData, roleData, auditData] = await Promise.allSettled([
         adminFetch<{ keys: ApiKeyStatus[] }>("/admin/api-keys"),
         adminFetch<{ users: AdminUser[] }>("/admin/users"),
         adminFetch<{ roles: CustomRole[] }>("/admin/roles"),
         adminFetch<{ activityLogs: AuditRow[]; downloadLogs: AuditRow[] }>("/admin/audit")
       ]);
-      setKeys(Array.isArray(data.keys) ? data.keys : []);
-      setUsers(Array.isArray(userData.users) ? userData.users : []);
-      setRoles(Array.isArray(roleData.roles) ? roleData.roles : []);
-      setActivityLogs(Array.isArray(auditData.activityLogs) ? auditData.activityLogs : []);
-      setDownloadLogs(Array.isArray(auditData.downloadLogs) ? auditData.downloadLogs : []);
+      const warnings: string[] = [];
+      if (data.status === "fulfilled") setKeys(Array.isArray(data.value.keys) ? data.value.keys : []);
+      else warnings.push(`APIs: ${data.reason instanceof Error ? data.reason.message : "falha ao carregar"}`);
+      if (userData.status === "fulfilled") setUsers(Array.isArray(userData.value.users) ? userData.value.users : []);
+      else warnings.push(`Usuários: ${userData.reason instanceof Error ? userData.reason.message : "falha ao carregar"}`);
+      if (roleData.status === "fulfilled") setRoles(Array.isArray(roleData.value.roles) ? roleData.value.roles : []);
+      else warnings.push(`Cargos: ${roleData.reason instanceof Error ? roleData.reason.message : "falha ao carregar"}`);
+      if (auditData.status === "fulfilled") {
+        setActivityLogs(Array.isArray(auditData.value.activityLogs) ? auditData.value.activityLogs : []);
+        setDownloadLogs(Array.isArray(auditData.value.downloadLogs) ? auditData.value.downloadLogs : []);
+      } else {
+        warnings.push(`Auditoria: ${auditData.reason instanceof Error ? auditData.reason.message : "falha ao carregar"}`);
+      }
       setAuthorized(true);
-      setMessage("Painel administrativo conectado.");
+      setMessage(warnings.length ? `Painel administrativo conectado com avisos: ${warnings.join(" · ")}` : "Painel administrativo conectado.");
     } catch (error) {
       setAuthorized(false);
       if (error instanceof AdminFetchError && error.status === 403) {

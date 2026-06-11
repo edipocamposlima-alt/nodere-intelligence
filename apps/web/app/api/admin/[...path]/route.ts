@@ -9,9 +9,9 @@ type RouteContext = {
 
 async function proxyAdmin(request: NextRequest, context: RouteContext) {
   const { path = [] } = await context.params;
-  const tokenFromCookie = COOKIE_NAMES.map((name) => request.cookies.get(name)?.value).find(Boolean);
   const tokenFromHeader = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
-  const token = tokenFromCookie || tokenFromHeader;
+  const tokenFromCookie = COOKIE_NAMES.map((name) => request.cookies.get(name)?.value).find(Boolean);
+  const token = tokenFromHeader || tokenFromCookie;
 
   if (!token) {
     return NextResponse.json({ message: "Sessão ausente. Faça login para continuar." }, { status: 401 });

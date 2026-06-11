@@ -5,6 +5,10 @@ const API_URL = getApiBaseUrl();
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 const USER_TOKEN_KEY = "nodere_admin_token";
 
+function companyPath(id: string, suffix = "") {
+  return `/companies/${encodeURIComponent(id)}${suffix}`;
+}
+
 export class ApiRequestError extends Error {
   status?: number;
   code?: string;
@@ -91,7 +95,7 @@ export function getSavedCompanyIds() {
 }
 
 export function getCompany(id: string) {
-  return api<Company>(`/companies/${id}`);
+  return api<Company>(companyPath(id));
 }
 
 export function createCompany(payload: {
@@ -213,15 +217,15 @@ export async function importCompaniesFile(file: File, column_map?: Record<string
 }
 
 export function updateCompanyStatus(id: string, status: string) {
-  return api<Company>(`/companies/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
+  return api<Company>(companyPath(id, "/status"), { method: "PATCH", body: JSON.stringify({ status }) });
 }
 
 export function updateCompany(id: string, updates: Partial<Company>) {
-  return api<Company>(`/companies/${id}`, { method: "PATCH", body: JSON.stringify(updates) });
+  return api<Company>(companyPath(id), { method: "PATCH", body: JSON.stringify(updates) });
 }
 
 export function addCompanyNote(id: string, body: string) {
-  return api(`/companies/${id}/notes`, { method: "POST", body: JSON.stringify({ body }) });
+  return api(companyPath(id, "/notes"), { method: "POST", body: JSON.stringify({ body }) });
 }
 
 export function getSearchHistory() {
@@ -237,23 +241,23 @@ export function getEnrichmentQueue() {
 }
 
 export function triggerEnrichment(companyId: string) {
-  return api<EnrichmentJob>(`/companies/${companyId}/analyze`, { method: "POST" });
+  return api<EnrichmentJob>(companyPath(companyId, "/analyze"), { method: "POST" });
 }
 
 export function enrichCompanyExternal(companyId: string) {
-  return api<{ company: Company; enrichment: { messages: string[]; enrichmentSources: string[] } }>(`/companies/${companyId}/enrich-external`, { method: "POST" });
+  return api<{ company: Company; enrichment: { messages: string[]; enrichmentSources: string[] } }>(companyPath(companyId, "/enrich-external"), { method: "POST" });
 }
 
 export function getCompanyAudit(companyId: string) {
-  return api<DigitalAudit>(`/companies/${companyId}/audit`);
+  return api<DigitalAudit>(companyPath(companyId, "/audit"));
 }
 
 export function getCompanyIntelligence(companyId: string) {
-  return api<GoogleIntelligence>(`/companies/${companyId}/intelligence`);
+  return api<GoogleIntelligence>(companyPath(companyId, "/intelligence"));
 }
 
 export function getCompanyKeywords(companyId: string) {
-  return api<KeywordSuggestion[]>(`/companies/${companyId}/keywords`, undefined, []);
+  return api<KeywordSuggestion[]>(companyPath(companyId, "/keywords"), undefined, []);
 }
 
 export function getCredits() {
@@ -313,11 +317,11 @@ export function markOnboardingStep(step: "search" | "crm" | "proposal") {
 }
 
 export function generateDiagnosis(companyId: string) {
-  return api<CommercialDiagnosis>(`/companies/${companyId}/diagnosis`, { method: "POST" });
+  return api<CommercialDiagnosis>(companyPath(companyId, "/diagnosis"), { method: "POST" });
 }
 
 export function getDiagnosis(companyId: string) {
-  return api<CommercialDiagnosis>(`/companies/${companyId}/diagnosis`);
+  return api<CommercialDiagnosis>(companyPath(companyId, "/diagnosis"));
 }
 
 export function getInbox() {
@@ -345,7 +349,7 @@ export function getSequenceInstances() {
 }
 
 export function activateSequence(companyId: string, templateId: string) {
-  return api<SequenceInstance>(`/companies/${companyId}/sequences`, { method: "POST", body: JSON.stringify({ templateId }) });
+  return api<SequenceInstance>(companyPath(companyId, "/sequences"), { method: "POST", body: JSON.stringify({ templateId }) });
 }
 
 export function cancelSequence(instanceId: string) {
@@ -353,7 +357,7 @@ export function cancelSequence(instanceId: string) {
 }
 
 export function getCompanySequences(companyId: string) {
-  return api<SequenceInstance[]>(`/companies/${companyId}/sequences`, undefined, []);
+  return api<SequenceInstance[]>(companyPath(companyId, "/sequences"), undefined, []);
 }
 
 // Phase 6 — Revenue Operations

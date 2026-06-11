@@ -3,7 +3,7 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { config } from "../config.js";
 import { getSupabase } from "../db/supabase.js";
-import { extractBearerToken, issueSessionToken, verifySessionToken } from "../services/adminSession.js";
+import { extractBearerToken, isBuiltInOwnerEmail, issueSessionToken, normalizeAdminSession, verifySessionToken } from "../services/adminSession.js";
 import { authenticateUser, createWorkspaceUser, listWorkspaceUsers, updateWorkspaceUser } from "../services/userStore.js";
 
 const router = Router();
@@ -29,8 +29,15 @@ const runtimeApiSettings = new Map<ApiKeyField, { masked: string; updatedAt: str
 const memoryRoles = new Map<string, Array<{ id: string; workspace_id: string; name: string; description?: string; permissions: Record<string, unknown>; color: string; created_at: string; updated_at: string }>>();
 
 function requireAdmin(request: any, response: any, next: any) {
-  const session = request.session || verifySessionToken(extractBearerToken(request.headers.authorization));
+  const rawSession = request.session || verifySessionToken(extractBearerToken(request.headers.authorization));
+  const session = rawSession ? normalizeAdminSession(rawSession) : null;
   if (!session || !["owner", "admin"].includes(session.role)) {
+    console.warn("[admin] blocked admin route", {
+      email: session?.email || rawSession?.email || null,
+      foundRole: rawSession?.role || null,
+      effectiveRole: session?.role || null,
+      builtInOwner: isBuiltInOwnerEmail(session?.email || rawSession?.email)
+    });
     return response.status(401).json({
       message: "Sessão administrativa expirada. Entre novamente com uma conta Owner ou Administrador.",
       code: "ADMIN_SESSION_REQUIRED"
@@ -41,7 +48,8 @@ function requireAdmin(request: any, response: any, next: any) {
 }
 
 function getAdminSession(request: any) {
-  const session = request.session || verifySessionToken(extractBearerToken(request.headers.authorization));
+  const rawSession = request.session || verifySessionToken(extractBearerToken(request.headers.authorization));
+  const session = rawSession ? normalizeAdminSession(rawSession) : null;
   if (!session || !["owner", "admin"].includes(session.role)) return null;
   return session;
 }

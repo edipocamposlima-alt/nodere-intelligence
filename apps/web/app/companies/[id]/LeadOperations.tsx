@@ -56,6 +56,7 @@ async function api<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export function LeadOperations({ company }: { company: Company }) {
+  const companyPath = useMemo(() => `/companies/${encodeURIComponent(company.id)}`, [company.id]);
   const [lead, setLead] = useState(company);
   const [tab, setTab] = useState<Tab>("dados");
   const [notes, setNotes] = useState<Note[]>(company.notes || []);
@@ -88,15 +89,15 @@ export function LeadOperations({ company }: { company: Company }) {
   }, [lead.name, editor]);
 
   useEffect(() => {
-    api<Note[]>(`/companies/${company.id}/notes`).then(setNotes).catch(() => {});
-    api<Task[]>(`/companies/${company.id}/tasks`).then(setTasks).catch(() => {});
-    api<DocumentItem[]>(`/companies/${company.id}/documents`).then(setDocuments).catch(() => {});
-    api<CompanyFile[]>(`/companies/${company.id}/files`).then(setCompanyFiles).catch(() => {});
-    api<Contact[]>(`/companies/${company.id}/contacts`).then(setContacts).catch(() => {});
-    api<Communication[]>(`/companies/${company.id}/communications`).then(setCommunications).catch(() => {});
-    api<ContractItem[]>(`/companies/${company.id}/contracts`).then(setContracts).catch(() => {});
-    api<ProposalVersion[]>(`/proposals/leads/${company.id}`).then(setProposalVersions).catch(() => {});
-  }, [company.id]);
+    api<Note[]>(`${companyPath}/notes`).then((items) => setNotes(Array.isArray(items) ? items : [])).catch(() => {});
+    api<Task[]>(`${companyPath}/tasks`).then((items) => setTasks(Array.isArray(items) ? items : [])).catch(() => {});
+    api<DocumentItem[]>(`${companyPath}/documents`).then((items) => setDocuments(Array.isArray(items) ? items : [])).catch(() => {});
+    api<CompanyFile[]>(`${companyPath}/files`).then((items) => setCompanyFiles(Array.isArray(items) ? items : [])).catch(() => {});
+    api<Contact[]>(`${companyPath}/contacts`).then((items) => setContacts(Array.isArray(items) ? items : [])).catch(() => {});
+    api<Communication[]>(`${companyPath}/communications`).then((items) => setCommunications(Array.isArray(items) ? items : [])).catch(() => {});
+    api<ContractItem[]>(`${companyPath}/contracts`).then((items) => setContracts(Array.isArray(items) ? items : [])).catch(() => {});
+    api<ProposalVersion[]>(`/proposals/leads/${encodeURIComponent(company.id)}`).then((items) => setProposalVersions(Array.isArray(items) ? items : [])).catch(() => {});
+  }, [company.id, companyPath]);
 
   function showSuccess(text: string) {
     setMessage(text);
@@ -117,7 +118,7 @@ export function LeadOperations({ company }: { company: Company }) {
     form.append("logo", file);
     setUploadingLogo(true);
     try {
-      const response = await fetch(`${API_URL}/companies/${company.id}/logo`, { method: "POST", body: form });
+      const response = await fetch(`${API_URL}${companyPath}/logo`, { method: "POST", body: form });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.message || `API HTTP ${response.status}`);
       const updated = payload.company || { ...lead, logoUrl: payload.logoUrl };
@@ -138,7 +139,7 @@ export function LeadOperations({ company }: { company: Company }) {
     form.append("file", file);
     setUploadingFile(true);
     try {
-      const response = await fetch(`${API_URL}/companies/${company.id}/files`, { method: "POST", body: form });
+      const response = await fetch(`${API_URL}${companyPath}/files`, { method: "POST", body: form });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.message || `API HTTP ${response.status}`);
       setCompanyFiles((items) => [payload, ...items]);
@@ -152,7 +153,7 @@ export function LeadOperations({ company }: { company: Company }) {
 
   async function deleteCompanyFile(fileId: string) {
     try {
-      const response = await fetch(`${API_URL}/companies/${company.id}/files/${fileId}`, { method: "DELETE" });
+      const response = await fetch(`${API_URL}${companyPath}/files/${encodeURIComponent(fileId)}`, { method: "DELETE" });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.message || `API HTTP ${response.status}`);
       setCompanyFiles((items) => items.filter((item) => item.id !== fileId));
@@ -205,7 +206,7 @@ export function LeadOperations({ company }: { company: Company }) {
     const body = String(form.get("body") || "").trim();
     if (!body) return;
     try {
-      const note = await api<Note>(`/companies/${company.id}/notes`, {
+      const note = await api<Note>(`${companyPath}/notes`, {
         method: "POST",
         body: JSON.stringify({ body, type: form.get("type") || "Observação" })
       });
@@ -220,7 +221,7 @@ export function LeadOperations({ company }: { company: Company }) {
 
   async function deleteNote(noteId: string) {
     try {
-      await fetch(`${API_URL}/companies/${company.id}/notes/${noteId}`, { method: "DELETE" });
+      await fetch(`${API_URL}${companyPath}/notes/${encodeURIComponent(noteId)}`, { method: "DELETE" });
       setNotes((items) => items.filter((item) => item.id !== noteId));
       showSuccess("Observação removida.");
     } catch (err) {
@@ -233,7 +234,7 @@ export function LeadOperations({ company }: { company: Company }) {
     const target = event.currentTarget;
     const form = new FormData(target);
     try {
-      const task = await api<Task>(`/companies/${company.id}/tasks`, {
+      const task = await api<Task>(`${companyPath}/tasks`, {
         method: "POST",
         body: JSON.stringify({
           title: form.get("title"),
@@ -262,7 +263,7 @@ export function LeadOperations({ company }: { company: Company }) {
     const target = event.currentTarget;
     const form = new FormData(target);
     try {
-      const contact = await api<Contact>(`/companies/${company.id}/contacts`, {
+      const contact = await api<Contact>(`${companyPath}/contacts`, {
         method: "POST",
         body: JSON.stringify({
           name: form.get("name"),
@@ -288,7 +289,7 @@ export function LeadOperations({ company }: { company: Company }) {
     const target = event.currentTarget;
     const form = new FormData(target);
     try {
-      const comm = await api<Communication>(`/companies/${company.id}/communications`, {
+      const comm = await api<Communication>(`${companyPath}/communications`, {
         method: "POST",
         body: JSON.stringify({
           type: form.get("type"),
@@ -312,7 +313,7 @@ export function LeadOperations({ company }: { company: Company }) {
     const target = event.currentTarget;
     const form = new FormData(target);
     try {
-      const response = await api<{ communication: Communication; messageId: string }>(`/companies/${company.id}/email`, {
+      const response = await api<{ communication: Communication; messageId: string }>(`${companyPath}/email`, {
         method: "POST",
         body: JSON.stringify({
           to: form.get("to"),
@@ -331,7 +332,7 @@ export function LeadOperations({ company }: { company: Company }) {
 
   async function completeTask(task: Task) {
     try {
-      const updated = await api<Task>(`/companies/${company.id}/tasks/${task.id}`, {
+      const updated = await api<Task>(`${companyPath}/tasks/${encodeURIComponent(task.id)}`, {
         method: "PATCH",
         body: JSON.stringify({ status: task.status === "done" ? "open" : "done" })
       });
@@ -371,7 +372,7 @@ export function LeadOperations({ company }: { company: Company }) {
     setEnriching(true);
     setError(null);
     try {
-      const response = await api<{ company: Company; enrichment: { messages: string[]; enrichmentSources: string[] } }>(`/companies/${company.id}/enrich-external`, {
+      const response = await api<{ company: Company; enrichment: { messages: string[]; enrichmentSources: string[] } }>(`${companyPath}/enrich-external`, {
         method: "POST"
       });
       setLead(response.company);
@@ -401,7 +402,7 @@ export function LeadOperations({ company }: { company: Company }) {
 
   async function openProposalVersion(versionNumber: number) {
     try {
-      const version = await api<ProposalVersion>(`/proposals/leads/${company.id}/${versionNumber}`);
+      const version = await api<ProposalVersion>(`/proposals/leads/${encodeURIComponent(company.id)}/${encodeURIComponent(String(versionNumber))}`);
       setPreviewVersion(version);
     } catch (err) {
       showError(err);
@@ -410,7 +411,7 @@ export function LeadOperations({ company }: { company: Company }) {
 
   async function restoreProposalVersion(versionNumber: number) {
     try {
-      const version = await api<ProposalVersion>(`/proposals/leads/${company.id}/${versionNumber}`);
+      const version = await api<ProposalVersion>(`/proposals/leads/${encodeURIComponent(company.id)}/${encodeURIComponent(String(versionNumber))}`);
       setEditor(version.content || "");
       setTab("ia");
       showSuccess(`Versão ${version.version_number} restaurada no editor.`);
@@ -421,7 +422,7 @@ export function LeadOperations({ company }: { company: Company }) {
 
   async function downloadProposalVersion(versionNumber: number) {
     try {
-      const version = await api<ProposalVersion>(`/proposals/leads/${company.id}/${versionNumber}`);
+      const version = await api<ProposalVersion>(`/proposals/leads/${encodeURIComponent(company.id)}/${encodeURIComponent(String(versionNumber))}`);
       await downloadPdf(`Versão ${version.version_number} - ${version.service_type || "Proposta"}`, version.content || "", `nodere-${company.name}-v${version.version_number}.pdf`);
     } catch (err) {
       showError(err);
@@ -432,7 +433,7 @@ export function LeadOperations({ company }: { company: Company }) {
     try {
       const title = `${type === "contrato" ? "Contrato" : "Proposta"} - ${company.name}`;
       const fileName = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`;
-      const document = await api<DocumentItem>(`/companies/${company.id}/documents`, {
+      const document = await api<DocumentItem>(`${companyPath}/documents`, {
         method: "POST",
         body: JSON.stringify({ type, title, content: editor, fileName })
       });
