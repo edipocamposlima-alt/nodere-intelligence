@@ -6,6 +6,14 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "2mb"
     }
   },
+  async rewrites() {
+    return [
+      {
+        source: "/",
+        destination: "/index.html"
+      }
+    ];
+  },
   async redirects() {
     return [
       {
