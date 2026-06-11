@@ -1,0 +1,3 @@
+"use strict";exports.id=1285,exports.ids=[1285],exports.modules={81285:(a,b,c)=>{c.d(b,{Loader:()=>f});let d="@googlemaps/js-api-loader",e=window.trustedTypes;if(e)try{e.createPolicy(d,{createScriptURL:a=>a})}catch(a){((a,b)=>b instanceof Error?b.message:String(b))(d,a)}class f{constructor(...a){throw Error(`[@googlemaps/js-api-loader]: The Loader class is no longer available in this version.
+Please use the new functional API: setOptions() and importLibrary().
+For more information, see the updated documentation at: https://github.com/googlemaps/js-api-loader/blob/main/README.md`)}}}};

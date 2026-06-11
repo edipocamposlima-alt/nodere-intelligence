@@ -1,0 +1,1108 @@
+{
+  "deploymentId": "dpl_FNSh4CdUHvL3AdNsnW7QFhYfkNWZ",
+  "recoveredAt": "2026-06-11T13:10:07.085Z",
+  "note": "These files were downloaded from Vercel deployment artifacts. Original TS/TSX source files were not present in the deployment file tree.",
+  "fileCount": 220,
+  "files": [
+    {
+      "path": "src/.env.example",
+      "uid": "e9777a1cababe41b4bd98dc2844b00a5217a5b2a",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/BUILD_ID",
+      "uid": "d79c1020ab5c90b5906c73ced1be9491c15215d0",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/app-build-manifest.json",
+      "uid": "aa74f48a8495ddecfcbb57ce4af51296eaad6246",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/app-path-routes-manifest.json",
+      "uid": "8933b2b08d7e93b1b993e59733b1f501bdf1736b",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/build-manifest.json",
+      "uid": "b29dcaab6e14d67a7e7754c6a0e35a4b63415d71",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/package.json",
+      "uid": "8d886b5ebeac6a48f7f2dd839b808c3fcf463b58",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/prerender-manifest.json",
+      "uid": "9ff41e253427ce13c79a6dbe8f36aa4ce7c82847",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/react-loadable-manifest.json",
+      "uid": "d8c4e7063fb73b203c91c71f8c0e745bad1ed5e4",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/required-server-files.json",
+      "uid": "f77f289799f6849816fced884d05f954fff58b5b",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/_not-found/page.js",
+      "uid": "73a2305bcc5aee8830834985e5add6761c7d89f8",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/_not-found/page_client-reference-manifest.js",
+      "uid": "7bfa9a885265d344757753414b953e206e4c03a9",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/admin/page.js",
+      "uid": "f39a98c3cb7d0ee2d1136588d3b82988deb36479",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/admin/page_client-reference-manifest.js",
+      "uid": "738137391c7592a12be75a326eac110bf9dc7f1c",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/ajuda/page.js",
+      "uid": "02d90f62152f6ffcdf21ba25e18cca0ff86e2d8e",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/ajuda/page_client-reference-manifest.js",
+      "uid": "d29aeac0178f3991d71d77bbf99a6e7348afc6ff",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/api/admin/[...path]/route.js",
+      "uid": "246bc1ce035f13215ab0192944cc018fd159b24c",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/api/admin/[...path]/route_client-reference-manifest.js",
+      "uid": "23706167b2f12f79c4726712c602a9ce377e2664",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/api/auth/me/route.js",
+      "uid": "cd663a7e9d4e17da53b7c1a6d3a9abc7cf43c23f",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/api/auth/me/route_client-reference-manifest.js",
+      "uid": "0307db3546ce07da85107ef51f9baa9a9e7cce86",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/api/auth/session/route.js",
+      "uid": "bcd6fcb9d5dc9a82db489a77670506db69ee607d",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/api/auth/session/route_client-reference-manifest.js",
+      "uid": "87ba2da982e9158a0fd557be5f6ff5444c83a965",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/automations/page.js",
+      "uid": "f351aba86b7e48c48f03765a4015897d2809b2e0",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/automations/page_client-reference-manifest.js",
+      "uid": "36c5740b1f146cd33c462b111796feb76745130a",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/billing/page.js",
+      "uid": "d546e94a8f824ffc2a60a9dba16023827d26da0a",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/billing/page_client-reference-manifest.js",
+      "uid": "42219db82a8db78a883d06dc0e49e214c3c64dab",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/busca-de-empresas/page.js",
+      "uid": "ba828489caa39b55bd1e46eb9103fabb21c1eb80",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/busca-de-empresas/page_client-reference-manifest.js",
+      "uid": "155bba17a79271f964ec651a80e06da126daac4c",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/calendar/page.js",
+      "uid": "0cc3b2f3c5c04c319356e7e44d17cf4a64bd9d3a",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/calendar/page_client-reference-manifest.js",
+      "uid": "403f5835e89726f84ed6f9ab1080d1c456a7c610",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/calendario/page.js",
+      "uid": "5abd1dfd7a6c43b8d4b8f44042137984a2a9bd3c",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/calendario/page_client-reference-manifest.js",
+      "uid": "4fc3335ef438170bc1dd77a6c6c9f93eb9c3efb4",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/catalog/page.js",
+      "uid": "4501cb8c3863b4037acafc2183581b2e3941cf1c",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/catalog/page_client-reference-manifest.js",
+      "uid": "ea4d7ab517536c8dac4b8ca4c219c076f5d35f3c",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/companies/[id]/page.js",
+      "uid": "24b9587cbce4a40c5565c00471bd7a5e211321c2",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/companies/[id]/page_client-reference-manifest.js",
+      "uid": "10e9e00440da914a06b18d742a552c0ec480603b",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/companies/page.js",
+      "uid": "0016d48e3dcbdc2fde09df51fb13319a011eea1d",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/companies/page_client-reference-manifest.js",
+      "uid": "17a3ae5d4079d2496209beaf8f1a1042949d8d76",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/configuracoes/page.js",
+      "uid": "a0b2f9c8539eaa3c6eef8abb5d0e6c333d83c515",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/configuracoes/page_client-reference-manifest.js",
+      "uid": "994ff0dd5f42f40b96ec6051757ed5549e3f5cf5",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/crm/page.js",
+      "uid": "684cdd6468185073c1d1fa3257c4a8562f5318e5",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/crm/page_client-reference-manifest.js",
+      "uid": "070b1e05fdaadc06788af24d5d4ebb1adc54054b",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/dashboard/page.js",
+      "uid": "ea4ec4d022a9ccfe07f9e1f4dafbc3db54cb2bdc",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/dashboard/page_client-reference-manifest.js",
+      "uid": "e9ee841eaa838902c0d07a60099e8ecf0d4bb31a",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/empresas/page.js",
+      "uid": "5d63a6ac4c433ba304a6463cc9af323a5b8c174f",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/empresas/page_client-reference-manifest.js",
+      "uid": "1b91c793cb618a243c6540af9105ac225f47e56d",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/help/page.js",
+      "uid": "49b78ef668e6ef4c7b74e2bf3003c273884adf41",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/help/page_client-reference-manifest.js",
+      "uid": "6de6cc00a4c3a4fb4a13179c19612cc865a3942f",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/ia/page.js",
+      "uid": "6265f296a883d8448833528de7ae9c2cc3b83cfb",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/ia/page_client-reference-manifest.js",
+      "uid": "922a1729460f5669c47416a11f4a20e3855fd227",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/inbox/page.js",
+      "uid": "872335b0863ba3460a555c23deb1b0edb75e72d9",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/inbox/page_client-reference-manifest.js",
+      "uid": "8b5ae4eadd107e6ddf8c28557276c27d465473e7",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/integracoes/page.js",
+      "uid": "2a3a5fa24448f7434d9ed723484356c46b65e845",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/integracoes/page_client-reference-manifest.js",
+      "uid": "d9604850ce9bac88f9a87ff45381bf90c49298da",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/integrations/page.js",
+      "uid": "62a7adda7daceee407f5f5876794a52d91131608",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/integrations/page_client-reference-manifest.js",
+      "uid": "581fe21a2a8ee2699754dc196fa30f7c2a4a1f29",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/intelligence/page.js",
+      "uid": "0e543e47d7580b881093a5008783e706fc2fc863",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/intelligence/page_client-reference-manifest.js",
+      "uid": "bf97ce421eb48b3a92b5c749092ba56fe61a3fbf",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/login/page.js",
+      "uid": "38bd1b74700327639d664baab93bb697ebdacc07",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/login/page_client-reference-manifest.js",
+      "uid": "4dd65ef71b8cee864f5837f7f08d0ae199bf8c7c",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/manual/page.js",
+      "uid": "74d0bc4b5d186a42aca29da20359668edacc5bc5",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/manual/page_client-reference-manifest.js",
+      "uid": "cf33567b6c14fcbca5efcffe755ade3211e78eef",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/marketing/page.js",
+      "uid": "e2bc5e3fd85a48936f093989c9c887dbfb8e51a1",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/marketing/page_client-reference-manifest.js",
+      "uid": "4db4131e84b464b5facde26e1e4f3af7fe7cf1c8",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/operators/page.js",
+      "uid": "1e031ea48b67d76315b7555bbd5d04d7cf1597ad",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/operators/page_client-reference-manifest.js",
+      "uid": "ce533770812512e9e682205cdbf5a1540d3526ae",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/page.js",
+      "uid": "01270b2fd0b652a3b88634362459f7147459cb42",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/page_client-reference-manifest.js",
+      "uid": "be558ee7c938d236c2db48184bbd1ba57f1380bb",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/pagespeed/page.js",
+      "uid": "d7c35cf4d97473c1984d0b97046fc74b0046b7e5",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/pagespeed/page_client-reference-manifest.js",
+      "uid": "e84576a518803d8cb9610462a044e48a4d728238",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/pipeline/page.js",
+      "uid": "25088b280c18d6c8b596d47874581b716f90102a",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/pipeline/page_client-reference-manifest.js",
+      "uid": "27552f287260d17d1359a9df971fdab98ea5ffcf",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/privacy/page.js",
+      "uid": "23bbceef948dc9638a3501bbd66bda0cf60b4b3e",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/privacy/page_client-reference-manifest.js",
+      "uid": "4ef0f0895c902e70a1b7efcf151282524872e868",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/register/page.js",
+      "uid": "f80c909450e7f766166806dafc3c4bf7ca5bfe29",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/register/page_client-reference-manifest.js",
+      "uid": "8dfc78c6b5763eb059cdb20b18884b83403762af",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/relatorios/page.js",
+      "uid": "0c033c8feba47c3eed5fbe51134ce1a42129c5cf",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/relatorios/page_client-reference-manifest.js",
+      "uid": "9fff681fefe173dce3f5b26684aed8aac8af61a9",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/reports/page.js",
+      "uid": "db37cc15b6568700ac705250afdb3d1e965e99b5",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/reports/page_client-reference-manifest.js",
+      "uid": "6670394605b56b5f17e6029dd094c13b14642149",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/reset-password/page.js",
+      "uid": "4b4e245f5bae757bc7c5c53fb42fda88ac27cd05",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/reset-password/page_client-reference-manifest.js",
+      "uid": "484f37df043beb0f4d53b9aae0ec347ddf21d936",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/searches/page.js",
+      "uid": "6819952560c7c9dd3cc106ea9218318e6c3ac453",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/searches/page_client-reference-manifest.js",
+      "uid": "af48f4b383cc6c8271bf0b1e2de4aee9d5073c6f",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/settings/page.js",
+      "uid": "7c8ea1c6e3105914640a53ed2b34f2dcf0aa8855",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/settings/page_client-reference-manifest.js",
+      "uid": "44c7fe5fa9d681192cc9f08d5dd582ca7c89d6f6",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/terms/page.js",
+      "uid": "13ef6b47201d2ff4597f1887b16d30ccddaea8aa",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/app/terms/page_client-reference-manifest.js",
+      "uid": "af83e8685abfccee5be2ef1ab4ad5c00c345049e",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/chunks/1285.js",
+      "uid": "2bf77424d36a28efbae3742f8fa37eaa606fe2aa",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/chunks/1331.js",
+      "uid": "57bf3bb200dadba829c8e7b0902bd3a58760296e",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/chunks/1643.js",
+      "uid": "794287313b2a579e2e47c9f70c0f9a987d8efedd",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/chunks/1692.js",
+      "uid": "fde5d91cc6a6ce16a11f0ef65773b16df13f3a2a",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/chunks/1737.js",
+      "uid": "61d7617531df4c47e2a38e689490d22531f2b8bb",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/chunks/3535.js",
+      "uid": "9ece60ea0e4d14662fd8734c78bb368609f7a417",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/chunks/3945.js",
+      "uid": "d6d48f4aa397150066b80538296815c2f52da169",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/chunks/5112.js",
+      "uid": "6a05726851368ddb051e22eace65ae59543d9d5a",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/chunks/5611.js",
+      "uid": "2e6d8f6571c32f4912c0dee712cd4f76bd8327f0",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/chunks/6910.js",
+      "uid": "e4ebda3cf5312d1d9084d0123955d7f58fb448ec",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/chunks/8218.js",
+      "uid": "bafaa0e58447543f22549986dc14d5bfc4856475",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/chunks/8898.js",
+      "uid": "574625bfd04d4ac6eaa21d0ae9b968b36ad952dd",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/functions-config-manifest.json",
+      "uid": "54be2e732b202c105abcf316d2bbc3bf8bd81f67",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/middleware-build-manifest.js",
+      "uid": "aed229bf40908220aaab0f81f27fc50c4605d943",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/middleware-manifest.json",
+      "uid": "be7d7233df3b7ee1ef94c0720c21341f14d43df2",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/middleware-react-loadable-manifest.js",
+      "uid": "4003632324cfb70f9ca5fef5e089da8ebf8a279e",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/next-font-manifest.js",
+      "uid": "c580621e53f59269792c9c752c4d3f95acd86825",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/next-font-manifest.json",
+      "uid": "c297ae777f2bbac5fbf96f88988b60489fec416c",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/pages/404.html",
+      "uid": "aa3ec65a2328dc8dbe49a05204b2ba0b3801a459",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/pages/_app.js",
+      "uid": "bbe55be239dbc84e14c76b2bf36a840d6fa063c2",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/pages/_document.js",
+      "uid": "b19d4b6203a438588dbc3f5d20bc1fa988f05296",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/pages/_error.js",
+      "uid": "68577aa9a7a64af1f8fb9e5891d71f08cd506ac3",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/server-reference-manifest.js",
+      "uid": "7260d08b0ec8c574c50acf90712bd0f88bdd8c8e",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/server-reference-manifest.json",
+      "uid": "a62d3a8b71bb82d3e611782da2076a152ee3cbc3",
+      "mode": 33188
+    },
+    {
+      "path": "src/.next/server/webpack-runtime.js",
+      "uid": "e67fcc2e3fe035d8aa97f4ee5c602f0dc3562ce3",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/_not-found.prerender-fallback.html",
+      "uid": "aa3ec65a2328dc8dbe49a05204b2ba0b3801a459",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/_not-found.prerender-config.json",
+      "uid": "6d40b185839012f9da75aea40ee5dc80ba6ebd66",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/_not-found.rsc.func/.next/routes-manifest.json",
+      "uid": "debceac5d9fa91aec4a3f1a81c3fbe73798f7837",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/_not-found.rsc.func/.next/server/app-paths-manifest.json",
+      "uid": "14ca7fc9d44e0434ab5da64e3acf835f1b6e7e5e",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/_not-found.rsc.func/.next/server/pages-manifest.json",
+      "uid": "76ee8eb12a3ac60fe87650bb429c8e817c7d12f2",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/_not-found.rsc.func/.vc-config.json",
+      "uid": "4d379f0eef0d75cd949d8768022212d6f1d09ef7",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/_not-found.rsc.func/___next_launcher.cjs",
+      "uid": "a067858af5a46256b28033c16efe0c497d871f6c",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/api/auth/me.func/.next/server/pages-manifest.json",
+      "uid": "76ee8eb12a3ac60fe87650bb429c8e817c7d12f2",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/api/auth/me.func/.next/server/app-paths-manifest.json",
+      "uid": "16a2aa1bea6873f7607680ab83e9d8b809ad918e",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/api/auth/me.func/.next/routes-manifest.json",
+      "uid": "e49f5632335fa6655608573e2e127b92e9be680c",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/api/auth/me.func/___next_launcher.cjs",
+      "uid": "a067858af5a46256b28033c16efe0c497d871f6c",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/api/auth/me.func/.vc-config.json",
+      "uid": "07a6962860511860543644e37d009502579622cb",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/automations.func/.next/server/pages-manifest.json",
+      "uid": "76ee8eb12a3ac60fe87650bb429c8e817c7d12f2",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/automations.func/.next/server/app-paths-manifest.json",
+      "uid": "5a6bc66184dc747c6fa153cabebb95ba592c8a6e",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/automations.func/.next/routes-manifest.json",
+      "uid": "fc5a74fe2ece7d53e274ea5ba30db3b8b6a84668",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/automations.func/___next_launcher.cjs",
+      "uid": "a067858af5a46256b28033c16efe0c497d871f6c",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/automations.func/.vc-config.json",
+      "uid": "a7eb16e0b719d07047c5b5ee8805bb23c54c20f6",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/_not-found.rsc.prerender-config.json",
+      "uid": "ad732ddc0937f71c40a1a3fef57593615f7bea7d",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/_not-found.rsc.prerender-fallback.rsc",
+      "uid": "8a762392e0e68b53dd9028e60a910b861773bf31",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/admin.prerender-config.json",
+      "uid": "12645f62c58524122686f356af19a12e72cd5cd0",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/admin.prerender-fallback.html",
+      "uid": "9313e2eeb9f4412ac7e3d6a29abdb2e1b804ea49",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/admin.rsc.prerender-config.json",
+      "uid": "38f07409636d9173b7d2988d503abd90d06d7767",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/admin.rsc.prerender-fallback.rsc",
+      "uid": "a37461718b8bde50fa698ef0e9de21c922a89683",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/ajuda.prerender-config.json",
+      "uid": "5101af540abfd13b76d7d3cfdb5f73d6d620863c",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/ajuda.prerender-fallback.html",
+      "uid": "557d4b0a9466fc123b366537aaa2ee5de095319d",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/ajuda.rsc.prerender-config.json",
+      "uid": "d3edc84084d50f8cbe0ce6d49f2448755b37cc80",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/ajuda.rsc.prerender-fallback.rsc",
+      "uid": "dc5abeabb389801647593c05249ce8d446df66f8",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/busca-de-empresas.prerender-config.json",
+      "uid": "6d05e017bcdbed07a2162b4941e6093e14174fca",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/busca-de-empresas.prerender-fallback.html",
+      "uid": "719426ce1ccdd06a532dcaf22d99870b01cd900d",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/busca-de-empresas.rsc.prerender-config.json",
+      "uid": "0a03a88fb50817aad69673e3af5a45932aa86253",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/busca-de-empresas.rsc.prerender-fallback.rsc",
+      "uid": "cb901d7de3114cf1a39ef3f169642996bb3ff600",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/calendar.prerender-config.json",
+      "uid": "34dbf01f97fcbb31abd88cd846524e6fa52093c5",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/calendar.prerender-fallback.html",
+      "uid": "5e53eabfb9d61f27c2730afa8306dbb50c0e7cdc",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/calendar.rsc.prerender-config.json",
+      "uid": "8d66136e67e4ae2db83683a775458e2040a0a717",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/calendar.rsc.prerender-fallback.rsc",
+      "uid": "2e8beda9506b2eda5025f45ad38bd5f81b228ef1",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/calendario.prerender-config.json",
+      "uid": "0b79e0ba3a615cf1170a70c9cfb9c82f46ecc0b3",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/calendario.prerender-fallback.html",
+      "uid": "21a2825a283f92c8fe0ba47bacff902d3e36017c",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/calendario.rsc.prerender-config.json",
+      "uid": "e81b06b009c211fed4abb611187aa6818668df29",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/calendario.rsc.prerender-fallback.rsc",
+      "uid": "13087fe4c0b7be38b45c214ad26488d83f736f95",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/catalog.prerender-config.json",
+      "uid": "9195ac86d8838c5b89cf80668dba8c25fb58889a",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/catalog.prerender-fallback.html",
+      "uid": "832f86a7a64049d940376653eebc088ee5e18c42",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/catalog.rsc.prerender-config.json",
+      "uid": "ec763cd1dd3f2770fd1687c861c9424cef422233",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/catalog.rsc.prerender-fallback.rsc",
+      "uid": "7b606fb3a5a3c796d81a81d55d5d2f6328880514",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/configuracoes.prerender-config.json",
+      "uid": "0544c7decca3f6225727ac8dcd950b9e4480bbf0",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/configuracoes.prerender-fallback.html",
+      "uid": "6deb156c72758194fa3e1558382b119f29e16418",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/configuracoes.rsc.prerender-config.json",
+      "uid": "d1c6a4e09d41be2b045ce930407d915bd5c965ef",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/configuracoes.rsc.prerender-fallback.rsc",
+      "uid": "4f0c69e944ac267cee87a2fe455885b791d561b3",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/empresas.prerender-config.json",
+      "uid": "43d4f5ef4d95b7e2585ba518ca5e17ec206341b5",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/empresas.prerender-fallback.html",
+      "uid": "9ecdf92435a142066798bb86b3c1dd26228abb57",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/empresas.rsc.prerender-config.json",
+      "uid": "3208bf0b8d8286acd51ba419ec1e815e09cc454c",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/empresas.rsc.prerender-fallback.rsc",
+      "uid": "4428c0e256b74c7e0bdc1406ff3d8fb0558e1577",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/help.prerender-config.json",
+      "uid": "bb1f4d7d2acf71b705811b598ec8b26388a14bbe",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/help.prerender-fallback.html",
+      "uid": "d9c6c443f578d93a54a115a39bfd72095d10b3fe",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/help.rsc.prerender-config.json",
+      "uid": "adaab8a012de78bad1b9cab0943a78ee9336f214",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/help.rsc.prerender-fallback.rsc",
+      "uid": "0ea2d5648317d88b35437dd1c694a8da6ae90548",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/ia.prerender-config.json",
+      "uid": "6d55071eba8569dc3db8f0eaaf24263a4a0a821f",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/ia.prerender-fallback.html",
+      "uid": "df0d77175a3419e9bd5484cad348774b226fd1a1",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/ia.rsc.prerender-config.json",
+      "uid": "5637676f559c34ef6b5bcff69144d890fc53467a",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/ia.rsc.prerender-fallback.rsc",
+      "uid": "6bd513ee4d4f29b70324c23198be5be4510756b0",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/inbox.prerender-config.json",
+      "uid": "6cbf748780b20a286d2c585023a931c4f0ab956d",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/inbox.prerender-fallback.html",
+      "uid": "1629b125739b0f0fb07f3dbbd07dfb08bfd6488b",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/inbox.rsc.prerender-config.json",
+      "uid": "01a384d2aa6416cb89e3bf93df709ec55aa9a41b",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/inbox.rsc.prerender-fallback.rsc",
+      "uid": "9237759e9aefaa64331aa4efd9b5bf9af94134c6",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/integracoes.prerender-config.json",
+      "uid": "511ded8e43e4b5e031d745f5275d930f723c2fad",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/integracoes.prerender-fallback.html",
+      "uid": "1735759bd8c4f10979c476e3c5baae53ddcd33a2",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/integracoes.rsc.prerender-config.json",
+      "uid": "099dbfc4b55c55d106e759df3e6778606d023b11",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/integracoes.rsc.prerender-fallback.rsc",
+      "uid": "0787c315f7fb3c3a8700a5534bd2edb297942dce",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/login.prerender-config.json",
+      "uid": "335596f19da7c64e3f577a5bc9c553f2cb2b8720",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/login.prerender-fallback.html",
+      "uid": "4ddd5ee93a0c295c2c3b92f99ef9ed39b44629da",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/login.rsc.prerender-config.json",
+      "uid": "4784caa6adfd5fa511496760e45dd934b25b07e5",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/login.rsc.prerender-fallback.rsc",
+      "uid": "bca04b9564cba1cc248c7e35831b140f7e36c699",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/manual.prerender-config.json",
+      "uid": "29c775ea7bce8d12a9eefa734c5ec286bec48755",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/manual.prerender-fallback.html",
+      "uid": "89a304b017d81d8a028c86e4fd67f16ac282d013",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/manual.rsc.prerender-config.json",
+      "uid": "6cded6000cccfa8d3e83624d0102ab1fe75751ad",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/manual.rsc.prerender-fallback.rsc",
+      "uid": "256881f751c07f01e3129fd2046825cb9b5089ac",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/marketing.prerender-config.json",
+      "uid": "c317baa1ba6e663de07b83dc5240bca370bc0ad9",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/marketing.prerender-fallback.html",
+      "uid": "af1881a89cf91df7ef50da6418ec9a35c43e65d3",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/marketing.rsc.prerender-config.json",
+      "uid": "08c9898c256758d5aebe7ea409f2689ad78f0aed",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/marketing.rsc.prerender-fallback.rsc",
+      "uid": "01139014ebd8651d52ad5d162c1da3127675ae1c",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/middleware.func/.vc-config.json",
+      "uid": "ffb432bd249299c6ab0dc2fbda25f133ae45d82d",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/middleware.func/index.js",
+      "uid": "e3f2e417b4df4fbc77e73680d93dbb105f674816",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/middleware.func/index.js.map",
+      "uid": "9e6fac4ddf552fcfd692f81dc865c79af6aa35a3",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/pagespeed.prerender-config.json",
+      "uid": "f54c40e2571646493d4468117107259fede27483",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/pagespeed.prerender-fallback.html",
+      "uid": "b19521fab95c7c09ac4c5b6209d09f099920ba92",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/pagespeed.rsc.prerender-config.json",
+      "uid": "36fdc477f4204bafd633d8ed1571285825baae54",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/pagespeed.rsc.prerender-fallback.rsc",
+      "uid": "b389bec92ed6484e17b0aaf566ad664455b428cd",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/pipeline.prerender-config.json",
+      "uid": "3bf392a256a409f5b32abad6a7a084675730baf5",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/pipeline.prerender-fallback.html",
+      "uid": "680f33bf591f86095919f8bd692c3d13918f93fc",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/pipeline.rsc.prerender-config.json",
+      "uid": "97cb20207c9be4417fa1050b42a148a561017afe",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/pipeline.rsc.prerender-fallback.rsc",
+      "uid": "bef7edab81f57d29f4c25ab2a66a41ddebe00690",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/register.prerender-config.json",
+      "uid": "d02fd44e6f55bdc541d27d238679513f42cec272",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/register.prerender-fallback.html",
+      "uid": "a807d7e14bc9e4016912cdbdff94be17a37f2702",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/register.rsc.prerender-config.json",
+      "uid": "2e455c7ac4c37c28d9eb979c40c786b06b8e20c4",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/register.rsc.prerender-fallback.rsc",
+      "uid": "b6e7aafcc448c799e8e4b90dd7e127df756a4e64",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/relatorios.prerender-config.json",
+      "uid": "5f6972188da2138b1ec10e33d85bb76d519e28a3",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/relatorios.prerender-fallback.html",
+      "uid": "37dc90863e1ab4ba8093503839d30df912668857",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/relatorios.rsc.prerender-config.json",
+      "uid": "e4ff13bc4e90daa71a1af7995027ef0969e8c016",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/relatorios.rsc.prerender-fallback.rsc",
+      "uid": "abff62859abab2bf38955e89759925f19e8cf1f3",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/reset-password.prerender-config.json",
+      "uid": "88ebc167d22150db8e529ac59c0540a43ab0a24c",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/reset-password.prerender-fallback.html",
+      "uid": "12fbb5fa52ae18070b37158c57e50e743eeff1ff",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/reset-password.rsc.prerender-config.json",
+      "uid": "73f77d26c7f662e1c37e87b93ed514e13dd73175",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/reset-password.rsc.prerender-fallback.rsc",
+      "uid": "a47a88234095be07be7d2ca93c92498079260718",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/settings.prerender-config.json",
+      "uid": "48da02ffcc62bcf3eb8683282895e2b82f966cdc",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/settings.prerender-fallback.html",
+      "uid": "86194ded399aa7d5c53d9b21fd727d3dee97b425",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/settings.rsc.prerender-config.json",
+      "uid": "a413afe803f2e1c58e6fb8bbcc4fa6b69a7c53a9",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/functions/settings.rsc.prerender-fallback.rsc",
+      "uid": "c6403304646823fa32dc94641299a1ee411a234f",
+      "mode": 33188
+    },
+    {
+      "path": "src/.vercel/output/config.json",
+      "uid": "9a20b0718572b1bd53ae3d6499a98e6058f98a44",
+      "mode": 33188
+    },
+    {
+      "path": "src/package.json",
+      "uid": "69b7a626d88612927a4553f1bcaf584b68515bab",
+      "mode": 33188
+    }
+  ]
+}
