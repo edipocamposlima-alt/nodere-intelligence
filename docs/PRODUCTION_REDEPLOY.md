@@ -1,4 +1,4 @@
-# NODERE Intelligence - Reativacao de deploy em producao
+# NODERE Nexus - Reativacao de deploy em producao
 
 Este documento registra o estado necessario para publicar o codigo atual em producao.
 

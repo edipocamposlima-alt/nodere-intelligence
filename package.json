@@ -1,5 +1,6 @@
 {
-  "name": "nodere-intelligence",
+  "name": "nodere-nexus",
+  "description": "NODERE Nexus — Revenue Intelligence Platform",
   "version": "0.2.0-emergency",
   "private": true,
   "type": "module",

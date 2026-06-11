@@ -3,36 +3,54 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, LockKeyhole, Mail, UserRound } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { setAdminToken } from "@/lib/adminAuth";
 import { hasSupabaseAuthConfig, signUpWithPassword } from "@/lib/supabaseAuthRest";
 
+function passwordStrength(password: string) {
+  if (password.length < 4) return { label: "Fraca", level: 1 };
+  if (password.length < 8) return { label: "Média", level: 2 };
+  return { label: "Forte", level: 3 };
+}
+
 export function RegisterClient() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", email: "", password: "", workspace: "" });
+  const [form, setForm] = useState({ name: "", company: "", email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [success, setSuccess] = useState(false);
+  const strength = passwordStrength(form.password);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setMessage("");
+
+    if (form.password.length < 8) {
+      setMessage("A senha deve ter pelo menos 8 caracteres.");
+      setLoading(false);
+      return;
+    }
+
     try {
       if (!hasSupabaseAuthConfig()) {
-        throw new Error("Cadastro via Supabase Auth exige NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY configurados na Vercel.");
+        throw new Error("Configuração de cadastro indisponível. Revise as variáveis públicas do Supabase na Vercel.");
       }
+
       const auth = await signUpWithPassword(form.email, form.password, form.name);
       if (!auth.access_token) {
-        setMessage("Conta criada. Confirme seu e-mail e depois faça login.");
+        setSuccess(true);
         return;
       }
+
       setAdminToken(auth.access_token);
       await fetch("/api/auth/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: auth.access_token }) });
       await fetch(`${getApiBaseUrl()}/workspace`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.access_token}` },
-        body: JSON.stringify({ name: form.workspace || "Workspace NODERE" })
+        body: JSON.stringify({ name: form.company || "Workspace NODERE" })
       });
       router.push("/dashboard");
     } catch (error) {
@@ -42,46 +60,80 @@ export function RegisterClient() {
     }
   }
 
+  if (success) {
+    return (
+      <main className="site-auth">
+        <section className="site-auth__card site-auth__card--center">
+          <div className="site-auth__brand">NODERE <strong>Nexus</strong></div>
+          <h1>Verifique seu e-mail</h1>
+          <p>Enviamos um link de confirmação para <strong>{form.email}</strong>. Confirme para acessar o NODERE Nexus.</p>
+          <Link href="/login">Ir para o login</Link>
+        </section>
+      </main>
+    );
+  }
+
   return (
-    <main className="flex min-h-screen items-center justify-center bg-ink px-4 py-10">
-      <section className="w-full max-w-xl rounded-xl border border-line bg-panel/95 p-6 shadow-glow">
-        <h1 className="text-2xl font-semibold text-white">Criar workspace NODERE</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-400">
-          Crie a conta owner da empresa. Usuários, leads, CRM e configurações ficam isolados nesse workspace.
-        </p>
-        <form onSubmit={submit} className="mt-6 space-y-4">
+    <main className="site-auth">
+      <section className="site-auth__card">
+        <div className="site-auth__brand">NODERE <strong>Nexus</strong></div>
+        <p className="site-auth__caption">Revenue Intelligence Platform</p>
+        <h1>Criar conta grátis</h1>
+        <p className="site-auth__subtitle">14 dias grátis · Sem cartão de crédito</p>
+
+        {message && <div className="site-auth__message">{message}</div>}
+
+        <form onSubmit={submit} className="site-auth__form">
           {[
-            { key: "name", label: "Seu nome", icon: UserRound, type: "text" },
-            { key: "workspace", label: "Nome da empresa/workspace", icon: Building2, type: "text" },
-            { key: "email", label: "E-mail", icon: Mail, type: "email" },
-            { key: "password", label: "Senha", icon: LockKeyhole, type: "password" }
-          ].map((item) => {
-            const Icon = item.icon;
-            return (
-              <label key={item.key} className="block">
-                <span className="text-sm text-slate-300">{item.label}</span>
-                <div className="mt-2 flex items-center gap-2 rounded-lg border border-line bg-ink px-3 py-3">
-                  <Icon className="h-4 w-4 text-slate-500" />
-                  <input
-                    required={item.key !== "workspace"}
-                    minLength={item.key === "password" ? 8 : undefined}
-                    value={form[item.key as keyof typeof form]}
-                    onChange={(event) => setForm((current) => ({ ...current, [item.key]: event.target.value }))}
-                    type={item.type}
-                    className="w-full bg-transparent text-sm outline-none"
-                  />
-                </div>
-              </label>
-            );
-          })}
-          {message && <p className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-slate-200">{message}</p>}
-          <button disabled={loading} className="w-full rounded-lg bg-electric px-4 py-3 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-60">
-            {loading ? "Criando..." : "Criar conta"}
-          </button>
-          <p className="text-center text-sm text-slate-400">
-            Já tem acesso? <Link href="/login" className="text-cyan">Entrar</Link>
+            { key: "name", label: "Seu nome", placeholder: "João Silva", type: "text" },
+            { key: "company", label: "Nome da empresa", placeholder: "Agência Digital Ltda", type: "text" },
+            { key: "email", label: "E-mail profissional", placeholder: "joao@empresa.com.br", type: "email" }
+          ].map((field) => (
+            <label key={field.key}>
+              <span>{field.label}</span>
+              <input
+                required
+                type={field.type}
+                placeholder={field.placeholder}
+                value={form[field.key as keyof typeof form]}
+                onChange={(event) => setForm((current) => ({ ...current, [field.key]: event.target.value }))}
+              />
+            </label>
+          ))}
+
+          <label>
+            <span>Senha</span>
+            <div className="site-auth__password">
+              <input
+                required
+                minLength={8}
+                type={showPassword ? "text" : "password"}
+                placeholder="Mínimo 8 caracteres"
+                value={form.password}
+                onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
+              />
+              <button type="button" onClick={() => setShowPassword((current) => !current)} title={showPassword ? "Ocultar senha" : "Mostrar senha"} aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}>
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            {form.password.length > 0 && (
+              <div className="site-auth__strength">
+                {[1, 2, 3].map((level) => <span className={strength.level >= level ? `active active--${strength.level}` : ""} key={level} />)}
+                <small>{strength.label}</small>
+              </div>
+            )}
+          </label>
+
+          <p className="site-auth__terms">
+            Ao criar sua conta, você concorda com os <Link href="/terms">Termos de Uso</Link> e a <Link href="/privacy">Política de Privacidade</Link>.
           </p>
+
+          <button className="site-auth__submit" disabled={loading} type="submit">
+            {loading ? "Criando conta..." : "Criar conta grátis"}
+          </button>
         </form>
+
+        <p className="site-auth__login">Já tem conta? <Link href="/login">Entrar</Link></p>
       </section>
     </main>
   );

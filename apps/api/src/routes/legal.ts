@@ -3,8 +3,8 @@ import { Router } from "express";
 const router = Router();
 
 const TERMS_SECTIONS = [
-  ["1. ACEITAÇÃO DOS TERMOS", "Ao acessar, utilizar ou contratar qualquer serviço disponibilizado pelo NODERE Intelligence (\"Plataforma\"), o usuário declara ter lido, compreendido e concordado integralmente com os presentes Termos de Uso, bem como com a Política de Privacidade e demais documentos complementares disponibilizados pela plataforma. Caso o usuário não concorde com qualquer disposição destes termos, deverá interromper imediatamente a utilização da plataforma."],
-  ["2. SOBRE A PLATAFORMA", "O NODERE Intelligence é uma plataforma de software como serviço (SaaS) destinada à prospecção comercial, gestão de relacionamento com clientes (CRM), análise de presença digital, automação de processos, geração de documentos, inteligência comercial e utilização de recursos de inteligência artificial. As funcionalidades podem incluir: CRM e funil de vendas; gestão de leads e oportunidades; busca e análise de empresas; integrações com APIs e serviços de terceiros; geração de propostas e contratos; gestão de tarefas e agenda; relatórios e dashboards; recursos de inteligência artificial."],
+  ["1. ACEITAÇÃO DOS TERMOS", "Ao acessar, utilizar ou contratar qualquer serviço disponibilizado pelo NODERE Nexus (\"Plataforma\"), o usuário declara ter lido, compreendido e concordado integralmente com os presentes Termos de Uso, bem como com a Política de Privacidade e demais documentos complementares disponibilizados pela plataforma. Caso o usuário não concorde com qualquer disposição destes termos, deverá interromper imediatamente a utilização da plataforma."],
+  ["2. SOBRE A PLATAFORMA", "O NODERE Nexus é uma plataforma de software como serviço (SaaS) destinada à prospecção comercial, gestão de relacionamento com clientes (CRM), análise de presença digital, automação de processos, geração de documentos, inteligência comercial e utilização de recursos de inteligência artificial. As funcionalidades podem incluir: CRM e funil de vendas; gestão de leads e oportunidades; busca e análise de empresas; integrações com APIs e serviços de terceiros; geração de propostas e contratos; gestão de tarefas e agenda; relatórios e dashboards; recursos de inteligência artificial."],
   ["3. CADASTRO E ACESSO", "O usuário é responsável por fornecer informações verdadeiras e atualizadas; manter seus dados cadastrais atualizados; preservar o sigilo de login e senha; não compartilhar credenciais de acesso com terceiros; garantir a segurança dos dispositivos utilizados. Toda atividade realizada através da conta será considerada de responsabilidade do titular."],
   ["4. USO PERMITIDO", "Gestão comercial; organização de clientes e oportunidades; prospecção empresarial; automação de processos internos; emissão de documentos comerciais; apoio à tomada de decisão. O uso deverá ocorrer em conformidade com a legislação vigente."],
   ["5. USO PROIBIDO", "Atividades ilícitas; envio de spam; violação de direitos de terceiros; engenharia reversa; cópia ou redistribuição não autorizada; acesso não autorizado a sistemas; coleta indevida de dados pessoais; compartilhamento de credenciais com terceiros não autorizados; exploração de vulnerabilidades. O descumprimento poderá resultar em suspensão ou encerramento imediato."],
@@ -21,11 +21,11 @@ const TERMS_SECTIONS = [
   ["16. SUSPENSÃO E ENCERRAMENTO", "O acesso poderá ser suspenso por violação dos termos, fraude, inadimplência, uso abusivo, atividades ilícitas ou riscos à segurança."],
   ["17. ALTERAÇÕES DOS TERMOS", "O NODERE poderá modificar estes termos a qualquer momento. As alterações produzem efeitos após publicação. A continuidade de utilização representa concordância."],
   ["18. LEGISLAÇÃO E FORO", "Regidos pelas leis da República Federativa do Brasil. Foro da comarca de Caxias do Sul, Estado do Rio Grande do Sul."],
-  ["19. CONTATO", "Dúvidas poderão ser encaminhadas pelos canais oficiais do NODERE Intelligence."]
+  ["19. CONTATO", "Dúvidas poderão ser encaminhadas pelos canais oficiais do NODERE Nexus."]
 ];
 
 const PRIVACY_SECTIONS = [
-  ["1. APRESENTAÇÃO", "Esta Política de Privacidade explica como o NODERE Intelligence coleta, usa, armazena, protege e compartilha dados tratados na plataforma SaaS de prospecção, CRM, inteligência comercial, automações, relatórios e integrações."],
+  ["1. APRESENTAÇÃO", "Esta Política de Privacidade explica como o NODERE Nexus coleta, usa, armazena, protege e compartilha dados tratados na plataforma SaaS de prospecção, CRM, inteligência comercial, automações, relatórios e integrações."],
   ["2. DADOS COLETADOS", "Podemos tratar dados de cadastro, dados comerciais de empresas e leads, contatos e decisores, observações, histórico operacional, agenda, tarefas, propostas, contratos, arquivos, dados técnicos de acesso, logs de auditoria, preferências de tema/layout e dados obtidos de fontes públicas ou APIs autorizadas."],
   ["3. FINALIDADES DO TRATAMENTO", "Os dados são utilizados para autenticação, operação do CRM, busca de empresas, enriquecimento comercial, geração de documentos, relatórios, IA, notificações, suporte, segurança, billing, auditoria e melhoria da plataforma."],
   ["4. BASES LEGAIS", "O tratamento pode ocorrer com base em execução de contrato, legítimo interesse, cumprimento de obrigação legal, exercício regular de direitos e consentimento quando aplicável, sempre observando a LGPD."],
@@ -43,12 +43,12 @@ const PRIVACY_SECTIONS = [
   ["16. COOKIES", "Usamos cookies e armazenamento local para sessão, preferências visuais, segurança e funcionamento da experiência. Cookies essenciais são necessários para autenticação."],
   ["17. INCIDENTES DE SEGURANÇA", "Em caso de incidente relevante, adotaremos medidas técnicas e administrativas proporcionais e comunicaremos autoridades e titulares quando exigido pela legislação."],
   ["18. ALTERAÇÕES DESTA POLÍTICA", "Esta política pode ser atualizada para refletir melhorias, mudanças legais, novas integrações ou alterações operacionais. A versão vigente ficará disponível na plataforma."],
-  ["19. CONTATO E ENCARREGADO", "Dúvidas ou solicitações sobre privacidade e LGPD podem ser encaminhadas pelos canais oficiais do NODERE Intelligence."]
+  ["19. CONTATO E ENCARREGADO", "Dúvidas ou solicitações sobre privacidade e LGPD podem ser encaminhadas pelos canais oficiais do NODERE Nexus."]
 ];
 
 router.get("/terms", (_req, res) => {
   res.json({
-    title: "TERMOS DE USO – NODERE INTELLIGENCE",
+    title: "TERMOS DE USO – NODERE Nexus",
     updatedAt: "2026-06-02",
     subtitle: "Última atualização: 02 de junho de 2026",
     sections: TERMS_SECTIONS.map(([title, body]) => ({ title, body }))
@@ -57,7 +57,7 @@ router.get("/terms", (_req, res) => {
 
 router.get("/privacy", (_req, res) => {
   res.json({
-    title: "POLÍTICA DE PRIVACIDADE – NODERE INTELLIGENCE",
+    title: "POLÍTICA DE PRIVACIDADE – NODERE Nexus",
     updatedAt: "2026-06-02",
     subtitle: "Última atualização: 02 de junho de 2026",
     sections: PRIVACY_SECTIONS.map(([title, body]) => ({ title, body }))

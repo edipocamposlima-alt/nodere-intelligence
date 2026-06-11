@@ -7,10 +7,10 @@ import { AppShell } from "@/components/AppShell";
 export const metadata: Metadata = {
   metadataBase: new URL("https://nodere.com.br"),
   title: {
-    default: "NODERE",
-    template: "%s | NODERE"
+    default: "NODERE Nexus — Revenue Intelligence Platform",
+    template: "%s | NODERE Nexus"
   },
-  description: "Sistema de prospeccao inteligente para Google Ads e Google Meu Negocio",
+  description: "Encontre empresas que precisam dos seus serviços. Diagnóstico digital automático, CRM com IA e prospecção inteligente em um único fluxo.",
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -20,10 +20,10 @@ export const metadata: Metadata = {
     apple: "/nodere-logo-192.png"
   },
   openGraph: {
-    title: "NODERE Intelligence",
-    description: "CRM SaaS para prospeccao, Google Ads e inteligência comercial.",
+    title: "NODERE Nexus — Revenue Intelligence Platform",
+    description: "A plataforma que conecta inteligência comercial, prospecção e vendas em um único fluxo.",
     url: "https://nodere.com.br",
-    siteName: "NODERE Intelligence",
+    siteName: "NODERE Nexus",
     images: [{ url: "/nodere-logo.png", width: 512, height: 512, alt: "NODERE" }],
     locale: "pt_BR",
     type: "website"

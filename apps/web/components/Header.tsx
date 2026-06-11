@@ -60,7 +60,7 @@ export function Header() {
   const [prefs, setPrefs] = useState<UserPrefs>(defaultPrefs);
   const [globalQuery, setGlobalQuery] = useState("");
   const [unreadInbox, setUnreadInbox] = useState(0);
-  const [brandName, setBrandName] = useState("NODERE Intelligence");
+  const [brandName, setBrandName] = useState("NODERE Nexus");
   const pathname = usePathname();
   const router = useRouter();
   const { user, workspace, logout } = useAuth();

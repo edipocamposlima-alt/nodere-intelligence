@@ -161,7 +161,7 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
   async function exportPdf() {
     const list = (selectedCompanies.length ? selectedCompanies : visibleCompanies).slice(0, 50);
     const content = [
-      "NODERE Intelligence",
+      "NODERE Nexus",
       `Relatorio de empresas - ${new Date().toLocaleString("pt-BR")}`,
       "",
       ...list.flatMap((company, index) => [

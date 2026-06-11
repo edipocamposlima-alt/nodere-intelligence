@@ -171,7 +171,7 @@ router.post("/pdf", async (req: any, res, next) => {
     ]);
 
     const fileName = `relatorio-nodere-${Date.now()}.pdf`;
-    const doc = new PDFDocument({ size: "A4", margin: 42, bufferPages: true, info: { Title: "Relatorio NODERE", Author: "NODERE Intelligence" } });
+    const doc = new PDFDocument({ size: "A4", margin: 42, bufferPages: true, info: { Title: "Relatorio NODERE", Author: "NODERE Nexus" } });
     const chunks: Buffer[] = [];
     doc.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
     doc.on("end", async () => {
@@ -199,7 +199,7 @@ router.post("/pdf", async (req: any, res, next) => {
     } else {
       doc.fillColor("#FFFFFF").fontSize(22).text("NODERE", 42, 34);
     }
-    doc.fillColor("#94A3B8").fontSize(9).text("Relatorio comercial gerado pelo NODERE Intelligence", 42, 78);
+    doc.fillColor("#94A3B8").fontSize(9).text("Relatorio comercial gerado pelo NODERE Nexus", 42, 78);
     doc.fillColor("#FFFFFF").fontSize(11).text(`Periodo: ${period}`, 420, 35, { align: "right" });
     doc.fillColor("#94A3B8").fontSize(8).text(new Date().toLocaleString("pt-BR"), 420, 55, { align: "right" });
 
@@ -248,7 +248,7 @@ router.post("/pdf", async (req: any, res, next) => {
     const pages = doc.bufferedPageRange();
     for (let i = 0; i < pages.count; i += 1) {
       doc.switchToPage(i);
-      doc.fillColor("#64748B").fontSize(8).text(`NODERE Intelligence - pagina ${i + 1}/${pages.count}`, 42, doc.page.height - 38, { align: "center" });
+      doc.fillColor("#64748B").fontSize(8).text(`NODERE Nexus - pagina ${i + 1}/${pages.count}`, 42, doc.page.height - 38, { align: "center" });
     }
 
     doc.end();

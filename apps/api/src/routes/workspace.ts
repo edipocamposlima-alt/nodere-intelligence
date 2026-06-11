@@ -141,7 +141,7 @@ router.get("/branding", async (req, res, next) => {
     if (!data || !data.wl_enabled) return res.json(defaultBranding());
     res.json({
       workspaceId: data.id,
-      name: data.wl_name || data.name || "NODERE Intelligence",
+      name: data.wl_name || data.name || "NODERE Nexus",
       logoUrl: data.wl_logo_url || "/nodere-wordmark.png",
       primaryColor: data.wl_primary_color || "#1E6FDB",
       enabled: Boolean(data.wl_enabled)
@@ -177,7 +177,7 @@ router.patch("/branding", requireWorkspaceRole("owner", "admin"), async (req, re
 
 function defaultBranding() {
   return {
-    name: "NODERE Intelligence",
+    name: "NODERE Nexus",
     logoUrl: "/nodere-wordmark.png",
     primaryColor: "#1E6FDB",
     enabled: false

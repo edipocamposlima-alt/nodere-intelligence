@@ -1194,7 +1194,7 @@ router.get("/:id/export-pdf", async (req, res, next) => {
   ${diagHtml}
 
   <footer class="print-footer">
-    <span>Gerado pelo NODERE Intelligence · nodere.com.br</span>
+    <span>Gerado pelo NODERE Nexus · nodere.com.br</span>
     <span>Página <span class="page-number"></span> de <span class="page-total"></span></span>
   </footer>
 </body>

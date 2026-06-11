@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { setAdminToken } from "@/lib/adminAuth";
 import { hasSupabaseAuthConfig, sendPasswordRecovery, signInWithPassword } from "@/lib/supabaseAuthRest";
@@ -13,6 +13,7 @@ export function LoginClient() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -82,53 +83,56 @@ export function LoginClient() {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center bg-gray-950 px-5 py-10 text-white">
-      <section className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950/92 p-6 shadow-glow">
-        <div className="mb-7 flex justify-center">
-          <Image src="/nodere-wordmark.png" alt="NODERE" width={360} height={120} priority className="h-auto w-full max-w-xs object-contain" />
-        </div>
-        <h1 className="text-center text-2xl font-semibold text-white">Entrar no NODERE</h1>
-        <form onSubmit={submit} className="mt-7 space-y-4">
-          <label className="block">
-            <span className="text-sm font-medium text-slate-200">E-mail</span>
+    <main className="site-auth">
+      <section className="site-auth__card">
+        <div className="site-auth__brand">NODERE <strong>Nexus</strong></div>
+        <p className="site-auth__caption">Revenue Intelligence Platform</p>
+        <h1>Entrar no NODERE Nexus</h1>
+        <p className="site-auth__subtitle">Acesse seu workspace comercial.</p>
+        <form onSubmit={submit} className="site-auth__form">
+          <label>
+            <span>E-mail</span>
             <input
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               type="email"
               required
               autoComplete="email"
-              className="mt-2 min-h-12 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-white outline-none focus:border-[#1E6FDB]"
             />
           </label>
-          <label className="block">
-            <span className="text-sm font-medium text-slate-200">Senha</span>
-            <input
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              type="password"
-              required
-              autoComplete="current-password"
-              className="mt-2 min-h-12 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-white outline-none focus:border-[#1E6FDB]"
-            />
+          <label>
+            <span>Senha</span>
+            <div className="site-auth__password">
+              <input
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                type={showPassword ? "text" : "password"}
+                required
+                autoComplete="current-password"
+              />
+              <button type="button" onClick={() => setShowPassword((current) => !current)} title={showPassword ? "Ocultar senha" : "Mostrar senha"} aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}>
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </label>
-          {error && <p className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{error}</p>}
-          {notice && <p className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">{notice}</p>}
-          <button disabled={loading} className="min-h-12 w-full rounded-lg bg-[#1E6FDB] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1557B0] disabled:opacity-60">
+          {error && <p className="site-auth__message">{error}</p>}
+          {notice && <p className="site-auth__message site-auth__message--success">{notice}</p>}
+          <button disabled={loading} className="site-auth__submit" type="submit">
             {loading ? "Entrando..." : "Entrar"}
           </button>
         </form>
-        <div className="mt-5 space-y-3 text-center text-sm">
-          <button type="button" onClick={recoverPassword} className="block w-full text-cyan hover:text-white">
+        <div className="site-auth__links">
+          <button type="button" onClick={recoverPassword}>
             Esqueci minha senha
           </button>
-          <Link href="/register" className="block text-slate-300 hover:text-white">
+          <Link href="/register">
             Criar conta
           </Link>
         </div>
-        <footer className="mt-7 text-center text-xs text-slate-500">
-          <Link href="/terms" className="hover:text-cyan">Termos de uso</Link>
+        <footer className="site-auth__footer">
+          <Link href="/terms">Termos de uso</Link>
           <span className="px-2">·</span>
-          <Link href="/privacy" className="hover:text-cyan">Política de privacidade</Link>
+          <Link href="/privacy">Política de privacidade</Link>
         </footer>
       </section>
     </main>

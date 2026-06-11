@@ -81,7 +81,7 @@ export default async function DashboardPage() {
       <section className="rounded-lg border border-electric/25 bg-panel/90 p-5 shadow-glow">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div>
-            <Image src="/nodere-wordmark.png" alt="NODERE Intelligence" width={360} height={120} priority className="h-auto w-full max-w-sm rounded-xl object-contain" />
+            <Image src="/nodere-wordmark.png" alt="NODERE Nexus" width={360} height={120} priority className="h-auto w-full max-w-sm rounded-xl object-contain" />
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
               Central comercial para busca de empresas, CRM, funil, WhatsApp, propostas e inteligência operacional.
             </p>

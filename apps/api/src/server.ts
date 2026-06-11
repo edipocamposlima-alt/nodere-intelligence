@@ -89,7 +89,7 @@ app.use(express.json());
 app.use(attachSession);
 
 app.get("/health", (_req, res) => {
-  res.json({ ok: true, name: "NODERE Intelligence API" });
+  res.json({ ok: true, name: "NODERE Nexus API" });
 });
 
 app.get("/api/health", (_req, res) => {
@@ -98,7 +98,7 @@ app.get("/api/health", (_req, res) => {
     status: "ok",
     timestamp: new Date().toISOString(),
     version: "1.0.0",
-    name: "NODERE Intelligence API",
+    name: "NODERE Nexus API",
     googlePlacesConfigured: Boolean(config.google.placesKey),
     pageSpeedConfigured: Boolean(config.google.pageSpeedKey),
     openaiConfigured: Boolean(config.openai.apiKey),
@@ -174,7 +174,7 @@ app.post("/api/auth/forgot-password", async (req, res, next) => {
 
 function publicIntegrationSettings() {
   return {
-    appName: "NODERE Intelligence",
+    appName: "NODERE Nexus",
     environment: process.env.NODE_ENV ?? "development",
     apiUrl: "https://nodere-api.onrender.com",
     enabledIntegrations: {
@@ -272,7 +272,7 @@ app.post("/api/openai/analyze", async (req, res, next) => {
     const context = req.body?.context ?? {};
 
     const systemPrompt =
-      "Voce e o assistente operacional do NODERE Intelligence, especialista em prospeccao B2B, CRM, Google Ads, Google Meu Negocio, PageSpeed, WhatsApp comercial e vendas consultivas. " +
+      "Voce e o assistente operacional do NODERE Nexus, especialista em prospeccao B2B, CRM, Google Ads, Google Meu Negocio, PageSpeed, WhatsApp comercial e vendas consultivas. " +
       "Responda APENAS com JSON valido, sem markdown, em portugues do Brasil, com conteudo pratico e especifico para o lead informado.";
 
     const userPrompt = JSON.stringify({
@@ -420,7 +420,7 @@ app.use("/api/developer", developerRouter);
 app.use("/api/admin/verticals", verticalsRouter);
 app.use("/v1", publicApiRouter);
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customSiteTitle: "NODERE Intelligence API",
+  customSiteTitle: "NODERE Nexus API",
   customCss: ".swagger-ui .topbar{background:#0A0F1E}.swagger-ui .topbar-wrapper img{display:none}.swagger-ui .topbar-wrapper:before{content:'NODERE API';color:#fff;font-weight:700;font-size:18px}"
 }));
 
@@ -448,7 +448,7 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
 setInterval(() => { processDueSteps().catch(console.error); }, 5 * 60 * 1000);
 
 app.listen(config.port, () => {
-  console.log(`NODERE Intelligence API running on http://localhost:${config.port}`);
+  console.log(`NODERE Nexus API running on http://localhost:${config.port}`);
   if (process.env.NODE_ENV === "production" && process.env.RENDER_EXTERNAL_URL) {
     const pingUrl = `${process.env.RENDER_EXTERNAL_URL.replace(/\/+$/, "")}/api/health`;
     setInterval(async () => {

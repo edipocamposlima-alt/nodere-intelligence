@@ -1,5 +1,6 @@
 {
-  "name": "@nodere/web",
+  "name": "nodere-nexus",
+  "description": "NODERE Nexus — Revenue Intelligence Platform",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,9 +13,11 @@
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^2.1.0",
+    "@radix-ui/react-navigation-menu": "^1.2.15",
     "@uiw/react-md-editor": "^4.1.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
+    "framer-motion": "^12.40.0",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.468.0",
     "next": "^15.1.3",
