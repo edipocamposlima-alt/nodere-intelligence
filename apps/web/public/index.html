@@ -2,1044 +2,1001 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NODERE Nexus — Revenue Intelligence Platform</title>
-<meta name="description" content="Encontre empresas que precisam dos seus serviços. Diagnóstico digital automático, CRM com IA e prospecção inteligente em um único fluxo.">
+<meta name="description" content="A plataforma que conecta inteligência comercial, prospecção e vendas em um único fluxo. Encontre empresas, analise e feche mais contratos.">
 <meta property="og:title" content="NODERE Nexus — Revenue Intelligence Platform">
-<meta property="og:description" content="A plataforma que conecta inteligência comercial, prospecção e vendas em um único fluxo.">
-<meta property="og:url" content="https://nodere.com.br">
-<meta property="og:locale" content="pt_BR">
+<meta property="og:image" content="https://nodere.com.br/nodere-logo.png">
 <link rel="icon" href="/nodere-logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{font-family:'Inter',system-ui,sans-serif;background:#060D1A;color:#EFF6FF;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',system-ui,sans-serif;background:#0A1628;color:#fff;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 a{text-decoration:none;color:inherit}
-img{max-width:100%;display:block}
 
+/* ─── VARIÁVEIS ─── */
 :root{
-  --bg:#060D1A;
-  --bg2:#07101E;
-  --card:#0C1628;
-  --card2:#101E33;
-  --border:#1A3050;
-  --blue:#1E6FDB;
-  --cyan:#00D4FF;
-  --green:#10B981;
-  --amber:#F59E0B;
-  --pink:#EC4899;
-  --purple:#8B5CF6;
+  --navy:#0A1628;
+  --navy2:#0D1F38;
+  --card-bg:#122035;
+  --border:#1E3A5F;
+  --blue:#1A6CF5;
+  --cyan:#00C2FF;
+  --lime:#AADD00;
+  --lime-dark:#8BB800;
+  --teal:#00BFA5;
+  --purple:#7C3AED;
+  --green:#22C55E;
   --orange:#F97316;
-  --red:#EF4444;
-  --text:#EFF6FF;
-  --text2:#8BA3C4;
-  --muted:#4A6A8A;
+  --pink:#EC4899;
+  --amber:#F59E0B;
+  --text2:#94A3B8;
+  --text3:#64748B;
 }
 
-/* ── HEADER ── */
-.site-header{
+/* ─── HEADER ─── */
+.hdr{
   position:fixed;top:0;left:0;right:0;z-index:1000;
-  background:rgba(6,13,26,0.92);backdrop-filter:blur(24px);
-  border-bottom:1px solid var(--border);
-  padding:0 40px;height:66px;
   display:flex;align-items:center;justify-content:space-between;
+  padding:0 48px;height:68px;
+  background:rgba(10,22,40,0.95);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,0.06);
   transition:background .3s;
 }
-.logo{display:flex;align-items:center;gap:10px}
-.logo-icon{
-  width:36px;height:36px;
-  background:linear-gradient(135deg,#1E6FDB,#00D4FF);
-  border-radius:9px;display:flex;align-items:center;justify-content:center;
-  font-size:19px;font-weight:900;color:#fff;flex-shrink:0;
+.hdr-logo{display:flex;align-items:center;gap:0}
+.hdr-logo img,.hdr-logo svg{height:36px;width:auto;display:block}
+.hdr-nav{display:flex;align-items:center;gap:2px}
+.hdr-nav a,.hdr-nav button{
+  color:#94A3B8;font-size:14px;font-weight:500;font-family:inherit;
+  padding:8px 14px;border-radius:8px;background:none;border:none;cursor:pointer;
+  transition:color .2s,background .2s;white-space:nowrap;
 }
-.logo-name{font-size:19px;font-weight:800;color:#EFF6FF;letter-spacing:-.3px}
-.logo-name span{color:#00D4FF}
-.site-nav{display:flex;align-items:center;gap:4px}
-.site-nav a{
-  color:var(--text2);font-size:14px;font-weight:500;
-  padding:7px 14px;border-radius:7px;transition:all .2s;
-}
-.site-nav a:hover{color:var(--text);background:var(--card)}
-.header-ctas{display:flex;align-items:center;gap:8px}
-.btn-login{
-  color:var(--text2);font-size:14px;font-weight:500;
-  padding:8px 16px;border:1px solid var(--border);border-radius:8px;
+.hdr-nav a:hover,.hdr-nav button:hover{color:#fff;background:rgba(255,255,255,0.06)}
+.hdr-ctas{display:flex;align-items:center;gap:10px}
+.btn-demo{
+  color:#fff;font-size:14px;font-weight:600;
+  padding:9px 18px;border-radius:8px;
+  border:1.5px solid rgba(255,255,255,0.2);
   transition:all .2s;
 }
-.btn-login:hover{color:var(--text);border-color:#2A5080}
-.btn-register{
-  background:linear-gradient(135deg,#1E6FDB,#2B8AEF);
-  color:#fff;font-size:14px;font-weight:700;
-  padding:9px 20px;border-radius:8px;
-  box-shadow:0 0 24px rgba(30,111,219,.35);
-  transition:all .25s;
+.btn-demo:hover{border-color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.05)}
+.btn-trial{
+  background:var(--lime);color:#0A1628;
+  font-size:14px;font-weight:800;
+  padding:10px 22px;border-radius:8px;
+  transition:all .25s;display:flex;align-items:center;gap:6px;
 }
-.btn-register:hover{box-shadow:0 0 40px rgba(30,111,219,.55);transform:translateY(-1px)}
+.btn-trial:hover{background:var(--lime-dark);transform:translateY(-1px);box-shadow:0 6px 20px rgba(170,221,0,0.35)}
 
-/* dropdown soluções */
-.nav-dropdown{position:relative}
-.nav-dropdown-btn{
-  background:none;border:none;cursor:pointer;
-  color:var(--text2);font-size:14px;font-weight:500;font-family:inherit;
-  padding:7px 14px;border-radius:7px;
-  display:flex;align-items:center;gap:5px;transition:all .2s;
-}
-.nav-dropdown-btn:hover{color:var(--text);background:var(--card)}
-.nav-dropdown-btn .arrow{font-size:10px;transition:transform .2s}
-.nav-dropdown-panel{
-  display:none;position:absolute;top:calc(100% + 8px);left:-220px;
-  width:600px;background:var(--card);border:1px solid var(--border);
+/* DROPDOWN */
+.dd{position:relative}
+.dd-panel{
+  display:none;position:absolute;top:calc(100% + 8px);left:-200px;
+  width:580px;background:#0D1F38;border:1px solid var(--border);
   border-radius:16px;padding:20px;
-  box-shadow:0 24px 80px rgba(0,0,0,.6);
-  grid-template-columns:1fr 1fr;gap:8px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.6);
+  grid-template-columns:1fr 1fr;gap:6px;
 }
-.nav-dropdown:hover .nav-dropdown-panel{display:grid}
-.nav-dropdown:hover .arrow{transform:rotate(180deg)}
-.sol-item{
-  display:flex;gap:10px;padding:10px 12px;border-radius:8px;
-  transition:background .15s;cursor:pointer;
-}
-.sol-item:hover{background:var(--card2)}
-.sol-icon{
-  width:36px;height:36px;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:18px;flex-shrink:0;
-}
-.sol-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
-.sol-desc{font-size:11px;color:var(--muted);line-height:1.4}
-.dropdown-footer{
-  grid-column:1/-1;margin-top:8px;padding-top:14px;
-  border-top:1px solid var(--border);
-  font-size:13px;color:var(--blue);font-weight:500;
-}
+.dd:hover .dd-panel{display:grid}
+.dd-arrow{font-size:10px;transition:transform .2s}
+.dd:hover .dd-arrow{transform:rotate(180deg)}
+.dd-item{display:flex;gap:10px;padding:10px;border-radius:10px;transition:background .15s}
+.dd-item:hover{background:rgba(255,255,255,0.05)}
+.dd-ic{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.dd-name{font-size:13px;font-weight:600;color:#fff;margin-bottom:2px}
+.dd-desc{font-size:11px;color:#64748B;line-height:1.4}
+.dd-footer{grid-column:1/-1;margin-top:6px;padding-top:12px;border-top:1px solid var(--border);font-size:13px;color:var(--blue)}
 
-/* ── HERO ── */
+/* ─── HERO ─── */
 .hero{
-  min-height:95vh;display:flex;align-items:center;
-  padding:96px 40px 60px;position:relative;overflow:hidden;
-  background:
-    radial-gradient(ellipse 90% 60% at 65% -5%,rgba(30,111,219,.28) 0%,transparent 65%),
-    radial-gradient(ellipse 55% 45% at 5% 85%,rgba(0,212,255,.09) 0%,transparent 60%),
-    #060D1A;
+  min-height:100vh;display:flex;align-items:center;
+  padding:100px 48px 80px;position:relative;overflow:hidden;
+  background:linear-gradient(165deg,#0A1628 0%,#0D2040 40%,#0A1628 100%);
 }
-.grid-bg{
+/* Linha de energia diagonal — estilo RD Station */
+.hero::before{
+  content:'';position:absolute;top:-20%;right:-5%;
+  width:55%;height:140%;
+  background:linear-gradient(145deg,
+    rgba(26,108,245,0.18) 0%,
+    rgba(0,194,255,0.08) 40%,
+    transparent 70%);
+  transform:skewX(-8deg);pointer-events:none;
+}
+.hero-inner{max-width:1200px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;position:relative;z-index:1}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--lime);color:#0A1628;
+  font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  padding:6px 16px;border-radius:100px;margin-bottom:24px;
+}
+h1.hero-h1{font-size:clamp(36px,4.5vw,58px);font-weight:900;letter-spacing:-1.5px;line-height:1.06;margin-bottom:20px}
+h1.hero-h1 span{color:var(--lime)}
+.hero-sub{font-size:18px;color:#94A3B8;line-height:1.65;max-width:480px;margin-bottom:36px}
+.hero-ctas{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px}
+.cta-primary{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--lime);color:#0A1628;
+  font-size:16px;font-weight:800;
+  padding:15px 32px;border-radius:10px;
+  box-shadow:0 0 32px rgba(170,221,0,0.3);
+  transition:all .25s;
+}
+.cta-primary:hover{background:var(--lime-dark);transform:translateY(-2px);box-shadow:0 8px 40px rgba(170,221,0,0.45)}
+.cta-ghost{
+  display:inline-flex;align-items:center;gap:8px;
+  color:#fff;font-size:16px;font-weight:600;
+  padding:15px 28px;border-radius:10px;
+  border:1.5px solid rgba(255,255,255,0.2);
+  transition:all .25s;
+}
+.cta-ghost:hover{border-color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.05)}
+.hero-trust{display:flex;gap:20px;flex-wrap:wrap}
+.trust-i{font-size:12px;color:#64748B;display:flex;align-items:center;gap:5px}
+.trust-i .ck{color:var(--lime)}
+
+/* Hero foto + card overlay */
+.hero-visual{position:relative}
+.hero-photo-wrap{position:relative;border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,0.5)}
+.hero-photo{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;border-radius:20px}
+.hero-photo-overlay{
   position:absolute;inset:0;
-  background-image:
-    linear-gradient(rgba(30,111,219,.04) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(30,111,219,.04) 1px,transparent 1px);
-  background-size:60px 60px;pointer-events:none;
+  background:linear-gradient(135deg,rgba(26,108,245,0.25) 0%,transparent 60%);
+  border-radius:20px;
 }
-.orb{position:absolute;border-radius:50%;pointer-events:none}
-.orb-1{top:-120px;right:-40px;width:540px;height:540px;background:radial-gradient(circle,rgba(30,111,219,.16) 0%,transparent 70%)}
-.orb-2{bottom:-80px;left:-40px;width:380px;height:380px;background:radial-gradient(circle,rgba(0,212,255,.09) 0%,transparent 70%)}
-.hero-inner{
-  max-width:1200px;margin:0 auto;width:100%;
-  display:grid;grid-template-columns:1fr 1fr;gap:60px;
-  align-items:center;position:relative;z-index:1;
+/* Score card flutuante */
+.score-card{
+  position:absolute;bottom:-20px;left:-20px;
+  background:#0D1F38;border:1px solid var(--border);
+  border-radius:14px;padding:16px 20px;
+  box-shadow:0 16px 48px rgba(0,0,0,0.5);
+  min-width:180px;
+  animation:floatY 4s ease-in-out infinite;
 }
-.hero-left{opacity:0;transform:translateY(28px);animation:fadeUp .7s ease .1s forwards}
-.hero-right{opacity:0;transform:translateX(28px);animation:fadeRight .7s ease .25s forwards}
+.sc-label{font-size:10px;color:#64748B;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.sc-num{font-size:40px;font-weight:900;color:#fff;line-height:1;margin-bottom:6px}
+.sc-bar{height:6px;background:#1E3A5F;border-radius:100px;overflow:hidden}
+.sc-fill{height:100%;width:82%;background:linear-gradient(90deg,var(--blue),var(--lime));border-radius:100px}
+/* Notif card flutuante */
+.notif-card{
+  position:absolute;top:-16px;right:-16px;
+  background:#0D1F38;border:1px solid var(--border);
+  border-radius:12px;padding:12px 16px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);
+  display:flex;align-items:center;gap:10px;
+  animation:floatY 4s ease-in-out infinite .5s;
+}
+.nc-dot{width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 8px var(--lime);flex-shrink:0}
+.nc-text{font-size:12px;color:#94A3B8;white-space:nowrap}
+.nc-text strong{color:#fff}
 
-.live-badge{
-  display:inline-flex;align-items:center;gap:8px;
-  background:rgba(30,111,219,.12);border:1px solid rgba(30,111,219,.3);
-  border-radius:100px;padding:6px 16px;margin-bottom:22px;
+/* ─── STATS ─── */
+.stats-bar{
+  padding:44px 48px;
+  background:linear-gradient(90deg,#0D1F38,#0A1628);
+  border-top:1px solid rgba(255,255,255,0.05);
+  border-bottom:1px solid rgba(255,255,255,0.05);
 }
-.live-dot{
-  width:7px;height:7px;background:#00D4FF;border-radius:50%;
-  box-shadow:0 0 8px #00D4FF;
-  animation:dotPulse 1.8s ease-in-out infinite;
-}
-.live-text{font-size:13px;color:#00D4FF;font-weight:600}
+.stats-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;text-align:center}
+.stat-icon{font-size:26px;margin-bottom:6px}
+.stat-val{font-size:36px;font-weight:900;letter-spacing:-1px;margin-bottom:4px}
+.stat-val span{color:var(--lime)}
+.stat-lbl{font-size:13px;color:#64748B}
 
-h1.hero-title{
-  font-size:clamp(34px,4.5vw,56px);
-  font-weight:900;letter-spacing:-1.5px;line-height:1.06;
-  color:#EFF6FF;margin-bottom:16px;
+/* ─── PRODUTOS (estilo RD Station big cards) ─── */
+.produtos-section{padding:100px 48px;background:#0A1628}
+.produtos-inner{max-width:1200px;margin:0 auto}
+.sec-eyebrow{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px}
+h2.sec-title{font-size:clamp(28px,3.5vw,42px);font-weight:900;letter-spacing:-.7px;margin-bottom:14px}
+.sec-desc{font-size:16px;color:#94A3B8;max-width:560px;margin-bottom:48px;line-height:1.65}
+/* Grid de cards grandes — igual RD Station */
+.prod-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.prod-card{
+  border-radius:20px;padding:36px;min-height:280px;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  position:relative;overflow:hidden;
+  transition:transform .3s ease,box-shadow .3s ease;
+  cursor:default;
 }
-.grad{
-  background:linear-gradient(135deg,#EFF6FF 0%,#00D4FF 55%,#1E6FDB 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+.prod-card:hover{transform:translateY(-6px);box-shadow:0 24px 60px rgba(0,0,0,0.4)}
+.prod-card.large{grid-row:span 2;justify-content:flex-end;min-height:400px}
+.prod-card .pc-screen{
+  position:absolute;top:20px;right:20px;left:20px;
+  background:rgba(255,255,255,0.07);border-radius:12px;padding:16px;
+  font-size:12px;
 }
-.ticker-row{display:flex;align-items:center;gap:10px;margin-bottom:20px}
-.ticker-label{font-size:14px;color:var(--muted)}
-.ticker-chip{
-  background:rgba(30,111,219,.12);border:1px solid rgba(30,111,219,.25);
-  border-radius:8px;padding:5px 14px;
-  font-size:14px;font-weight:700;color:#00D4FF;
-  min-width:185px;transition:opacity .3s;
-}
-.hero-desc{font-size:17px;color:var(--text2);line-height:1.65;max-width:460px;margin-bottom:36px}
-.hero-ctas{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px}
-.cta-main{
-  display:inline-flex;align-items:center;gap:8px;
-  background:linear-gradient(135deg,#1E6FDB,#2B8AEF);
-  color:#fff;font-size:15px;font-weight:700;
-  padding:14px 28px;border-radius:10px;
-  box-shadow:0 0 32px rgba(30,111,219,.4);
-  transition:all .25s;
-}
-.cta-main:hover{box-shadow:0 0 52px rgba(30,111,219,.6);transform:translateY(-2px)}
-.cta-sec{
-  display:inline-flex;align-items:center;gap:8px;
-  color:var(--text2);font-size:15px;font-weight:500;
-  padding:14px 22px;border-radius:10px;border:1px solid var(--border);
-  transition:all .25s;
-}
-.cta-sec:hover{color:var(--text);border-color:#2A5080;background:var(--card)}
-.trust{display:flex;gap:20px;flex-wrap:wrap}
-.trust-item{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px}
-.trust-item .ck{color:#10B981}
-
-/* dashboard card */
-.dash-card{
-  background:var(--card);border:1px solid var(--border);border-radius:18px;padding:26px;
-  box-shadow:0 32px 80px rgba(0,0,0,.5),0 0 0 1px rgba(30,111,219,.1);
-  animation:floatAnim 5s ease-in-out infinite;
-}
-.dash-top{
-  display:flex;justify-content:space-between;align-items:center;
-  margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);
-}
-.dash-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
-.dash-sub{font-size:13px;font-weight:600}
-.status-pill{
-  background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);
-  color:#10B981;font-size:12px;font-weight:600;
-  padding:4px 12px;border-radius:100px;
-  display:flex;align-items:center;gap:6px;
-}
-.status-dot{width:6px;height:6px;background:#10B981;border-radius:50%}
-.score-center{text-align:center;margin-bottom:22px}
-.score-num{
-  font-size:72px;font-weight:900;letter-spacing:-3px;line-height:1;
-  color:#EFF6FF;font-variant-numeric:tabular-nums;
-}
-.score-sub{font-size:13px;color:var(--muted);margin:6px 0 10px}
-.prog-bar{height:8px;background:var(--card2);border-radius:100px;overflow:hidden}
-.prog-fill{
-  height:100%;border-radius:100px;
-  background:linear-gradient(90deg,#1E6FDB,#00D4FF);
-  box-shadow:0 0 10px rgba(0,212,255,.4);
-  width:0;transition:width 1.5s ease .8s;
-}
-.opp-list{display:flex;flex-direction:column;gap:8px}
-.opp-row{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 13px;background:var(--card2);
-  border-radius:10px;border:1px solid var(--border);
-}
-.opp-left{display:flex;align-items:center;gap:9px}
-.opp-icon{font-size:17px}
-.opp-lbl{font-size:13px;color:var(--text2)}
-.opp-val{font-size:12px;font-weight:700;padding:3px 10px;border-radius:100px}
-.dash-floats{display:flex;gap:10px;margin-top:12px}
-.float-chip{
-  flex:1;background:var(--card);border:1px solid var(--border);
-  border-radius:10px;padding:10px 14px;
-  display:flex;align-items:center;gap:9px;
-  font-size:12px;color:var(--text2);
-}
-.float-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-
-/* ── STATS ── */
-.stats-section{
-  padding:48px 40px;background:var(--bg2);
-  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
-}
-.stats-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center}
-.stat-icon{font-size:28px;margin-bottom:8px}
-.stat-val{font-size:34px;font-weight:900;letter-spacing:-1px;color:#EFF6FF;margin-bottom:4px}
-.stat-lbl{font-size:13px;color:var(--muted)}
-
-/* ── PESSOAS ── */
-.people-section{padding:100px 40px;background:var(--bg)}
-.people-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
-.section-eyebrow{
+.pc-row{display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,255,255,0.05);border-radius:8px;margin-bottom:6px}
+.pc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.pc-text{font-size:12px;color:rgba(255,255,255,0.7)}
+.prod-card .pc-badge{
   display:inline-flex;align-items:center;gap:6px;
-  background:rgba(30,111,219,.1);border:1px solid rgba(30,111,219,.25);
-  border-radius:100px;padding:5px 14px;
-  font-size:12px;color:#00D4FF;font-weight:600;margin-bottom:16px;
+  font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  padding:4px 12px;border-radius:100px;margin-bottom:12px;width:fit-content;
 }
-h2.section-title{font-size:clamp(26px,3.5vw,40px);font-weight:900;letter-spacing:-.7px;margin-bottom:14px}
-.section-desc{font-size:15px;color:var(--text2);line-height:1.65;margin-bottom:24px}
-.avatars-row{display:flex;margin-bottom:14px}
-.av{
-  width:44px;height:44px;border-radius:50%;border:2px solid var(--bg);
-  display:flex;align-items:center;justify-content:center;
-  font-size:22px;margin-left:-10px;background:var(--card);
+.prod-card h3{font-size:26px;font-weight:800;margin-bottom:8px}
+.prod-card p{font-size:14px;opacity:.75;line-height:1.5;margin-bottom:18px;max-width:320px}
+.prod-card a{font-size:14px;font-weight:700;display:inline-flex;align-items:center;gap:5px}
+
+/* Temas dos cards */
+.pc-discovery{background:linear-gradient(145deg,#0D3B30,#0A2820)}
+.pc-crm{background:linear-gradient(145deg,#0D2B5E,#061B40)}
+.pc-engage{background:linear-gradient(145deg,#1A1040,#0D0828)}
+.pc-ai{background:linear-gradient(145deg,#2A1040,#1A0828)}
+
+/* ─── PESSOAS / QUEM USA ─── */
+.people-section{
+  padding:100px 48px;
+  background:linear-gradient(180deg,#0A1628 0%,#0D1F38 100%);
 }
+.people-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+.people-photos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pphoto{border-radius:16px;overflow:hidden;position:relative}
+.pphoto img{width:100%;height:200px;object-fit:cover;display:block;transition:transform .4s}
+.pphoto:hover img{transform:scale(1.04)}
+.pphoto-overlay{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(0deg,rgba(10,22,40,.85) 0%,transparent 100%);
+  padding:16px;
+}
+.pphoto-name{font-size:13px;font-weight:700}
+.pphoto-role{font-size:11px;color:#94A3B8}
+.pphoto-result{
+  display:inline-flex;align-items:center;gap:4px;margin-top:6px;
+  font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;
+  background:rgba(170,221,0,.15);color:var(--lime);border:1px solid rgba(170,221,0,.25);
+}
+.people-copy{display:flex;flex-direction:column;justify-content:center}
+.av-row{display:flex;margin-bottom:16px}
+.av{width:44px;height:44px;border-radius:50%;border:2.5px solid #0A1628;margin-left:-10px;overflow:hidden;background:#122035;display:flex;align-items:center;justify-content:center;font-size:20px}
 .av:first-child{margin-left:0}
-.av-count{
-  width:44px;height:44px;border-radius:50%;border:2px solid var(--bg);
-  background:var(--blue);display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:700;color:#fff;margin-left:-10px;
-}
-.people-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.person-card{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:14px;padding:20px;text-align:center;
-  transition:all .22s;cursor:default;
-}
-.person-card:hover{border-color:var(--blue);transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.3)}
-.p-emoji{font-size:44px;margin-bottom:10px;display:block}
-.p-name{font-size:13px;font-weight:700;margin-bottom:2px}
-.p-role{font-size:11px;color:var(--muted);margin-bottom:10px}
-.p-tag{
-  display:inline-flex;align-items:center;gap:4px;
-  font-size:11px;font-weight:600;padding:3px 10px;
-  border-radius:100px;border:1px solid transparent;
-}
+.av-more{width:44px;height:44px;border-radius:50%;border:2.5px solid #0A1628;margin-left:-10px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff}
 
-/* ── INTEGRAÇÕES ── */
-.integ-section{padding:100px 40px;background:var(--bg2)}
-.integ-inner{max-width:1200px;margin:0 auto;text-align:center}
-.integ-inner h2{font-size:clamp(26px,3.5vw,40px);font-weight:900;letter-spacing:-.6px;margin-bottom:12px}
-.integ-inner p{font-size:15px;color:var(--text2);max-width:480px;margin:0 auto 40px}
-.integ-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
-.integ-chip{
-  display:flex;align-items:center;gap:8px;
-  background:var(--card);border:1px solid var(--border);
-  border-radius:12px;padding:11px 18px;
-  font-size:13px;font-weight:500;color:var(--text2);
-  transition:all .2s;cursor:default;
-}
-.integ-chip:hover{transform:translateY(-2px);color:var(--text)}
-.integ-chip .i-icon{font-size:18px}
-
-/* ── COMO FUNCIONA ── */
-.howto-section{padding:100px 40px;background:var(--bg)}
+/* ─── COMO FUNCIONA ─── */
+.howto-section{padding:100px 48px;background:#0A1628}
 .howto-inner{max-width:1200px;margin:0 auto}
 .howto-header{text-align:center;margin-bottom:64px}
-.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
-.step-card{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:16px;padding:32px;position:relative;overflow:hidden;
-  transition:all .25s;cursor:default;
-}
-.step-card:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,.3)}
-.step-num-bg{
-  position:absolute;top:14px;right:16px;
-  font-size:88px;font-weight:900;color:rgba(255,255,255,.025);
-  line-height:1;user-select:none;pointer-events:none;
-}
-.step-icon-wrap{
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;position:relative}
+/* linha conectora */
+.steps::before{content:'';position:absolute;top:60px;left:calc(16.67% + 24px);right:calc(16.67% + 24px);height:2px;background:linear-gradient(90deg,var(--blue),var(--lime));opacity:.3;z-index:0}
+.step{background:#0D1F38;border:1px solid var(--border);border-radius:20px;padding:32px;position:relative;z-index:1;transition:all .3s}
+.step:hover{transform:translateY(-6px);border-color:var(--blue);box-shadow:0 16px 48px rgba(0,0,0,.3)}
+.step-n{
   width:52px;height:52px;border-radius:14px;
   display:flex;align-items:center;justify-content:center;
-  font-size:26px;margin-bottom:20px;
+  font-size:22px;font-weight:900;margin-bottom:20px;
 }
-.step-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
-.step-title{font-size:20px;font-weight:800;margin-bottom:12px;line-height:1.3}
-.step-desc{font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:20px}
-.step-stat{
-  display:inline-flex;align-items:center;gap:7px;
-  border-radius:100px;padding:5px 14px;font-size:12px;font-weight:600;
-}
+.step-num-bg{position:absolute;top:12px;right:16px;font-size:80px;font-weight:900;opacity:.03;line-height:1}
+.step-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.step-title{font-size:20px;font-weight:800;margin-bottom:10px;line-height:1.3}
+.step-text{font-size:14px;color:#94A3B8;line-height:1.65;margin-bottom:18px}
+.step-stat{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:5px 14px;border-radius:100px}
 
-/* ── SOLUÇÕES ── */
-.sol-section{padding:100px 40px;background:var(--bg2)}
-.sol-inner{max-width:1200px;margin:0 auto}
-.sol-header{text-align:center;margin-bottom:64px}
-.sol-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.sol-card{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:14px;padding:22px;transition:all .22s;cursor:default;
+/* ─── INTEGRAÇÕES (logos reais orbitando — estilo RD Station) ─── */
+.integ-section{
+  padding:100px 48px;
+  background:linear-gradient(180deg,#0A1628,#0D1F38);
 }
-.sol-card:hover{transform:translateY(-3px)}
-.sol-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.sol-card-left{display:flex;align-items:center;gap:10px}
-.sol-ic{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.sol-cname{font-size:15px;font-weight:700}
-.sol-code{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
-.sol-tag-pill{font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px}
-.sol-cdesc{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px}
-.sol-divider{height:1px;margin-bottom:12px;transition:opacity .2s}
-.sol-link{font-size:12px;font-weight:600;transition:opacity .2s}
+.integ-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+.integ-orbit{
+  position:relative;width:420px;height:420px;margin:0 auto;
+  display:flex;align-items:center;justify-content:center;
+}
+.orbit-center{
+  width:100px;height:100px;border-radius:50%;
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  display:flex;align-items:center;justify-content:center;
+  font-size:42px;font-weight:900;color:#fff;
+  box-shadow:0 0 48px rgba(26,108,245,.5);
+  z-index:2;position:relative;
+}
+/* Logos ao redor — posicionados com top/left absolutos */
+.orbit-ring{position:absolute;inset:0}
+.orbit-logo{
+  position:absolute;width:56px;height:56px;border-radius:50%;
+  background:#fff;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 20px rgba(0,0,0,.3);
+  transition:transform .2s;cursor:default;
+}
+.orbit-logo:hover{transform:scale(1.15)}
+.orbit-logo svg{width:28px;height:28px}
+/* Posições dos logos no círculo */
+.ol-0{top:0;left:50%;transform:translateX(-50%)}
+.ol-1{top:15%;right:5%}
+.ol-2{top:50%;right:-10px;transform:translateY(-50%)}
+.ol-3{bottom:15%;right:5%}
+.ol-4{bottom:0;left:50%;transform:translateX(-50%)}
+.ol-5{bottom:15%;left:5%}
+.ol-6{top:50%;left:-10px;transform:translateY(-50%)}
+.ol-7{top:15%;left:5%}
+/* Linhas de órbita */
+.orbit-circle{
+  position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.06);
+}
+.oc-1{inset:60px}
+.oc-2{inset:20px}
+.integ-copy{display:flex;flex-direction:column;justify-content:center}
+.integ-list{display:flex;flex-direction:column;gap:12px;margin-top:28px}
+.integ-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#122035;border:1px solid var(--border);border-radius:12px;transition:all .2s}
+.integ-row:hover{border-color:var(--blue);background:rgba(26,108,245,.08);transform:translateX(4px)}
+.ir-icon{width:36px;height:36px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ir-icon svg{width:20px;height:20px}
+.ir-name{font-size:14px;font-weight:600}
+.ir-desc{font-size:12px;color:#64748B}
 
-/* ── PLANOS ── */
-.plans-section{padding:100px 40px;background:var(--bg)}
+/* ─── PLANOS ─── */
+.plans-section{padding:100px 48px;background:#0D1F38}
 .plans-inner{max-width:1200px;margin:0 auto}
 .plans-header{text-align:center;margin-bottom:48px}
-.plans-header h2{font-size:clamp(26px,3.5vw,40px);font-weight:900;letter-spacing:-.7px;margin-bottom:12px}
-.plans-header p{font-size:15px;color:var(--text2);margin-bottom:28px}
-.toggle-wrap{display:inline-flex;background:var(--card);border:1px solid var(--border);border-radius:100px;padding:5px 6px;gap:4px}
-.toggle-btn{
-  background:transparent;border:none;cursor:pointer;font-family:inherit;
-  color:var(--text2);font-size:13px;font-weight:600;
-  padding:7px 18px;border-radius:100px;transition:all .2s;
-  display:flex;align-items:center;gap:6px;
-}
-.toggle-btn.active{background:var(--blue);color:#fff}
-.save-badge{background:#10B981;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:100px}
+.toggle-row{display:flex;justify-content:center;margin-top:24px}
+.toggle{display:inline-flex;background:#122035;border:1px solid var(--border);border-radius:100px;padding:5px 6px;gap:4px}
+.tgl{background:transparent;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:#64748B;padding:7px 20px;border-radius:100px;transition:all .2s;display:flex;align-items:center;gap:6px}
+.tgl.on{background:var(--blue);color:#fff}
+.save-pill{background:var(--lime);color:#0A1628;font-size:10px;font-weight:800;padding:2px 7px;border-radius:100px}
 .plans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:32px}
-.plan-card{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:16px;padding:26px;position:relative;
-}
-.plan-card.featured{
-  border:1.5px solid var(--blue);
-  background:linear-gradient(145deg,var(--card) 0%,#111F35 100%);
-  box-shadow:0 0 48px rgba(30,111,219,.15);
-}
-.plan-popular{
-  position:absolute;top:-13px;left:50%;transform:translateX(-50%);
-  background:linear-gradient(135deg,#1E6FDB,#00D4FF);
-  color:#fff;font-size:11px;font-weight:700;
-  padding:4px 16px;border-radius:100px;white-space:nowrap;
-}
-.plan-name{font-size:15px;font-weight:700;margin-bottom:3px}
-.plan-users{font-size:12px;color:var(--muted);margin-bottom:16px}
-.plan-price{margin-bottom:18px}
-.plan-amount{font-size:38px;font-weight:900;letter-spacing:-1px}
-.plan-period{font-size:13px;color:var(--muted)}
-.plan-cta{
-  display:block;text-align:center;
-  font-size:13px;font-weight:700;
-  padding:11px 16px;border-radius:8px;
-  margin-bottom:20px;transition:all .2s;
-}
-.plan-cta.primary{background:linear-gradient(135deg,#1E6FDB,#2B8AEF);color:#fff;box-shadow:0 0 20px rgba(30,111,219,.3)}
-.plan-cta.ghost{border:1px solid var(--border);color:var(--text2)}
-.plan-cta.ghost:hover{border-color:#2A5080;color:var(--text)}
-.plan-features{list-style:none;display:flex;flex-direction:column;gap:9px}
-.plan-features li{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text2);line-height:1.4}
-.plan-features .fk{color:#10B981;font-size:11px;margin-top:1px;flex-shrink:0}
-.plans-note{text-align:center;margin-top:20px;font-size:13px;color:var(--muted)}
+.plan{background:#0A1628;border:1px solid var(--border);border-radius:18px;padding:28px;position:relative}
+.plan.hot{border:2px solid var(--blue);background:linear-gradient(145deg,#0A1628,#0D2040);box-shadow:0 0 48px rgba(26,108,245,.15)}
+.plan-pop{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--blue);color:#fff;font-size:11px;font-weight:800;padding:4px 18px;border-radius:100px;white-space:nowrap}
+.plan-name{font-size:16px;font-weight:800;margin-bottom:3px}
+.plan-users{font-size:12px;color:#64748B;margin-bottom:18px}
+.plan-price{margin-bottom:20px}
+.plan-amt{font-size:40px;font-weight:900;letter-spacing:-1px}
+.plan-per{font-size:13px;color:#64748B}
+.plan-cta{display:block;text-align:center;font-size:14px;font-weight:800;padding:12px;border-radius:10px;margin-bottom:22px;transition:all .2s}
+.plan-cta.prim{background:var(--lime);color:#0A1628}
+.plan-cta.prim:hover{background:var(--lime-dark);transform:translateY(-1px)}
+.plan-cta.sec{border:1.5px solid var(--border);color:#94A3B8}
+.plan-cta.sec:hover{border-color:#94A3B8;color:#fff}
+.plan-feats{list-style:none;display:flex;flex-direction:column;gap:9px}
+.plan-feats li{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#94A3B8;line-height:1.4}
+.pf-ck{color:var(--lime);font-size:11px;margin-top:1px;flex-shrink:0}
+.plans-note{text-align:center;margin-top:20px;font-size:13px;color:#64748B}
 .plans-note a{color:var(--blue)}
 
-/* ── DEPOIMENTOS ── */
-.testi-section{padding:80px 40px;background:var(--bg2)}
+/* ─── DEPOIMENTOS ─── */
+.testi-section{padding:80px 48px;background:#0A1628}
 .testi-inner{max-width:1200px;margin:0 auto}
-.testi-inner h2{font-size:36px;font-weight:900;letter-spacing:-.5px;text-align:center;margin-bottom:48px}
+.testi-inner>h2{font-size:clamp(26px,3vw,38px);font-weight:900;margin-bottom:48px;text-align:center}
 .testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.testi-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px}
+.testi{background:#0D1F38;border:1px solid var(--border);border-radius:18px;padding:28px;transition:all .25s}
+.testi:hover{border-color:var(--blue);transform:translateY(-4px)}
 .stars{display:flex;gap:2px;margin-bottom:14px}
-.star{color:#F59E0B;font-size:14px}
-.testi-text{font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:22px}
+.star{color:var(--amber);font-size:15px}
+.testi-text{font-size:14px;color:#94A3B8;line-height:1.7;margin-bottom:22px}
 .testi-author{display:flex;align-items:center;gap:12px}
-.testi-av{
-  width:42px;height:42px;border-radius:50%;
-  background:rgba(30,111,219,.15);border:1px solid rgba(30,111,219,.25);
-  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;
-}
-.testi-name{font-size:13px;font-weight:700}
-.testi-role{font-size:12px;color:var(--muted)}
+.ta-av{width:46px;height:46px;border-radius:50%;overflow:hidden;background:#122035;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.ta-av img{width:100%;height:100%;object-fit:cover}
+.ta-name{font-size:13px;font-weight:700}
+.ta-role{font-size:12px;color:#64748B}
+.ta-result{margin-top:4px;font-size:11px;font-weight:700;color:var(--lime)}
 
-/* ── BLOG ── */
-.blog-section{padding:100px 40px;background:var(--bg)}
+/* ─── BLOG ─── */
+.blog-section{padding:100px 48px;background:#0D1F38}
 .blog-inner{max-width:1200px;margin:0 auto}
-.blog-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:48px}
-.blog-header h2{font-size:36px;font-weight:900;letter-spacing:-.5px}
-.blog-more{font-size:14px;color:var(--blue);font-weight:600}
-.blog-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.blog-card{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:14px;overflow:hidden;
-  transition:all .22s;display:block;color:inherit;
-}
-.blog-card:hover{transform:translateY(-3px)}
-.blog-stripe{height:5px}
-.blog-body{padding:22px}
-.blog-tag{
-  display:inline-flex;align-items:center;
-  font-size:11px;font-weight:600;padding:3px 10px;
-  border-radius:100px;border:1px solid transparent;margin-bottom:12px;
-}
-.blog-title{font-size:14px;font-weight:700;line-height:1.5;margin-bottom:12px}
-.blog-desc{font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:18px}
-.blog-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.blog-hdr{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:48px}
+.blog-hdr h2{font-size:clamp(26px,3vw,38px);font-weight:900}
+.blog-more{color:var(--blue);font-size:14px;font-weight:700;white-space:nowrap}
+.blog-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.blog-card{background:#0A1628;border:1px solid var(--border);border-radius:16px;overflow:hidden;display:block;color:inherit;transition:all .25s}
+.blog-card:hover{transform:translateY(-4px);border-color:var(--blue)}
+.bc-img{width:100%;height:180px;object-fit:cover;display:block}
+.bc-body{padding:22px}
+.bc-tag{display:inline-flex;font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;margin-bottom:10px;border:1px solid transparent}
+.bc-title{font-size:15px;font-weight:700;line-height:1.5;margin-bottom:10px}
+.bc-desc{font-size:13px;color:#64748B;line-height:1.55;margin-bottom:16px}
+.bc-meta{display:flex;justify-content:space-between;font-size:12px;color:#64748B}
 
-/* ── CTA FINAL ── */
-.cta-section{
-  padding:100px 40px;text-align:center;
-  background:radial-gradient(ellipse 80% 70% at 50% 50%,rgba(30,111,219,.18) 0%,transparent 70%),
-    var(--bg2);
+/* ─── CTA FINAL ─── */
+.cta-final{
+  padding:120px 48px;text-align:center;
+  background:linear-gradient(145deg,#0A1628 0%,#0D2040 50%,#0A1628 100%);
+  position:relative;overflow:hidden;
 }
-.cta-section h2{font-size:clamp(28px,4vw,50px);font-weight:900;letter-spacing:-1px;margin-bottom:16px}
-.cta-section p{font-size:17px;color:var(--text2);margin-bottom:36px}
-.cta-big{
-  display:inline-flex;align-items:center;gap:10px;
-  background:linear-gradient(135deg,#1E6FDB,#2B8AEF);
-  color:#fff;font-size:16px;font-weight:700;
-  padding:16px 44px;border-radius:12px;
-  box-shadow:0 0 56px rgba(30,111,219,.45);
-  transition:all .25s;
+.cta-final::before{
+  content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(170,221,0,.12) 0%,transparent 70%);
+  pointer-events:none;
 }
-.cta-big:hover{transform:translateY(-2px);box-shadow:0 0 72px rgba(30,111,219,.6)}
-.cta-trust{display:flex;justify-content:center;gap:24px;margin-top:22px;flex-wrap:wrap}
-.cta-trust span{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.cta-final h2{font-size:clamp(30px,4vw,52px);font-weight:900;letter-spacing:-1px;margin-bottom:16px;position:relative}
+.cta-final h2 span{color:var(--lime)}
+.cta-final p{font-size:18px;color:#94A3B8;margin-bottom:40px;position:relative}
+.cta-final .cta-primary{font-size:17px;padding:17px 44px;margin:0 auto;position:relative}
+.cta-trust{display:flex;justify-content:center;gap:28px;margin-top:24px;flex-wrap:wrap;position:relative}
+.ct-i{font-size:13px;color:#64748B;display:flex;align-items:center;gap:5px}
+.ct-i .ck{color:var(--lime)}
 
-/* ── FOOTER ── */
-.site-footer{
-  background:#030810;border-top:1px solid var(--border);
-  padding:64px 40px 32px;
-}
+/* ─── FOOTER ─── */
+.footer{background:#060E1C;border-top:1px solid rgba(255,255,255,.06);padding:64px 48px 32px}
 .footer-inner{max-width:1200px;margin:0 auto}
-.footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px}
-.footer-brand{}
-.footer-logo{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.footer-desc{font-size:13px;color:var(--muted);line-height:1.65;max-width:280px;margin-bottom:20px}
-.footer-socials{display:flex;gap:8px}
-.social-btn{
-  color:var(--muted);font-size:12px;
-  background:var(--card);border:1px solid var(--border);
-  padding:6px 14px;border-radius:6px;
+.footer-top{display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px}
+.footer-brand p{font-size:13px;color:#64748B;line-height:1.65;max-width:280px;margin-top:14px}
+.footer-socials{display:flex;gap:8px;margin-top:18px}
+.fs-btn{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1px solid var(--border);transition:all .2s;color:#64748B;font-size:16px}
+.fs-btn:hover{border-color:#94A3B8;color:#fff;background:rgba(255,255,255,.05)}
+.footer-col-title{font-size:11px;font-weight:700;color:#64748B;letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px}
+.footer-col a{display:block;font-size:13px;color:#94A3B8;margin-bottom:10px;transition:color .2s}
+.footer-col a:hover{color:#fff}
+.footer-bottom{border-top:1px solid rgba(255,255,255,.06);padding-top:24px;display:flex;justify-content:space-between;font-size:12px;color:#64748B}
+
+/* ─── WA FLOAT ─── */
+.wa-float{
+  position:fixed;bottom:24px;right:24px;z-index:999;
+  width:56px;height:56px;border-radius:50%;
+  background:#25D366;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 20px rgba(37,211,102,.4);
   transition:all .2s;
 }
-.social-btn:hover{color:var(--text);border-color:#2A5080}
-.footer-col-title{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px}
-.footer-col a{display:block;font-size:13px;color:var(--text2);margin-bottom:10px;transition:color .2s}
-.footer-col a:hover{color:var(--text)}
-.footer-bottom{
-  border-top:1px solid var(--border);padding-top:24px;
-  display:flex;justify-content:space-between;align-items:center;
-  font-size:12px;color:var(--muted);
-}
+.wa-float:hover{transform:scale(1.1);box-shadow:0 6px 32px rgba(37,211,102,.6)}
+.wa-float svg{width:28px;height:28px}
 
-/* ── WA BUTTON ── */
-.wa-btn{
-  position:fixed;bottom:24px;right:24px;z-index:999;
-  width:54px;height:54px;border-radius:50%;
-  background:#25D366;display:flex;align-items:center;justify-content:center;
-  font-size:26px;box-shadow:0 4px 20px rgba(37,211,102,.4);
-  transition:all .2s;text-decoration:none;
-}
-.wa-btn:hover{transform:scale(1.1);box-shadow:0 6px 30px rgba(37,211,102,.6)}
+/* ─── ANIMAÇÕES ─── */
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes floatYcard{0%,100%{transform:translateY(0) translateX(-20px)}50%{transform:translateY(-12px) translateX(-20px)}}
+@keyframes spinSlow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeLeft{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.85)}}
+@keyframes orbitSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
-/* ── ANIMAÇÕES ── */
-@keyframes floatAnim{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-@keyframes dotPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeRight{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
-@keyframes countUp{from{opacity:0}to{opacity:1}}
+/* Scroll reveal */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .6s ease,transform .6s ease}
+.reveal.up{opacity:1;transform:translateY(0)}
+.reveal-left{opacity:0;transform:translateX(-28px);transition:opacity .6s ease,transform .6s ease}
+.reveal-left.up{opacity:1;transform:translateX(0)}
+.reveal-right{opacity:0;transform:translateX(28px);transition:opacity .6s ease,transform .6s ease}
+.reveal-right.up{opacity:1;transform:translateX(0)}
 
-/* ── RESPONSIVE ── */
+/* Delay helpers */
+.d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.3s}
+.d4{transition-delay:.4s}.d5{transition-delay:.5s}
+
+/* ─── RESPONSIVE ─── */
 @media(max-width:1024px){
-  .sol-grid{grid-template-columns:repeat(2,1fr)}
+  .prod-grid{grid-template-columns:1fr}
   .plans-grid{grid-template-columns:repeat(2,1fr)}
+  .integ-inner{grid-template-columns:1fr}
+  .integ-orbit{display:none}
 }
 @media(max-width:768px){
-  .site-nav{display:none}
+  .hdr-nav{display:none}
   .hero-inner,.people-inner{grid-template-columns:1fr}
-  .hero-right{display:none}
+  .hero-visual{display:none}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
-  .steps-grid,.testi-grid,.blog-grid{grid-template-columns:1fr}
-  .plans-grid,.sol-grid{grid-template-columns:1fr}
+  .steps,.testi-grid,.blog-grid{grid-template-columns:1fr}
+  .plans-grid{grid-template-columns:1fr}
   .footer-top{grid-template-columns:1fr}
-  .blog-header{flex-direction:column;gap:16px;align-items:flex-start}
+  .blog-hdr{flex-direction:column;gap:12px;align-items:flex-start}
 }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<header class="site-header">
-  <a href="/" class="logo">
-    <div class="logo-icon">N</div>
-    <span class="logo-name">NODERE <span>Nexus</span></span>
+<!-- ═══════ HEADER ═══════ -->
+<header class="hdr">
+  <a href="/" class="hdr-logo">
+    <!-- Logo SVG inline — garante que aparece em qualquer ambiente -->
+    <svg xmlns="http://www.w3.org/2000/svg" height="36" viewBox="0 0 200 40">
+      <defs>
+        <linearGradient id="ng" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#1A6CF5"/>
+          <stop offset="100%" stop-color="#00C2FF"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="1" width="38" height="38" rx="9" fill="url(#ng)"/>
+      <circle cx="13" cy="1" r="2.5" fill="#AADD00" opacity=".9"/>
+      <circle cx="25" cy="39" r="2.5" fill="#AADD00" opacity=".9"/>
+      <text x="19" y="28" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="22" font-weight="900" fill="white">N</text>
+      <text x="52" y="28" font-family="Inter,Arial,sans-serif" font-size="21" font-weight="800" fill="white">NODERE</text>
+      <text x="146" y="28" font-family="Inter,Arial,sans-serif" font-size="21" font-weight="400" fill="#94A3B8">Nexus</text>
+    </svg>
   </a>
-  <nav class="site-nav">
-    <div class="nav-dropdown">
-      <button class="nav-dropdown-btn">
-        Soluções <span class="arrow">▼</span>
+
+  <nav class="hdr-nav">
+    <div class="dd">
+      <button class="hdr-nav" style="display:flex;align-items:center;gap:5px">
+        Soluções <span class="dd-arrow">▼</span>
       </button>
-      <div class="nav-dropdown-panel">
-        <a href="/solucoes#discovery" class="sol-item">
-          <div class="sol-icon" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.2)">🔍</div>
-          <div><div class="sol-name">Discovery</div><div class="sol-desc">Prospecção por Google Maps e score digital</div></div>
-        </a>
-        <a href="/solucoes#intelligence" class="sol-item">
-          <div class="sol-icon" style="background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.2)">🧠</div>
-          <div><div class="sol-name">Intelligence</div><div class="sol-desc">Enriquecimento Apollo + Receita Federal</div></div>
-        </a>
-        <a href="/solucoes#crm" class="sol-item">
-          <div class="sol-icon" style="background:rgba(30,111,219,.12);border:1px solid rgba(30,111,219,.25)">📊</div>
-          <div><div class="sol-name">CRM</div><div class="sol-desc">Pipeline, ficha inteligente e propostas PDF</div></div>
-        </a>
-        <a href="/solucoes#engage" class="sol-item">
-          <div class="sol-icon" style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.2)">💬</div>
-          <div><div class="sol-name">Engage</div><div class="sol-desc">WhatsApp, e-mail e omnichannel</div></div>
-        </a>
-        <a href="/solucoes#ai" class="sol-item">
-          <div class="sol-icon" style="background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.18)">🤖</div>
-          <div><div class="sol-name">AI Nexus</div><div class="sol-desc">Copiloto comercial com contexto real</div></div>
-        </a>
-        <a href="/solucoes#analytics" class="sol-item">
-          <div class="sol-icon" style="background:rgba(236,72,153,.12);border:1px solid rgba(236,72,153,.2)">📈</div>
-          <div><div class="sol-name">Analytics</div><div class="sol-desc">Dashboard, forecast e ranking</div></div>
-        </a>
-        <a href="/solucoes#operations" class="sol-item">
-          <div class="sol-icon" style="background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.2)">🗂️</div>
-          <div><div class="sol-name">Operations</div><div class="sol-desc">Projetos, portal do cliente e docs</div></div>
-        </a>
-        <a href="/solucoes#marketplace" class="sol-item">
-          <div class="sol-icon" style="background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.18)">🤝</div>
-          <div><div class="sol-name">Marketplace</div><div class="sol-desc">Parceiros, comissionamento e ERPs</div></div>
-        </a>
-        <div class="dropdown-footer"><a href="/solucoes">Ver todas as soluções →</a></div>
+      <div class="dd-panel">
+        <a href="/solucoes#discovery" class="dd-item"><div class="dd-ic" style="background:rgba(0,191,165,.15)">🔍</div><div><div class="dd-name">Discovery</div><div class="dd-desc">Prospecção por Google Maps e score digital</div></div></a>
+        <a href="/solucoes#intelligence" class="dd-item"><div class="dd-ic" style="background:rgba(124,58,237,.15)">🧠</div><div><div class="dd-name">Intelligence</div><div class="dd-desc">Enriquecimento Apollo + Receita Federal</div></div></a>
+        <a href="/solucoes#crm" class="dd-item"><div class="dd-ic" style="background:rgba(26,108,245,.15)">📊</div><div><div class="dd-name">CRM</div><div class="dd-desc">Pipeline, ficha inteligente e propostas</div></div></a>
+        <a href="/solucoes#engage" class="dd-item"><div class="dd-ic" style="background:rgba(34,197,94,.15)">💬</div><div><div class="dd-name">Engage</div><div class="dd-desc">WhatsApp, e-mail e omnichannel</div></div></a>
+        <a href="/solucoes#ai" class="dd-item"><div class="dd-ic" style="background:rgba(0,194,255,.1)">🤖</div><div><div class="dd-name">AI Nexus</div><div class="dd-desc">Copiloto comercial com contexto real</div></div></a>
+        <a href="/solucoes#analytics" class="dd-item"><div class="dd-ic" style="background:rgba(236,72,153,.15)">📈</div><div><div class="dd-name">Analytics</div><div class="dd-desc">Dashboard, forecast e ranking</div></div></a>
+        <a href="/solucoes#operations" class="dd-item"><div class="dd-ic" style="background:rgba(249,115,22,.15)">🗂️</div><div><div class="dd-name">Operations</div><div class="dd-desc">Projetos, portal do cliente e docs</div></div></a>
+        <a href="/solucoes#marketplace" class="dd-item"><div class="dd-ic" style="background:rgba(0,194,255,.1)">🤝</div><div><div class="dd-name">Marketplace</div><div class="dd-desc">Parceiros e integração com ERPs</div></div></a>
+        <div class="dd-footer"><a href="/solucoes">Ver todas as soluções →</a></div>
       </div>
     </div>
     <a href="/planos">Planos</a>
     <a href="/blog">Blog</a>
     <a href="/contato">Contato</a>
   </nav>
-  <div class="header-ctas">
-    <a href="/login" class="btn-login">Entrar</a>
-    <a href="/register" class="btn-register">Começar grátis</a>
+
+  <div class="hdr-ctas">
+    <a href="/login" class="btn-demo">Entrar</a>
+    <a href="/register" class="btn-trial">Começar grátis →</a>
   </div>
 </header>
 
-<!-- HERO -->
+<!-- ═══════ HERO ═══════ -->
 <section class="hero">
-  <div class="grid-bg"></div>
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
   <div class="hero-inner">
-    <div class="hero-left">
-      <div class="live-badge">
-        <span class="live-dot"></span>
-        <span class="live-text">Revenue Intelligence Platform</span>
-      </div>
-      <h1 class="hero-title">
+    <div class="hero-left" style="animation:fadeLeft .7s ease .1s both">
+      <div class="hero-badge">✦ Inteligência que muda o jogo</div>
+      <h1 class="hero-h1">
         Encontre empresas<br>
         que precisam<br>
-        <span class="grad">dos seus serviços.</span>
+        <span>dos seus serviços.</span>
       </h1>
-      <div class="ticker-row">
-        <span class="ticker-label">Feito para</span>
-        <div class="ticker-chip" id="ticker">Agências digitais</div>
-      </div>
-      <p class="hero-desc">Prospecção inteligente com diagnóstico digital automático, CRM integrado e copiloto de IA — do primeiro contato ao fechamento.</p>
+      <p class="hero-sub">Prospecção inteligente com diagnóstico digital, CRM integrado e copiloto de IA — do primeiro contato ao fechamento.</p>
       <div class="hero-ctas">
-        <a href="/register" class="cta-main">Começar grátis — 14 dias ✦</a>
-        <a href="/planos" class="cta-sec">Ver planos →</a>
+        <a href="/register" class="cta-primary">Começar grátis — 14 dias →</a>
+        <a href="#como-funciona" class="cta-ghost">Como funciona</a>
       </div>
-      <div class="trust">
-        <span class="trust-item"><span class="ck">✓</span> Sem cartão de crédito</span>
-        <span class="trust-item"><span class="ck">✓</span> Cancele quando quiser</span>
-        <span class="trust-item"><span class="ck">✓</span> LGPD compliant</span>
+      <div class="hero-trust">
+        <span class="trust-i"><span class="ck">✓</span> Sem cartão de crédito</span>
+        <span class="trust-i"><span class="ck">✓</span> 14 dias grátis</span>
+        <span class="trust-i"><span class="ck">✓</span> LGPD compliant</span>
       </div>
     </div>
-    <div class="hero-right">
-      <div class="dash-card">
-        <div class="dash-top">
-          <div>
-            <div class="dash-label">Score de oportunidade</div>
-            <div class="dash-sub">Academias · Caxias do Sul, RS</div>
-          </div>
-          <div class="status-pill"><span class="status-dot"></span>Alta intenção</div>
-        </div>
-        <div class="score-center">
-          <div class="score-num" id="scoreNum">0</div>
-          <div class="score-sub">/ 100 pontos de potencial</div>
-          <div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
-        </div>
-        <div class="opp-list">
-          <div class="opp-row"><div class="opp-left"><span class="opp-icon">🏋️</span><span class="opp-lbl">Academias sem site</span></div><span class="opp-val" style="color:#F59E0B;background:rgba(245,158,11,.12)">42 leads</span></div>
-          <div class="opp-row"><div class="opp-left"><span class="opp-icon">⭐</span><span class="opp-lbl">Nota abaixo de 4.0</span></div><span class="opp-val" style="color:#EF4444;background:rgba(239,68,68,.12)">18 alertas</span></div>
-          <div class="opp-row"><div class="opp-left"><span class="opp-icon">📢</span><span class="opp-lbl">Sem Google Ads ativos</span></div><span class="opp-val" style="color:#1E6FDB;background:rgba(30,111,219,.12)">31 oport.</span></div>
-          <div class="opp-row"><div class="opp-left"><span class="opp-icon">📸</span><span class="opp-lbl">Sem Instagram ativo</span></div><span class="opp-val" style="color:#EC4899;background:rgba(236,72,153,.12)">56 leads</span></div>
-        </div>
+
+    <div class="hero-visual" style="animation:fadeRight .7s ease .25s both">
+      <div class="hero-photo-wrap">
+        <!-- Foto de pessoa trabalhando — Unsplash CDN gratuito -->
+        <img class="hero-photo"
+          src="https://images.unsplash.com/photo-1551434678-e076c223a692?w=700&q=80"
+          alt="Profissional usando NODERE Nexus"
+          loading="eager">
+        <div class="hero-photo-overlay"></div>
       </div>
-      <div class="dash-floats">
-        <div class="float-chip"><span class="float-dot" style="background:#10B981;box-shadow:0 0 8px #10B981"></span><span><strong>127</strong> empresas analisadas hoje</span></div>
-        <div class="float-chip"><span class="float-dot" style="background:#00D4FF;box-shadow:0 0 8px #00D4FF"></span><span>🤖 IA em <strong style="color:#00D4FF">tempo real</strong></span></div>
+      <!-- Score card flutuante -->
+      <div class="score-card">
+        <div class="sc-label">Score de oportunidade</div>
+        <div class="sc-num" id="heroScore">0</div>
+        <div class="sc-bar"><div class="sc-fill" style="width:0" id="scFill"></div></div>
+      </div>
+      <!-- Notif flutuante -->
+      <div class="notif-card">
+        <div class="nc-dot" style="animation:pulse 2s infinite"></div>
+        <div class="nc-text"><strong>127</strong> empresas analisadas hoje</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- STATS -->
-<section class="stats-section">
+<!-- ═══════ STATS ═══════ -->
+<div class="stats-bar">
   <div class="stats-grid">
-    <div><div class="stat-icon">🏢</div><div class="stat-val">2.400+</div><div class="stat-lbl">Empresas prospectadas</div></div>
-    <div><div class="stat-icon">⭐</div><div class="stat-val">94%</div><div class="stat-lbl">Taxa de satisfação</div></div>
-    <div><div class="stat-icon">📈</div><div class="stat-val">3×</div><div class="stat-lbl">Mais conversões</div></div>
-    <div><div class="stat-icon">⚡</div><div class="stat-val">&lt; 3s</div><div class="stat-lbl">Diagnóstico gerado</div></div>
+    <div class="reveal"><div class="stat-icon">🏢</div><div class="stat-val"><span>2.400</span>+</div><div class="stat-lbl">Empresas prospectadas</div></div>
+    <div class="reveal d1"><div class="stat-icon">⭐</div><div class="stat-val"><span>94</span>%</div><div class="stat-lbl">Taxa de satisfação</div></div>
+    <div class="reveal d2"><div class="stat-icon">📈</div><div class="stat-val"><span>3</span>×</div><div class="stat-lbl">Mais conversões</div></div>
+    <div class="reveal d3"><div class="stat-icon">⚡</div><div class="stat-val">&lt;<span>3</span>s</div><div class="stat-lbl">Diagnóstico gerado</div></div>
+  </div>
+</div>
+
+<!-- ═══════ PRODUTOS (big cards estilo RD Station) ═══════ -->
+<section class="produtos-section">
+  <div class="produtos-inner">
+    <div class="reveal-left">
+      <div class="sec-eyebrow" style="color:var(--lime)">Conheça as soluções do NODERE Nexus</div>
+      <h2 class="sec-title">Uma plataforma.<br>Oito conjuntos integrados.</h2>
+      <p class="sec-desc">Use o que precisar agora. Ative novos conjuntos conforme crescer — todos se comunicam entre si.</p>
+    </div>
+    <div class="prod-grid reveal">
+      <!-- DISCOVERY — card grande -->
+      <div class="prod-card large pc-discovery">
+        <div class="pc-screen" style="top:16px">
+          <div class="pc-row"><div class="pc-dot" style="background:#00BFA5"></div><div class="pc-text">Academias · Caxias do Sul · Score 82/100</div></div>
+          <div class="pc-row"><div class="pc-dot" style="background:#AADD00"></div><div class="pc-text">18 empresas sem site detectadas</div></div>
+          <div class="pc-row"><div class="pc-dot" style="background:#F97316"></div><div class="pc-text">Oportunidade: Google Ads ausente</div></div>
+        </div>
+        <div class="pc-badge" style="background:rgba(0,191,165,.2);color:#00BFA5">🔍 Discovery</div>
+        <h3>Encontre empresas que precisam de você</h3>
+        <p>Busca por Google Maps, score digital 0–100 por empresa, scanner de site e redes sociais em segundos.</p>
+        <a href="/solucoes#discovery" style="color:#00BFA5">Conhecer solução ›</a>
+      </div>
+      <!-- CRM -->
+      <div class="prod-card pc-crm">
+        <div class="pc-screen" style="top:16px;padding:12px">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-size:11px">
+            <div style="background:rgba(255,255,255,.08);border-radius:6px;padding:6px;text-align:center">Novo<br><strong>12</strong></div>
+            <div style="background:rgba(255,255,255,.08);border-radius:6px;padding:6px;text-align:center">Proposta<br><strong>7</strong></div>
+            <div style="background:rgba(255,255,255,.08);border-radius:6px;padding:6px;text-align:center">Negoc.<br><strong>4</strong></div>
+            <div style="background:rgba(170,221,0,.15);border-radius:6px;padding:6px;text-align:center;color:var(--lime)">Ganho<br><strong>3</strong></div>
+          </div>
+        </div>
+        <div class="pc-badge" style="background:rgba(26,108,245,.2);color:#60A5FA">📊 CRM</div>
+        <h3>Organize e acelere suas vendas</h3>
+        <p>Pipeline visual, ficha 360° do lead, propostas em PDF e agenda integrada.</p>
+        <a href="/solucoes#crm" style="color:#60A5FA">Conhecer solução ›</a>
+      </div>
+      <!-- ENGAGE -->
+      <div class="prod-card pc-engage">
+        <div class="pc-badge" style="background:rgba(34,197,94,.2);color:#4ADE80">💬 Engage</div>
+        <h3>WhatsApp, e-mail e omnichannel</h3>
+        <p>Inbox unificado, disparos em massa e automações por estágio do funil.</p>
+        <a href="/solucoes#engage" style="color:#4ADE80">Conhecer solução ›</a>
+      </div>
+      <!-- AI NEXUS -->
+      <div class="prod-card pc-ai">
+        <div class="pc-badge" style="background:rgba(0,194,255,.15);color:#00C2FF">🤖 AI Nexus</div>
+        <h3>Copiloto comercial com contexto real</h3>
+        <p>Scripts gerados por IA com dados reais do lead. Do diagnóstico à proposta em segundos.</p>
+        <a href="/solucoes#ai" style="color:#00C2FF">Conhecer solução ›</a>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- PESSOAS -->
+<!-- ═══════ PESSOAS ═══════ -->
 <section class="people-section">
   <div class="people-inner">
-    <div>
-      <div class="section-eyebrow">✦ Para quem vende serviços</div>
-      <h2 class="section-title">Feito para quem<br><span class="grad">vende serviços recorrentes</span></h2>
-      <p class="section-desc">Agências, consultorias, times de SDR e prestadores de serviço B2B que precisam prospectar com inteligência e fechar mais contratos.</p>
-      <div class="avatars-row">
-        <div class="av">👨‍💼</div>
-        <div class="av">👩‍💻</div>
-        <div class="av">👨‍🎨</div>
-        <div class="av">👩‍💼</div>
-        <div class="av-count">+2k</div>
+    <div class="people-photos reveal-left">
+      <div class="pphoto">
+        <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400&q=80" alt="Camila Souza" loading="lazy">
+        <div class="pphoto-overlay">
+          <div class="pphoto-name">Camila Souza</div>
+          <div class="pphoto-role">Fundadora · Consultoria de marketing</div>
+          <div class="pphoto-result">↑ 12 contratos/mês</div>
+        </div>
       </div>
-      <p style="font-size:13px;color:var(--muted)">Mais de 2.000 profissionais já usam o NODERE Nexus</p>
+      <div class="pphoto">
+        <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&q=80" alt="Felipe Martins" loading="lazy">
+        <div class="pphoto-overlay">
+          <div class="pphoto-name">Felipe Martins</div>
+          <div class="pphoto-role">Diretor comercial · Agência digital</div>
+          <div class="pphoto-result">↑ 3× conversões</div>
+        </div>
+      </div>
+      <div class="pphoto">
+        <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&q=80" alt="Ana Lima" loading="lazy">
+        <div class="pphoto-overlay">
+          <div class="pphoto-name">Ana Lima</div>
+          <div class="pphoto-role">Gestora de tráfego</div>
+          <div class="pphoto-result">180 leads/semana</div>
+        </div>
+      </div>
+      <div class="pphoto">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80" alt="Roberto Alves" loading="lazy">
+        <div class="pphoto-overlay">
+          <div class="pphoto-name">Roberto Alves</div>
+          <div class="pphoto-role">Gerente de vendas · Agência B2B</div>
+          <div class="pphoto-result">1 plataforma só</div>
+        </div>
+      </div>
     </div>
-    <div class="people-grid">
-      <div class="person-card"><span class="p-emoji">👩‍💻</span><div class="p-name">Camila Souza</div><div class="p-role">Fundadora · Consultoria</div><div class="p-tag" style="background:rgba(16,185,129,.12);color:#10B981;border-color:rgba(16,185,129,.2)">✓ 12 contratos/mês</div></div>
-      <div class="person-card"><span class="p-emoji">👨‍💼</span><div class="p-name">Felipe Martins</div><div class="p-role">Diretor comercial</div><div class="p-tag" style="background:rgba(30,111,219,.12);color:#1E6FDB;border-color:rgba(30,111,219,.2)">↑ 3× conversões</div></div>
-      <div class="person-card"><span class="p-emoji">👩‍🎨</span><div class="p-name">Ana Lima</div><div class="p-role">Gestora de tráfego</div><div class="p-tag" style="background:rgba(245,158,11,.12);color:#F59E0B;border-color:rgba(245,158,11,.2)">180 leads/semana</div></div>
-      <div class="person-card"><span class="p-emoji">👨‍🎨</span><div class="p-name">Roberto Alves</div><div class="p-role">Gerente de vendas</div><div class="p-tag" style="background:rgba(236,72,153,.12);color:#EC4899;border-color:rgba(236,72,153,.2)">1 plataforma só</div></div>
+
+    <div class="people-copy reveal-right">
+      <div class="sec-eyebrow" style="color:var(--lime)">Para quem vende serviços recorrentes</div>
+      <h2 class="sec-title">Feito para quem<br>vende mais<br><span style="color:var(--lime)">com inteligência.</span></h2>
+      <p class="sec-desc">Agências digitais, consultorias, times de SDR e gestores de tráfego que precisam prospectar com dados e fechar mais contratos.</p>
+      <div class="av-row">
+        <div class="av">👩‍💻</div>
+        <div class="av">👨‍💼</div>
+        <div class="av">👩‍🎨</div>
+        <div class="av">👨‍🎨</div>
+        <div class="av-more">+2k</div>
+      </div>
+      <p style="font-size:13px;color:#64748B;margin-bottom:28px">Mais de 2.000 profissionais já usam o NODERE Nexus</p>
+      <a href="/register" class="cta-primary" style="width:fit-content">Começar grátis →</a>
     </div>
   </div>
 </section>
 
-<!-- INTEGRAÇÕES -->
+<!-- ═══════ COMO FUNCIONA ═══════ -->
+<section class="howto-section" id="como-funciona">
+  <div class="howto-inner">
+    <div class="howto-header reveal">
+      <div class="sec-eyebrow" style="color:var(--lime)">Fluxo de trabalho</div>
+      <h2 class="sec-title">Do mapa ao contrato<br>em um fluxo inteligente.</h2>
+    </div>
+    <div class="steps">
+      <div class="step reveal d1">
+        <div class="step-num-bg">01</div>
+        <div class="step-n" style="background:rgba(0,191,165,.15)">🔍</div>
+        <div class="step-tag" style="color:#00BFA5">Passo 01</div>
+        <h3 class="step-title">Encontre com precisão</h3>
+        <p class="step-text">Busque por segmento e cidade. Score digital 0–100 por empresa com Google Maps, análise de site, avaliações e redes sociais em segundos.</p>
+        <div class="step-stat" style="background:rgba(0,191,165,.1);color:#00BFA5;border:1px solid rgba(0,191,165,.2)">✦ 127 empresas analisadas/dia</div>
+      </div>
+      <div class="step reveal d2">
+        <div class="step-num-bg">02</div>
+        <div class="step-n" style="background:rgba(124,58,237,.15)">🧠</div>
+        <div class="step-tag" style="color:#A78BFA">Passo 02</div>
+        <h3 class="step-title">Analise e priorize</h3>
+        <p class="step-text">IA identifica dores prováveis e sugere o produto certo. Enriquecimento automático com Apollo.io e Receita Federal incluído.</p>
+        <div class="step-stat" style="background:rgba(124,58,237,.1);color:#A78BFA;border:1px solid rgba(124,58,237,.2)">✦ Score gerado em menos de 3s</div>
+      </div>
+      <div class="step reveal d3">
+        <div class="step-num-bg">03</div>
+        <div class="step-n" style="background:rgba(170,221,0,.12)">💬</div>
+        <div class="step-tag" style="color:var(--lime)">Passo 03</div>
+        <h3 class="step-title">Aborde e feche</h3>
+        <p class="step-text">CRM integrado, scripts gerados por IA, WhatsApp e e-mail na mesma tela. Do primeiro contato ao PDF da proposta assinada.</p>
+        <div class="step-stat" style="background:rgba(170,221,0,.1);color:var(--lime);border:1px solid rgba(170,221,0,.2)">✦ Conversão até 3× maior</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ INTEGRAÇÕES (logos reais SVG) ═══════ -->
 <section class="integ-section">
   <div class="integ-inner">
-    <div class="section-eyebrow">✦ 14+ integrações nativas</div>
-    <h2 class="section-title">Conectado ao ecossistema<br>que você já usa</h2>
-    <p class="section-desc">Google, WhatsApp, Facebook, Instagram, LinkedIn, Apollo.io e muito mais — integrados nativamente na plataforma.</p>
-    <div class="integ-grid">
-      <div class="integ-chip" style="border-color:rgba(66,133,244,.3)"><span class="i-icon">🗺️</span>Google Maps</div>
-      <div class="integ-chip" style="border-color:rgba(251,188,4,.3)"><span class="i-icon">⭐</span>Google Business</div>
-      <div class="integ-chip" style="border-color:rgba(52,168,83,.3)"><span class="i-icon">📊</span>Google Ads</div>
-      <div class="integ-chip" style="border-color:rgba(37,211,102,.3)"><span class="i-icon">💬</span>WhatsApp Business</div>
-      <div class="integ-chip" style="border-color:rgba(24,119,242,.3)"><span class="i-icon">📘</span>Facebook Ads</div>
-      <div class="integ-chip" style="border-color:rgba(225,48,108,.3)"><span class="i-icon">📸</span>Instagram</div>
-      <div class="integ-chip" style="border-color:rgba(10,102,194,.3)"><span class="i-icon">💼</span>LinkedIn</div>
-      <div class="integ-chip" style="border-color:rgba(124,58,237,.3)"><span class="i-icon">🚀</span>Apollo.io</div>
-      <div class="integ-chip" style="border-color:rgba(16,163,127,.3)"><span class="i-icon">🤖</span>OpenAI GPT-4</div>
-      <div class="integ-chip" style="border-color:rgba(30,111,219,.3)"><span class="i-icon">🏛️</span>Receita Federal</div>
-      <div class="integ-chip" style="border-color:rgba(99,91,255,.3)"><span class="i-icon">💳</span>Stripe</div>
-      <div class="integ-chip" style="border-color:rgba(0,188,255,.3)"><span class="i-icon">💰</span>Mercado Pago</div>
-      <div class="integ-chip" style="border-color:rgba(62,207,142,.3)"><span class="i-icon">🗄️</span>Supabase</div>
-      <div class="integ-chip" style="border-color:rgba(234,67,53,.3)"><span class="i-icon">📧</span>E-mail SMTP</div>
+    <div class="integ-orbit reveal-left">
+      <div class="orbit-circle oc-2"></div>
+      <div class="orbit-circle oc-1"></div>
+      <div class="orbit-center">N</div>
+      <div class="orbit-ring">
+        <!-- Instagram -->
+        <div class="orbit-logo ol-0">
+          <svg viewBox="0 0 24 24"><defs><radialGradient id="ig" cx="30%" cy="107%"><stop offset="0%" stop-color="#fdf497"/><stop offset="5%" stop-color="#fdf497"/><stop offset="45%" stop-color="#fd5949"/><stop offset="60%" stop-color="#d6249f"/><stop offset="90%" stop-color="#285AEB"/></radialGradient></defs><rect width="24" height="24" rx="6" fill="url(#ig)"/><circle cx="12" cy="12" r="4" fill="none" stroke="white" stroke-width="1.8"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/><rect x="2" y="2" width="20" height="20" rx="6" fill="none" stroke="white" stroke-width="1.5" opacity=".5"/></svg>
+        </div>
+        <!-- WhatsApp -->
+        <div class="orbit-logo ol-1">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#25D366"/><path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9-.3-.1-.5-.1-.7.1-.2.3-.7.9-.9 1-.2.2-.3.2-.6.1-.3-.2-1.2-.4-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.6.1-.1.3-.3.4-.5.1-.2.1-.3.2-.5 0-.2 0-.4-.1-.5-.1-.1-.7-1.6-.9-2.2-.2-.5-.4-.5-.6-.5h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4s1 2.8 1.1 3c.1.1 2 3 4.8 4.2.7.3 1.2.4 1.6.5.7.2 1.3.2 1.8.1.5-.1 1.7-.7 1.9-1.3.2-.6.2-1.2.2-1.3 0-.2-.2-.3-.5-.4z" fill="white"/></svg>
+        </div>
+        <!-- LinkedIn -->
+        <div class="orbit-logo ol-2">
+          <svg viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#0A66C2"/><text x="12" y="18" text-anchor="middle" font-family="Arial" font-size="14" font-weight="900" fill="white">in</text></svg>
+        </div>
+        <!-- Facebook -->
+        <div class="orbit-logo ol-3">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#1877F2"/><path d="M14.5 8H13c-.3 0-.5.2-.5.5V10h2l-.3 2H12.5v6H10v-6H9v-2h1V8.5C10 7.1 11.1 6 12.5 6H14.5v2z" fill="white"/></svg>
+        </div>
+        <!-- Google -->
+        <div class="orbit-logo ol-4">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="white"/><path d="M21.8 12.2c0-.6-.1-1.2-.2-1.8H12v3.4h5.5c-.2 1.2-1 2.2-2 2.9v2.4h3.3c1.9-1.8 3-4.3 3-6.9z" fill="#4285F4"/><path d="M12 22c2.7 0 5-1 6.8-2.8l-3.3-2.6c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.3H2.8v2.7C4.6 19.7 8.1 22 12 22z" fill="#34A853"/><path d="M6.2 13.3c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V6.6H2.8C2.1 8 1.8 9.5 1.8 11.3s.3 3.3 1 4.7l3.4-2.7z" fill="#FBBC04"/><path d="M12 6.5c1.5 0 2.9.5 3.9 1.5l3-3C17 3.3 14.7 2.5 12 2.5 8.1 2.5 4.6 4.8 2.8 8l3.4 2.7c.8-2.5 3.1-4.2 5.8-4.2z" fill="#EA4335"/></svg>
+        </div>
+        <!-- Apollo -->
+        <div class="orbit-logo ol-5">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#7C3AED"/><text x="12" y="17" text-anchor="middle" font-family="Arial" font-size="13" font-weight="900" fill="white">A</text></svg>
+        </div>
+        <!-- Google Maps -->
+        <div class="orbit-logo ol-6">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="white"/><path d="M12 2C8.7 2 6 4.7 6 8c0 4 6 13 6 13s6-9 6-13c0-3.3-2.7-6-6-6zm0 8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" fill="#4285F4"/><path d="M12 2C8.7 2 6 4.7 6 8c0 1.5.4 2.8 1.1 3.9L12 21l4.9-9.1c.7-1.1 1.1-2.4 1.1-3.9 0-3.3-2.7-6-6-6z" fill="#EA4335" opacity=".6"/></svg>
+        </div>
+        <!-- Stripe -->
+        <div class="orbit-logo ol-7">
+          <svg viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#635BFF"/><path d="M11.5 9.5c0-.8.7-1.1 1.8-1.1 1.6 0 3.2.5 4.4 1.2V7.2C16.6 6.4 15 6 13.3 6c-3.1 0-5.3 1.6-5.3 4.3 0 4.2 5.8 3.5 5.8 5.3 0 .9-.8 1.2-1.9 1.2-1.7 0-3.5-.7-4.8-1.6v2.4c1.3.6 2.9 1 4.8 1 3.2 0 5.4-1.5 5.4-4.3-.1-4.5-5.8-3.7-5.8-5.5z" fill="white"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="integ-copy reveal-right">
+      <div class="sec-eyebrow" style="color:var(--lime)">14+ integrações nativas</div>
+      <h2 class="sec-title">Fortaleça sua operação com integrações poderosas</h2>
+      <p class="sec-desc" style="margin-bottom:28px">Conectado ao ecossistema que você já usa. Todas as integrações disponíveis em um só lugar.</p>
+      <div class="integ-list">
+        <div class="integ-row"><div class="ir-icon"><svg viewBox="0 0 24 24"><path d="M21.8 12.2c0-.6-.1-1.2-.2-1.8H12v3.4h5.5c-.2 1.2-1 2.2-2 2.9v2.4h3.3c1.9-1.8 3-4.3 3-6.9z" fill="#4285F4"/><path d="M12 22c2.7 0 5-1 6.8-2.8l-3.3-2.6c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.3H2.8v2.7C4.6 19.7 8.1 22 12 22z" fill="#34A853"/><path d="M6.2 13.3c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V6.6H2.8C2.1 8 1.8 9.5 1.8 11.3s.3 3.3 1 4.7l3.4-2.7z" fill="#FBBC04"/><path d="M12 6.5c1.5 0 2.9.5 3.9 1.5l3-3C17 3.3 14.7 2.5 12 2.5 8.1 2.5 4.6 4.8 2.8 8l3.4 2.7c.8-2.5 3.1-4.2 5.8-4.2z" fill="#EA4335"/></svg></div><div><div class="ir-name">Google Suite</div><div class="ir-desc">Maps, Business, Ads e Analytics</div></div></div>
+        <div class="integ-row"><div class="ir-icon" style="background:#25D366"><svg viewBox="0 0 24 24"><path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9-.3-.1-.5-.1-.7.1-.2.3-.7.9-.9 1-.2.2-.3.2-.6.1-.3-.2-1.2-.4-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.6.1-.1.3-.3.4-.5.1-.2.1-.3.2-.5 0-.2 0-.4-.1-.5-.1-.1-.7-1.6-.9-2.2-.2-.5-.4-.5-.6-.5h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4s1 2.8 1.1 3c.1.1 2 3 4.8 4.2.7.3 1.2.4 1.6.5.7.2 1.3.2 1.8.1.5-.1 1.7-.7 1.9-1.3.2-.6.2-1.2.2-1.3 0-.2-.2-.3-.5-.4z" fill="white"/></svg></div><div><div class="ir-name">WhatsApp Business</div><div class="ir-desc">Inbox, disparos em massa e automações</div></div></div>
+        <div class="integ-row"><div class="ir-icon" style="background:#7C3AED"><svg viewBox="0 0 24 24"><text x="12" y="17" text-anchor="middle" font-family="Arial" font-size="14" font-weight="900" fill="white">A</text></svg></div><div><div class="ir-name">Apollo.io</div><div class="ir-desc">Enriquecimento B2B e dados de contato</div></div></div>
+        <div class="integ-row"><div class="ir-icon" style="background:#1877F2"><svg viewBox="0 0 24 24"><path d="M14.5 8H13c-.3 0-.5.2-.5.5V10h2l-.3 2H12.5v6H10v-6H9v-2h1V8.5C10 7.1 11.1 6 12.5 6H14.5v2z" fill="white"/></svg></div><div><div class="ir-name">Facebook + Instagram</div><div class="ir-desc">Ads, integração e automações</div></div></div>
+      </div>
+      <a href="/integracoes" style="color:var(--blue);font-size:14px;font-weight:700;margin-top:16px;display:inline-block">Conheça todas as integrações ›</a>
     </div>
   </div>
 </section>
 
-<!-- COMO FUNCIONA -->
-<section class="howto-section">
-  <div class="howto-inner">
-    <div class="howto-header">
-      <div class="section-eyebrow" style="margin:0 auto 16px">Fluxo de trabalho</div>
-      <h2 class="section-title">Do mapa ao contrato<br><span class="grad">em um fluxo inteligente.</span></h2>
-    </div>
-    <div class="steps-grid">
-      <div class="step-card" onmouseenter="this.style.borderColor='#F59E0B';this.style.boxShadow='0 16px 48px rgba(0,0,0,.3),0 0 0 1px rgba(245,158,11,.3)'" onmouseleave="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
-        <div class="step-num-bg">01</div>
-        <div class="step-icon-wrap" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25)">🔍</div>
-        <div class="step-label" style="color:#F59E0B">Passo 01</div>
-        <h3 class="step-title">Encontre com precisão</h3>
-        <p class="step-desc">Busque por segmento, cidade ou raio. Score digital 0–100 por empresa, gerado em segundos com Google Maps, site, redes e avaliações.</p>
-        <div class="step-stat" style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:#F59E0B">✦ 127 empresas analisadas/dia</div>
-      </div>
-      <div class="step-card" onmouseenter="this.style.borderColor='#8B5CF6';this.style.boxShadow='0 16px 48px rgba(0,0,0,.3),0 0 0 1px rgba(139,92,246,.3)'" onmouseleave="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
-        <div class="step-num-bg">02</div>
-        <div class="step-icon-wrap" style="background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.25)">🧠</div>
-        <div class="step-label" style="color:#8B5CF6">Passo 02</div>
-        <h3 class="step-title">Analise e priorize</h3>
-        <p class="step-desc">IA identifica dores prováveis, sugere o produto certo e estima propensão com dados reais — enriquecimento automático de Apollo e Receita Federal.</p>
-        <div class="step-stat" style="background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2);color:#8B5CF6">✦ Score gerado em menos de 3s</div>
-      </div>
-      <div class="step-card" onmouseenter="this.style.borderColor='#10B981';this.style.boxShadow='0 16px 48px rgba(0,0,0,.3),0 0 0 1px rgba(16,185,129,.3)'" onmouseleave="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
-        <div class="step-num-bg">03</div>
-        <div class="step-icon-wrap" style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25)">💬</div>
-        <div class="step-label" style="color:#10B981">Passo 03</div>
-        <h3 class="step-title">Aborde e feche</h3>
-        <p class="step-desc">CRM integrado, scripts gerados por IA, WhatsApp e e-mail na mesma tela. Do primeiro contato ao PDF da proposta assinada, sem sair da plataforma.</p>
-        <div class="step-stat" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);color:#10B981">✦ Conversão até 3× maior</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- SOLUÇÕES -->
-<section class="sol-section">
-  <div class="sol-inner">
-    <div class="sol-header">
-      <div class="section-eyebrow" style="margin:0 auto 16px">8 conjuntos integrados</div>
-      <h2 class="section-title">Uma plataforma. Oito conjuntos.<br><span class="grad">Um fluxo só.</span></h2>
-      <p class="section-desc" style="max-width:500px;margin:0 auto">Use o que precisar agora. Ative novos conjuntos conforme crescer — todos se comunicam entre si.</p>
-    </div>
-    <div class="sol-grid">
-      <div class="sol-card" onmouseenter="this.style.borderColor='#F59E0B';this.style.background='rgba(245,158,11,.05)';this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--card)';this.style.transform='none'">
-        <div class="sol-card-top">
-          <div class="sol-card-left">
-            <div class="sol-ic" style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2)">🔍</div>
-            <div><div class="sol-cname">Discovery</div><div class="sol-code" style="color:#F59E0B">DISC</div></div>
-          </div>
-          <div class="sol-tag-pill" style="background:rgba(245,158,11,.12);color:#F59E0B;border:1px solid rgba(245,158,11,.2)">Prospecção</div>
-        </div>
-        <p class="sol-cdesc">Busca Google Maps, score digital 0–100, scanner de site e redes sociais. Identifica oportunidades automaticamente.</p>
-        <div class="sol-divider" style="background:linear-gradient(90deg,transparent,#F59E0B,transparent)"></div>
-        <a href="/solucoes#discovery" class="sol-link" style="color:#F59E0B">Saiba mais →</a>
-      </div>
-      <div class="sol-card" onmouseenter="this.style.borderColor='#8B5CF6';this.style.background='rgba(139,92,246,.05)';this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--card)';this.style.transform='none'">
-        <div class="sol-card-top">
-          <div class="sol-card-left">
-            <div class="sol-ic" style="background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2)">🧠</div>
-            <div><div class="sol-cname">Intelligence</div><div class="sol-code" style="color:#8B5CF6">INTEL</div></div>
-          </div>
-          <div class="sol-tag-pill" style="background:rgba(139,92,246,.12);color:#8B5CF6;border:1px solid rgba(139,92,246,.2)">Enriquecimento</div>
-        </div>
-        <p class="sol-cdesc">Apollo.io, Receita Federal, LinkedIn. Score de potencial e diagnóstico automático por IA para cada lead.</p>
-        <div class="sol-divider" style="background:linear-gradient(90deg,transparent,#8B5CF6,transparent)"></div>
-        <a href="/solucoes#intelligence" class="sol-link" style="color:#8B5CF6">Saiba mais →</a>
-      </div>
-      <div class="sol-card" onmouseenter="this.style.borderColor='#1E6FDB';this.style.background='rgba(30,111,219,.05)';this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--card)';this.style.transform='none'">
-        <div class="sol-card-top">
-          <div class="sol-card-left">
-            <div class="sol-ic" style="background:rgba(30,111,219,.1);border:1px solid rgba(30,111,219,.2)">📊</div>
-            <div><div class="sol-cname">CRM</div><div class="sol-code" style="color:#1E6FDB">CRM</div></div>
-          </div>
-          <div class="sol-tag-pill" style="background:rgba(30,111,219,.12);color:#1E6FDB;border:1px solid rgba(30,111,219,.2)">Gestão</div>
-        </div>
-        <p class="sol-cdesc">Pipeline visual, ficha 360° do lead, propostas em PDF e agenda de follow-ups completamente integrados.</p>
-        <div class="sol-divider" style="background:linear-gradient(90deg,transparent,#1E6FDB,transparent)"></div>
-        <a href="/solucoes#crm" class="sol-link" style="color:#1E6FDB">Saiba mais →</a>
-      </div>
-      <div class="sol-card" onmouseenter="this.style.borderColor='#10B981';this.style.background='rgba(16,185,129,.05)';this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--card)';this.style.transform='none'">
-        <div class="sol-card-top">
-          <div class="sol-card-left">
-            <div class="sol-ic" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2)">💬</div>
-            <div><div class="sol-cname">Engage</div><div class="sol-code" style="color:#10B981">ENG</div></div>
-          </div>
-          <div class="sol-tag-pill" style="background:rgba(16,185,129,.12);color:#10B981;border:1px solid rgba(16,185,129,.2)">Comunicação</div>
-        </div>
-        <p class="sol-cdesc">WhatsApp inbox, disparos em massa, sequências de e-mail e central omnichannel com automações por funil.</p>
-        <div class="sol-divider" style="background:linear-gradient(90deg,transparent,#10B981,transparent)"></div>
-        <a href="/solucoes#engage" class="sol-link" style="color:#10B981">Saiba mais →</a>
-      </div>
-      <div class="sol-card" onmouseenter="this.style.borderColor='#00D4FF';this.style.background='rgba(0,212,255,.04)';this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--card)';this.style.transform='none'">
-        <div class="sol-card-top">
-          <div class="sol-card-left">
-            <div class="sol-ic" style="background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.18)">🤖</div>
-            <div><div class="sol-cname">AI Nexus</div><div class="sol-code" style="color:#00D4FF">AI</div></div>
-          </div>
-          <div class="sol-tag-pill" style="background:rgba(0,212,255,.1);color:#00D4FF;border:1px solid rgba(0,212,255,.18)">Copiloto</div>
-        </div>
-        <p class="sol-cdesc">Chat com contexto real do lead. Gera scripts, analisa oportunidades e responde sobre sua operação comercial.</p>
-        <div class="sol-divider" style="background:linear-gradient(90deg,transparent,#00D4FF,transparent)"></div>
-        <a href="/solucoes#ai" class="sol-link" style="color:#00D4FF">Saiba mais →</a>
-      </div>
-      <div class="sol-card" onmouseenter="this.style.borderColor='#EC4899';this.style.background='rgba(236,72,153,.05)';this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--card)';this.style.transform='none'">
-        <div class="sol-card-top">
-          <div class="sol-card-left">
-            <div class="sol-ic" style="background:rgba(236,72,153,.1);border:1px solid rgba(236,72,153,.2)">📈</div>
-            <div><div class="sol-cname">Analytics</div><div class="sol-code" style="color:#EC4899">ANA</div></div>
-          </div>
-          <div class="sol-tag-pill" style="background:rgba(236,72,153,.12);color:#EC4899;border:1px solid rgba(236,72,153,.2)">BI</div>
-        </div>
-        <p class="sol-cdesc">Dashboard executivo, forecast de receita, ranking de operadores e relatórios em PDF/CSV em tempo real.</p>
-        <div class="sol-divider" style="background:linear-gradient(90deg,transparent,#EC4899,transparent)"></div>
-        <a href="/solucoes#analytics" class="sol-link" style="color:#EC4899">Saiba mais →</a>
-      </div>
-      <div class="sol-card" onmouseenter="this.style.borderColor='#F97316';this.style.background='rgba(249,115,22,.05)';this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--card)';this.style.transform='none'">
-        <div class="sol-card-top">
-          <div class="sol-card-left">
-            <div class="sol-ic" style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.2)">🗂️</div>
-            <div><div class="sol-cname">Operations</div><div class="sol-code" style="color:#F97316">OPS</div></div>
-          </div>
-          <div class="sol-tag-pill" style="background:rgba(249,115,22,.12);color:#F97316;border:1px solid rgba(249,115,22,.2)">Pós-venda</div>
-        </div>
-        <p class="sol-cdesc">Projetos kanban, portal do cliente, gestão de documentos e controle financeiro básico pós-venda.</p>
-        <div class="sol-divider" style="background:linear-gradient(90deg,transparent,#F97316,transparent)"></div>
-        <a href="/solucoes#operations" class="sol-link" style="color:#F97316">Saiba mais →</a>
-      </div>
-      <div class="sol-card" onmouseenter="this.style.borderColor='#06B6D4';this.style.background='rgba(6,182,212,.05)';this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--card)';this.style.transform='none'">
-        <div class="sol-card-top">
-          <div class="sol-card-left">
-            <div class="sol-ic" style="background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.18)">🤝</div>
-            <div><div class="sol-cname">Marketplace</div><div class="sol-code" style="color:#06B6D4">MKT</div></div>
-          </div>
-          <div class="sol-tag-pill" style="background:rgba(6,182,212,.1);color:#06B6D4;border:1px solid rgba(6,182,212,.18)">Ecossistema</div>
-        </div>
-        <p class="sol-cdesc">Rede de parceiros, comissionamento automático e integração nativa com ERPs brasileiros (Bling, Omie).</p>
-        <div class="sol-divider" style="background:linear-gradient(90deg,transparent,#06B6D4,transparent)"></div>
-        <a href="/solucoes#marketplace" class="sol-link" style="color:#06B6D4">Saiba mais →</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- PLANOS -->
+<!-- ═══════ PLANOS ═══════ -->
 <section class="plans-section">
   <div class="plans-inner">
-    <div class="plans-header">
-      <div class="section-eyebrow" style="margin:0 auto 16px">Preços simples</div>
-      <h2>Planos que crescem com você</h2>
-      <p>14 dias grátis em todos os planos. Sem cartão de crédito.</p>
-      <div class="toggle-wrap">
-        <button class="toggle-btn active" id="btnMonthly" onclick="setAnnual(false)">Mensal</button>
-        <button class="toggle-btn" id="btnAnnual" onclick="setAnnual(true)">Anual <span class="save-badge">-17%</span></button>
+    <div class="plans-header reveal">
+      <div class="sec-eyebrow" style="color:var(--lime)">Preços simples e transparentes</div>
+      <h2 class="sec-title">Comece simples.<br>Escale quando precisar.</h2>
+      <p style="color:#94A3B8;font-size:15px">14 dias grátis em todos os planos. Sem cartão de crédito.</p>
+      <div class="toggle-row">
+        <div class="toggle">
+          <button class="tgl on" id="btnM" onclick="setAnnual(false)">Mensal</button>
+          <button class="tgl" id="btnA" onclick="setAnnual(true)">Anual <span class="save-pill">-17%</span></button>
+        </div>
       </div>
     </div>
     <div class="plans-grid">
-      <div class="plan-card">
+      <div class="plan reveal d1">
         <div class="plan-name">Starter</div>
         <div class="plan-users">1 usuário incluso</div>
-        <div class="plan-price"><span class="plan-amount" id="p0">R$ 97</span><span class="plan-period">/mês</span></div>
-        <a href="/register" class="plan-cta ghost">Começar grátis</a>
-        <ul class="plan-features">
-          <li><span class="fk">✓</span>Discovery completo</li>
-          <li><span class="fk">✓</span>CRM essencial</li>
-          <li><span class="fk">✓</span>Dashboard básico</li>
-          <li><span class="fk">✓</span>IA limitada (50 req/mês)</li>
-          <li><span class="fk">✓</span>300 créditos/mês</li>
-        </ul>
+        <div class="plan-price"><span class="plan-amt" id="p0">R$ 97</span><span class="plan-per">/mês</span></div>
+        <a href="/register" class="plan-cta sec">Começar grátis</a>
+        <ul class="plan-feats"><li><span class="pf-ck">✓</span>Discovery completo</li><li><span class="pf-ck">✓</span>CRM essencial</li><li><span class="pf-ck">✓</span>Dashboard básico</li><li><span class="pf-ck">✓</span>IA limitada (50 req/mês)</li><li><span class="pf-ck">✓</span>300 créditos/mês</li></ul>
       </div>
-      <div class="plan-card featured">
-        <div class="plan-popular">Mais popular</div>
+      <div class="plan hot reveal d2">
+        <div class="plan-pop">Mais popular</div>
         <div class="plan-name">Pro</div>
         <div class="plan-users">Até 3 usuários</div>
-        <div class="plan-price"><span class="plan-amount" id="p1">R$ 247</span><span class="plan-period">/mês</span></div>
-        <a href="/register" class="plan-cta primary">Começar grátis</a>
-        <ul class="plan-features">
-          <li><span class="fk">✓</span>Tudo do Starter</li>
-          <li><span class="fk">✓</span>Intelligence + Enriquecimento</li>
-          <li><span class="fk">✓</span>WhatsApp + E-mail</li>
-          <li><span class="fk">✓</span>IA copiloto ilimitado</li>
-          <li><span class="fk">✓</span>Relatórios e forecast</li>
-          <li><span class="fk">✓</span>1.000 créditos/mês</li>
-        </ul>
+        <div class="plan-price"><span class="plan-amt" id="p1">R$ 247</span><span class="plan-per">/mês</span></div>
+        <a href="/register" class="plan-cta prim">Começar grátis</a>
+        <ul class="plan-feats"><li><span class="pf-ck">✓</span>Tudo do Starter</li><li><span class="pf-ck">✓</span>Intelligence + Enriquecimento</li><li><span class="pf-ck">✓</span>WhatsApp + E-mail</li><li><span class="pf-ck">✓</span>IA copiloto ilimitado</li><li><span class="pf-ck">✓</span>Relatórios e forecast</li><li><span class="pf-ck">✓</span>1.000 créditos/mês</li></ul>
       </div>
-      <div class="plan-card">
+      <div class="plan reveal d3">
         <div class="plan-name">Agency</div>
         <div class="plan-users">Até 10 usuários</div>
-        <div class="plan-price"><span class="plan-amount" id="p2">R$ 497</span><span class="plan-period">/mês</span></div>
-        <a href="/register" class="plan-cta ghost">Começar grátis</a>
-        <ul class="plan-features">
-          <li><span class="fk">✓</span>Tudo do Pro</li>
-          <li><span class="fk">✓</span>Omnichannel completo</li>
-          <li><span class="fk">✓</span>Automações avançadas</li>
-          <li><span class="fk">✓</span>Analytics completo</li>
-          <li><span class="fk">✓</span>Operations + Marketplace</li>
-          <li><span class="fk">✓</span>Créditos ampliados</li>
-        </ul>
+        <div class="plan-price"><span class="plan-amt" id="p2">R$ 497</span><span class="plan-per">/mês</span></div>
+        <a href="/register" class="plan-cta sec">Começar grátis</a>
+        <ul class="plan-feats"><li><span class="pf-ck">✓</span>Tudo do Pro</li><li><span class="pf-ck">✓</span>Omnichannel completo</li><li><span class="pf-ck">✓</span>Automações avançadas</li><li><span class="pf-ck">✓</span>Analytics completo</li><li><span class="pf-ck">✓</span>Operations + Marketplace</li></ul>
       </div>
-      <div class="plan-card">
+      <div class="plan reveal d4">
         <div class="plan-name">Enterprise</div>
-        <div class="plan-users">Usuários ilimitados</div>
-        <div class="plan-price"><span class="plan-amount" style="font-size:28px">Consulte</span></div>
-        <a href="/contato" class="plan-cta ghost">Falar com vendas</a>
-        <ul class="plan-features">
-          <li><span class="fk">✓</span>Todos os módulos</li>
-          <li><span class="fk">✓</span>White-label disponível</li>
-          <li><span class="fk">✓</span>API pública</li>
-          <li><span class="fk">✓</span>SLA dedicado</li>
-          <li><span class="fk">✓</span>Gerente de conta</li>
-        </ul>
+        <div class="plan-users">Ilimitado</div>
+        <div class="plan-price"><span class="plan-amt" style="font-size:28px">Consulte</span></div>
+        <a href="/contato" class="plan-cta sec">Falar com vendas</a>
+        <ul class="plan-feats"><li><span class="pf-ck">✓</span>Todos os módulos</li><li><span class="pf-ck">✓</span>White-label</li><li><span class="pf-ck">✓</span>API pública</li><li><span class="pf-ck">✓</span>SLA dedicado</li><li><span class="pf-ck">✓</span>Gerente de conta</li></ul>
       </div>
     </div>
-    <p class="plans-note">Usuário adicional: Starter +R$47 · Pro +R$37 · Agency +R$27 &nbsp;·&nbsp; <a href="/planos">Ver comparativo completo →</a></p>
+    <p class="plans-note">Usuário adicional: Starter +R$47 · Pro +R$37 · Agency +R$27 · <a href="/planos">Ver comparativo completo →</a></p>
   </div>
 </section>
 
-<!-- DEPOIMENTOS -->
+<!-- ═══════ DEPOIMENTOS ═══════ -->
 <section class="testi-section">
   <div class="testi-inner">
     <h2>Quem já usa o NODERE Nexus</h2>
     <div class="testi-grid">
-      <div class="testi-card"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div><p class="testi-text">"Em 3 dias prospectei 180 empresas no meu segmento com diagnóstico automático. Nunca fui tão assertivo na abordagem."</p><div class="testi-author"><div class="testi-av">👨‍💼</div><div><div class="testi-name">Felipe Martins</div><div class="testi-role">Diretor comercial · Agência digital SP</div></div></div></div>
-      <div class="testi-card"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div><p class="testi-text">"O diagnóstico de presença digital virou meu principal argumento de venda. O cliente vê o score e já entende o problema."</p><div class="testi-author"><div class="testi-av">👩‍💼</div><div><div class="testi-name">Camila Souza</div><div class="testi-role">Fundadora · Consultoria de marketing</div></div></div></div>
-      <div class="testi-card"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div><p class="testi-text">"Minha equipe parou de usar 4 ferramentas diferentes. Tudo num único lugar, do lead até a proposta assinada."</p><div class="testi-author"><div class="testi-av">👨‍💻</div><div><div class="testi-name">Roberto Alves</div><div class="testi-role">Gerente de vendas · Agência B2B</div></div></div></div>
+      <div class="testi reveal d1">
+        <div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+        <p class="testi-text">"Em 3 dias prospectei 180 empresas no meu segmento com diagnóstico automático. Nunca fui tão assertivo na abordagem."</p>
+        <div class="testi-author">
+          <div class="ta-av"><img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&q=80" alt="Felipe Martins" loading="lazy"></div>
+          <div><div class="ta-name">Felipe Martins</div><div class="ta-role">Diretor comercial · Agência digital SP</div><div class="ta-result">↑ 3× mais conversões</div></div>
+        </div>
+      </div>
+      <div class="testi reveal d2">
+        <div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+        <p class="testi-text">"O diagnóstico de presença digital virou meu principal argumento de venda. O cliente vê o score e já entende o problema."</p>
+        <div class="testi-author">
+          <div class="ta-av"><img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=100&q=80" alt="Camila Souza" loading="lazy"></div>
+          <div><div class="ta-name">Camila Souza</div><div class="ta-role">Fundadora · Consultoria de marketing</div><div class="ta-result">12 contratos/mês</div></div>
+        </div>
+      </div>
+      <div class="testi reveal d3">
+        <div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+        <p class="testi-text">"Minha equipe parou de usar 4 ferramentas diferentes. Tudo num único lugar, do lead até a proposta assinada."</p>
+        <div class="testi-author">
+          <div class="ta-av"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80" alt="Roberto Alves" loading="lazy"></div>
+          <div><div class="ta-name">Roberto Alves</div><div class="ta-role">Gerente de vendas · Agência B2B</div><div class="ta-result">1 plataforma para tudo</div></div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- BLOG -->
-<section class="blog-section">
+<!-- ═══════ BLOG ═══════ -->
+<section class="blog-section" id="blog">
   <div class="blog-inner">
-    <div class="blog-header">
-      <div><div class="section-eyebrow" style="margin-bottom:12px">Blog & Conteúdo</div><h2>Aprenda a vender mais<br>com inteligência comercial</h2></div>
-      <a href="/blog" class="blog-more">Ver todos os artigos →</a>
+    <div class="blog-hdr reveal">
+      <div>
+        <div class="sec-eyebrow" style="color:var(--lime);margin-bottom:8px">Blog & Conteúdo</div>
+        <h2>Aprenda a vender mais<br>com inteligência comercial</h2>
+      </div>
+      <a href="/blog" class="blog-more">Ver todos os artigos ›</a>
     </div>
     <div class="blog-grid">
-      <a href="/blog/prospeccao-200-empresas-score-digital" class="blog-card" onmouseenter="this.style.borderColor='#F59E0B';this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='var(--border)';this.style.transform='none'"><div class="blog-stripe" style="background:#F59E0B"></div><div class="blog-body"><div class="blog-tag" style="background:rgba(245,158,11,.12);color:#F59E0B;border-color:rgba(245,158,11,.2)">Discovery</div><h3 class="blog-title">Como prospectar 200 empresas por semana com score digital automatizado</h3><p class="blog-desc">Aprenda a usar o conjunto Discovery do NODERE Nexus para encontrar empresas com baixa presença digital e alto potencial.</p><div class="blog-meta"><span>⏱ 5 min</span><span>Jun 2026</span></div></div></a>
-      <a href="/blog/pipeline-inteligente-leads" class="blog-card" onmouseenter="this.style.borderColor='#1E6FDB';this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='var(--border)';this.style.transform='none'"><div class="blog-stripe" style="background:#1E6FDB"></div><div class="blog-body"><div class="blog-tag" style="background:rgba(30,111,219,.12);color:#1E6FDB;border-color:rgba(30,111,219,.2)">CRM</div><h3 class="blog-title">Pipeline inteligente: como parar de perder leads no funil de vendas</h3><p class="blog-desc">Configure estágios personalizados, alertas de estagnação e automações que movem seus leads no funil.</p><div class="blog-meta"><span>⏱ 4 min</span><span>Jun 2026</span></div></div></a>
-      <a href="/blog/copiloto-ia-scripts-abordagem" class="blog-card" onmouseenter="this.style.borderColor='#00D4FF';this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='var(--border)';this.style.transform='none'"><div class="blog-stripe" style="background:#00D4FF"></div><div class="blog-body"><div class="blog-tag" style="background:rgba(0,212,255,.1);color:#00D4FF;border-color:rgba(0,212,255,.18)">AI Nexus</div><h3 class="blog-title">Copiloto comercial: como a IA gera scripts de abordagem em segundos</h3><p class="blog-desc">O AI Nexus usa o contexto real do lead para criar mensagens de WhatsApp e e-mails personalizados com um clique.</p><div class="blog-meta"><span>⏱ 6 min</span><span>Mai 2026</span></div></div></a>
+      <a href="/blog/prospeccao-200-empresas" class="blog-card reveal d1">
+        <img class="bc-img" src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=500&q=80" alt="Prospecção" loading="lazy">
+        <div class="bc-body">
+          <div class="bc-tag" style="background:rgba(0,191,165,.12);color:#00BFA5;border-color:rgba(0,191,165,.2)">Discovery</div>
+          <h3 class="bc-title">Como prospectar 200 empresas por semana com score digital automatizado</h3>
+          <p class="bc-desc">Aprenda a usar o conjunto Discovery para encontrar empresas com baixa presença digital e alto potencial.</p>
+          <div class="bc-meta"><span>⏱ 5 min</span><span>Jun 2026</span></div>
+        </div>
+      </a>
+      <a href="/blog/pipeline-inteligente" class="blog-card reveal d2">
+        <img class="bc-img" src="https://images.unsplash.com/photo-1551434678-e076c223a692?w=500&q=80" alt="CRM" loading="lazy">
+        <div class="bc-body">
+          <div class="bc-tag" style="background:rgba(26,108,245,.12);color:#60A5FA;border-color:rgba(26,108,245,.2)">CRM</div>
+          <h3 class="bc-title">Pipeline inteligente: como parar de perder leads no funil de vendas</h3>
+          <p class="bc-desc">Configure estágios, alertas de estagnação e automações que movem seus leads no funil.</p>
+          <div class="bc-meta"><span>⏱ 4 min</span><span>Jun 2026</span></div>
+        </div>
+      </a>
+      <a href="/blog/copiloto-ia-scripts" class="blog-card reveal d3">
+        <img class="bc-img" src="https://images.unsplash.com/photo-1677442136019-21780ecad995?w=500&q=80" alt="IA" loading="lazy">
+        <div class="bc-body">
+          <div class="bc-tag" style="background:rgba(0,194,255,.1);color:#00C2FF;border-color:rgba(0,194,255,.18)">AI Nexus</div>
+          <h3 class="bc-title">Copiloto comercial: como a IA gera scripts de abordagem em segundos</h3>
+          <p class="bc-desc">O AI Nexus usa o contexto real do lead para criar mensagens personalizadas com um clique.</p>
+          <div class="bc-meta"><span>⏱ 6 min</span><span>Mai 2026</span></div>
+        </div>
+      </a>
     </div>
   </div>
 </section>
 
-<!-- CTA FINAL -->
-<section class="cta-section">
-  <h2>Pronto para encontrar<br>seus próximos clientes?</h2>
+<!-- ═══════ CTA FINAL ═══════ -->
+<section class="cta-final">
+  <h2>Pronto para encontrar<br><span>seus próximos clientes?</span></h2>
   <p>14 dias grátis. Sem cartão. Sem compromisso.</p>
-  <a href="/register" class="cta-big">Criar conta grátis →</a>
+  <a href="/register" class="cta-primary">Criar conta grátis →</a>
   <div class="cta-trust">
-    <span><span style="color:#10B981">✓</span> Sem cartão de crédito</span>
-    <span><span style="color:#10B981">✓</span> Cancele quando quiser</span>
-    <span><span style="color:#10B981">✓</span> LGPD compliant</span>
+    <span class="ct-i"><span class="ck">✓</span> Sem cartão de crédito</span>
+    <span class="ct-i"><span class="ck">✓</span> Cancele quando quiser</span>
+    <span class="ct-i"><span class="ck">✓</span> LGPD compliant</span>
   </div>
 </section>
 
-<!-- FOOTER -->
-<footer class="site-footer">
+<!-- ═══════ FOOTER ═══════ -->
+<footer class="footer">
   <div class="footer-inner">
     <div class="footer-top">
       <div class="footer-brand">
-        <div class="footer-logo"><div class="logo-icon" style="width:32px;height:32px;font-size:16px">N</div><span class="logo-name">NODERE <span>Nexus</span></span></div>
-        <p class="footer-desc">Revenue Intelligence Platform. A plataforma que conecta inteligência comercial, prospecção e vendas em um único fluxo.</p>
+        <svg xmlns="http://www.w3.org/2000/svg" height="32" viewBox="0 0 200 40">
+          <defs><linearGradient id="ng2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1A6CF5"/><stop offset="100%" stop-color="#00C2FF"/></linearGradient></defs>
+          <rect x="0" y="1" width="38" height="38" rx="9" fill="url(#ng2)"/>
+          <text x="19" y="28" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="22" font-weight="900" fill="white">N</text>
+          <text x="52" y="28" font-family="Inter,Arial,sans-serif" font-size="21" font-weight="800" fill="white">NODERE</text>
+          <text x="146" y="28" font-family="Inter,Arial,sans-serif" font-size="21" font-weight="400" fill="#64748B">Nexus</text>
+        </svg>
+        <p>Revenue Intelligence Platform. A plataforma que conecta inteligência comercial, prospecção e vendas em um único fluxo.</p>
         <div class="footer-socials">
-          <a href="https://linkedin.com/company/nodere" class="social-btn" target="_blank">LinkedIn</a>
-          <a href="https://instagram.com/nodere.nexus" class="social-btn" target="_blank">Instagram</a>
+          <a href="https://linkedin.com/company/nodere" class="fs-btn" target="_blank" title="LinkedIn">in</a>
+          <a href="https://instagram.com/nodere.nexus" class="fs-btn" target="_blank" title="Instagram">📸</a>
+          <a href="https://wa.me/5500000000000" class="fs-btn" target="_blank" title="WhatsApp">💬</a>
         </div>
       </div>
-      <div class="footer-col"><div class="footer-col-title">Produto</div><a href="/solucoes">Soluções</a><a href="/planos">Planos</a><a href="/blog">Blog</a></div>
+      <div class="footer-col"><div class="footer-col-title">Produto</div><a href="/solucoes">Soluções</a><a href="/planos">Planos</a><a href="/blog">Blog</a><a href="/integracoes">Integrações</a></div>
       <div class="footer-col"><div class="footer-col-title">Empresa</div><a href="/contato">Contato</a><a href="/terms">Termos de uso</a><a href="/privacy">Privacidade</a></div>
-      <div class="footer-col"><div class="footer-col-title">Contato</div><a href="mailto:comercial@nodere.com.br">comercial@nodere.com.br</a></div>
+      <div class="footer-col"><div class="footer-col-title">Contato</div><a href="mailto:comercial@nodere.com.br">comercial@nodere.com.br</a><a href="https://wa.me/5500000000000">WhatsApp</a></div>
     </div>
     <div class="footer-bottom"><span>© 2026 NODERE Nexus. Todos os direitos reservados.</span><span>Revenue Intelligence Platform · nodere.com.br</span></div>
   </div>
 </footer>
 
-<!-- WHATSAPP -->
-<a href="https://wa.me/5500000000000?text=Olá! Quero conhecer o NODERE Nexus." class="wa-btn" target="_blank">💬</a>
+<!-- WHATSAPP FLUTUANTE -->
+<a href="https://wa.me/5500000000000?text=Olá! Quero conhecer o NODERE Nexus." class="wa-float" target="_blank" title="Falar no WhatsApp">
+  <svg viewBox="0 0 24 24" fill="white"><path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9-.3-.1-.5-.1-.7.1-.2.3-.7.9-.9 1-.2.2-.3.2-.6.1-.3-.2-1.2-.4-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.6.1-.1.3-.3.4-.5.1-.2.1-.3.2-.5 0-.2 0-.4-.1-.5-.1-.1-.7-1.6-.9-2.2-.2-.5-.4-.5-.6-.5h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4s1 2.8 1.1 3c.1.1 2 3 4.8 4.2.7.3 1.2.4 1.6.5.7.2 1.3.2 1.8.1.5-.1 1.7-.7 1.9-1.3.2-.6.2-1.2.2-1.3 0-.2-.2-.3-.5-.4z"/><path d="M12 2C6.5 2 2 6.5 2 12c0 1.9.5 3.7 1.4 5.3L2 22l4.8-1.4C8.3 21.5 10.1 22 12 22c5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18c-1.7 0-3.4-.5-4.8-1.3l-.3-.2-3.2.9.9-3.1-.2-.3C3.5 15.4 3 13.7 3 12c0-5 4-9 9-9s9 4 9 9-4 9-9 9z"/></svg>
+</a>
 
 <script>
-// TICKER
-const ticks=['Agências digitais','Consultorias B2B','Times de SDR','Gestores de tráfego','Prestadores locais','Franquias'];
-let ti=0;
-const tickEl=document.getElementById('ticker');
-setInterval(()=>{
-  ti=(ti+1)%ticks.length;
-  if(tickEl){tickEl.style.opacity='0';setTimeout(()=>{tickEl.textContent=ticks[ti];tickEl.style.opacity='1'},200)}
-},2200);
+// ── SCORE COUNTER ──
+let sc = 0;
+const scEl = document.getElementById('heroScore');
+const scFill = document.getElementById('scFill');
+const scT = setInterval(() => {
+  sc++;
+  if(scEl) scEl.textContent = sc;
+  if(scFill) scFill.style.width = sc + '%';
+  if(sc >= 82) clearInterval(scT);
+}, 22);
 
-// CONTADOR SCORE
-const numEl=document.getElementById('scoreNum');
-const fillEl=document.getElementById('progFill');
-let count=0;
-if(fillEl)fillEl.style.width='0';
-const timer=setInterval(()=>{
-  count++;
-  if(numEl)numEl.textContent=count;
-  if(fillEl)fillEl.style.width=count+'%';
-  if(count>=82)clearInterval(timer);
-},22);
+// ── TICKER ──
+const tks = ['Agências digitais','Consultorias B2B','Times de SDR','Gestores de tráfego','Prestadores locais','Franquias'];
+let ti = 0;
+// (ticker removido do hero nesta versão — headline fixa é mais impactante)
 
-// TOGGLE PLANOS
-const prices=[[97,247,497],[80,205,413]];
-function setAnnual(a){
-  document.getElementById('btnMonthly').className='toggle-btn'+(a?'':' active');
-  document.getElementById('btnAnnual').className='toggle-btn'+(a?' active':'');
-  const row=a?prices[1]:prices[0];
-  ['p0','p1','p2'].forEach((id,i)=>{
-    const el=document.getElementById(id);
-    if(el)el.textContent='R$ '+row[i];
+// ── TOGGLE PLANOS ──
+const prices = [[97,247,497],[80,205,413]];
+function setAnnual(a) {
+  document.getElementById('btnM').className = 'tgl' + (a ? '' : ' on');
+  document.getElementById('btnA').className = 'tgl' + (a ? ' on' : '');
+  ['p0','p1','p2'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = 'R$ ' + (a ? prices[1][i] : prices[0][i]);
   });
 }
 
-// SCROLL REVEAL (Intersection Observer)
-const observer=new IntersectionObserver((entries)=>{
-  entries.forEach(e=>{
-    if(e.isIntersecting){
-      e.target.style.opacity='1';
-      e.target.style.transform='translateY(0)';
+// ── SCROLL REVEAL ──
+const revObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if(e.isIntersecting) {
+      e.target.classList.add('up');
+      revObserver.unobserve(e.target);
     }
   });
-},{threshold:0.1});
-document.querySelectorAll('.step-card,.sol-card,.plan-card,.testi-card,.blog-card,.person-card,.integ-chip').forEach(el=>{
-  el.style.opacity='0';
-  el.style.transform='translateY(20px)';
-  el.style.transition='opacity .5s ease, transform .5s ease';
-  observer.observe(el);
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.reveal,.reveal-left,.reveal-right').forEach(el => {
+  revObserver.observe(el);
+});
+
+// ── HEADER SCROLL ──
+window.addEventListener('scroll', () => {
+  const hdr = document.querySelector('.hdr');
+  if(hdr) hdr.style.background = window.scrollY > 30
+    ? 'rgba(10,22,40,0.98)'
+    : 'rgba(10,22,40,0.95)';
 });
 </script>
 </body>
