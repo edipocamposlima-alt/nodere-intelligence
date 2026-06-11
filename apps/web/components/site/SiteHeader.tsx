@@ -22,11 +22,25 @@ export default function SiteHeader() {
       <header className={`site-header ${scrolled ? "site-header--scrolled" : ""}`}>
         <div className="site-header__inner">
           <Link href="/" className="site-logo" aria-label="NODERE Nexus">
-            <span className="site-logo__mark">N</span>
-            <span>NODERE <strong>Nexus</strong></span>
+            <img
+              src="/nodere-logo.svg"
+              alt="NODERE Nexus"
+              height={32}
+              className="site-logo__image"
+              onError={(event) => {
+                const target = event.currentTarget as HTMLImageElement;
+                target.style.display = "none";
+                const fallback = target.nextElementSibling as HTMLElement | null;
+                if (fallback) fallback.style.display = "flex";
+              }}
+            />
+            <span className="site-logo__fallback">
+              <span className="site-logo__mark">N</span>
+              <span>NODERE <strong>Nexus</strong></span>
+            </span>
           </Link>
 
-          <nav className="site-nav" aria-label="Navegação principal">
+          <nav className="site-nav desktop-nav" aria-label="Navegação principal">
             <div className="site-nav__mega" onMouseEnter={() => setSolutionsOpen(true)} onMouseLeave={() => setSolutionsOpen(false)}>
               <button className="site-nav__link site-nav__button" type="button" onClick={() => setSolutionsOpen((current) => !current)} aria-expanded={solutionsOpen}>
                 Soluções <ChevronDown className={solutionsOpen ? "site-chevron site-chevron--open" : "site-chevron"} size={14} />
@@ -57,7 +71,7 @@ export default function SiteHeader() {
             <Link className="site-nav__link" href="/contato">Contato</Link>
           </nav>
 
-          <div className="site-header__actions">
+          <div className="site-header__actions header-ctas">
             <Link className="site-login" href="/login">Entrar</Link>
             <Link className="site-primary" href="/register">Começar grátis</Link>
           </div>

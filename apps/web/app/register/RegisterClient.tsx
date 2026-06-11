@@ -64,7 +64,7 @@ export function RegisterClient() {
     return (
       <main className="site-auth">
         <section className="site-auth__card site-auth__card--center">
-          <div className="site-auth__brand">NODERE <strong>Nexus</strong></div>
+          <img className="site-auth__logo" src="/nodere-logo.svg" alt="NODERE Nexus" />
           <h1>Verifique seu e-mail</h1>
           <p>Enviamos um link de confirmação para <strong>{form.email}</strong>. Confirme para acessar o NODERE Nexus.</p>
           <Link href="/login">Ir para o login</Link>
@@ -76,7 +76,7 @@ export function RegisterClient() {
   return (
     <main className="site-auth">
       <section className="site-auth__card">
-        <div className="site-auth__brand">NODERE <strong>Nexus</strong></div>
+        <img className="site-auth__logo" src="/nodere-logo.svg" alt="NODERE Nexus" />
         <p className="site-auth__caption">Revenue Intelligence Platform</p>
         <h1>Criar conta grátis</h1>
         <p className="site-auth__subtitle">14 dias grátis · Sem cartão de crédito</p>

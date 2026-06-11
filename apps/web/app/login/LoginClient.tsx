@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { setAdminToken } from "@/lib/adminAuth";
@@ -11,6 +11,11 @@ import { hasSupabaseAuthConfig, sendPasswordRecovery, signInWithPassword } from 
 export function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const nextPath = useMemo(() => {
+    const raw = searchParams.get("next");
+    if (!raw || raw === "/" || raw.startsWith("/login") || raw.startsWith("/register")) return "/dashboard";
+    return raw.startsWith("/") ? raw : "/dashboard";
+  }, [searchParams]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -37,7 +42,7 @@ export function LoginClient() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ access_token: auth.access_token })
         });
-        router.push(searchParams.get("next") || "/");
+        router.push(nextPath);
         return;
       }
 
@@ -59,7 +64,7 @@ export function LoginClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ access_token: payload.token })
       });
-      router.push(searchParams.get("next") || "/");
+      router.push(nextPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao fazer login.");
     } finally {
@@ -85,7 +90,7 @@ export function LoginClient() {
   return (
     <main className="site-auth">
       <section className="site-auth__card">
-        <div className="site-auth__brand">NODERE <strong>Nexus</strong></div>
+        <img className="site-auth__logo" src="/nodere-logo.svg" alt="NODERE Nexus" />
         <p className="site-auth__caption">Revenue Intelligence Platform</p>
         <h1>Entrar no NODERE Nexus</h1>
         <p className="site-auth__subtitle">Acesse seu workspace comercial.</p>

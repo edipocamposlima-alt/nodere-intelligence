@@ -27,7 +27,7 @@ export default function PlansSection() {
             <button className={annual ? "active" : ""} onClick={() => setAnnual(true)} type="button">Anual</button>
           </div>
         </div>
-        <div className="site-card-grid site-card-grid--4">
+        <div className="plans-grid site-card-grid site-card-grid--4">
           {plans.map((plan) => {
             const price = annual ? plan.yearly : plan.monthly;
             return (
