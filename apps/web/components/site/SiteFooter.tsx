@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 const columns = [
-  { title: "Produto", links: [{ label: "Soluções", href: "/solucoes" }, { label: "Planos", href: "/planos" }, { label: "Blog", href: "/blog" }] },
-  { title: "Empresa", links: [{ label: "Contato", href: "/contato" }, { label: "Termos de uso", href: "/terms" }, { label: "Privacidade", href: "/privacy" }] },
+  { title: "Produto", links: [{ label: "Soluções", href: "/solucoes" }, { label: "Preços", href: "/precos" }, { label: "Blog", href: "/blog" }] },
+  { title: "Empresa", links: [{ label: "Contato", href: "/contato" }, { label: "Termos de uso", href: "/termos" }, { label: "Privacidade", href: "/privacidade" }] },
   { title: "Contato", links: [{ label: "comercial@nodere.com.br", href: "mailto:comercial@nodere.com.br" }] }
 ];
 

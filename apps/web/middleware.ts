@@ -7,12 +7,17 @@ const PUBLIC_PATHS = [
   "/reset-password",
   "/forgot-password",
   "/planos",
+  "/precos",
   "/plans",
   "/solucoes",
   "/blog",
   "/contato",
   "/terms",
   "/privacy",
+  "/termos",
+  "/privacidade",
+  "/app/login",
+  "/app/register",
   "/api/admin",
   "/api/auth",
   "/api/webhooks",
@@ -31,6 +36,14 @@ const PUBLIC_PATHS = [
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const session = request.cookies.get("nodere_session")?.value || request.cookies.get("nodere-session")?.value;
+
+  if (pathname === "/app/login") {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  if (pathname === "/app/register") {
+    return NextResponse.redirect(new URL("/register", request.url));
+  }
 
   if (pathname === "/") {
     if (session) return NextResponse.redirect(new URL("/dashboard", request.url));

@@ -17,12 +17,15 @@ const PUBLIC_PREFIXES = [
   "/reset-password",
   "/forgot-password",
   "/planos",
+  "/precos",
   "/plans",
   "/solucoes",
   "/blog",
   "/contato",
   "/terms",
-  "/privacy"
+  "/privacy",
+  "/termos",
+  "/privacidade"
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

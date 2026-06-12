@@ -22,7 +22,7 @@ export default function ContactPage() {
           <article className="site-info-card site-contact-card--form">
             <p className="site-eyebrow">Mensagem</p>
             <h2>Envie os dados do seu projeto</h2>
-            <p>A mensagem será preparada para envio pelo seu aplicativo de e-mail, sem expor erros técnicos ao visitante.</p>
+            <p>O formulario envia sua mensagem diretamente para o comercial da NODERE Nexus.</p>
             <ContactForm />
           </article>
           <article className="site-info-card">
@@ -35,7 +35,7 @@ export default function ContactPage() {
             <p className="site-eyebrow">WhatsApp</p>
             <h2>Atendimento comercial</h2>
             <p>O botão fixo de WhatsApp usa o número configurado em ambiente para contato direto.</p>
-            <a className="site-secondary-button" href="https://wa.me/5500000000000" target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>
+            <a className="site-secondary-button" href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5500000000000"}`} target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>
           </article>
         </div>
       </section>

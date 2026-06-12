@@ -66,14 +66,14 @@ export default function SiteHeader() {
                 </div>
               )}
             </div>
-            <Link className="site-nav__link" href="/planos">Planos</Link>
+            <Link className="site-nav__link" href="/precos">Preços</Link>
             <Link className="site-nav__link" href="/blog">Blog</Link>
             <Link className="site-nav__link" href="/contato">Contato</Link>
           </nav>
 
           <div className="site-header__actions header-ctas">
-            <Link className="site-login" href="/login">Entrar</Link>
-            <Link className="site-primary" href="/register">Começar grátis</Link>
+            <Link className="site-login" href="/app/login">Entrar</Link>
+            <Link className="site-primary" href="/app/register">Começar grátis</Link>
           </div>
 
           <button className="site-menu-button" type="button" onClick={() => setMenuOpen((current) => !current)} aria-label="Abrir menu">
@@ -84,11 +84,11 @@ export default function SiteHeader() {
         {menuOpen && (
           <div className="site-mobile-menu">
             <Link href="/solucoes" onClick={() => setMenuOpen(false)}>Soluções</Link>
-            <Link href="/planos" onClick={() => setMenuOpen(false)}>Planos</Link>
+            <Link href="/precos" onClick={() => setMenuOpen(false)}>Preços</Link>
             <Link href="/blog" onClick={() => setMenuOpen(false)}>Blog</Link>
             <Link href="/contato" onClick={() => setMenuOpen(false)}>Contato</Link>
-            <Link href="/login" onClick={() => setMenuOpen(false)}>Entrar</Link>
-            <Link href="/register" onClick={() => setMenuOpen(false)}>Começar grátis</Link>
+            <Link href="/app/login" onClick={() => setMenuOpen(false)}>Entrar</Link>
+            <Link href="/app/register" onClick={() => setMenuOpen(false)}>Começar grátis</Link>
           </div>
         )}
       </header>
