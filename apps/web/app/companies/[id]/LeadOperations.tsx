@@ -4,7 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { CalendarClock, Copy, Download, Eye, FileText, ImageIcon, MessageCircle, Pencil, Plus, RotateCcw, Save, Sparkles, Trash2, Upload } from "lucide-react";
 import { Company } from "@/lib/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
-import { updateCompany as saveCompanyData } from "@/lib/api";
+import { createCalendarEvent, updateCompany as saveCompanyData } from "@/lib/api";
 import { downloadNoderePdf } from "@/lib/pdf";
 import { RichTextEditor, RichTextPreview } from "@/components/RichTextEditor";
 import { CompanyMiniCalendar } from "@/app/calendar/CalendarClient";
@@ -32,6 +32,13 @@ function whatsappDigits(value?: string) {
   const digits = String(value || "").replace(/\D/g, "");
   if (!digits) return "";
   return digits.startsWith("55") ? digits : `55${digits}`;
+}
+
+function normalizeCalendarPriority(value: string) {
+  const normalized = value.toLowerCase();
+  if (normalized.includes("alta") || normalized.includes("urgente")) return "alta";
+  if (normalized.includes("baixa")) return "baixa";
+  return "media";
 }
 
 function linkedinSearchUrl(name: string) {
@@ -245,6 +252,27 @@ export function LeadOperations({ company }: { company: Company }) {
         })
       });
       setTasks((items) => [task, ...items]);
+      const dueAt = String(form.get("dueAt") || "");
+      if (dueAt) {
+        const startAt = new Date(dueAt);
+        const endAt = new Date(startAt);
+        endAt.setMinutes(endAt.getMinutes() + 30);
+        await createCalendarEvent({
+          companyId: company.id,
+          title: String(form.get("title") || "Follow-up comercial"),
+          type: "followup",
+          priority: normalizeCalendarPriority(String(form.get("priority") || "media")),
+          channel: String(form.get("channel") || "WhatsApp"),
+          status: "pendente",
+          startAt: startAt.toISOString(),
+          endAt: endAt.toISOString(),
+          notes: taskDescription,
+          reminderEnabled: true,
+          reminderMinutes: 30,
+          reminderAt: new Date(startAt.getTime() - 30 * 60 * 1000).toISOString(),
+          metadata: { source: "lead_task", taskId: task.id }
+        });
+      }
       if ("Notification" in window && Notification.permission === "granted") {
         new Notification("Follow-up criado no NODERE", { body: `${task.title} · ${company.name}` });
       } else if ("Notification" in window && Notification.permission === "default") {
@@ -439,6 +467,27 @@ export function LeadOperations({ company }: { company: Company }) {
       });
       setDocuments((items) => [document, ...items]);
       if (type === "proposta" || type === "contrato") await saveProposalVersion(type, editor);
+      if (type === "proposta" || type === "contrato") {
+        const startAt = new Date();
+        startAt.setHours(startAt.getHours() + 1);
+        const endAt = new Date(startAt);
+        endAt.setMinutes(endAt.getMinutes() + 30);
+        await createCalendarEvent({
+          companyId: company.id,
+          title: `${type === "contrato" ? "Revisar contrato" : "Enviar proposta"} - ${company.name}`,
+          type: type === "contrato" ? "pos_venda" : "proposta",
+          priority: "media",
+          channel: "Interno",
+          status: "pendente",
+          startAt: startAt.toISOString(),
+          endAt: endAt.toISOString(),
+          notes: `Evento criado automaticamente ao salvar ${type}.`,
+          reminderEnabled: true,
+          reminderMinutes: 30,
+          reminderAt: new Date(startAt.getTime() - 30 * 60 * 1000).toISOString(),
+          metadata: { source: "lead_document", documentId: document.id, documentType: type }
+        });
+      }
       await downloadPdf(title, editor, fileName);
       showSuccess("Documento salvo e PDF baixado.");
     } catch (err) {

@@ -633,8 +633,12 @@ export interface CalendarEvent {
   end_at: string;
   notes?: string;
   assigned_to?: string;
+  created_by?: string;
   status?: string;
   channel?: string;
+  reminder_at?: string;
+  reminder_minutes?: number;
+  reminder_enabled?: boolean;
   metadata?: Record<string, unknown>;
 }
 
@@ -654,6 +658,9 @@ export function createCalendarEvent(payload: {
   assignedTo?: string;
   status?: string;
   channel?: string;
+  reminderAt?: string | null;
+  reminderMinutes?: number | null;
+  reminderEnabled?: boolean;
   metadata?: Record<string, unknown>;
 }) {
   return api<CalendarEvent>("/calendar", { method: "POST", body: JSON.stringify(payload) });
@@ -671,6 +678,9 @@ export function updateCalendarEvent(id: string, payload: Partial<{
   assignedTo: string | null;
   status: string;
   channel: string | null;
+  reminderAt: string | null;
+  reminderMinutes: number | null;
+  reminderEnabled: boolean;
   metadata: Record<string, unknown>;
 }>) {
   return api<CalendarEvent>(`/calendar/${id}`, { method: "PATCH", body: JSON.stringify(payload) });

@@ -2,14 +2,17 @@ import { Router } from "express";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { getSupabase } from "../db/supabase.js";
-import { getRequestWorkspaceId } from "../middleware/session.js";
+import { getRequestWorkspaceId, isPrivilegedSession, requireWorkspaceRole, requireWorkspaceSession } from "../middleware/session.js";
 import { logRequestMetric } from "../services/metricsStore.js";
 
 const router = Router();
 
+router.use(requireWorkspaceSession);
+
 router.get("/", async (req, res, next) => {
   try {
     const workspaceId = getRequestWorkspaceId(req);
+    const session = (req as any).session;
     let query = requireSupabase()
       .from("calendar_events")
       .select("*")
@@ -20,6 +23,9 @@ router.get("/", async (req, res, next) => {
     if (req.query.status) query = query.eq("status", String(req.query.status));
     if (req.query.start) query = query.gte("start_at", String(req.query.start));
     if (req.query.end) query = query.lte("end_at", String(req.query.end));
+    if (!isPrivilegedSession(req) && session?.role === "operator") {
+      query = query.or(`assigned_to.eq.${session.userId},created_by.eq.${session.userId}`);
+    }
     const { data, error } = await query.order("start_at", { ascending: true });
     if (error) throw error;
     return res.json(data ?? []);
@@ -28,9 +34,11 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requireWorkspaceRole("owner", "admin", "operator"), async (req, res, next) => {
   try {
     const body = eventSchema.parse(req.body);
+    const session = (req as any).session;
+    const assignedTo = body.assignedTo || session?.userId || null;
     const row = {
       id: randomUUID(),
       workspace_id: getRequestWorkspaceId(req),
@@ -42,15 +50,18 @@ router.post("/", async (req, res, next) => {
       start_at: body.startAt,
       end_at: body.endAt,
       notes: body.notes,
-      assigned_to: body.assignedTo,
+      assigned_to: assignedTo,
       status: body.status,
       channel: body.channel,
-      created_by: (req as any).session?.userId,
+      created_by: session?.userId,
+      reminder_at: body.reminderAt,
+      reminder_minutes: body.reminderMinutes,
+      reminder_enabled: body.reminderEnabled,
       metadata: body.metadata ?? {}
     };
     const { data, error } = await requireSupabase().from("calendar_events").insert(row).select("*").single();
     if (error) throw error;
-    if (String(body.type).toLowerCase() === "reuniao" || String(body.type).toLowerCase() === "meeting") {
+    if (["reuniao", "meeting", "demonstracao"].includes(String(body.type).toLowerCase())) {
       logRequestMetric(req, "meeting_scheduled", row.id, { companyId: body.companyId || null, startAt: body.startAt });
     }
     return res.status(201).json(data);
@@ -59,17 +70,20 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", requireWorkspaceRole("owner", "admin", "operator"), async (req, res, next) => {
   try {
     const body = eventSchema.partial().parse(req.body);
     const row = mapEventUpdate(body);
-    const { data, error } = await requireSupabase()
+    let query = requireSupabase()
       .from("calendar_events")
       .update({ ...row, updated_at: new Date().toISOString() })
       .eq("workspace_id", getRequestWorkspaceId(req))
-      .eq("id", req.params.id)
-      .select("*")
-      .single();
+      .eq("id", req.params.id);
+    if (!isPrivilegedSession(req)) {
+      const userId = (req as any).session?.userId;
+      query = query.or(`assigned_to.eq.${userId},created_by.eq.${userId}`);
+    }
+    const { data, error } = await query.select("*").single();
     if (error) throw error;
     return res.json(data);
   } catch (error) {
@@ -77,13 +91,18 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requireWorkspaceRole("owner", "admin", "operator"), async (req, res, next) => {
   try {
-    const { error } = await requireSupabase()
+    let query = requireSupabase()
       .from("calendar_events")
       .delete()
       .eq("workspace_id", getRequestWorkspaceId(req))
       .eq("id", req.params.id);
+    if (!isPrivilegedSession(req)) {
+      const userId = (req as any).session?.userId;
+      query = query.or(`assigned_to.eq.${userId},created_by.eq.${userId}`);
+    }
+    const { error } = await query;
     if (error) throw error;
     return res.json({ ok: true });
   } catch (error) {
@@ -103,6 +122,9 @@ const eventSchema = z.object({
   assignedTo: z.string().optional().nullable(),
   status: z.string().default("pendente"),
   channel: z.string().optional().nullable(),
+  reminderAt: z.string().optional().nullable(),
+  reminderMinutes: z.number().int().min(0).max(10080).optional().nullable(),
+  reminderEnabled: z.boolean().optional().default(false),
   metadata: z.record(z.unknown()).optional()
 });
 
@@ -119,6 +141,9 @@ function mapEventUpdate(input: Partial<z.infer<typeof eventSchema>>) {
   if (input.assignedTo !== undefined) row.assigned_to = input.assignedTo;
   if (input.status !== undefined) row.status = input.status;
   if (input.channel !== undefined) row.channel = input.channel;
+  if (input.reminderAt !== undefined) row.reminder_at = input.reminderAt;
+  if (input.reminderMinutes !== undefined) row.reminder_minutes = input.reminderMinutes;
+  if (input.reminderEnabled !== undefined) row.reminder_enabled = input.reminderEnabled;
   if (input.metadata !== undefined) row.metadata = input.metadata;
   return row;
 }
