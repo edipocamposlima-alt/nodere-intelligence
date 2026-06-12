@@ -3,8 +3,6 @@ import { z } from "zod";
 import { createCipheriv, createHash, randomBytes, randomUUID } from "node:crypto";
 import { getSupabase } from "../db/supabase.js";
 import { getRequestWorkspaceId } from "../middleware/session.js";
-import { getCompanyAsync, listCompaniesAsync } from "../services/companyStore.js";
-import { sendWhatsappMessage } from "../services/whatsapp.js";
 
 const router = Router();
 
@@ -19,55 +17,6 @@ router.get("/", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     return res.status(201).json(await createCampaign(getRequestWorkspaceId(req), req.body));
-  } catch (error) {
-    return next(error);
-  }
-});
-
-router.post("/whatsapp", async (req, res, next) => {
-  try {
-    const body = z.object({
-      name: z.string().min(2),
-      template: z.string().min(2),
-      lead_ids: z.array(z.string()).min(1)
-    }).parse(req.body);
-    const workspaceId = getRequestWorkspaceId(req);
-    const sb = requireSupabase();
-    const { data: campaign, error } = await sb.from("campaigns").insert({
-      id: randomUUID(),
-      workspace_id: workspaceId,
-      name: body.name,
-      type: "whatsapp",
-      template: body.template,
-      status: "sending",
-      started_at: new Date().toISOString(),
-      total_recipients: body.lead_ids.length
-    }).select("*").single();
-    if (error) throw error;
-
-    const all = await listCompaniesAsync(workspaceId);
-    const recipients = all
-      .filter((lead) => body.lead_ids.includes(lead.id))
-      .map((lead) => ({
-        workspace_id: workspaceId,
-        campaign_id: campaign.id,
-        company_id: lead.id,
-        phone: String(lead.whatsapp || lead.phone || "").replace(/\D/g, ""),
-        variables: { nome: lead.name.split(" ")[0], empresa: lead.name }
-      }))
-      .filter((row) => row.phone);
-
-    if (recipients.length) {
-      const inserted = await sb.from("campaign_recipients").insert(recipients);
-      if (inserted.error) throw inserted.error;
-    }
-
-    setImmediate(() => sendWhatsappCampaign(String(campaign.id), workspaceId).catch((err) => console.error("[campaigns/whatsapp]", err)));
-    return res.status(201).json({
-      campaign_id: campaign.id,
-      total_recipients: recipients.length,
-      message: `Campanha iniciada para ${recipients.length} destinatários.`
-    });
   } catch (error) {
     return next(error);
   }
@@ -260,46 +209,6 @@ async function createCampaign(workspaceId: string, input: unknown) {
   const { data, error } = await requireSupabase().from("campaigns").insert(row).select("*").single();
   if (error) throw error;
   return data;
-}
-
-async function sendWhatsappCampaign(campaignId: string, workspaceId: string) {
-  const sb = requireSupabase();
-  const { data: campaign } = await sb.from("campaigns").select("*").eq("id", campaignId).eq("workspace_id", workspaceId).maybeSingle();
-  const { data: recipients } = await sb
-    .from("campaign_recipients")
-    .select("*")
-    .eq("workspace_id", workspaceId)
-    .eq("campaign_id", campaignId)
-    .eq("status", "pending");
-  for (const recipient of recipients || []) {
-    const lead = recipient.company_id ? await getCompanyAsync(String(recipient.company_id), workspaceId) : null;
-    if (!lead) continue;
-    let message = String(campaign?.template || "");
-    for (const [key, value] of Object.entries((recipient.variables || {}) as Record<string, string>)) {
-      message = message.replace(new RegExp(`{${key}}`, "g"), String(value));
-    }
-    try {
-      const result = await sendWhatsappMessage(lead, message);
-      const status = (result as any).sent ? "sent" : "failed";
-      const updated = await sb.from("campaign_recipients").update({
-        status,
-        error_msg: status === "failed" ? String((result as any).reason || (result as any).error?.message || "Falha no envio") : null,
-        sent_at: new Date().toISOString()
-      }).eq("id", recipient.id);
-      if (updated.error) throw updated.error;
-      if (status === "sent") {
-        try {
-          await sb.rpc("increment_campaign_sent", { cid: campaignId });
-        } catch {
-          // Se a função SQL ainda não foi aplicada, o status do destinatário continua válido.
-        }
-      }
-      await new Promise((resolve) => setTimeout(resolve, 1100));
-    } catch (error) {
-      await sb.from("campaign_recipients").update({ status: "failed", error_msg: "Erro de conexão" }).eq("id", recipient.id);
-    }
-  }
-  await sb.from("campaigns").update({ status: "done", finished_at: new Date().toISOString() }).eq("id", campaignId);
 }
 
 function buildSocialStatus() {

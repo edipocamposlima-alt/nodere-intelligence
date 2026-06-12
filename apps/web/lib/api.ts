@@ -299,40 +299,6 @@ export function getCompanyIntelligence(companyId: string, token?: string | null)
   return api<GoogleIntelligence>(companyPath(companyId, "/intelligence"), token ? { headers: authHeaders(token) } : undefined);
 }
 
-export type IntelligenceDiagnostic = {
-  summary?: string;
-  pains?: string[];
-  needs?: string[];
-  recommended_product?: string;
-  propensity?: string;
-  approach_tip?: string;
-};
-
-export function enrichLeadIntelligence(companyId: string) {
-  return api<{ enrichment: Record<string, unknown>; potential_score?: number; message?: string }>(`/intelligence/enrich/${encodeURIComponent(companyId)}`, { method: "POST" });
-}
-
-export function getLeadEnrichment(companyId: string) {
-  return api<Record<string, unknown> | null>(`/intelligence/enrichment/${encodeURIComponent(companyId)}`, undefined, null);
-}
-
-export function diagnoseLeadIntelligence(companyId: string) {
-  return api<IntelligenceDiagnostic>(`/intelligence/diagnose/${encodeURIComponent(companyId)}`, { method: "POST" });
-}
-
-export function getLeadDiagnostic(companyId: string) {
-  return api<IntelligenceDiagnostic | null>(`/intelligence/diagnostic/${encodeURIComponent(companyId)}`, undefined, null);
-}
-
-export function analyzeLeadCompetitors(companyId: string) {
-  return api<{
-    competitors: Array<{ name: string; rating?: number | null; total_ratings?: number }>;
-    avg_competitor_rating?: number | null;
-    lead_score?: number;
-    gap_message?: string;
-  }>(`/intelligence/competitors/${encodeURIComponent(companyId)}`, { method: "POST" });
-}
-
 export function getCompanyKeywords(companyId: string) {
   return api<KeywordSuggestion[]>(companyPath(companyId, "/keywords"), undefined, []);
 }

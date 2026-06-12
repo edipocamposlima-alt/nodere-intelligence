@@ -9,7 +9,6 @@ import dashboardRouter from "./routes/dashboard.js";
 import enrichmentRouter from "./routes/enrichment.js";
 import creditsRouter from "./routes/credits.js";
 import integrationsRouter from "./routes/integrations.js";
-import intelligenceRouter from "./routes/intelligence.js";
 import searchesRouter from "./routes/searches.js";
 import settingsRouter from "./routes/settings.js";
 import inboxRouter from "./routes/inbox.js";
@@ -32,7 +31,6 @@ import geocodeRouter from "./routes/geocode.js";
 import { developerRouter, publicApiRouter } from "./routes/developer.js";
 import verticalsRouter from "./routes/verticals.js";
 import webhooksRouter from "./routes/webhooks.js";
-import whatsappRouter from "./routes/whatsapp.js";
 import crmRouter from "./routes/crm.js";
 import discoveryRouter from "./routes/discovery.js";
 import onboardingRouter from "./routes/onboarding.js";
@@ -71,8 +69,6 @@ app.use(
       return callback(new Error(`Origin not allowed: ${origin}`));
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -416,10 +412,21 @@ app.use("/api/marketing", requireWorkspaceSession, marketingRouter);
 app.use("/api/campaigns", requireWorkspaceSession, marketingRouter);
 app.use("/api/social", requireWorkspaceSession, marketingRouter);
 app.use("/api/integrations", requireWorkspaceSession, integrationsRouter);
-app.use("/api/intelligence", intelligenceRouter);
 app.use("/api/inbox", requireWorkspaceSession, inboxRouter);
 app.use("/api/webhooks", webhooksRouter);
-app.use("/api/whatsapp", whatsappRouter);
+app.get("/api/whatsapp/webhook", (req, res) => {
+  const mode = String(req.query["hub.mode"] || "");
+  const token = String(req.query["hub.verify_token"] || "");
+  const challenge = String(req.query["hub.challenge"] || "");
+  const expected = process.env.WHATSAPP_VERIFY_TOKEN || config.webhookSecret;
+  if (mode === "subscribe" && expected && token === expected) {
+    return res.status(200).send(challenge);
+  }
+  return res.status(403).json({ message: "Webhook verification failed." });
+});
+app.post("/api/whatsapp/webhook", (_req, res) => {
+  return res.status(200).json({ ok: true });
+});
 app.use("/api/sequences", requireWorkspaceSession, sequencesRouter);
 app.use("/api/operators", requireWorkspaceSession, operatorsRouter);
 app.use("/api/credits", requireWorkspaceSession, creditsRouter);

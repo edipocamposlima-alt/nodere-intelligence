@@ -4,16 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { CalendarClock, Copy, Download, Eye, FileText, ImageIcon, MessageCircle, Pencil, Plus, RotateCcw, Save, Sparkles, Trash2, Upload } from "lucide-react";
 import { Company } from "@/lib/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
-import {
-  analyzeLeadCompetitors,
-  createCalendarEvent,
-  diagnoseLeadIntelligence,
-  enrichLeadIntelligence,
-  getLeadDiagnostic,
-  getLeadEnrichment,
-  type IntelligenceDiagnostic,
-  updateCompany as saveCompanyData
-} from "@/lib/api";
+import { createCalendarEvent, updateCompany as saveCompanyData } from "@/lib/api";
 import { downloadNoderePdf } from "@/lib/pdf";
 import { RichTextEditor, RichTextPreview } from "@/components/RichTextEditor";
 import { CompanyMiniCalendar } from "@/app/calendar/CalendarClient";
@@ -109,10 +100,6 @@ export function LeadOperations({ company }: { company: Company }) {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [enrichmentMessages, setEnrichmentMessages] = useState<string[]>([]);
-  const [intelDiagnostic, setIntelDiagnostic] = useState<IntelligenceDiagnostic | null>(null);
-  const [intelEnrichment, setIntelEnrichment] = useState<Record<string, unknown> | null>(null);
-  const [competitorAnalysis, setCompetitorAnalysis] = useState<{ competitors?: Array<{ name: string; rating?: number | null; total_ratings?: number }>; gap_message?: string } | null>(null);
-  const [intelligenceLoading, setIntelligenceLoading] = useState(false);
 
   const whatsappText = useMemo(() => {
     return editor || `Olá, tudo bem? Analisei a presença digital da ${lead.name} e identifiquei oportunidades para gerar mais contatos pelo Google. Posso te mostrar um diagnóstico rápido?`;
@@ -127,8 +114,6 @@ export function LeadOperations({ company }: { company: Company }) {
     api<Communication[]>(`${companyPath}/communications`).then((items) => setCommunications(Array.isArray(items) ? items : [])).catch(() => {});
     api<ContractItem[]>(`${companyPath}/contracts`).then((items) => setContracts(Array.isArray(items) ? items : [])).catch(() => {});
     api<ProposalVersion[]>(`/proposals/leads/${encodeURIComponent(company.id)}`).then((items) => setProposalVersions(Array.isArray(items) ? items : [])).catch(() => {});
-    getLeadDiagnostic(company.id).then(setIntelDiagnostic).catch(() => {});
-    getLeadEnrichment(company.id).then(setIntelEnrichment).catch(() => {});
   }, [company.id, companyPath]);
 
   function showSuccess(text: string) {
@@ -448,59 +433,6 @@ export function LeadOperations({ company }: { company: Company }) {
       setEnriching(false);
     }
   }
-
-  async function enrichWithIntelligence() {
-    setIntelligenceLoading(true);
-    setError(null);
-    try {
-      const response = await enrichLeadIntelligence(company.id);
-      setIntelEnrichment(response.enrichment || null);
-      showSuccess(response.message || "Enriquecimento Intelligence concluído.");
-    } catch (err) {
-      showError(err);
-    } finally {
-      setIntelligenceLoading(false);
-    }
-  }
-
-  async function diagnoseWithIntelligence() {
-    setIntelligenceLoading(true);
-    setError(null);
-    try {
-      const diagnostic = await diagnoseLeadIntelligence(company.id);
-      setIntelDiagnostic(diagnostic);
-      setEditor([
-        diagnostic.summary,
-        diagnostic.pains?.length ? `Dores:\n- ${diagnostic.pains.join("\n- ")}` : "",
-        diagnostic.needs?.length ? `Necessidades:\n- ${diagnostic.needs.join("\n- ")}` : "",
-        diagnostic.recommended_product ? `Produto recomendado: ${diagnostic.recommended_product}` : "",
-        diagnostic.approach_tip ? `Abordagem: ${diagnostic.approach_tip}` : ""
-      ].filter(Boolean).join("\n\n"));
-      showSuccess("Diagnóstico IA gerado.");
-    } catch (err) {
-      showError(err);
-    } finally {
-      setIntelligenceLoading(false);
-    }
-  }
-
-  async function analyzeCompetitors() {
-    setIntelligenceLoading(true);
-    setError(null);
-    try {
-      const analysis = await analyzeLeadCompetitors(company.id);
-      setCompetitorAnalysis(analysis);
-      showSuccess("Monitoramento competitivo concluído.");
-    } catch (err) {
-      showError(err);
-    } finally {
-      setIntelligenceLoading(false);
-    }
-  }
-
-  const enrichmentEntries = intelEnrichment
-    ? Object.entries(intelEnrichment).filter(([, value]) => value !== null && value !== undefined && value !== "")
-    : [];
 
 
   async function saveProposalVersion(type: string, content: string) {
@@ -854,53 +786,6 @@ export function LeadOperations({ company }: { company: Company }) {
             <input value={instruction} placeholder="Instrução adicional para a IA" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" onChange={(event) => setInstruction(event.target.value)} />
             <button onClick={generateWithAi} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"><Sparkles className="h-4 w-4" />{loading ? "Gerando" : "Gerar com IA"}</button>
           </div>
-          <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="rounded-lg border border-line bg-ink p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h4 className="font-semibold text-white">Diagnóstico comercial IA</h4>
-                  <p className="mt-1 text-sm text-slate-400">Resumo, dores, necessidades, produto recomendado e abordagem consultiva.</p>
-                </div>
-                <button onClick={diagnoseWithIntelligence} disabled={intelligenceLoading} className="inline-flex items-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
-                  <Sparkles className="h-4 w-4" />
-                  {intelligenceLoading ? "Processando..." : "Gerar diagnóstico"}
-                </button>
-              </div>
-              {intelDiagnostic ? (
-                <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
-                  <Info label="Resumo" value={intelDiagnostic.summary} />
-                  <Info label="Produto recomendado" value={intelDiagnostic.recommended_product} />
-                  <Info label="Propensão" value={intelDiagnostic.propensity} />
-                  <Info label="Abordagem" value={intelDiagnostic.approach_tip} />
-                  <Info label="Dores" value={intelDiagnostic.pains?.join(", ")} />
-                  <Info label="Necessidades" value={intelDiagnostic.needs?.join(", ")} />
-                </div>
-              ) : (
-                <p className="mt-4 rounded-lg border border-dashed border-line p-3 text-sm text-slate-500">Nenhum diagnóstico IA persistido para este lead ainda.</p>
-              )}
-            </div>
-            <div className="rounded-lg border border-line bg-ink p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h4 className="font-semibold text-white">Concorrentes</h4>
-                  <p className="mt-1 text-sm text-slate-400">Leitura via Google Places quando a chave estiver configurada.</p>
-                </div>
-                <button onClick={analyzeCompetitors} disabled={intelligenceLoading} className="rounded-lg border border-line bg-panel px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">Analisar</button>
-              </div>
-              {competitorAnalysis ? (
-                <div className="mt-4 space-y-2">
-                  {competitorAnalysis.gap_message && <p className="rounded-md border border-cyan/30 bg-cyan/10 px-3 py-2 text-xs text-cyan">{competitorAnalysis.gap_message}</p>}
-                  {(competitorAnalysis.competitors || []).slice(0, 5).map((item) => (
-                    <p key={item.name} className="rounded-md border border-line bg-panel/80 px-3 py-2 text-xs text-slate-300">
-                      {item.name} · nota {item.rating ?? "n/d"} · {item.total_ratings ?? 0} avaliações
-                    </p>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-4 rounded-lg border border-dashed border-line p-3 text-sm text-slate-500">Nenhuma análise competitiva executada nesta sessão.</p>
-              )}
-            </div>
-          </div>
           <RichTextEditor value={editor} onChange={setEditor} minHeight={360} placeholder="O texto gerado ou editado aparece aqui. Você pode alterar antes de salvar, copiar, virar PDF ou usar no WhatsApp." />
           <div className="flex flex-wrap gap-2">
             <button onClick={() => copy(editor)} className="inline-flex items-center gap-2 rounded-lg border border-line bg-ink px-4 py-2 text-sm text-white"><Copy className="h-4 w-4" />Copiar</button>
@@ -931,18 +816,6 @@ export function LeadOperations({ company }: { company: Company }) {
                 <p key={item} className="rounded-md border border-line bg-panel/80 px-3 py-2 text-xs text-slate-300">{item}</p>
               ))}
             </div>
-            <div className="mt-5 border-t border-line pt-4">
-              <h4 className="font-semibold text-white">Nexus Intelligence</h4>
-              <p className="mt-2 text-sm leading-6 text-slate-400">Enriquece o lead com fontes configuradas no workspace e persiste o resultado em tabela própria do BLOCO 07.</p>
-              <button
-                onClick={enrichWithIntelligence}
-                disabled={intelligenceLoading}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg border border-cyan/40 bg-cyan/10 px-4 py-2 text-sm font-semibold text-cyan disabled:opacity-60"
-              >
-                <Sparkles className="h-4 w-4" />
-                {intelligenceLoading ? "Enriquecendo..." : "Enriquecer via Nexus"}
-              </button>
-            </div>
           </div>
           <div className="rounded-lg border border-line bg-ink p-4">
             <h4 className="font-semibold text-white">Dados enriquecidos</h4>
@@ -954,19 +827,6 @@ export function LeadOperations({ company }: { company: Company }) {
               <Info label={lead.linkedin ? "LinkedIn direto" : "LinkedIn sugerido"} value={lead.linkedin || linkedinSearchUrl(lead.name)} isLink hint={lead.linkedin ? "Fonte externa/site" : "Busca no LinkedIn somente pelo nome da empresa. Confirme a empresa correta antes de usar."} />
               <Info label="Fontes" value={lead.enrichmentSources?.join(", ")} />
             </dl>
-            <div className="mt-5">
-              <p className="text-sm font-semibold text-white">Intelligence persistido</p>
-              <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
-                {enrichmentEntries.length ? enrichmentEntries.slice(0, 10).map(([key, value]) => (
-                  <div key={key} className="rounded-lg border border-line bg-panel/80 p-3">
-                    <p className="font-semibold text-slate-300">{key}</p>
-                    <p className="mt-1 break-words text-slate-500">{typeof value === "object" ? JSON.stringify(value) : String(value)}</p>
-                  </div>
-                )) : (
-                  <p className="rounded-lg border border-dashed border-line p-3 text-sm text-slate-500 sm:col-span-2">Nenhum dado do Nexus Intelligence persistido ainda.</p>
-                )}
-              </div>
-            </div>
             <div className="mt-5">
               <p className="text-sm font-semibold text-white">Decisores</p>
               <div className="mt-3 space-y-2">
