@@ -171,6 +171,41 @@ export function searchApollo(payload: {
     results: Array<Record<string, string | number | undefined>>;
   }>("/searches/apollo", { method: "POST", body: JSON.stringify(payload) });
 }
+
+export function discoverySearch(payload: { companyName?: string; segment?: string; keyword?: string; city?: string; state?: string; country?: string; limit?: number; lat?: number; lng?: number; radiusKm?: number }) {
+  return api<{ source: "google" | "mock" | "google_places"; warning?: string; companies: Company[] }>(
+    "/discovery/search",
+    { method: "POST", body: JSON.stringify(payload) }
+  );
+}
+
+export function discoveryScanWebsite(payload: { url: string; companyId?: string }) {
+  return api<{ scan: Record<string, unknown> }>("/discovery/scan-website", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function discoveryOpportunities(payload: { company?: Partial<Company>; companyId?: string; websiteScan?: Record<string, unknown> }) {
+  return api<{ score: number; opportunityLevel: string; detectedOpportunities: string[]; suggestions: string[] }>(
+    "/discovery/opportunities",
+    { method: "POST", body: JSON.stringify(payload) }
+  );
+}
+
+export function discoveryScanSocial(payload: { website?: string; domain?: string; companyName?: string; companyId?: string }) {
+  return api<{ social: { instagram?: string; facebook?: string; linkedin?: string; youtube?: string; searches?: Record<string, string | undefined> } }>(
+    "/discovery/scan-social",
+    { method: "POST", body: JSON.stringify(payload) }
+  );
+}
+
+export function discoveryAddToCrm(company: Partial<Company>) {
+  return api<{ company: Company }>("/discovery/add-to-crm", {
+    method: "POST",
+    body: JSON.stringify({ company })
+  });
+}
 export function geocodeAddress(address: string) {
   return api<{ status: string; results: Array<{ address?: string; lat?: number; lng?: number }> }>(`/geocode?address=${encodeURIComponent(address)}`);
 }
