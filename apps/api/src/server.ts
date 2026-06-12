@@ -36,7 +36,7 @@ import discoveryRouter from "./routes/discovery.js";
 import onboardingRouter from "./routes/onboarding.js";
 import { processDueSteps } from "./services/emailSequences.js";
 import { requireAuth } from "./middleware/auth.js";
-import { attachSession, getRequestWorkspaceId, requireWorkspaceRole } from "./middleware/session.js";
+import { attachSession, getRequestWorkspaceId, requireWorkspaceRole, requireWorkspaceSession } from "./middleware/session.js";
 import { getSupabase, hasSupabase } from "./db/supabase.js";
 import { searchCompaniesWithMeta } from "./services/companyStore.js";
 import { GoogleApiError } from "./services/google.js";
@@ -207,7 +207,7 @@ app.get("/api/settings", async (req, res, next) => {
   }
 });
 
-app.patch("/api/settings", async (req, res, next) => {
+app.patch("/api/settings", requireWorkspaceRole("owner", "admin"), async (req, res, next) => {
   try {
     const preferences = await savePreferences(req.body ?? {}, getRequestWorkspaceId(req));
     res.json({
@@ -221,7 +221,7 @@ app.patch("/api/settings", async (req, res, next) => {
   }
 });
 
-app.patch("/api/settings/pipeline", async (req, res, next) => {
+app.patch("/api/settings/pipeline", requireWorkspaceRole("owner", "admin", "operator"), async (req, res, next) => {
   try {
     const pipeline = await savePipelineSettings(req.body ?? {}, getRequestWorkspaceId(req));
     res.json({
@@ -261,7 +261,7 @@ app.get("/api/openai/health", (_req, res) => {
   });
 });
 
-app.post("/api/openai/analyze", async (req, res, next) => {
+app.post("/api/openai/analyze", requireWorkspaceSession, async (req, res, next) => {
   try {
     if (!config.openai.apiKey && !config.anthropic.apiKey) {
       return res.status(503).json({
@@ -309,7 +309,7 @@ app.post("/api/openai/analyze", async (req, res, next) => {
   }
 });
 
-app.get("/api/pagespeed", async (req, res, next) => {
+app.get("/api/pagespeed", requireWorkspaceSession, async (req, res, next) => {
   try {
     const url = typeof req.query.url === "string" ? req.query.url.trim() : "";
     if (!config.google.pageSpeedKey) {
@@ -365,7 +365,7 @@ app.get("/api/pagespeed", async (req, res, next) => {
   }
 });
 
-app.get("/api/places/search", async (req, res, next) => {
+app.get("/api/places/search", requireWorkspaceSession, async (req, res, next) => {
   try {
     const input = {
       companyName: typeof req.query.companyName === "string" ? req.query.companyName : undefined,
@@ -401,28 +401,28 @@ app.use("/api/geocode", geocodeRouter);
 app.use("/api/searches", searchesRouter);
 app.use("/api/search", searchesRouter);
 app.use("/api/settings", settingsRouter);
-app.use("/api/companies", companiesRouter);
-app.use("/api/crm", crmRouter);
-app.use("/api/discovery", discoveryRouter);
-app.use("/api/dashboard", dashboardRouter);
-app.use("/api/reports", reportsRouter);
-app.use("/api/calendar", calendarRouter);
-app.use("/api/catalog", catalogRouter);
-app.use("/api/marketing", marketingRouter);
-app.use("/api/campaigns", marketingRouter);
-app.use("/api/social", marketingRouter);
-app.use("/api/integrations", integrationsRouter);
-app.use("/api/inbox", inboxRouter);
+app.use("/api/companies", requireWorkspaceSession, companiesRouter);
+app.use("/api/crm", requireWorkspaceSession, crmRouter);
+app.use("/api/discovery", requireWorkspaceSession, discoveryRouter);
+app.use("/api/dashboard", requireWorkspaceSession, dashboardRouter);
+app.use("/api/reports", requireWorkspaceSession, reportsRouter);
+app.use("/api/calendar", requireWorkspaceSession, calendarRouter);
+app.use("/api/catalog", requireWorkspaceSession, catalogRouter);
+app.use("/api/marketing", requireWorkspaceSession, marketingRouter);
+app.use("/api/campaigns", requireWorkspaceSession, marketingRouter);
+app.use("/api/social", requireWorkspaceSession, marketingRouter);
+app.use("/api/integrations", requireWorkspaceSession, integrationsRouter);
+app.use("/api/inbox", requireWorkspaceSession, inboxRouter);
 app.use("/api/webhooks", webhooksRouter);
-app.use("/api/sequences", sequencesRouter);
-app.use("/api/operators", operatorsRouter);
-app.use("/api/credits", creditsRouter);
-app.use("/api/backup", backupRouter);
+app.use("/api/sequences", requireWorkspaceSession, sequencesRouter);
+app.use("/api/operators", requireWorkspaceSession, operatorsRouter);
+app.use("/api/credits", requireWorkspaceSession, creditsRouter);
+app.use("/api/backup", requireWorkspaceSession, backupRouter);
 app.use("/api/billing", billingRouter);
-app.use("/api/proposals", proposalsRouter);
-app.use("/api/push", pushRouter);
-app.use("/api/notifications", pushRouter);
-app.use("/api/developer", developerRouter);
+app.use("/api/proposals", requireWorkspaceSession, proposalsRouter);
+app.use("/api/push", requireWorkspaceSession, pushRouter);
+app.use("/api/notifications", requireWorkspaceSession, pushRouter);
+app.use("/api/developer", requireWorkspaceSession, developerRouter);
 app.use("/api/admin/verticals", verticalsRouter);
 app.use("/v1", publicApiRouter);
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
