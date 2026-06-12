@@ -414,6 +414,19 @@ app.use("/api/social", requireWorkspaceSession, marketingRouter);
 app.use("/api/integrations", requireWorkspaceSession, integrationsRouter);
 app.use("/api/inbox", requireWorkspaceSession, inboxRouter);
 app.use("/api/webhooks", webhooksRouter);
+app.get("/api/whatsapp/webhook", (req, res) => {
+  const mode = String(req.query["hub.mode"] || "");
+  const token = String(req.query["hub.verify_token"] || "");
+  const challenge = String(req.query["hub.challenge"] || "");
+  const expected = process.env.WHATSAPP_VERIFY_TOKEN || config.webhookSecret;
+  if (mode === "subscribe" && expected && token === expected) {
+    return res.status(200).send(challenge);
+  }
+  return res.status(403).json({ message: "Webhook verification failed." });
+});
+app.post("/api/whatsapp/webhook", (_req, res) => {
+  return res.status(200).json({ ok: true });
+});
 app.use("/api/sequences", requireWorkspaceSession, sequencesRouter);
 app.use("/api/operators", requireWorkspaceSession, operatorsRouter);
 app.use("/api/credits", requireWorkspaceSession, creditsRouter);
