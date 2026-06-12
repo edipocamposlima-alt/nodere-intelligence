@@ -28,8 +28,9 @@ const PUBLIC_PREFIXES = [
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() || "/";
   const isPublic = pathname === "/" || PUBLIC_PREFIXES.some((prefix) => prefix !== "/" && pathname.startsWith(prefix));
+  const isPlatformApp = pathname.startsWith("/app");
 
-  if (isPublic) {
+  if (isPublic || isPlatformApp) {
     return (
       <>
         {children}
