@@ -65,7 +65,7 @@ export const config = {
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT ?? 587),
     user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    pass: process.env.SMTP_PASS || process.env.SMTP_PASSWORD,
     from: process.env.SMTP_FROM ?? process.env.SMTP_USER
   },
   supabase: {
@@ -86,8 +86,14 @@ export const config = {
     cancelUrl: process.env.STRIPE_CANCEL_URL ?? "http://localhost:3000/billing?cancel=1",
     prices: {
       starter: process.env.STRIPE_PRICE_STARTER,
+      starterMonthly: process.env.STRIPE_PRICE_STARTER_MONTHLY || process.env.STRIPE_PRICE_STARTER,
+      starterYearly: process.env.STRIPE_PRICE_STARTER_YEARLY || process.env.STRIPE_PRICE_STARTER,
       pro: process.env.STRIPE_PRICE_PRO,
-      agency: process.env.STRIPE_PRICE_AGENCY
+      proMonthly: process.env.STRIPE_PRICE_PRO_MONTHLY || process.env.STRIPE_PRICE_PRO,
+      proYearly: process.env.STRIPE_PRICE_PRO_YEARLY || process.env.STRIPE_PRICE_PRO,
+      agency: process.env.STRIPE_PRICE_AGENCY,
+      agencyMonthly: process.env.STRIPE_PRICE_AGENCY_MONTHLY || process.env.STRIPE_PRICE_AGENCY,
+      agencyYearly: process.env.STRIPE_PRICE_AGENCY_YEARLY || process.env.STRIPE_PRICE_AGENCY
     }
   }
 };

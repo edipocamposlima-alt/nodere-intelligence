@@ -6,8 +6,12 @@ import { config } from "../config.js";
 
 const router = Router();
 
-router.get("/", (_req, res) => {
-  res.json(getBillingStatus());
+router.get("/", async (req, res, next) => {
+  try {
+    res.json(await getBillingStatus(getRequestWorkspaceId(req)));
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.get("/plans", (_req, res) => {
@@ -45,17 +49,39 @@ router.post("/waitlist", async (req: Request, res: Response, next: NextFunction)
 
 router.post("/checkout", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { planId, customerId } = req.body;
-    if (!planId) return res.status(400).json({ message: "planId obrigatório" });
-    const url = await createCheckoutSession(planId, customerId);
+    const session = (req as any).session;
+    const workspaceId = session?.workspaceId;
+    if (!workspaceId) return res.status(401).json({ message: "Login com workspace obrigatório para iniciar checkout." });
+    const body = checkoutSchema.parse(req.body ?? {});
+    const url = await createCheckoutSession({
+      planId: body.plan,
+      billingCycle: body.billingCycle,
+      workspaceId,
+      customerId: body.customerId
+    });
     res.json({ url });
   } catch (err) {
+    if (err instanceof z.ZodError) return res.status(400).json({ message: err.issues[0]?.message || "Dados inválidos" });
     const msg = err instanceof Error ? err.message : "";
     if (msg === "Plano não disponível para checkout" || msg === "Stripe não configurado") {
       return res.status(400).json({ message: msg });
     }
     next(err);
   }
+});
+
+const checkoutSchema = z.object({
+  plan: z.enum(["starter", "pro", "agency"]).optional(),
+  planId: z.enum(["starter", "pro", "agency"]).optional(),
+  billingCycle: z.enum(["monthly", "yearly"]).default("monthly"),
+  customerId: z.string().optional()
+}).transform((input, ctx) => {
+  const plan = input.plan || input.planId;
+  if (!plan) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "plan obrigatório" });
+    return z.NEVER;
+  }
+  return { ...input, plan };
 });
 
 router.post("/portal", async (req: Request, res: Response, next: NextFunction) => {

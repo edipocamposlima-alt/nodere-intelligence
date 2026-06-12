@@ -18,7 +18,10 @@ export const PLANS: Plan[] = [
     name: "Starter",
     monthlyCredits: 200,
     priceMonthly: 9700,
-    stripePriceId: config.stripe.prices.starter,
+    priceYearly: 97000,
+    stripePriceId: config.stripe.prices.starterMonthly,
+    stripePriceMonthlyId: config.stripe.prices.starterMonthly,
+    stripePriceYearlyId: config.stripe.prices.starterYearly,
     paymentLinkUrl: config.stripe.paymentLinks.starter,
     features: ["200 créditos/mês", "1 operador", "Diagnóstico IA", "Export PDF", "WhatsApp templates"]
   },
@@ -27,7 +30,10 @@ export const PLANS: Plan[] = [
     name: "Pro",
     monthlyCredits: 600,
     priceMonthly: 19700,
-    stripePriceId: config.stripe.prices.pro,
+    priceYearly: 197000,
+    stripePriceId: config.stripe.prices.proMonthly,
+    stripePriceMonthlyId: config.stripe.prices.proMonthly,
+    stripePriceYearlyId: config.stripe.prices.proYearly,
     paymentLinkUrl: config.stripe.paymentLinks.pro,
     features: ["600 créditos/mês", "3 operadores", "Caixa de entrada", "Relatórios comerciais", "Suporte prioritário"]
   },
@@ -36,7 +42,10 @@ export const PLANS: Plan[] = [
     name: "Agency",
     monthlyCredits: 999999,
     priceMonthly: 39700,
-    stripePriceId: config.stripe.prices.agency,
+    priceYearly: 397000,
+    stripePriceId: config.stripe.prices.agencyMonthly,
+    stripePriceMonthlyId: config.stripe.prices.agencyMonthly,
+    stripePriceYearlyId: config.stripe.prices.agencyYearly,
     paymentLinkUrl: config.stripe.paymentLinks.agency,
     features: ["Créditos ilimitados", "10 operadores", "White-label", "Audit log completo", "Suporte dedicado"]
   }
@@ -78,7 +87,11 @@ export function getPlanLinks() {
   };
 }
 
-export function getBillingStatus(): BillingStatus {
+export async function getBillingStatus(workspaceId?: string): Promise<BillingStatus> {
+  if (workspaceId) {
+    const persisted = await getPersistedBillingStatus(workspaceId).catch(() => null);
+    if (persisted) return persisted;
+  }
   const plan = PLANS.find((p) => p.id === billingState.planId) ?? PLANS[0];
   return {
     plan,
@@ -105,19 +118,40 @@ export function getUsageLog(limit = 200) {
   return usageLog.slice(0, limit);
 }
 
-export async function createCheckoutSession(planId: PlanId, customerId?: string): Promise<string> {
+export async function createCheckoutSession(input: {
+  planId: Exclude<PlanId, "demo">;
+  billingCycle: "monthly" | "yearly";
+  workspaceId: string;
+  customerId?: string;
+}): Promise<string> {
+  const { planId, billingCycle, workspaceId, customerId } = input;
   const plan = PLANS.find((p) => p.id === planId);
+  if (!plan) throw new Error("Plano não disponível para checkout");
   if (plan?.paymentLinkUrl) return plan.paymentLinkUrl;
-  if (!plan?.stripePriceId) throw new Error("Plano não disponível para checkout");
+  const priceId = getStripePriceId(plan, billingCycle);
+  if (!priceId) throw new Error("Plano não disponível para checkout");
   if (!config.stripe.secretKey) throw new Error("Stripe não configurado");
 
   const stripe = new Stripe(config.stripe.secretKey);
   const params: Stripe.Checkout.SessionCreateParams = {
     mode: "subscription",
     payment_method_types: ["card"],
-    line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+    line_items: [{ price: priceId, quantity: 1 }],
     success_url: config.stripe.successUrl,
-    cancel_url: config.stripe.cancelUrl
+    cancel_url: config.stripe.cancelUrl,
+    client_reference_id: workspaceId,
+    metadata: {
+      workspace_id: workspaceId,
+      plan: planId,
+      billing_cycle: billingCycle
+    },
+    subscription_data: {
+      metadata: {
+        workspace_id: workspaceId,
+        plan: planId,
+        billing_cycle: billingCycle
+      }
+    }
   };
   if (customerId) params.customer = customerId;
 
@@ -182,16 +216,151 @@ async function activateWorkspacePlan(workspaceId: string, planId: string, renewa
   }
 }
 
+async function downgradeWorkspaceToDemo(workspaceId: string) {
+  const sb = getSupabase();
+  if (!sb) return;
+  const demo = PLANS[0];
+  await sb.from("nodere_workspaces").update({
+    plan: demo.id,
+    credits: demo.monthlyCredits,
+    credits_used: 0,
+    plan_started_at: null,
+    plan_renews_at: null,
+    expires_at: null,
+    updated_at: new Date().toISOString()
+  }).eq("id", workspaceId);
+}
+
+async function getPersistedBillingStatus(workspaceId: string): Promise<BillingStatus | null> {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb
+    .from("nodere_billing_subscriptions")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  const plan = PLANS.find((p) => p.id === data.plan) ?? PLANS[0];
+  const creditsLimit = Number(data.credits_limit ?? plan.monthlyCredits);
+  return {
+    plan,
+    balance: creditsLimit,
+    used: 0,
+    resetAt: String(data.current_period_end || nextResetDate()),
+    stripeCustomerId: data.stripe_customer_id || undefined,
+    stripeSubscriptionId: data.stripe_subscription_id || undefined,
+    subscriptionStatus: data.status || undefined,
+    gated: data.status === "canceled" || data.status === "unpaid" || data.status === "past_due"
+  };
+}
+
+function getStripePriceId(plan: Plan | undefined, billingCycle: "monthly" | "yearly") {
+  if (!plan) return "";
+  if (billingCycle === "yearly") return plan.stripePriceYearlyId || plan.stripePriceId || "";
+  return plan.stripePriceMonthlyId || plan.stripePriceId || "";
+}
+
+function seatsForPlan(planId: string) {
+  if (planId === "agency") return 10;
+  if (planId === "pro") return 3;
+  if (planId === "starter") return 1;
+  return 1;
+}
+
+async function isStripeEventProcessed(stripeEventId: string) {
+  const sb = getSupabase();
+  if (!sb) return false;
+  const { data } = await sb
+    .from("nodere_stripe_events")
+    .select("id")
+    .eq("stripe_event_id", stripeEventId)
+    .maybeSingle();
+  return Boolean(data?.id);
+}
+
+async function recordStripeEvent(event: Stripe.Event) {
+  const sb = getSupabase();
+  if (!sb) return;
+  const { error } = await sb.from("nodere_stripe_events").insert({
+    stripe_event_id: event.id,
+    event_type: event.type,
+    payload: event as unknown as Record<string, unknown>
+  });
+  if (error && !String(error.message || "").includes("duplicate")) throw error;
+}
+
+async function upsertBillingSubscription(input: {
+  workspaceId: string;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+  planId: string;
+  billingCycle?: string | null;
+  status?: string | null;
+  currentPeriodStart?: string | null;
+  currentPeriodEnd?: string | null;
+  cancelAtPeriodEnd?: boolean;
+  metadata?: Record<string, unknown>;
+}) {
+  const sb = getSupabase();
+  if (!sb) return;
+  const plan = PLANS.find((item) => item.id === input.planId) ?? PLANS[0];
+  const row = {
+    workspace_id: input.workspaceId,
+    stripe_customer_id: input.stripeCustomerId || null,
+    stripe_subscription_id: input.stripeSubscriptionId || null,
+    plan: plan.id,
+    billing_cycle: input.billingCycle || "monthly",
+    status: input.status || "active",
+    current_period_start: input.currentPeriodStart || null,
+    current_period_end: input.currentPeriodEnd || null,
+    cancel_at_period_end: Boolean(input.cancelAtPeriodEnd),
+    seats_limit: seatsForPlan(plan.id),
+    credits_limit: plan.monthlyCredits,
+    metadata: input.metadata || {},
+    updated_at: new Date().toISOString()
+  };
+
+  const onConflict = row.stripe_subscription_id ? "stripe_subscription_id" : "workspace_id";
+  const { error } = await sb.from("nodere_billing_subscriptions").upsert(row, { onConflict });
+  if (error) throw error;
+}
+
+function planIdFromPrice(priceId?: string): PlanId {
+  const plan = PLANS.find((item) =>
+    item.stripePriceMonthlyId === priceId ||
+    item.stripePriceYearlyId === priceId ||
+    item.stripePriceId === priceId
+  );
+  return plan?.id ?? "demo";
+}
+
+function billingCycleFromPrice(priceId?: string) {
+  const yearly = PLANS.some((item) => item.stripePriceYearlyId && item.stripePriceYearlyId === priceId);
+  return yearly ? "yearly" : "monthly";
+}
+
 export async function handleStripeWebhook(rawBody: Buffer, signature: string) {
   if (!config.stripe.secretKey || !config.stripe.webhookSecret) return "stripe_not_configured";
   const stripe = new Stripe(config.stripe.secretKey);
   const event = stripe.webhooks.constructEvent(rawBody, signature, config.stripe.webhookSecret);
+  if (await isStripeEventProcessed(event.id)) return `${event.type}:duplicate`;
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const workspaceId = session.metadata?.workspace_id || session.client_reference_id || undefined;
     const planId = session.metadata?.plan || session.metadata?.plan_id || undefined;
     if (workspaceId && planId) {
+      await upsertBillingSubscription({
+        workspaceId,
+        stripeCustomerId: typeof session.customer === "string" ? session.customer : session.customer?.id,
+        stripeSubscriptionId: typeof session.subscription === "string" ? session.subscription : session.subscription?.id,
+        planId,
+        billingCycle: session.metadata?.billing_cycle || "monthly",
+        status: "checkout_completed",
+        metadata: { checkoutSessionId: session.id }
+      });
       await activateWorkspacePlan(workspaceId, planId);
       appendAuditLog("billing", "checkout_completed", `Checkout concluído para plano ${planId}`, {
         metadata: { workspaceId, planId, checkoutSessionId: session.id }
@@ -202,8 +371,9 @@ export async function handleStripeWebhook(rawBody: Buffer, signature: string) {
   if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated") {
     const sub = event.data.object as Stripe.Subscription;
     const priceId = sub.items.data[0]?.price.id;
-    const plan = PLANS.find((p) => p.stripePriceId === priceId) ?? PLANS[0];
+    const plan = PLANS.find((p) => p.id === planIdFromPrice(priceId)) ?? PLANS[0];
     const periodEnd: number | undefined = (sub as any).current_period_end;
+    const periodStart: number | undefined = (sub as any).current_period_start;
     billingState = {
       planId: plan.id,
       balance: sub.status === "active" ? plan.monthlyCredits : billingState.balance,
@@ -214,7 +384,21 @@ export async function handleStripeWebhook(rawBody: Buffer, signature: string) {
       subscriptionStatus: sub.status
     };
     const workspaceId = sub.metadata?.workspace_id || sub.metadata?.workspaceId || undefined;
-    if (workspaceId) await activateWorkspacePlan(workspaceId, plan.id, billingState.resetAt);
+    if (workspaceId) {
+      await upsertBillingSubscription({
+        workspaceId,
+        stripeCustomerId: typeof sub.customer === "string" ? sub.customer : sub.customer.id,
+        stripeSubscriptionId: sub.id,
+        planId: plan.id,
+        billingCycle: sub.metadata?.billing_cycle || billingCycleFromPrice(priceId),
+        status: sub.status,
+        currentPeriodStart: periodStart ? new Date(periodStart * 1000).toISOString() : null,
+        currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+        cancelAtPeriodEnd: Boolean(sub.cancel_at_period_end),
+        metadata: { priceId }
+      });
+      await activateWorkspacePlan(workspaceId, plan.id, billingState.resetAt);
+    }
     appendAuditLog("billing", `subscription_${event.type.split(".")[2]}`, `Assinatura ${plan.name} — ${sub.status}`, {
       metadata: { planId: plan.id, subscriptionId: sub.id }
     });
@@ -223,8 +407,23 @@ export async function handleStripeWebhook(rawBody: Buffer, signature: string) {
   if (event.type === "customer.subscription.deleted") {
     const sub = event.data.object as Stripe.Subscription;
     billingState = { planId: "demo", balance: PLANS[0].monthlyCredits, used: 0, resetAt: nextResetDate(), subscriptionStatus: "canceled" };
+    const workspaceId = sub.metadata?.workspace_id || sub.metadata?.workspaceId || undefined;
+    if (workspaceId) {
+      await upsertBillingSubscription({
+        workspaceId,
+        stripeCustomerId: typeof sub.customer === "string" ? sub.customer : sub.customer.id,
+        stripeSubscriptionId: sub.id,
+        planId: "demo",
+        billingCycle: sub.metadata?.billing_cycle || "monthly",
+        status: "canceled",
+        cancelAtPeriodEnd: Boolean(sub.cancel_at_period_end),
+        metadata: { deleted: true }
+      });
+      await downgradeWorkspaceToDemo(workspaceId);
+    }
     appendAuditLog("billing", "subscription_canceled", "Assinatura cancelada, voltando ao plano Demo", { metadata: { subscriptionId: sub.id } });
   }
 
+  await recordStripeEvent(event);
   return event.type;
 }

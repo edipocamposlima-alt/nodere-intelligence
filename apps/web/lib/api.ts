@@ -427,8 +427,11 @@ export function getUsageLog(limit = 100) {
   return api<UsageEvent[]>(`/billing/usage?limit=${limit}`, undefined, []);
 }
 
-export function createCheckoutSession(planId: string) {
-  return api<{ url: string }>("/billing/checkout", { method: "POST", body: JSON.stringify({ planId }) });
+export function createCheckoutSession(planId: string, billingCycle: "monthly" | "yearly" = "monthly") {
+  return api<{ url: string }>("/billing/checkout", {
+    method: "POST",
+    body: JSON.stringify({ plan: planId, planId, billingCycle })
+  });
 }
 
 export function createPortalSession(customerId: string) {

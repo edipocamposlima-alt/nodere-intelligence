@@ -246,8 +246,11 @@ export interface Plan {
   name: string;
   monthlyCredits: number;
   priceMonthly: number;
+  priceYearly?: number;
   features: string[];
   stripePriceId?: string;
+  stripePriceMonthlyId?: string;
+  stripePriceYearlyId?: string;
   paymentLinkUrl?: string;
 }
 
