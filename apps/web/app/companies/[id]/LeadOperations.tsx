@@ -41,6 +41,12 @@ function normalizeCalendarPriority(value: string) {
   return "media";
 }
 
+function authHeaders(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  const token = localStorage.getItem("nodere_admin_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 function linkedinSearchUrl(name: string) {
   const query = String(name || "")
     .replace(/https?:\/\/\S+/gi, "")
@@ -51,9 +57,13 @@ function linkedinSearchUrl(name: string) {
 }
 
 async function api<T>(path: string, options?: RequestInit): Promise<T> {
+  const headers = new Headers(options?.headers);
+  headers.set("Content-Type", "application/json");
+  const auth = authHeaders();
+  if (auth.Authorization) headers.set("Authorization", auth.Authorization);
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
-    headers: { "Content-Type": "application/json", ...(options?.headers ?? {}) }
+    headers
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
@@ -116,6 +126,17 @@ export function LeadOperations({ company }: { company: Company }) {
     setError(err instanceof Error ? err.message : "Ação não concluída.");
   }
 
+  async function tryCreateCalendarEvent(payload: Parameters<typeof createCalendarEvent>[0]) {
+    try {
+      await createCalendarEvent(payload);
+    } catch (err) {
+      console.warn("[lead-operations] calendar event skipped", {
+        companyId: company.id,
+        message: err instanceof Error ? err.message : String(err)
+      });
+    }
+  }
+
 
   async function uploadLogo(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -125,7 +146,7 @@ export function LeadOperations({ company }: { company: Company }) {
     form.append("logo", file);
     setUploadingLogo(true);
     try {
-      const response = await fetch(`${API_URL}${companyPath}/logo`, { method: "POST", body: form });
+      const response = await fetch(`${API_URL}${companyPath}/logo`, { method: "POST", headers: authHeaders(), body: form });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.message || `API HTTP ${response.status}`);
       const updated = payload.company || { ...lead, logoUrl: payload.logoUrl };
@@ -146,7 +167,7 @@ export function LeadOperations({ company }: { company: Company }) {
     form.append("file", file);
     setUploadingFile(true);
     try {
-      const response = await fetch(`${API_URL}${companyPath}/files`, { method: "POST", body: form });
+      const response = await fetch(`${API_URL}${companyPath}/files`, { method: "POST", headers: authHeaders(), body: form });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.message || `API HTTP ${response.status}`);
       setCompanyFiles((items) => [payload, ...items]);
@@ -160,7 +181,7 @@ export function LeadOperations({ company }: { company: Company }) {
 
   async function deleteCompanyFile(fileId: string) {
     try {
-      const response = await fetch(`${API_URL}${companyPath}/files/${encodeURIComponent(fileId)}`, { method: "DELETE" });
+      const response = await fetch(`${API_URL}${companyPath}/files/${encodeURIComponent(fileId)}`, { method: "DELETE", headers: authHeaders() });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.message || `API HTTP ${response.status}`);
       setCompanyFiles((items) => items.filter((item) => item.id !== fileId));
@@ -228,7 +249,7 @@ export function LeadOperations({ company }: { company: Company }) {
 
   async function deleteNote(noteId: string) {
     try {
-      await fetch(`${API_URL}${companyPath}/notes/${encodeURIComponent(noteId)}`, { method: "DELETE" });
+      await fetch(`${API_URL}${companyPath}/notes/${encodeURIComponent(noteId)}`, { method: "DELETE", headers: authHeaders() });
       setNotes((items) => items.filter((item) => item.id !== noteId));
       showSuccess("Observação removida.");
     } catch (err) {
@@ -257,7 +278,7 @@ export function LeadOperations({ company }: { company: Company }) {
         const startAt = new Date(dueAt);
         const endAt = new Date(startAt);
         endAt.setMinutes(endAt.getMinutes() + 30);
-        await createCalendarEvent({
+        await tryCreateCalendarEvent({
           companyId: company.id,
           title: String(form.get("title") || "Follow-up comercial"),
           type: "followup",
@@ -472,7 +493,7 @@ export function LeadOperations({ company }: { company: Company }) {
         startAt.setHours(startAt.getHours() + 1);
         const endAt = new Date(startAt);
         endAt.setMinutes(endAt.getMinutes() + 30);
-        await createCalendarEvent({
+        await tryCreateCalendarEvent({
           companyId: company.id,
           title: `${type === "contrato" ? "Revisar contrato" : "Enviar proposta"} - ${company.name}`,
           type: type === "contrato" ? "pos_venda" : "proposta",

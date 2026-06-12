@@ -38,7 +38,7 @@ export function Sidebar() {
         <Image src="/nodere-logo.png" alt="NODERE" width={42} height={42} priority className="h-10 w-10 rounded-lg object-contain" />
         <div>
           <p className="text-sm font-semibold text-white">NODERE</p>
-          <p className="text-[10px] uppercase tracking-[0.18em] text-cyan">Intelligence</p>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-cyan">Nexus</p>
         </div>
       </Link>
 

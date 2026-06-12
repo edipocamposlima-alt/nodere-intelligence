@@ -5,6 +5,10 @@ const API_URL = getApiBaseUrl();
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 const USER_TOKEN_KEY = "nodere_admin_token";
 
+function authHeaders(token?: string | null): Record<string, string> {
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 function companyPath(id: string, suffix = "") {
   return `/companies/${encodeURIComponent(id)}${suffix}`;
 }
@@ -64,7 +68,11 @@ async function api<T>(path: string, options?: RequestInit, fallback?: T): Promis
       }
       throw new ApiRequestError(detail || `API retornou HTTP ${response.status}`, response.status, payload);
     }
-    return (await response.json()) as T;
+    try {
+      return (await response.json()) as T;
+    } catch {
+      throw new ApiRequestError(`Resposta inválida do backend em ${API_URL}${path}.`, response.status);
+    }
   } catch (error) {
     if (fallback !== undefined) return fallback;
     if (error instanceof ApiRequestError) throw error;
@@ -94,8 +102,8 @@ export function getSavedCompanyIds() {
   return api<string[]>("/companies/saved-ids", undefined, []);
 }
 
-export function getCompany(id: string) {
-  return api<Company>(companyPath(id));
+export function getCompany(id: string, token?: string | null) {
+  return api<Company>(companyPath(id), token ? { headers: authHeaders(token) } : undefined);
 }
 
 export function createCompany(payload: {
@@ -283,12 +291,12 @@ export function enrichCompanyExternal(companyId: string) {
   return api<{ company: Company; enrichment: { messages: string[]; enrichmentSources: string[] } }>(companyPath(companyId, "/enrich-external"), { method: "POST" });
 }
 
-export function getCompanyAudit(companyId: string) {
-  return api<DigitalAudit>(companyPath(companyId, "/audit"));
+export function getCompanyAudit(companyId: string, token?: string | null) {
+  return api<DigitalAudit>(companyPath(companyId, "/audit"), token ? { headers: authHeaders(token) } : undefined);
 }
 
-export function getCompanyIntelligence(companyId: string) {
-  return api<GoogleIntelligence>(companyPath(companyId, "/intelligence"));
+export function getCompanyIntelligence(companyId: string, token?: string | null) {
+  return api<GoogleIntelligence>(companyPath(companyId, "/intelligence"), token ? { headers: authHeaders(token) } : undefined);
 }
 
 export function getCompanyKeywords(companyId: string) {

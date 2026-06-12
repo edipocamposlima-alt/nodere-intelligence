@@ -1,4 +1,5 @@
 import { ExternalLink, Facebook, FileText, Globe2, Instagram, Linkedin, MessageCircle, Phone, ShieldCheck, Star, Youtube, Zap } from "lucide-react";
+import { cookies } from "next/headers";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getCompany, getCompanyAudit, getCompanyIntelligence } from "@/lib/api";
 import { EnrichTrigger } from "./EnrichTrigger";
@@ -66,17 +67,19 @@ function CompanyLoadError({ id, message }: { id: string; message: string }) {
 
 export default async function CompanyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("nodere_session")?.value || cookieStore.get("nodere-session")?.value || null;
   let company;
   let audit = null;
   let intel = null;
   try {
     [company, audit, intel] = await Promise.all([
-      getCompany(id),
-      getCompanyAudit(id).catch((error) => {
+      getCompany(id, sessionToken),
+      getCompanyAudit(id, sessionToken).catch((error) => {
         console.warn("[company-page] audit unavailable", { id, message: error instanceof Error ? error.message : String(error) });
         return null;
       }),
-      getCompanyIntelligence(id).catch((error) => {
+      getCompanyIntelligence(id, sessionToken).catch((error) => {
         console.warn("[company-page] intelligence unavailable", { id, message: error instanceof Error ? error.message : String(error) });
         return null;
       })
