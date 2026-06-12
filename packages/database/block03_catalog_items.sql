@@ -1,0 +1,72 @@
+create extension if not exists pgcrypto;
+
+create table if not exists public.catalog_items (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  code text not null,
+  name text not null,
+  commercial_name text,
+  category text not null,
+  subcategory text,
+  brand text,
+  image_url text,
+  images text[] not null default '{}',
+  type text not null check (type in ('product','service')),
+  status text not null default 'active' check (status in ('active','inactive')),
+  description_short text not null default '',
+  description_full text,
+  features text,
+  benefits text,
+  differentials text,
+  target_audience text,
+  use_cases text,
+  cost numeric not null default 0,
+  price numeric not null default 0,
+  commission_pct numeric,
+  max_discount_pct numeric,
+  promotional_price numeric,
+  promotion_expires_at date,
+  supplier text,
+  delivery_days integer,
+  warranty text,
+  exchange_policy text,
+  cancellation_policy text,
+  payment_conditions text,
+  installments_available integer,
+  unit_measure text,
+  weight_kg numeric,
+  height_cm numeric,
+  width_cm numeric,
+  length_cm numeric,
+  color text,
+  material text,
+  model text,
+  voltage text,
+  technical_specs text,
+  execution_time text,
+  scope text,
+  limitations text,
+  deliverables text,
+  complexity text,
+  sla text,
+  stock_current integer,
+  stock_min integer,
+  stock_max integer,
+  stock_location text,
+  keywords text[] not null default '{}',
+  market_segment text,
+  campaign_url text,
+  support_material_urls text[] not null default '{}',
+  registered_by text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (workspace_id, code)
+);
+
+alter table public.catalog_items add column if not exists image_url text;
+alter table public.catalog_items add column if not exists images text[] not null default '{}';
+
+create index if not exists idx_catalog_items_workspace
+  on public.catalog_items(workspace_id, status, category);
+
+notify pgrst, 'reload schema';

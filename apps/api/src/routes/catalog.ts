@@ -199,7 +199,13 @@ function mapCatalogInput(input: Partial<z.infer<typeof catalogSchema>>) {
     campaignUrl: "campaign_url"
   };
   for (const [key, value] of Object.entries(input)) {
-    if (value !== undefined) row[map[key] ?? key] = value;
+    if (value === undefined) continue;
+    const column = map[key] ?? key;
+    if (column === "promotion_expires_at" && value === "") {
+      row[column] = null;
+      continue;
+    }
+    row[column] = value;
   }
   return row;
 }
