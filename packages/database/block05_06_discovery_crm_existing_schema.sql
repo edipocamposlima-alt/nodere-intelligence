@@ -94,6 +94,24 @@ create table if not exists public.calendar_events (
 create index if not exists idx_calendar_events_range
   on public.calendar_events(workspace_id, start_at, end_at);
 
+create table if not exists public.communications (
+  id text primary key default gen_random_uuid()::text,
+  workspace_id text not null default 'default',
+  company_id text not null references public.nodere_companies(id) on delete cascade,
+  contact_id text references public.company_contacts(id) on delete set null,
+  type text not null default 'note',
+  direction text not null default 'manual',
+  subject text,
+  body text,
+  sent_by text,
+  sent_at timestamptz not null default now(),
+  status text not null default 'sent',
+  metadata jsonb not null default '{}'
+);
+
+create index if not exists idx_communications_company
+  on public.communications(workspace_id, company_id, sent_at desc);
+
 create table if not exists public.proposal_versions (
   id text primary key default gen_random_uuid()::text,
   lead_id text not null,

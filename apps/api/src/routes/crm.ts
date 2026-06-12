@@ -226,6 +226,9 @@ router.get("/leads/:id/activities", async (req, res, next) => {
       .eq("workspace_id", getRequestWorkspaceId(req))
       .eq("company_id", req.params.id)
       .order("sent_at", { ascending: false });
+    if (error && isMissingSupabaseRelation(error)) {
+      return res.json(notes.map((note) => ({ ...note, type: "note" })));
+    }
     if (error) throw error;
     res.json([...(data ?? []), ...notes.map((note) => ({ ...note, type: "note" }))]);
   } catch (error) {
@@ -254,6 +257,10 @@ router.post("/leads/:id/activities", async (req, res, next) => {
       metadata: body.metadata ?? {}
     };
     const { data, error } = await requireSupabase().from("communications").insert(row).select("*").single();
+    if (error && isMissingSupabaseRelation(error)) {
+      const note = await addNote(req.params.id, body.body, getRequestWorkspaceId(req));
+      return res.status(201).json({ ...note, type: body.type });
+    }
     if (error) throw error;
     res.status(201).json(data);
   } catch (error) {
@@ -375,6 +382,12 @@ function safeFileName(value: string) {
     .replace(/[^a-zA-Z0-9._-]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80) || "lead";
+}
+
+function isMissingSupabaseRelation(error: unknown) {
+  const source = error as { code?: unknown; message?: unknown };
+  const text = String(source?.message || "");
+  return source?.code === "PGRST205" || text.includes("Could not find the table");
 }
 
 export default router;
