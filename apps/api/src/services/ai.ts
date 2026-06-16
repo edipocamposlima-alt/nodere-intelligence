@@ -37,7 +37,10 @@ export async function callAI(systemPrompt: string, userPrompt: string) {
     }
   }
 
-  const err = new AiUnavailableError();
+  const message = lastError instanceof Error && lastError.message
+    ? `IA indisponível: ${lastError.message}`
+    : "IA indisponível no momento.";
+  const err = new AiUnavailableError(message);
   (err as Error & { cause?: unknown }).cause = lastError;
   throw err;
 }
