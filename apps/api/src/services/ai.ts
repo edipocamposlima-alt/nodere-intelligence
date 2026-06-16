@@ -20,6 +20,7 @@ let providerHealthCache:
 export async function callAI(systemPrompt: string, userPrompt: string) {
   const providers = orderedProviders();
   let lastError: unknown;
+  let primaryProviderError: unknown;
 
   for (const provider of providers) {
     const startedAt = Date.now();
@@ -31,17 +32,19 @@ export async function callAI(systemPrompt: string, userPrompt: string) {
       return { provider, content };
     } catch (error) {
       lastError = error;
+      if (!primaryProviderError && !isMissingProviderConfig(error)) primaryProviderError = error;
       const retryable = isRetryableAiError(error);
       console.warn(`[AI] provider=${provider} status=failed retryable=${retryable} latency=${Date.now() - startedAt}ms`);
       if (!retryable) break;
     }
   }
 
-  const message = lastError instanceof Error && lastError.message
-    ? `IA indisponível: ${lastError.message}`
+  const reportedError = primaryProviderError || lastError;
+  const message = reportedError instanceof Error && reportedError.message
+    ? `IA indisponível: ${reportedError.message}`
     : "IA indisponível no momento.";
   const err = new AiUnavailableError(message);
-  (err as Error & { cause?: unknown }).cause = lastError;
+  (err as Error & { cause?: unknown }).cause = reportedError;
   throw err;
 }
 
@@ -118,6 +121,10 @@ function retryable(message: string) {
   const err = new Error(message) as Error & { retryable?: boolean };
   err.retryable = true;
   return err;
+}
+
+function isMissingProviderConfig(error: unknown) {
+  return error instanceof Error && /API_KEY ausente/i.test(error.message);
 }
 
 function isRetryableAiError(error: unknown) {
