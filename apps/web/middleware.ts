@@ -24,11 +24,17 @@ const PUBLIC_PATHS = [
   "/_next",
   "/favicon.ico",
   "/favicon",
+  "/favicon-",
   "/nodere",
+  "/logo-noderi",
+  "/android-chrome",
   "/apple-touch-icon",
+  "/icon-",
+  "/og-image",
   "/robots.txt",
   "/sitemap.xml",
   "/manifest.json",
+  "/manifest.webmanifest",
   "/sw.js",
   "/icons"
 ];
