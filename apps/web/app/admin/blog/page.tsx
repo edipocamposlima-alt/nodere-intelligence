@@ -45,12 +45,12 @@ export default function AdminBlogPage() {
   const style = {
     page: { padding: '32px', background: '#0A1628', minHeight: '100vh', color: '#EFF6FF', fontFamily: 'Inter,sans-serif' },
     h1: { fontSize: 28, fontWeight: 900, marginBottom: 8 },
-    btn: { background: '#1A6CF5', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 700 },
+    btn: { background: '#03624C', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 700 },
     btnLime: { background: '#AADD00', color: '#0A1628', border: 'none', padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 700 },
     btnRed: { background: 'rgba(239,68,68,.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,.3)', padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontSize: 13 },
-    card: { background: '#0D1F38', border: '1px solid #1E3A5F', borderRadius: 12, padding: 20, marginBottom: 12 },
-    input: { width: '100%', background: '#122035', border: '1px solid #1E3A5F', borderRadius: 8, padding: '10px 14px', color: '#EFF6FF', fontSize: 14, fontFamily: 'Inter,sans-serif', marginBottom: 12, boxSizing: 'border-box' as const },
-    textarea: { width: '100%', background: '#122035', border: '1px solid #1E3A5F', borderRadius: 8, padding: '10px 14px', color: '#EFF6FF', fontSize: 14, fontFamily: 'Inter,sans-serif', marginBottom: 12, minHeight: 120, boxSizing: 'border-box' as const, resize: 'vertical' as const },
+    card: { background: '#111827', border: '1px solid #243244', borderRadius: 12, padding: 20, marginBottom: 12 },
+    input: { width: '100%', background: '#111827', border: '1px solid #243244', borderRadius: 8, padding: '10px 14px', color: '#EFF6FF', fontSize: 14, fontFamily: 'Inter,sans-serif', marginBottom: 12, boxSizing: 'border-box' as const },
+    textarea: { width: '100%', background: '#111827', border: '1px solid #243244', borderRadius: 8, padding: '10px 14px', color: '#EFF6FF', fontSize: 14, fontFamily: 'Inter,sans-serif', marginBottom: 12, minHeight: 120, boxSizing: 'border-box' as const, resize: 'vertical' as const },
     label: { fontSize: 12, color: '#64748B', fontWeight: 600, display: 'block', marginBottom: 5 },
     tag: (published: boolean) => ({ display: 'inline-block', padding: '3px 10px', borderRadius: 100, fontSize: 11, fontWeight: 700, background: published ? 'rgba(170,221,0,.15)' : 'rgba(100,116,139,.15)', color: published ? '#AADD00' : '#64748B', border: `1px solid ${published ? 'rgba(170,221,0,.25)' : 'rgba(100,116,139,.25)'}` }),
   }
@@ -71,7 +71,7 @@ export default function AdminBlogPage() {
 
       {/* FORMULÁRIO DE EDIÇÃO */}
       {editing && (
-        <div style={{ ...style.card, border: '1.5px solid #1A6CF5', marginBottom: 32 }}>
+        <div style={{ ...style.card, border: '1.5px solid #03624C', marginBottom: 32 }}>
           <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 20 }}>{editing.id ? 'Editar artigo' : 'Novo artigo'}</h2>
           <label style={style.label}>Título</label>
           <input style={style.input} value={editing.title} onChange={e => setEditing({...editing, title: e.target.value})} placeholder="Título do artigo" />
@@ -97,7 +97,7 @@ export default function AdminBlogPage() {
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button style={style.btnLime} onClick={save}>Salvar artigo</button>
-            <button style={{ ...style.btn, background: 'transparent', border: '1px solid #1E3A5F', color: '#64748B' }} onClick={() => setEditing(null)}>Cancelar</button>
+            <button style={{ ...style.btn, background: 'transparent', border: '1px solid #243244', color: '#64748B' }} onClick={() => setEditing(null)}>Cancelar</button>
           </div>
         </div>
       )}

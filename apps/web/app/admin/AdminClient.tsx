@@ -94,7 +94,7 @@ export function AdminClient() {
     visibilityLevel: "read_edit",
     modulePermissions: defaultPermissions
   });
-  const [roleForm, setRoleForm] = useState({ name: "", description: "", color: "#1E6FDB", permissions: defaultPermissions });
+  const [roleForm, setRoleForm] = useState({ name: "", description: "", color: "#03624C", permissions: defaultPermissions });
 
   const activeUsers = useMemo(() => users.filter((user) => user.active), [users]);
 
@@ -213,7 +213,7 @@ export function AdminClient() {
         body: JSON.stringify(roleForm)
       });
       setRoles((current) => [...current, payload.role]);
-      setRoleForm({ name: "", description: "", color: "#1E6FDB", permissions: defaultPermissions });
+      setRoleForm({ name: "", description: "", color: "#03624C", permissions: defaultPermissions });
       setMessage(payload.message);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Erro ao criar cargo.");

@@ -15,7 +15,7 @@ const TICKER_ITEMS = [
 const OPPORTUNITY_CARDS = [
   { icon: "🏋️", label: "Academias sem site", value: "42 leads", color: "#F59E0B" },
   { icon: "⭐", label: "Clínicas com nota baixa", value: "18 alertas", color: "#EF4444" },
-  { icon: "📢", label: "Empresas sem Google Ads", value: "31 oport.", color: "#1E6FDB" },
+  { icon: "📢", label: "Empresas sem Google Ads", value: "31 oport.", color: "var(--info)" },
   { icon: "📸", label: "Restaurantes sem Instagram", value: "56 leads", color: "#EC4899" }
 ];
 

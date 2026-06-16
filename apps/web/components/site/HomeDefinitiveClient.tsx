@@ -15,9 +15,9 @@ const STATS = [
 const SOLUTIONS = [
   { icon: "🔍", code: "DISC", name: "Discovery", color: "#F59E0B", desc: "Encontre empresas com baixa presença digital e alto potencial de compra por segmento e cidade." },
   { icon: "🧠", code: "INTEL", name: "Intelligence", color: "#8B5CF6", desc: "Enriquecimento automático com Apollo, Receita Federal e diagnóstico por IA." },
-  { icon: "📊", code: "CRM", name: "CRM", color: "#1E6FDB", desc: "Pipeline visual, ficha 360, propostas em PDF e agenda de follow-ups integrados." },
+  { icon: "📊", code: "CRM", name: "CRM", color: "var(--crm-new)", desc: "Pipeline visual, ficha 360, propostas em PDF e agenda de follow-ups integrados." },
   { icon: "💬", code: "ENGAGE", name: "Engage", color: "#10B981", desc: "WhatsApp inbox, disparos em massa, e-mail e central omnichannel com automações." },
-  { icon: "🤖", code: "AI", name: "AI Nexus", color: "#00D4FF", desc: "Copiloto comercial com contexto real do lead. Scripts, análise e respostas inteligentes." },
+  { icon: "🤖", code: "AI", name: "AI Nexus", color: "var(--ai-primary)", desc: "Copiloto comercial com contexto real do lead. Scripts, análise e respostas inteligentes." },
   { icon: "📈", code: "ANA", name: "Analytics", color: "#EC4899", desc: "Dashboard executivo, forecast de receita e ranking de operadores em tempo real." },
   { icon: "🗂️", code: "OPS", name: "Operations", color: "#F97316", desc: "Projetos kanban, portal do cliente e controle de documentos pós-venda." },
   { icon: "🤝", code: "MKT", name: "Marketplace", color: "#06B6D4", desc: "Rede de parceiros, comissionamento e integração nativa com ERPs brasileiros." }
@@ -33,7 +33,7 @@ const INTEGRATIONS = [
   { icon: "📘", name: "Facebook Ads", color: "#1877F2" },
   { icon: "📸", name: "Instagram", color: "#E1306C" },
   { icon: "💼", name: "LinkedIn", color: "#0A66C2" },
-  { icon: "🏛️", name: "Receita Federal", color: "#1E6FDB" },
+  { icon: "🏛️", name: "Receita Federal", color: "var(--info)" },
   { icon: "💳", name: "Stripe", color: "#635BFF" },
   { icon: "💰", name: "Mercado Pago", color: "#00BCFF" },
   { icon: "🗄️", name: "Supabase", color: "#3ECF8E" },
@@ -55,8 +55,8 @@ const TESTIMONIALS = [
 
 const BLOG_POSTS = [
   { tag: "Discovery", color: "#F59E0B", title: "Como prospectar 200 empresas por semana com score digital automatizado", read: "5 min", date: "Jun 2026" },
-  { tag: "CRM", color: "#1E6FDB", title: "Pipeline inteligente: como parar de perder leads no funil de vendas", read: "4 min", date: "Jun 2026" },
-  { tag: "AI Nexus", color: "#00D4FF", title: "Copiloto comercial: como a IA gera scripts de abordagem em segundos", read: "6 min", date: "Mai 2026" },
+  { tag: "CRM", color: "var(--crm-new)", title: "Pipeline inteligente: como parar de perder leads no funil de vendas", read: "4 min", date: "Jun 2026" },
+  { tag: "AI Nexus", color: "var(--ai-primary)", title: "Copiloto comercial: como a IA gera scripts de abordagem em segundos", read: "6 min", date: "Mai 2026" },
   { tag: "Engage", color: "#10B981", title: "WhatsApp B2B: como escalar prospecção sem virar spam", read: "5 min", date: "Mai 2026" },
   { tag: "Analytics", color: "#EC4899", title: "Forecast de receita: como prever seu faturamento com precisão", read: "4 min", date: "Abr 2026" },
   { tag: "Intelligence", color: "#8B5CF6", title: "Enriquecimento de dados: Apollo + Receita Federal na mesma tela", read: "3 min", date: "Abr 2026" }
@@ -117,7 +117,7 @@ export default function HomeDefinitiveClient() {
             {[
               { icon: "🏋️", label: "Academias sem site", val: "42 leads", c: "#F59E0B" },
               { icon: "⭐", label: "Nota abaixo de 4.0", val: "18 alertas", c: "#EF4444" },
-              { icon: "📢", label: "Sem Google Ads", val: "31 oport.", c: "#1E6FDB" },
+              { icon: "📢", label: "Sem Google Ads", val: "31 oport.", c: "var(--info)" },
               { icon: "📸", label: "Sem Instagram ativo", val: "56 leads", c: "#EC4899" }
             ].map((item, index) => (
               <div className="def-opportunity" style={{ animationDelay: `${0.3 + index * 0.08}s` }} key={item.label}>

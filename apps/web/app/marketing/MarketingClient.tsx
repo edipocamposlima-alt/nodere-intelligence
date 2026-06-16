@@ -275,7 +275,7 @@ export function MarketingClient() {
                 </span>
                 {!platform.configured && <p className="mt-3 text-xs text-slate-400">Env vars: {platform.requiredEnv.join(", ")}</p>}
                 {platform.configured && <p className="mt-3 line-clamp-2 text-xs text-slate-500">OAuth real via {platform.provider}. Tokens criptografados.</p>}
-                <button type="button" onClick={() => setConnectionPlatform(platform)} className="mt-4 inline-flex rounded-lg px-3 py-2 text-xs font-black text-white shadow-glow" style={{ background: platform.color || "#1E6FDB" }}>
+                <button type="button" onClick={() => setConnectionPlatform(platform)} className="mt-4 inline-flex rounded-lg px-3 py-2 text-xs font-black text-white shadow-glow" style={{ background: platform.color || "var(--brand-primary)" }}>
                   {platform.configured ? "Conectar" : "Ver pendência"}
                 </button>
               </article>
@@ -321,7 +321,7 @@ export function MarketingClient() {
             <div className="flex items-center justify-between border-t border-slate-200 px-6 py-4">
               <button onClick={() => setConnectionPlatform(null)} className="text-sm font-semibold text-slate-500 hover:text-slate-900">Cancelar</button>
               {connectionPlatform.configured ? (
-                <a href={`${API_ROOT}/api/marketing/social/connect/${connectionPlatform.key}`} target="_blank" className="inline-flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-black text-white" style={{ background: connectionPlatform.color || "#1E6FDB" }}>
+                <a href={`${API_ROOT}/api/marketing/social/connect/${connectionPlatform.key}`} target="_blank" className="inline-flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-black text-white" style={{ background: connectionPlatform.color || "var(--brand-primary)" }}>
                   Continuar <CheckCircle2 className="h-4 w-4" />
                 </a>
               ) : (
@@ -395,7 +395,7 @@ function ConnectionStep({ index, title, text, muted = false }: { index: number; 
 }
 
 function BrandLogo({ platformKey, name, color, size = "md" }: { platformKey: string; name: string; color?: string; size?: "md" | "lg" }) {
-  const brand = brandMarks[platformKey] || { label: name.slice(0, 2).toUpperCase(), background: color || "#1E6FDB", foreground: "#FFFFFF" };
+  const brand = brandMarks[platformKey] || { label: name.slice(0, 2).toUpperCase(), background: color || "var(--brand-primary)", foreground: "#FFFFFF" };
   const dimension = size === "lg" ? "h-14 w-14 text-lg" : "h-10 w-10 text-sm";
   return (
     <span

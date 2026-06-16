@@ -191,7 +191,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
                     <XAxis type="number" stroke="#94A3B8" allowDecimals={false} />
                     <YAxis type="category" dataKey="name" stroke="#94A3B8" width={110} fontSize={11} />
                     <Tooltip contentStyle={{ background: "#0B1220", border: "1px solid #1E293B", color: "#fff" }} />
-                    <Bar dataKey="count" radius={[0, 6, 6, 0]} fill="#1E6FDB" />
+                    <Bar dataKey="count" radius={[0, 6, 6, 0]} fill="var(--chart-leads)" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

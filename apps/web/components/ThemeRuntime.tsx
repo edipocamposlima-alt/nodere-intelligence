@@ -22,7 +22,7 @@ const themePresets: Record<string, { primary: string; cyan: string; panel: strin
   "Solar executivo": { primary: "#F59E0B", cyan: "#F97316", panel: "#211407", ink: "#0F0702", line: "#92400E" },
   "Vermelho conversão": { primary: "#EF4444", cyan: "#F97316", panel: "#220A0A", ink: "#100303", line: "#7F1D1D" },
   "Magenta premium": { primary: "#EC4899", cyan: "#A78BFA", panel: "#201020", ink: "#100712", line: "#831843" },
-  "Ciano neon": { primary: "#06B6D4", cyan: "#67E8F9", panel: "#061D24", ink: "#031014", line: "#155E75" },
+  "Ciano neon": { primary: "#03624C", cyan: "#00DF82", panel: "#111827", ink: "#081018", line: "#243244" },
   "Grafite claro": { primary: "#334155", cyan: "#2563EB", panel: "#FFFFFF", ink: "#F1F5F9", line: "#CBD5E1" },
   "Alto contraste": { primary: "#FACC15", cyan: "#00E5FF", panel: "#000000", ink: "#000000", line: "#FFFFFF" }
 };

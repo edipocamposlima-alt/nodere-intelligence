@@ -26,13 +26,13 @@ const themePresets: Record<string, { primary: string; mode: Settings["mode"]; cy
   "Solar executivo": { primary: "#F59E0B", mode: "dark", cyan: "#F97316", panel: "#211407", ink: "#0F0702", line: "#92400E" },
   "Vermelho conversão": { primary: "#EF4444", mode: "dark", cyan: "#F97316", panel: "#220A0A", ink: "#100303", line: "#7F1D1D" },
   "Magenta premium": { primary: "#EC4899", mode: "dark", cyan: "#A78BFA", panel: "#201020", ink: "#100712", line: "#831843" },
-  "Ciano neon": { primary: "#06B6D4", mode: "dark", cyan: "#67E8F9", panel: "#061D24", ink: "#031014", line: "#155E75" },
-  "Vibrante NODERI": { primary: "#00C2FF", mode: "dark", cyan: "#22D3EE", panel: "#061A2F", ink: "#030B18", line: "#155E75" },
+  "Ciano neon": { primary: "#03624C", mode: "dark", cyan: "#00DF82", panel: "#111827", ink: "#081018", line: "#243244" },
+  "Vibrante NODERI": { primary: "#03624C", mode: "dark", cyan: "#19F5A1", panel: "#10201C", ink: "#050D14", line: "#24594B" },
   "Vibrante claro": { primary: "#E11D48", mode: "light", cyan: "#2563EB", panel: "#FFFFFF", ink: "#F8FAFC", line: "#CBD5E1" },
   "Grafite claro": { primary: "#334155", mode: "light", cyan: "#2563EB", panel: "#FFFFFF", ink: "#F1F5F9", line: "#CBD5E1" },
   "Alto contraste": { primary: "#FACC15", mode: "dark", cyan: "#00E5FF", panel: "#000000", ink: "#000000", line: "#FFFFFF" },
   "Claro": { primary: "#2563EB", mode: "light", cyan: "#0EA5E9", panel: "#FFFFFF", ink: "#F6F8FC", line: "#D9E2EF" },
-  "Escuro": { primary: "#1E6FDB", mode: "dark", cyan: "#42D7FF", panel: "#0B1220", ink: "#050914", line: "#18243A" }
+  "Escuro": { primary: "#03624C", mode: "dark", cyan: "#00DF82", panel: "#111827", ink: "#081018", line: "#243244" }
 };
 
 type Settings = {
@@ -74,7 +74,7 @@ type DownloadLog = {
 
 const defaults: Settings = {
   theme: "NODERI Verde",
-  colorPrimary: "#1E6FDB",
+  colorPrimary: "#03624C",
   mode: "dark",
   fontFamily: "Inter",
   fontSize: "normal",
