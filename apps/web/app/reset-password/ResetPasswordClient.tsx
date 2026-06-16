@@ -46,7 +46,7 @@ export function ResetPasswordClient() {
     setLoading(true);
     try {
       await updatePasswordWithRecoveryToken(token, password);
-      setMessage("Senha atualizada com sucesso. Você já pode entrar no NODERE.");
+      setMessage("Senha atualizada com sucesso. Você já pode entrar no NODERI.");
       setPassword("");
       setConfirm("");
     } catch (err) {
@@ -60,11 +60,11 @@ export function ResetPasswordClient() {
     <main className="min-h-screen bg-ink px-5 py-10">
       <section className="mx-auto max-w-md rounded-xl border border-line bg-panel/95 p-6 shadow-glow">
         <div className="mb-6 flex justify-center">
-          <Image src="/nodere-wordmark.png" alt="NODERE" width={360} height={120} priority className="h-auto w-full max-w-xs rounded-xl object-contain" />
+          <Image src="/logo-noderi-full.png" alt="NODERI" width={360} height={120} priority className="h-auto w-full max-w-xs rounded-xl object-contain" />
         </div>
         <h1 className="text-xl font-semibold text-white">Redefinir senha</h1>
         <p className="mt-2 text-sm leading-6 text-slate-400">
-          Crie uma nova senha para voltar ao NODERE. Por segurança, o link de recuperação expira automaticamente.
+          Crie uma nova senha para voltar ao NODERI. Por segurança, o link de recuperação expira automaticamente.
         </p>
         <form onSubmit={submit} className="mt-6 space-y-4">
           <label className="block">

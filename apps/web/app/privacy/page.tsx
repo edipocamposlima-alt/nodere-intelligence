@@ -10,7 +10,7 @@ async function getPrivacy() {
     // Render fallback below.
   }
   return {
-    title: "Política de Privacidade NODERE",
+    title: "Política de Privacidade NODERI",
     updatedAt: "2026-06-02",
     sections: [
       { title: "Dados tratados", body: "Armazenamos dados comerciais de leads, observações, tarefas, histórico, propostas e configurações do workspace." },
@@ -24,7 +24,7 @@ export default async function PrivacyPage() {
   return (
     <main className="mx-auto max-w-4xl space-y-6 p-5 md:p-10">
       <div className="flex items-center justify-between gap-4">
-        <Image src="/nodere-wordmark.png" alt="NODERE" width={220} height={80} className="h-auto w-44 rounded-lg object-contain" priority />
+        <Image src="/logo-noderi-full.png" alt="NODERI" width={220} height={80} className="h-auto w-44 rounded-lg object-contain" priority />
         <Link href="/login" className="text-sm font-semibold text-cyan">Voltar</Link>
       </div>
       <div>

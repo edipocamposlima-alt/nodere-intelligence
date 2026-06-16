@@ -29,13 +29,13 @@ const plans = [
 ];
 
 export const metadata: Metadata = {
-  title: "NODERE Nexus — Revenue Intelligence Platform",
+  title: "NODERI Nexus — Revenue Intelligence Platform",
   description: "A plataforma que conecta inteligencia comercial, prospeccao e vendas em um unico fluxo. Encontre empresas, analise oportunidades e feche mais contratos.",
   openGraph: {
-    title: "NODERE Nexus",
+    title: "NODERI Nexus",
     description: "Revenue Intelligence Platform para agencias e times comerciais.",
     url: "https://nodere.com.br",
-    siteName: "NODERE Nexus",
+    siteName: "NODERI Nexus",
     locale: "pt_BR",
     type: "website"
   }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { Logo } from "@/components/ui/Logo";
 
 const NAV_ITEMS = [
   { code: "DISC-01", label: "Prospecção", icon: "🔍", href: "/app/discovery", group: "Descoberta" },
@@ -34,8 +35,9 @@ export default function PlatformSidebar() {
     <nav className="sidebar">
       <div className="sidebar-logo">
         <Link href="/app/dashboard">
-          <span className="logo-text">NODERE</span>
-          <span className="logo-nexus">Nexus</span>
+          <Logo variant="full" size="md" />
+          <span className="logo-text sr-only">NODERI</span>
+          <span className="logo-nexus sr-only">Nexus</span>
         </Link>
       </div>
 

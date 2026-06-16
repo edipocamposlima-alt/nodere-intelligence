@@ -1,7 +1,7 @@
 import { CatalogClient } from "./CatalogClient";
 
 export const metadata = {
-  title: "Catálogo | NODERE"
+  title: "Catálogo | NODERI"
 };
 
 export default function CatalogPage() {

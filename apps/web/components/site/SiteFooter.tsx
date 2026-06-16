@@ -12,7 +12,7 @@ export default function SiteFooter() {
       <div className="site-container">
         <div className="site-footer__grid">
           <div>
-            <div className="site-footer__brand">NODERE <strong>Nexus</strong></div>
+            <div className="site-footer__brand">NODERI <strong>Nexus</strong></div>
             <p>Revenue Intelligence Platform. A plataforma que conecta inteligência comercial, prospecção e vendas em um único fluxo.</p>
             <div className="site-footer__social">
               <a href="https://linkedin.com/company/nodere" target="_blank" rel="noopener noreferrer">LinkedIn</a>
@@ -29,7 +29,7 @@ export default function SiteFooter() {
           ))}
         </div>
         <div className="site-footer__bottom">
-          <span>© 2026 NODERE Nexus. Todos os direitos reservados.</span>
+          <span>© 2026 NODERI Nexus. Todos os direitos reservados.</span>
           <span>Revenue Intelligence Platform · nodere.com.br</span>
         </div>
       </div>

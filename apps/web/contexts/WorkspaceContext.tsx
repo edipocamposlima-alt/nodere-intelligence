@@ -50,7 +50,7 @@ function normalizeWorkspace(raw: Workspace | null): Workspace | null {
   if (!raw) return null;
   return {
     ...raw,
-    name: raw.name || raw.nome || "Workspace NODERE",
+    name: raw.name || raw.nome || "Workspace NODERI",
     plan: raw.plan || raw.plano || "trial",
     plan_expires_at: raw.plan_expires_at || raw.trial_expires_at || raw.expires_at || raw.expira_em
   };

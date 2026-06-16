@@ -1,23 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="180" height="40" viewBox="0 0 180 40">
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="40" viewBox="0 0 180 40" role="img" aria-label="NODERI Nexus">
   <defs>
     <linearGradient id="ng" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1A6CF5"/>
-      <stop offset="100%" stop-color="#0099FF"/>
+      <stop offset="0%" stop-color="#2A9D6A"/>
+      <stop offset="65%" stop-color="#03624C"/>
+      <stop offset="100%" stop-color="#02483A"/>
     </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
-  <!-- Ícone quadrado arredondado -->
-  <rect x="0" y="2" width="36" height="36" rx="8" fill="url(#ng)"/>
-  <!-- Linhas de circuito decorativas -->
-  <circle cx="12" cy="2" r="2" fill="#00C2FF" opacity="0.8"/>
-  <circle cx="24" cy="38" r="2" fill="#00C2FF" opacity="0.8"/>
-  <path d="M12 2 Q0 2 0 10" stroke="#00C2FF" stroke-width="1.5" fill="none" opacity="0.6"/>
-  <path d="M24 38 Q36 38 36 30" stroke="#00C2FF" stroke-width="1.5" fill="none" opacity="0.6"/>
-  <!-- Letra N -->
-  <text x="18" y="27" text-anchor="middle" font-family="Inter,Arial,sans-serif"
-    font-size="22" font-weight="900" fill="white">N</text>
-  <!-- Texto NODERE -->
-  <text x="48" y="28" font-family="Inter,Arial,sans-serif"
-    font-size="22" font-weight="800" fill="white" letter-spacing="-0.5">NODERE</text>
-  <!-- Ponto azul no R de NODERE (detalhe de marca) -->
-  <rect x="128" y="18" width="4" height="4" rx="1" fill="#00C2FF"/>
+  <rect width="180" height="40" rx="12" fill="#050D14"/>
+  <rect x="2" y="3" width="34" height="34" rx="10" fill="url(#ng)" filter="url(#glow)"/>
+  <circle cx="13" cy="3" r="2" fill="#00DF82"/>
+  <circle cx="25" cy="37" r="2" fill="#00DF82"/>
+  <path d="M13 3 Q2 3 2 12" stroke="#00DF82" stroke-width="1.5" fill="none" opacity="0.8"/>
+  <path d="M25 37 Q36 37 36 28" stroke="#00DF82" stroke-width="1.5" fill="none" opacity="0.8"/>
+  <text x="19" y="28" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="22" font-weight="900" fill="white">N</text>
+  <text x="49" y="28" font-family="Inter,Arial,sans-serif" font-size="22" font-weight="900" fill="white" letter-spacing="1.5">NODERI</text>
+  <path d="M166 9h8l-8 8z" fill="#00DF82"/>
 </svg>

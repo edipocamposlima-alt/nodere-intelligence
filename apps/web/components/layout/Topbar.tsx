@@ -15,7 +15,7 @@ const PLAN_LABELS: Record<string, { label: string; color: string }> = {
 export default function PlatformTopbar() {
   const { workspace, user } = useWorkspace();
   const router = useRouter();
-  const workspaceName = workspace?.name || workspace?.nome || "Workspace NODERE";
+  const workspaceName = workspace?.name || workspace?.nome || "Workspace NODERI";
   const planKey = String(workspace?.plan || workspace?.plano || "trial").toLowerCase();
   const plan = PLAN_LABELS[planKey] || PLAN_LABELS.trial;
   const expiresAt = workspace?.plan_expires_at || workspace?.trial_expires_at || workspace?.expires_at || workspace?.expira_em;

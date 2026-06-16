@@ -10,10 +10,10 @@ async function getTerms() {
     // Render fallback below.
   }
   return {
-    title: "Termos de Uso NODERE",
+    title: "Termos de Uso NODERI",
     updatedAt: "2026-06-02",
     sections: [
-      { title: "Uso da plataforma", body: "O NODERE é uma plataforma SaaS para prospecção, CRM e inteligência comercial. Use dados e integrações de forma ética e autorizada." },
+      { title: "Uso da plataforma", body: "O NODERI é uma plataforma SaaS para prospecção, CRM e inteligência comercial. Use dados e integrações de forma ética e autorizada." },
       { title: "Credenciais", body: "Secrets e chaves completas devem ficar somente no backend/Render, nunca no frontend ou GitHub." }
     ]
   };
@@ -24,7 +24,7 @@ export default async function TermsPage() {
   return (
     <main className="mx-auto max-w-4xl space-y-6 p-5 md:p-10">
       <div className="flex items-center justify-between gap-4">
-        <Image src="/nodere-wordmark.png" alt="NODERE" width={220} height={80} className="h-auto w-44 rounded-lg object-contain" priority />
+        <Image src="/logo-noderi-full.png" alt="NODERI" width={220} height={80} className="h-auto w-44 rounded-lg object-contain" priority />
         <Link href="/login" className="text-sm font-semibold text-cyan">Voltar</Link>
       </div>
       <div>

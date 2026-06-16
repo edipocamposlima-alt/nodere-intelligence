@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { BarChart3, Building2, CalendarDays, CircleHelp, CreditCard, Inbox, KanbanSquare, LineChart, Megaphone, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
 import { useCredits } from "@/context/CreditsProvider";
+import { Logo } from "@/components/ui/Logo";
 
 const items = [
   { href: "/", label: "Início", icon: BarChart3, hex: "#0EA5E9", bg: "linear-gradient(135deg,#0284C7,#38BDF8)" },
@@ -21,7 +21,7 @@ const items = [
   { href: "/billing", label: "Faturamento", icon: CreditCard, hex: "#F97316", bg: "linear-gradient(135deg,#EA580C,#FDBA74)" },
   { href: "/integrations", label: "Integrações", icon: Plug, hex: "#14B8A6", bg: "linear-gradient(135deg,#0D9488,#5EEAD4)" },
   { href: "/settings", label: "Configurações", icon: Settings, hex: "#3B82F6", bg: "linear-gradient(135deg,#2563EB,#93C5FD)" },
-  { href: "/manual", label: "Ajuda / Manual NODERE", icon: CircleHelp, hex: "#F43F5E", bg: "linear-gradient(135deg,#E11D48,#FDA4AF)" },
+  { href: "/manual", label: "Ajuda / Manual NODERI", icon: CircleHelp, hex: "#F43F5E", bg: "linear-gradient(135deg,#E11D48,#FDA4AF)" },
   { href: "/admin", label: "Administrador", icon: ShieldCheck, hex: "#1D4ED8", bg: "linear-gradient(135deg,#1D4ED8,#22D3EE)" }
 ];
 
@@ -35,11 +35,7 @@ export function Sidebar() {
   return (
     <aside className="hidden min-h-screen w-72 border-r border-line bg-ink/90 p-5 lg:block">
       <Link href="/" className="flex items-center gap-3 rounded-xl border border-line bg-panel/70 p-3 transition hover:border-electric/60">
-        <Image src="/nodere-logo.png" alt="NODERE" width={42} height={42} priority className="h-10 w-10 rounded-lg object-contain" />
-        <div>
-          <p className="text-sm font-semibold text-white">NODERE</p>
-          <p className="text-[10px] uppercase tracking-[0.18em] text-cyan">Nexus</p>
-        </div>
+        <Logo variant="full" size="lg" />
       </Link>
 
       <nav className="mt-8 space-y-1">

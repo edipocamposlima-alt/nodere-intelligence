@@ -10,7 +10,7 @@ const STORAGE_KEY = "nodere_settings";
 const BACKEND_ROOT_URL = getBackendRootUrl();
 
 const themePresets: Record<string, { primary: string; mode: Settings["mode"]; cyan: string; panel: string; ink: string; line: string }> = {
-  "Nodere Azul": { primary: "#1E6FDB", mode: "dark", cyan: "#42D7FF", panel: "#0B1220", ink: "#050914", line: "#18243A" },
+  "NODERI Verde": { primary: "#03624C", mode: "dark", cyan: "#00DF82", panel: "#111827", ink: "#081018", line: "rgba(255,255,255,0.08)" },
   "Atlântico premium": { primary: "#0284C7", mode: "dark", cyan: "#22D3EE", panel: "#071827", ink: "#020817", line: "#164E63" },
   "Azul executivo": { primary: "#2563EB", mode: "dark", cyan: "#06B6D4", panel: "#0D1B2A", ink: "#050A14", line: "#1D3557" },
   "Executivo Escuro": { primary: "#2DD4BF", mode: "dark", cyan: "#38BDF8", panel: "#0D1624", ink: "#040812", line: "#223047" },
@@ -27,7 +27,7 @@ const themePresets: Record<string, { primary: string; mode: Settings["mode"]; cy
   "Vermelho conversão": { primary: "#EF4444", mode: "dark", cyan: "#F97316", panel: "#220A0A", ink: "#100303", line: "#7F1D1D" },
   "Magenta premium": { primary: "#EC4899", mode: "dark", cyan: "#A78BFA", panel: "#201020", ink: "#100712", line: "#831843" },
   "Ciano neon": { primary: "#06B6D4", mode: "dark", cyan: "#67E8F9", panel: "#061D24", ink: "#031014", line: "#155E75" },
-  "Vibrante NODERE": { primary: "#00C2FF", mode: "dark", cyan: "#22D3EE", panel: "#061A2F", ink: "#030B18", line: "#155E75" },
+  "Vibrante NODERI": { primary: "#00C2FF", mode: "dark", cyan: "#22D3EE", panel: "#061A2F", ink: "#030B18", line: "#155E75" },
   "Vibrante claro": { primary: "#E11D48", mode: "light", cyan: "#2563EB", panel: "#FFFFFF", ink: "#F8FAFC", line: "#CBD5E1" },
   "Grafite claro": { primary: "#334155", mode: "light", cyan: "#2563EB", panel: "#FFFFFF", ink: "#F1F5F9", line: "#CBD5E1" },
   "Alto contraste": { primary: "#FACC15", mode: "dark", cyan: "#00E5FF", panel: "#000000", ink: "#000000", line: "#FFFFFF" },
@@ -73,7 +73,7 @@ type DownloadLog = {
 };
 
 const defaults: Settings = {
-  theme: "Nodere Azul",
+  theme: "NODERI Verde",
   colorPrimary: "#1E6FDB",
   mode: "dark",
   fontFamily: "Inter",
@@ -84,7 +84,7 @@ const defaults: Settings = {
 };
 
 function applySettings(settings: Settings) {
-  const preset = themePresets[settings.theme] || themePresets["Nodere Azul"];
+  const preset = themePresets[settings.theme] || themePresets["NODERI Verde"];
   document.documentElement.style.setProperty("--nodere-primary", settings.colorPrimary);
   document.documentElement.style.setProperty("--color-cyan", preset.cyan);
   document.documentElement.style.setProperty("--color-panel", settings.mode === "light" ? "#FFFFFF" : preset.panel);
@@ -135,7 +135,7 @@ export function SettingsClient() {
     port: "587",
     user: "",
     pass: "",
-    fromName: "NODERE Nexus",
+    fromName: "NODERI Nexus",
     fromEmail: ""
   });
   const [smtpStatus, setSmtpStatus] = useState("Não testado");
@@ -491,7 +491,7 @@ export function SettingsClient() {
           <label className="space-y-2 text-sm text-slate-300">
             Tema
             <select value={settings.theme} onChange={(event) => update("theme", event.target.value)} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
-              {["Claro", "Grafite claro", "Vibrante claro", "Escuro", "Nodere Azul", "Vibrante NODERE", "Atlântico premium", "Azul executivo", "Executivo Escuro", "Preto absoluto", "Aço premium", "Ciano neon", "Roxo tecnológico", "Roxo SaaS", "Violeta sólido", "Magenta premium", "Verde comercial", "Verde Performance", "Esmeralda forte", "Laranja performance", "Solar executivo", "Vermelho conversão", "Alto contraste"].map((item) => <option key={item}>{item}</option>)}
+              {["Claro", "Grafite claro", "Vibrante claro", "Escuro", "NODERI Verde", "Vibrante NODERI", "Atlântico premium", "Azul executivo", "Executivo Escuro", "Preto absoluto", "Aço premium", "Ciano neon", "Roxo tecnológico", "Roxo SaaS", "Violeta sólido", "Magenta premium", "Verde comercial", "Verde Performance", "Esmeralda forte", "Laranja performance", "Solar executivo", "Vermelho conversão", "Alto contraste"].map((item) => <option key={item}>{item}</option>)}
             </select>
           </label>
           <label className="space-y-2 text-sm text-slate-300">

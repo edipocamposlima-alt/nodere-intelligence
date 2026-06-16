@@ -6,7 +6,7 @@ import { getPublicSettings } from "@/lib/api";
 const STORAGE_KEY = "nodere_settings";
 
 const themePresets: Record<string, { primary: string; cyan: string; panel: string; ink: string; line: string }> = {
-  "Nodere Azul": { primary: "#1E6FDB", cyan: "#42D7FF", panel: "#0B1220", ink: "#050914", line: "#18243A" },
+  "NODERI Verde": { primary: "#03624C", cyan: "#00DF82", panel: "#111827", ink: "#081018", line: "rgba(255,255,255,0.08)" },
   "Atlântico premium": { primary: "#0284C7", cyan: "#22D3EE", panel: "#071827", ink: "#020817", line: "#164E63" },
   "Azul executivo": { primary: "#2563EB", cyan: "#06B6D4", panel: "#0D1B2A", ink: "#050A14", line: "#1D3557" },
   "Executivo Escuro": { primary: "#2DD4BF", cyan: "#38BDF8", panel: "#0D1624", ink: "#040812", line: "#223047" },
@@ -37,7 +37,7 @@ type StoredSettings = {
 };
 
 function applyTheme(settings: StoredSettings) {
-  const preset = themePresets[settings.theme || "Nodere Azul"] || themePresets["Nodere Azul"];
+  const preset = themePresets[settings.theme || "NODERI Verde"] || themePresets["NODERI Verde"];
   const root = document.documentElement;
 
   root.style.setProperty("--nodere-primary", settings.colorPrimary || preset.primary);

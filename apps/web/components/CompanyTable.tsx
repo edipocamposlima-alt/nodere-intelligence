@@ -161,7 +161,7 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
   async function exportPdf() {
     const list = (selectedCompanies.length ? selectedCompanies : visibleCompanies).slice(0, 50);
     const content = [
-      "NODERE Nexus",
+      "NODERI Nexus",
       `Relatorio de empresas - ${new Date().toLocaleString("pt-BR")}`,
       "",
       ...list.flatMap((company, index) => [
@@ -173,7 +173,7 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
       ])
     ].join("\n");
     await downloadNoderePdf({
-      title: "Relatório NODERE",
+      title: "Relatório NODERI",
       subtitle: `Empresas exportadas em ${new Date().toLocaleString("pt-BR")}`,
       body: content,
       fileName: `relatorio-nodere-${Date.now()}.pdf`

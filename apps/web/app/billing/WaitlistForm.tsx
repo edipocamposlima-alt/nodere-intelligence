@@ -17,7 +17,7 @@ export function WaitlistForm() {
     setError("");
     try {
       await joinBillingWaitlist({ email, plan });
-      setMessage("Interesse registrado. A equipe NODERE pode ativar o checkout ou entrar em contato.");
+      setMessage("Interesse registrado. A equipe NODERI pode ativar o checkout ou entrar em contato.");
       setEmail("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível registrar o interesse.");

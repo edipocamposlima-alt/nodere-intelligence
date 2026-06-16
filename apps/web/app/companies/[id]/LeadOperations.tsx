@@ -295,7 +295,7 @@ export function LeadOperations({ company }: { company: Company }) {
         });
       }
       if ("Notification" in window && Notification.permission === "granted") {
-        new Notification("Follow-up criado no NODERE", { body: `${task.title} · ${company.name}` });
+        new Notification("Follow-up criado no NODERI", { body: `${task.title} · ${company.name}` });
       } else if ("Notification" in window && Notification.permission === "default") {
         void Notification.requestPermission();
       }

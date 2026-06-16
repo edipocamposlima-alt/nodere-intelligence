@@ -7,44 +7,61 @@ import { AppShell } from "@/components/AppShell";
 export const metadata: Metadata = {
   metadataBase: new URL("https://nodere.com.br"),
   title: {
-    default: "NODERE Nexus — Revenue Intelligence Platform",
-    template: "%s | NODERE Nexus"
+    default: "NODERI Nexus — Revenue Intelligence Platform",
+    template: "%s | NODERI Nexus"
   },
   description: "Encontre empresas que precisam dos seus serviços. Diagnóstico digital automático, CRM com IA e prospecção inteligente em um único fluxo.",
-  manifest: "/manifest.json",
+  applicationName: "NODERI Nexus",
+  authors: [{ name: "NODERI" }],
+  creator: "NODERI",
+  publisher: "NODERI",
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: [
-      { url: "/nodere-logo-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/nodere-logo-512.png", sizes: "512x512", type: "image/png" }
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" }
     ],
-    apple: "/nodere-logo-192.png"
+    apple: "/apple-touch-icon.png",
+    other: [{ rel: "mask-icon", url: "/logo-noderi-icon.png", color: "#03624C" }]
   },
   openGraph: {
-    title: "NODERE Nexus — Revenue Intelligence Platform",
+    title: "NODERI Nexus — Revenue Intelligence Platform",
     description: "A plataforma que conecta inteligência comercial, prospecção e vendas em um único fluxo.",
     url: "https://nodere.com.br",
-    siteName: "NODERE Nexus",
-    images: [{ url: "/nodere-logo.png", width: 512, height: 512, alt: "NODERE" }],
+    siteName: "NODERI Nexus",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "NODERI Nexus" }],
     locale: "pt_BR",
     type: "website"
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "NODERI Nexus",
+    description: "Inteligência comercial, CRM e IA para agências e times de vendas.",
+    images: ["/og-image.png"]
   }
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1E6FDB"
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#081018" },
+    { media: "(prefers-color-scheme: light)", color: "#03624C" }
+  ]
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className="dark" suppressHydrationWarning>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="NODERE" />
-        <link rel="apple-touch-icon" href="/nodere-logo-192.png" />
-        <link rel="icon" type="image/png" sizes="192x192" href="/nodere-logo-192.png" />
-        <link rel="icon" type="image/png" sizes="512x512" href="/nodere-logo-512.png" />
+        <meta name="apple-mobile-web-app-title" content="NODERI" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png" />
       </head>
       <body>
         <AppShell>{children}</AppShell>

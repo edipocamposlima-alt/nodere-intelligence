@@ -264,7 +264,7 @@ export function AdminClient() {
       <section className="overflow-hidden rounded-xl border border-electric/30 bg-panel shadow-glow">
         <div className="grid gap-6 p-6 lg:grid-cols-[330px_1fr]">
           <div className="rounded-2xl border border-electric/20 bg-electric/10 p-4">
-            <Image src="/nodere-wordmark.png" alt="NODERE" width={500} height={180} priority className="h-auto w-full rounded-xl object-contain" />
+            <Image src="/logo-noderi-full.png" alt="NODERI" width={500} height={180} priority className="h-auto w-full rounded-xl object-contain" />
           </div>
           <div>
             <div className="flex flex-wrap items-center justify-between gap-3">

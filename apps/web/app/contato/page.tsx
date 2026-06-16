@@ -3,8 +3,8 @@ import ContactForm from "@/components/site/ContactForm";
 import SitePageShell from "@/components/site/SitePageShell";
 
 export const metadata: Metadata = {
-  title: "Contato | NODERE Nexus",
-  description: "Fale com a equipe NODERE Nexus."
+  title: "Contato | NODERI Nexus",
+  description: "Fale com a equipe NODERI Nexus."
 };
 
 export default function ContactPage() {
@@ -13,7 +13,7 @@ export default function ContactPage() {
       <section className="site-simple-hero">
         <div className="site-container">
           <p className="site-eyebrow">Contato</p>
-          <h1>Converse com a equipe NODERE Nexus.</h1>
+          <h1>Converse com a equipe NODERI Nexus.</h1>
           <p>Para falar com vendas, suporte ou parcerias, use um dos canais oficiais abaixo.</p>
         </div>
       </section>
@@ -22,14 +22,14 @@ export default function ContactPage() {
           <article className="site-info-card site-contact-card--form">
             <p className="site-eyebrow">Mensagem</p>
             <h2>Envie os dados do seu projeto</h2>
-            <p>O formulario envia sua mensagem diretamente para o comercial da NODERE Nexus.</p>
+            <p>O formulario envia sua mensagem diretamente para o comercial da NODERI Nexus.</p>
             <ContactForm />
           </article>
           <article className="site-info-card">
             <p className="site-eyebrow">E-mail</p>
             <h2>comercial@nodere.com.br</h2>
             <p>Envie sua mensagem com o nome da empresa, cidade, telefone e objetivo comercial.</p>
-            <a className="site-primary" href="mailto:comercial@nodere.com.br?subject=Contato pelo site NODERE Nexus">Enviar e-mail</a>
+            <a className="site-primary" href="mailto:comercial@nodere.com.br?subject=Contato pelo site NODERI Nexus">Enviar e-mail</a>
           </article>
           <article className="site-info-card">
             <p className="site-eyebrow">WhatsApp</p>

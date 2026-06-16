@@ -11,7 +11,7 @@ const INTEGRATIONS = [
   { key: "smtp_port", label: "SMTP Porta", hint: "587" },
   { key: "smtp_user", label: "SMTP Usuário", hint: "email@dominio.com" },
   { key: "smtp_pass", label: "SMTP Senha", hint: "••••••••", type: "password" },
-  { key: "smtp_from", label: "E-mail Remetente", hint: "NODERE <noreply@nodere.com.br>" }
+  { key: "smtp_from", label: "E-mail Remetente", hint: "NODERI <noreply@nodere.com.br>" }
 ];
 
 const supabase = createClient(

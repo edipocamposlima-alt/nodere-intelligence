@@ -33,7 +33,7 @@ export function PwaRegister() {
         body: JSON.stringify(subscription)
       }).catch(() => undefined);
     }).catch((error) => {
-      console.warn("NODERE PWA service worker registration failed", error);
+      console.warn("NODERI PWA service worker registration failed", error);
     });
   }, []);
 
