@@ -337,6 +337,18 @@ async function dbUpdateFields(id: string, fields: Record<string, unknown>, works
   throw new Error("Nao foi possivel atualizar empresa: schema Supabase tem colunas incompatíveis demais. Aplique apps/api/src/db/schema.sql.");
 }
 
+async function dbDeleteCompany(id: string, workspaceId = "default"): Promise<void> {
+  const sb = getSupabase()!;
+  let query = sb.from("nodere_companies").delete().eq("id", id);
+  if (workspaceColumnAvailable) query = query.eq("workspace_id", workspaceId);
+  let { error } = await query;
+  if (error && markWorkspaceColumnMissing(error)) {
+    const retry = await sb.from("nodere_companies").delete().eq("id", id);
+    error = retry.error;
+  }
+  if (error) throw error;
+}
+
 async function dbAddNote(companyId: string, body: string, workspaceId = "default") {
   const sb = getSupabase()!;
   const note = { id: randomUUID(), workspace_id: workspaceId, company_id: companyId, body, created_at: new Date().toISOString() };
@@ -662,6 +674,17 @@ export async function updateCompany(id: string, updates: Partial<Company>, works
   }
   if (hasSupabase()) return dbGet(id, workspaceId);
   return undefined;
+}
+
+export async function deleteCompany(id: string, workspaceId = "default") {
+  const existing = await getCompanyAsync(id, workspaceId);
+  if (!existing) return false;
+  if (hasSupabase()) await withPersistentWrite("excluir lead", () => dbDeleteCompany(id, workspaceId), () => undefined);
+  const index = memStore.findIndex((company) => company.id === id && (((company as any).workspaceId ?? "default") === workspaceId));
+  if (index >= 0) memStore.splice(index, 1);
+  taskStore.delete(`${workspaceId}:${id}`);
+  documentStore.delete(`${workspaceId}:${id}`);
+  return true;
 }
 
 export function getDashboardMetrics() {

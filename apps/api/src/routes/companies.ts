@@ -13,6 +13,7 @@ import {
   listDocuments,
   listNotes,
   listTasks,
+  deleteCompany,
   removeDocument,
   removeNote,
   updateCompany,
@@ -270,6 +271,14 @@ router.patch("/:id", async (req, res, next) => {
       logRequestMetric(req, "crm_stage_changed", req.params.id, { from: before?.status || null, to: company.status });
     }
     return res.json(company);
+  } catch (err) { return next(err); }
+});
+
+router.delete("/:id", async (req, res, next) => {
+  try {
+    const removed = await deleteCompany(req.params.id, getRequestWorkspaceId(req));
+    if (!removed) return res.status(404).json({ message: "Company not found" });
+    return res.json({ ok: true });
   } catch (err) { return next(err); }
 });
 

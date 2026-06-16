@@ -8,6 +8,11 @@ export interface PublicPreferences {
   layoutDensity?: string;
   cardStyle?: string;
   backendUrl?: string;
+  workspaceWebsite?: string;
+  workspacePhone?: string;
+  workspaceSegment?: string;
+  workspaceAddress?: string;
+  timezone?: string;
 }
 
 export interface PipelineSettings {
@@ -57,7 +62,12 @@ function sanitizePreferences(input: Partial<PublicPreferences>): PublicPreferenc
     fontFamily: typeof input.fontFamily === "string" ? input.fontFamily : undefined,
     layoutDensity: typeof input.layoutDensity === "string" ? input.layoutDensity : undefined,
     cardStyle: typeof input.cardStyle === "string" ? input.cardStyle : undefined,
-    backendUrl: typeof input.backendUrl === "string" ? input.backendUrl : undefined
+    backendUrl: typeof input.backendUrl === "string" ? input.backendUrl : undefined,
+    workspaceWebsite: typeof input.workspaceWebsite === "string" ? input.workspaceWebsite : undefined,
+    workspacePhone: typeof input.workspacePhone === "string" ? input.workspacePhone : undefined,
+    workspaceSegment: typeof input.workspaceSegment === "string" ? input.workspaceSegment : undefined,
+    workspaceAddress: typeof input.workspaceAddress === "string" ? input.workspaceAddress : undefined,
+    timezone: typeof input.timezone === "string" ? input.timezone : undefined
   };
 }
 

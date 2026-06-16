@@ -28,6 +28,31 @@ export default function SettingsWorkspace() {
     }
   }, [workspace]);
 
+  useEffect(() => {
+    async function loadPreferences() {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token || localStorage.getItem("nodere_admin_token") || "";
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const payload = await res.json().catch(() => ({}));
+        const preferences = payload.preferences || {};
+        setForm((current) => ({
+          ...current,
+          website: preferences.workspaceWebsite ?? current.website,
+          phone: preferences.workspacePhone ?? current.phone,
+          segment: preferences.workspaceSegment ?? current.segment,
+          address: preferences.workspaceAddress ?? current.address,
+          timezone: preferences.timezone ?? current.timezone
+        }));
+      } catch {
+        // Workspace base data remains available even if preferences cannot be loaded.
+      }
+    }
+    void loadPreferences();
+  }, []);
+
   async function save() {
     setSaving(true);
     setMsg("");

@@ -157,9 +157,9 @@ app.post("/api/auth/forgot-password", async (req, res, next) => {
   try {
     const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
     if (!email) return res.status(400).json({ message: "Informe um e-mail valido." });
-    if (!hasSupabase() || !config.supabase.anonKey) {
+    if (!hasSupabase()) {
       return res.status(503).json({
-        message: "Recuperacao de senha indisponivel. Configure SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY e SUPABASE_ANON_KEY no backend."
+        message: "Recuperacao de senha indisponivel. Configure SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no backend."
       });
     }
     const redirectTo = `${config.frontendUrl.replace(/\/+$/, "")}/reset-password`;

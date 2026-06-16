@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { getSupabase, hasSupabase } from "../db/supabase.js";
 import { getRequestWorkspaceId, requireWorkspaceRole } from "../middleware/session.js";
+import { savePreferences } from "../services/settingsStore.js";
 
 const router = Router();
 
@@ -31,19 +32,42 @@ function maskSecret(value: string) {
   return value.length > 8 ? `${value.slice(0, 4)}****${value.slice(-4)}` : "****";
 }
 
-router.patch("/workspace", requireWorkspaceRole("admin", "owner"), async (req, res) => {
-  const allowed = ["name", "website", "phone", "segment", "address", "timezone", "currency"];
-  const updates: Record<string, unknown> = {};
-  for (const field of allowed) {
-    if (req.body?.[field] !== undefined) updates[field] = req.body[field];
-  }
-  updates.updated_at = new Date().toISOString();
+function isSettingsSchemaError(error: unknown) {
+  const source = error as { code?: unknown; message?: unknown };
+  const text = String(source?.message || "");
+  return (
+    source?.code === "PGRST205" ||
+    source?.code === "22P02" ||
+    text.includes("invalid input syntax for type uuid") ||
+    text.includes("Could not find the table") ||
+    text.includes("schema cache")
+  );
+}
 
+router.patch("/workspace", requireWorkspaceRole("admin", "owner"), async (req, res) => {
   try {
+    const workspaceId = getRequestWorkspaceId(req);
     const sb = requireSupabase();
-    const { error } = await sb.from("nodere_workspaces").update(updates).eq("id", getRequestWorkspaceId(req));
-    if (error) throw error;
-    return res.json({ message: "Workspace atualizado." });
+    const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+    if (name) {
+      let { error } = await sb
+        .from("nodere_workspaces")
+        .update({ nome: name, atualizado_em: new Date().toISOString() })
+        .eq("id", workspaceId);
+      if (error && String(error.message || "").includes("atualizado_em")) {
+        const retry = await sb.from("nodere_workspaces").update({ nome: name }).eq("id", workspaceId);
+        error = retry.error;
+      }
+      if (error) throw error;
+    }
+    const preferences = await savePreferences({
+      workspaceWebsite: typeof req.body?.website === "string" ? req.body.website : undefined,
+      workspacePhone: typeof req.body?.phone === "string" ? req.body.phone : undefined,
+      workspaceSegment: typeof req.body?.segment === "string" ? req.body.segment : undefined,
+      workspaceAddress: typeof req.body?.address === "string" ? req.body.address : undefined,
+      timezone: typeof req.body?.timezone === "string" ? req.body.timezone : undefined
+    }, workspaceId);
+    return res.json({ message: "Workspace atualizado.", preferences });
   } catch (error) {
     console.error("[settings/workspace]", error);
     const status = (error as { status?: number }).status || 500;
@@ -58,7 +82,10 @@ router.get("/integrations", requireWorkspaceRole("admin", "owner"), async (req, 
       .from("nodere_workspace_settings")
       .select("key, masked_value")
       .eq("workspace_id", getRequestWorkspaceId(req));
-    if (error) throw error;
+    if (error) {
+      if (isSettingsSchemaError(error)) return res.json({});
+      throw error;
+    }
     const result: Record<string, string> = {};
     for (const row of data || []) {
       result[String(row.key)] = String(row.masked_value || "");
@@ -103,7 +130,10 @@ async function getIntegrationValue(workspaceId: string, key: string) {
     .eq("workspace_id", workspaceId)
     .eq("key", key)
     .maybeSingle();
-  if (error) throw error;
+  if (error) {
+    if (isSettingsSchemaError(error)) return "";
+    throw error;
+  }
   return typeof data?.value === "string" ? data.value : "";
 }
 
