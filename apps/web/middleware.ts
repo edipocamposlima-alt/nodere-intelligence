@@ -29,6 +29,8 @@ const PUBLIC_PATHS = [
   "/logo-nodere",
   "/android-chrome",
   "/apple-touch-icon",
+  "/brand-logo-official",
+  "/brand-icon-official",
   "/icon-",
   "/og-image",
   "/robots.txt",

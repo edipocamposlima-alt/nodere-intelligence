@@ -3,7 +3,8 @@ import path from "node:path";
 import sharp from "sharp";
 
 const publicDir = path.resolve(process.cwd(), "public");
-const source = path.join(publicDir, "brand-logo-official.png");
+const logoSource = path.join(publicDir, "brand-logo-official.png");
+const iconSource = path.join(publicDir, "brand-icon-official.png");
 const OFFICIAL_BACKGROUND = "#68716d";
 
 async function writePng(name, pipeline) {
@@ -45,48 +46,53 @@ async function writeIco(name, pngNames) {
 }
 
 async function main() {
-  await fs.access(source);
-  const base = sharp(source).rotate();
+  await fs.access(logoSource);
+  await fs.access(iconSource);
+  const base = sharp(logoSource).rotate();
   const metadata = await base.metadata();
   const width = metadata.width ?? 1536;
   const height = metadata.height ?? 1024;
+  const iconBase = sharp(iconSource).rotate();
+  const iconMetadata = await iconBase.metadata();
+  const iconWidth = iconMetadata.width ?? 1536;
+  const iconHeight = iconMetadata.height ?? 1024;
 
-  // Official source is the standalone NODERE symbol. The crop below preserves
-  // the symbol, glow and proportions while removing excess empty canvas.
+  // Official source is the full NODERE logo. The full crop keeps the wordmark
+  // for platform surfaces, while the icon crop extracts the symbol for PWA/favicons.
   const fullCrop = {
-    left: Math.round(width * 0.29),
-    top: Math.round(height * 0.2),
-    width: Math.round(width * 0.42),
-    height: Math.round(width * 0.42)
+    left: Math.round(width * 0.16),
+    top: Math.round(height * 0.29),
+    width: Math.round(width * 0.67),
+    height: Math.round(height * 0.36)
   };
   const iconCrop = {
-    left: Math.round(width * 0.29),
-    top: Math.round(height * 0.2),
-    width: Math.round(width * 0.42),
-    height: Math.round(width * 0.42)
+    left: Math.round(iconWidth * 0.29),
+    top: Math.round(iconHeight * 0.2),
+    width: Math.round(iconWidth * 0.42),
+    height: Math.round(iconWidth * 0.42)
   };
 
-  await writePng("logo-nodere-full.png", sharp(source).rotate().extract(fullCrop).resize({ width: 900, withoutEnlargement: true }));
-  await writePng("logo-nodere-icon.png", sharp(source).rotate().extract(iconCrop).resize(512, 512, { fit: "cover" }));
+  await writePng("logo-nodere-full.png", sharp(logoSource).rotate().extract(fullCrop).resize({ width: 900, withoutEnlargement: true }));
+  await writePng("logo-nodere-icon.png", sharp(iconSource).rotate().extract(iconCrop).resize(512, 512, { fit: "cover" }));
 
   // Legacy filenames remain active only where old documents still resolve them,
   // but every generated asset is derived from the official brand file.
-  await writePng("nodere-logo.png", sharp(source).rotate().extract(fullCrop).resize({ width: 900, withoutEnlargement: true }));
-  await writePng("nodere-wordmark.png", sharp(source).rotate().extract(fullCrop).resize({ width: 900, withoutEnlargement: true }));
+  await writePng("nodere-logo.png", sharp(logoSource).rotate().extract(fullCrop).resize({ width: 900, withoutEnlargement: true }));
+  await writePng("nodere-wordmark.png", sharp(logoSource).rotate().extract(fullCrop).resize({ width: 900, withoutEnlargement: true }));
 
-  await writePng("favicon-16x16.png", sharp(source).rotate().extract(iconCrop).resize(16, 16));
-  await writePng("favicon-32x32.png", sharp(source).rotate().extract(iconCrop).resize(32, 32));
-  await writePng("apple-touch-icon.png", sharp(source).rotate().extract(iconCrop).resize(180, 180));
-  await writePng("android-chrome-192x192.png", sharp(source).rotate().extract(iconCrop).resize(192, 192));
-  await writePng("android-chrome-512x512.png", sharp(source).rotate().extract(iconCrop).resize(512, 512));
-  await writePng("icon-192.png", sharp(source).rotate().extract(iconCrop).resize(192, 192));
-  await writePng("icon-512.png", sharp(source).rotate().extract(iconCrop).resize(512, 512));
-  await writePng("nodere-logo-192.png", sharp(source).rotate().extract(iconCrop).resize(192, 192));
-  await writePng("nodere-logo-512.png", sharp(source).rotate().extract(iconCrop).resize(512, 512));
+  await writePng("favicon-16x16.png", sharp(iconSource).rotate().extract(iconCrop).resize(16, 16));
+  await writePng("favicon-32x32.png", sharp(iconSource).rotate().extract(iconCrop).resize(32, 32));
+  await writePng("apple-touch-icon.png", sharp(iconSource).rotate().extract(iconCrop).resize(180, 180));
+  await writePng("android-chrome-192x192.png", sharp(iconSource).rotate().extract(iconCrop).resize(192, 192));
+  await writePng("android-chrome-512x512.png", sharp(iconSource).rotate().extract(iconCrop).resize(512, 512));
+  await writePng("icon-192.png", sharp(iconSource).rotate().extract(iconCrop).resize(192, 192));
+  await writePng("icon-512.png", sharp(iconSource).rotate().extract(iconCrop).resize(512, 512));
+  await writePng("nodere-logo-192.png", sharp(iconSource).rotate().extract(iconCrop).resize(192, 192));
+  await writePng("nodere-logo-512.png", sharp(iconSource).rotate().extract(iconCrop).resize(512, 512));
 
   await writePng(
     "og-image.png",
-    sharp(source)
+    sharp(logoSource)
       .rotate()
       .resize(1200, 630, { fit: "cover", position: "center" })
   );
