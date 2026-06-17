@@ -403,6 +403,31 @@ async function dbDeleteNote(companyId: string, noteId: string, workspaceId = "de
   if (error) throw error;
 }
 
+async function dbUpdateNote(companyId: string, noteId: string, body: string, workspaceId = "default") {
+  const sb = getSupabase()!;
+  const fields = { body };
+  let query = sb
+    .from("nodere_company_notes")
+    .update(fields)
+    .eq("company_id", companyId)
+    .eq("id", noteId);
+  if (workspaceColumnAvailable) query = query.eq("workspace_id", workspaceId);
+  let { data, error } = await query.select("id, company_id, body, created_at").single();
+  if (error && markWorkspaceColumnMissing(error)) {
+    const retry = await sb
+      .from("nodere_company_notes")
+      .update(fields)
+      .eq("company_id", companyId)
+      .eq("id", noteId)
+      .select("id, company_id, body, created_at")
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
+  if (error) throw error;
+  return mapPublicNotes([data as Record<string, unknown>])[0];
+}
+
 async function dbListSystemItems<T>(companyId: string, prefix: string, workspaceId = "default"): Promise<T[]> {
   const sb = getSupabase()!;
   let query = sb
@@ -580,6 +605,26 @@ export async function removeNote(companyId: string, noteId: string, workspaceId 
   const company = memStore.find((c) => c.id === companyId && (((c as any).workspaceId ?? "default") === workspaceId));
   if (company) company.notes = company.notes.filter((note) => note.id !== noteId);
   return { ok: true };
+}
+
+export async function updateNote(companyId: string, noteId: string, body: string, workspaceId = "default") {
+  const now = new Date().toISOString();
+  if (hasSupabase()) {
+    return withPersistentWrite("atualizar observacao do lead", () => dbUpdateNote(companyId, noteId, body, workspaceId), () => {
+      const company = memStore.find((c) => c.id === companyId && (((c as any).workspaceId ?? "default") === workspaceId));
+      const note = company?.notes.find((item) => item.id === noteId);
+      if (!note) return undefined;
+      note.body = body;
+      note.updatedAt = now;
+      return note;
+    });
+  }
+  const company = memStore.find((c) => c.id === companyId && (((c as any).workspaceId ?? "default") === workspaceId));
+  const note = company?.notes.find((item) => item.id === noteId);
+  if (!note) return undefined;
+  note.body = body;
+  note.updatedAt = now;
+  return note;
 }
 
 export async function listTasks(companyId: string, workspaceId = "default"): Promise<OperationTask[]> {

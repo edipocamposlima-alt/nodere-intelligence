@@ -24,16 +24,16 @@ const defaultColumns = [
 const defaultStageColors: Record<string, string> = {
   "Novo Lead": "#03624C",
   "Qualificado": "#0A7A5F",
-  "Contatado": "#2A9D6A",
-  "Diagnóstico enviado": "#00A66A",
-  "Reunião marcada": "#00DF82",
-  "Proposta enviada": "#047857",
-  "Negociação": "#065F46",
+  "Contatado": "#F59E0B",
+  "Diagnóstico enviado": "#2563EB",
+  "Reunião marcada": "#00A66A",
+  "Proposta enviada": "#DC2626",
+  "Negociação": "#7C3AED",
   "Fechado": "#16A34A",
-  "Perdido": "#64748B"
+  "Perdido": "#334155"
 };
 
-const stagePalette = ["#03624C", "#0A7A5F", "#2A9D6A", "#00A66A", "#00DF82", "#047857", "#065F46", "#16A34A", "#64748B"];
+const stagePalette = ["#03624C", "#0A7A5F", "#F59E0B", "#2563EB", "#00A66A", "#DC2626", "#7C3AED", "#16A34A", "#334155"];
 const allowedStageColors = new Set(stagePalette.map((color) => color.toLowerCase()));
 
 function normalizeStageColors(colors: Record<string, string>, columns: string[] = defaultColumns) {
@@ -336,18 +336,18 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
                 if (companyId) void moveLead(companyId, column);
                 setDraggedId(null);
               }}
-              className="flex h-[680px] flex-col overflow-hidden rounded-xl border shadow-[0_16px_48px_rgba(0,0,0,0.22)]"
+              className="crm-stage flex h-[680px] flex-col overflow-hidden rounded-xl border shadow-[0_16px_48px_rgba(0,0,0,0.22)]"
               style={{
                 borderColor: hexToRgba(stageColor, 0.56),
-                background: "linear-gradient(180deg, rgba(17,24,39,0.96) 0%, rgba(8,16,24,0.98) 100%)"
+                background: `linear-gradient(180deg, ${hexToRgba(stageColor, 0.18)} 0%, rgba(8,16,24,0.98) 100%)`
               }}
             >
               <div
                 className="rounded-t-xl border-b px-3 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)]"
                 style={{
-                  background: `linear-gradient(180deg, ${hexToRgba(stageColor, 0.24)} 0%, rgba(17,24,39,0.92) 100%)`,
+                  background: `linear-gradient(135deg, ${hexToRgba(stageColor, 0.98)} 0%, ${hexToRgba(stageColor, 0.72)} 100%)`,
                   borderColor: hexToRgba(stageColor, 0.42),
-                  color: "#FFFFFF"
+                  color: stageTextColor
                 }}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -371,10 +371,10 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
                     </button>
                   </div>
                 ) : (
-                  <h3 className="min-w-0 truncate text-sm font-black text-white">{column}</h3>
+                  <h3 className="min-w-0 truncate text-sm font-black" style={{ color: stageTextColor }}>{column}</h3>
                 )}
                 <div className="flex items-center gap-2">
-                  <span className="rounded-md px-2 py-1 text-xs font-black" style={{ color: stageColor, backgroundColor: hexToRgba(stageColor, 0.16) }}>{leads.length}</span>
+                  <span className="rounded-md bg-white/18 px-2 py-1 text-xs font-black" style={{ color: stageTextColor }}>{leads.length}</span>
                   <input
                     type="color"
                     value={stageColor}
@@ -418,20 +418,24 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
                         setDraggedId(company.id);
                         event.dataTransfer.setData("text/plain", company.id);
                       }}
-                      className={`rounded-lg border border-white/15 bg-ink/90 p-3 shadow-sm ring-1 ring-white/5 transition hover:-translate-y-0.5 hover:border-cyan/70 hover:shadow-[0_10px_28px_rgba(34,211,238,0.14)] ${stale?.className || ""}`}
+                      className={`crm-lead-card rounded-lg border p-3 shadow-sm ring-1 transition hover:-translate-y-0.5 ${stale?.className || ""}`}
+                      style={{
+                        borderColor: hexToRgba(stageColor, 0.34),
+                        boxShadow: `inset 3px 0 0 ${stageColor}`
+                      }}
                     >
                       <div className="flex items-start gap-2">
                         <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
                         <div className="min-w-0">
-                          <Link href={`/companies/${encodeURIComponent(company.id)}`} className="block truncate text-sm font-medium text-white hover:text-cyan">
+                          <Link href={`/companies/${encodeURIComponent(company.id)}`} className="block truncate text-sm font-bold text-[var(--text-primary)] hover:text-[var(--cyan)]">
                             {company.name}
                           </Link>
-                          <p className="mt-1 truncate text-xs text-slate-500">{company.category} · {company.city}/{company.state}</p>
+                          <p className="mt-1 truncate text-xs text-[var(--text-secondary)]">{company.category} · {company.city}/{company.state}</p>
                         </div>
                       </div>
                       <div className="mt-3 flex items-center justify-between text-xs">
-                        <span className="text-slate-400">Score</span>
-                        <span className="font-semibold text-cyan">{company.score}</span>
+                        <span className="text-[var(--text-secondary)]">Score</span>
+                        <span className="font-semibold text-[var(--cyan)]">{company.score}</span>
                       </div>
                       {stale && <p className="mt-2 rounded-md bg-black/20 px-2 py-1 text-[11px] font-semibold text-amber-100">{stale.label}</p>}
                       {company.whatsapp && !isValidBrazilianMobile(company.whatsapp) && (

@@ -35,8 +35,8 @@ export default async function SearchesPage() {
       </div>
 
       <section className="space-y-3">
-        <div className="overflow-hidden rounded-lg border border-[rgba(3,98,76,0.32)] bg-[linear-gradient(135deg,rgba(3,98,76,0.18),rgba(8,16,24,0.92))] p-4 shadow-glow">
-          <Image src="/logo-noderi-full.png" alt="NODERE Nexus" width={420} height={150} priority className="h-auto w-full max-w-sm object-contain" />
+        <div className="nodere-brand-surface overflow-hidden rounded-lg border border-[rgba(3,98,76,0.32)] p-4 shadow-glow">
+          <Image src="/logo-noderi-full.png" alt="NODERE Nexus" width={520} height={180} priority className="h-auto w-full max-w-md object-contain" />
           <h2 className="mt-4 text-lg font-semibold text-[var(--text-primary)]">Busca inteligente de empresas</h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">Pesquise, selecione empresas em massa, salve leads, exporte CSV ou baixe relatório PDF.</p>
         </div>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
-import { Bell, CreditCard, Search, X } from "lucide-react";
+import { Bell, CreditCard, Download, Search, X } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { getInboxUnreadCount } from "@/lib/api";
 import { useAuth } from "@/context/AuthProvider";
@@ -72,6 +72,7 @@ export function Header() {
   const [globalQuery, setGlobalQuery] = useState("");
   const [unreadInbox, setUnreadInbox] = useState(0);
   const [brandName, setBrandName] = useState("NODERE Nexus");
+  const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
   const pathname = usePathname();
   const router = useRouter();
   const { user, workspace, logout } = useAuth();
@@ -120,6 +121,15 @@ export function Header() {
       }
     }
     if (typeof window !== "undefined") void loadBranding();
+  }, []);
+
+  useEffect(() => {
+    function onBeforeInstallPrompt(event: Event) {
+      event.preventDefault();
+      setInstallPrompt(event);
+    }
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
   }, []);
 
   useEffect(() => {
@@ -204,12 +214,23 @@ export function Header() {
     reader.readAsDataURL(file);
   }
 
+  async function installApp() {
+    const promptEvent = installPrompt as Event & { prompt?: () => Promise<void>; userChoice?: Promise<{ outcome: string }> };
+    if (promptEvent?.prompt) {
+      await promptEvent.prompt();
+      await promptEvent.userChoice?.catch(() => undefined);
+      setInstallPrompt(null);
+      return;
+    }
+    alert("Para instalar o app NODERE Nexus, abra o menu do navegador e selecione 'Instalar app' ou 'Adicionar à tela inicial'.");
+  }
+
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-ink/90 px-4 py-3 backdrop-blur md:px-8">
       <div className="flex items-center justify-between gap-4">
-        <Link href="/" className="min-w-0">
-          <span className="block truncate text-base font-semibold text-white md:text-lg">{pageTitle}</span>
-          <span className="hidden text-xs text-slate-500 sm:block">{brandName} · Operação comercial e inteligência de prospecção</span>
+        <Link href="/dashboard" className="min-w-0">
+          <span className="block truncate text-base font-semibold text-[var(--text-primary)] md:text-lg">{pageTitle}</span>
+          <span className="hidden text-xs text-[var(--text-secondary)] sm:block">{brandName} · Operação comercial e inteligência de prospecção</span>
         </Link>
 
         <form onSubmit={submitGlobalSearch} className="hidden w-full max-w-md items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 md:flex">
@@ -217,7 +238,7 @@ export function Header() {
           <input
             value={globalQuery}
             onChange={(event) => setGlobalQuery(event.target.value)}
-            className="w-full bg-transparent text-sm text-slate-200 outline-none"
+            className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none"
             placeholder="Buscar empresa, cidade ou segmento"
             aria-label="Buscar empresas salvas no CRM"
           />
@@ -243,6 +264,16 @@ export function Header() {
 
           <button
             type="button"
+            onClick={() => void installApp()}
+            className="hidden items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 text-xs font-semibold text-[var(--text-primary)] hover:border-electric/60 hover:bg-electric/10 md:inline-flex"
+            title="Instalar aplicativo NODERE Nexus"
+          >
+            <Download className="h-4 w-4" />
+            App
+          </button>
+
+          <button
+            type="button"
             className="flex items-center gap-2 rounded-lg border border-line bg-white/5 px-2 py-1.5 text-left hover:border-electric/60 hover:bg-electric/10"
             onClick={() => setShowPrefsModal(true)}
             title="Preferências"
@@ -251,15 +282,15 @@ export function Header() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={avatarUrl} alt={displayName} className="h-8 w-8 rounded-full object-cover" />
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--blue)] text-sm font-semibold text-white">
                 {initial}
               </div>
             )}
-            <span className="hidden max-w-64 truncate text-sm font-medium text-slate-100 lg:block" title={shownName}>{shownName}</span>
+            <span className="hidden max-w-64 truncate text-sm font-bold text-[var(--text-primary)] lg:block" title={shownName}>{shownName}</span>
             <span aria-hidden="true" title="Preferências">⚙️</span>
           </button>
 
-          <button onClick={logout} className="hidden rounded-lg border border-line px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white sm:inline-flex">
+          <button onClick={logout} className="hidden rounded-lg border border-line px-3 py-2 text-xs font-semibold text-[var(--text-primary)] hover:bg-white/10 sm:inline-flex">
             Sair
           </button>
           <div className="relative">
@@ -306,17 +337,17 @@ export function Header() {
           <section className="w-full max-w-lg rounded-2xl border border-line bg-panel p-5 shadow-glow">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-white">Preferências rápidas</h2>
-                <p className="text-sm text-slate-400">Tema, leitura, densidade e foto ficam salvos neste navegador.</p>
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Preferências rápidas</h2>
+                <p className="text-sm text-[var(--text-secondary)]">Tema, leitura, densidade e foto ficam salvos neste navegador.</p>
               </div>
-              <button type="button" onClick={() => setShowPrefsModal(false)} className="rounded-lg border border-line p-2 text-slate-300 hover:text-white" aria-label="Fechar preferências">
+              <button type="button" onClick={() => setShowPrefsModal(false)} className="rounded-lg border border-line p-2 text-[var(--text-primary)]" aria-label="Fechar preferências">
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className="text-sm font-medium text-slate-300">Tema</span>
+                <span className="text-sm font-medium text-[var(--text-secondary)]">Tema</span>
                 <select value={prefs.theme} onChange={(event) => updatePrefs({ theme: event.target.value as UserPrefs["theme"] })} className="mt-2 min-h-11 w-full rounded-lg border border-line bg-ink px-3 text-sm outline-none">
                   <option value="dark">Escuro</option>
                   <option value="light">Claro</option>
@@ -324,7 +355,7 @@ export function Header() {
                 </select>
               </label>
               <label className="block">
-                <span className="text-sm font-medium text-slate-300">Fonte</span>
+                <span className="text-sm font-medium text-[var(--text-secondary)]">Fonte</span>
                 <select value={prefs.fontSize} onChange={(event) => updatePrefs({ fontSize: event.target.value as UserPrefs["fontSize"] })} className="mt-2 min-h-11 w-full rounded-lg border border-line bg-ink px-3 text-sm outline-none">
                   <option value="small">Pequena</option>
                   <option value="normal">Normal</option>
@@ -332,7 +363,7 @@ export function Header() {
                 </select>
               </label>
               <label className="block">
-                <span className="text-sm font-medium text-slate-300">Densidade</span>
+                <span className="text-sm font-medium text-[var(--text-secondary)]">Densidade</span>
                 <select value={prefs.density} onChange={(event) => updatePrefs({ density: event.target.value as UserPrefs["density"] })} className="mt-2 min-h-11 w-full rounded-lg border border-line bg-ink px-3 text-sm outline-none">
                   <option value="compact">Compacto</option>
                   <option value="comfortable">Confortável</option>
@@ -340,11 +371,11 @@ export function Header() {
                 </select>
               </label>
               <label className="block">
-                <span className="text-sm font-medium text-slate-300">Foto</span>
+                <span className="text-sm font-medium text-[var(--text-secondary)]">Foto</span>
                 <input type="file" accept="image/*" onChange={handleAvatarUpload} className="mt-2 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
               </label>
               <label className="block sm:col-span-2">
-                <span className="text-sm font-medium text-slate-300">Nome exibido</span>
+                <span className="text-sm font-medium text-[var(--text-secondary)]">Nome exibido</span>
                 <input value={prefs.displayName} onChange={(event) => updatePrefs({ displayName: event.target.value })} placeholder="Ex.: ÉDIPO LIMA" className="mt-2 min-h-11 w-full rounded-lg border border-line bg-ink px-3 text-sm outline-none" />
               </label>
             </div>

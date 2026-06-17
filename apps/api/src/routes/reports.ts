@@ -187,21 +187,25 @@ router.post("/pdf", async (req: any, res, next) => {
     });
 
     const logoCandidates = [
+      path.resolve(process.cwd(), "../web/public/logo-noderi-full.png"),
+      path.resolve(process.cwd(), "apps/web/public/logo-noderi-full.png"),
+      path.resolve(process.cwd(), "public/logo-noderi-full.png"),
       path.resolve(process.cwd(), "../web/public/nodere-wordmark.png"),
       path.resolve(process.cwd(), "apps/web/public/nodere-wordmark.png"),
       path.resolve(process.cwd(), "public/nodere-wordmark.png")
     ];
     const logoPath = logoCandidates.find((candidate) => fs.existsSync(candidate));
 
-    doc.rect(0, 0, doc.page.width, 110).fill("#0A0F1E");
+    doc.rect(0, 0, doc.page.width, doc.page.height).fill("#FFFFFF");
+    doc.roundedRect(42, 28, doc.page.width - 84, 72, 12).strokeColor("#D9E4DF").lineWidth(1).stroke();
     if (logoPath) {
-      doc.image(logoPath, 42, 25, { width: 165 });
+      doc.image(logoPath, 56, 39, { width: 150 });
     } else {
-      doc.fillColor("#FFFFFF").fontSize(22).text("NODERE", 42, 34);
+      doc.fillColor("#03624C").fontSize(22).text("NODERE", 56, 42);
     }
-    doc.fillColor("#94A3B8").fontSize(9).text("Relatorio comercial gerado pelo NODERE Nexus", 42, 78);
-    doc.fillColor("#FFFFFF").fontSize(11).text(`Periodo: ${period}`, 420, 35, { align: "right" });
-    doc.fillColor("#94A3B8").fontSize(8).text(new Date().toLocaleString("pt-BR"), 420, 55, { align: "right" });
+    doc.fillColor("#334155").fontSize(9).text("Relatorio comercial gerado pelo NODERE Nexus", 56, 78);
+    doc.fillColor("#03624C").fontSize(11).text(`Periodo: ${period}`, 420, 42, { align: "right" });
+    doc.fillColor("#64748B").fontSize(8).text(new Date().toLocaleString("pt-BR"), 420, 62, { align: "right" });
 
     doc.y = 140;
     doc.fillColor("#0A0F1E").fontSize(18).text("Resumo executivo");

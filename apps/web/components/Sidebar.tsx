@@ -6,7 +6,7 @@ import { useCredits } from "@/context/CreditsProvider";
 import { Logo } from "@/components/ui/Logo";
 
 const items = [
-  { href: "/", label: "Início", icon: BarChart3 },
+  { href: "/dashboard", label: "Início", icon: BarChart3 },
   { href: "/searches", label: "Busca de empresas", icon: Search },
   { href: "/companies", label: "Empresas", icon: Building2 },
   { href: "/crm", label: "CRM / Funil", icon: KanbanSquare },
@@ -34,7 +34,7 @@ export function Sidebar() {
 
   return (
     <aside className="hidden min-h-screen w-72 border-r border-[var(--border-soft)] bg-[var(--bg-sidebar)] p-5 text-[var(--text-secondary)] lg:block">
-      <Link href="/" className="flex items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--bg-card)] px-4 py-5 transition hover:border-[var(--brand-primary)]">
+      <Link href="/dashboard" className="flex items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--bg-card)] px-4 py-5 transition hover:border-[var(--brand-primary)]">
         <Logo variant="full" size="xl" />
       </Link>
 

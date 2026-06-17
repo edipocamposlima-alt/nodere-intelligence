@@ -33,9 +33,9 @@ function metric(value: number, suffix = "") {
 function Card({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="rounded-xl border border-line bg-panel/90 p-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-3 text-3xl font-black text-white">{value}</p>
-      {sub && <p className="mt-1 text-xs text-slate-500">{sub}</p>}
+      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">{label}</p>
+      <p className="mt-3 text-3xl font-black text-[var(--text-primary)]">{value}</p>
+      {sub && <p className="mt-1 text-xs text-[var(--text-secondary)]">{sub}</p>}
     </div>
   );
 }
@@ -106,7 +106,12 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
   const filteredOrigins = origins.origins.slice(0, originLimit);
 
   async function exportReportsPdf() {
-    await downloadReportPdf(period, groupBy);
+    setError("");
+    try {
+      await downloadReportPdf(period, groupBy);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível exportar o PDF.");
+    }
   }
 
 
@@ -117,17 +122,17 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
           <div className="flex items-center gap-4">
             <Image src="/logo-noderi-full.png" alt="NODERE" width={220} height={76} className="hidden h-auto w-44 rounded-lg object-contain print:block" />
             <div>
-              <h2 className="text-2xl font-semibold text-white print:text-slate-950">Relatórios executivos</h2>
-              <p className="mt-1 text-sm text-slate-400 print:text-slate-600">Métricas reais do CRM, origem, funil e inteligência digital.</p>
+              <h2 className="text-2xl font-semibold text-[var(--text-primary)] print:text-slate-950">Relatórios executivos</h2>
+              <p className="mt-1 text-sm text-[var(--text-secondary)] print:text-slate-600">Métricas reais do CRM, origem, funil e inteligência digital.</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 print:hidden">
             {["7d", "30d", "90d", "12m"].map((item) => (
-              <button key={item} onClick={() => setPeriod(item)} className={`rounded-lg px-3 py-2 text-xs font-bold ${period === item ? "bg-electric text-white" : "border border-line bg-white/5 text-slate-300"}`}>
+              <button key={item} onClick={() => setPeriod(item)} className={`rounded-lg px-3 py-2 text-xs font-bold ${period === item ? "bg-electric text-white" : "border border-line bg-white/5 text-[var(--text-primary)]"}`}>
                 {item}
               </button>
             ))}
-            <select value={groupBy} onChange={(event) => setGroupBy(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-xs font-bold text-white">
+            <select value={groupBy} onChange={(event) => setGroupBy(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-xs font-bold text-[var(--text-primary)]">
               <option value="day">Diário</option>
               <option value="week">Semanal</option>
               <option value="month">Mensal</option>
@@ -140,13 +145,13 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
         </div>
       </section>
 
-      {loading && <p className="rounded-xl border border-line bg-panel p-4 text-sm text-slate-300">Carregando relatórios...</p>}
-      {error && <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-100">{error}</p>}
+      {loading && <p className="rounded-xl border border-line bg-panel p-4 text-sm text-[var(--text-secondary)]">Carregando relatórios...</p>}
+      {error && <p className="rounded-xl border border-danger/45 bg-danger/10 p-4 text-sm font-semibold text-[var(--text-primary)]">{error}</p>}
       {!loading && !error && !hasData && (
         <section className="rounded-xl border border-line bg-panel/90 p-8 text-center">
           <BarChart3 className="mx-auto h-10 w-10 text-cyan" />
-          <h3 className="mt-4 text-lg font-bold text-white">Nenhum dado para relatório ainda</h3>
-          <p className="mt-2 text-sm text-slate-400">Faça uma busca e salve leads no CRM para gerar métricas reais.</p>
+          <h3 className="mt-4 text-lg font-bold text-[var(--text-primary)]">Nenhum dado para relatório ainda</h3>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">Faça uma busca e salve leads no CRM para gerar métricas reais.</p>
         </section>
       )}
 
@@ -162,11 +167,11 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
 
           <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
             <div className="rounded-xl border border-line bg-panel/90 p-5">
-              <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-white"><TrendingUp className="h-4 w-4 text-cyan" /> Evolução comercial</h3>
+              <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><TrendingUp className="h-4 w-4 text-cyan" /> Evolução comercial</h3>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={timeline.data}>
-                    <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
+                    <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
                     <XAxis dataKey="date" stroke="#94A3B8" fontSize={12} />
                     <YAxis stroke="#94A3B8" fontSize={12} allowDecimals={false} />
                     <Tooltip contentStyle={{ background: "#0B1220", border: "1px solid #1E293B", color: "#fff" }} />
@@ -177,8 +182,8 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
             </div>
             <div className="rounded-xl border border-line bg-panel/90 p-5">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h3 className="flex items-center gap-2 text-sm font-bold text-white"><Gauge className="h-4 w-4 text-cyan" /> Funil</h3>
-                <select value={funnelMin} onChange={(event) => setFunnelMin(Number(event.target.value))} className="rounded-lg border border-line bg-ink px-3 py-2 text-xs font-bold text-white">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Gauge className="h-4 w-4 text-cyan" /> Funil</h3>
+                <select value={funnelMin} onChange={(event) => setFunnelMin(Number(event.target.value))} className="rounded-lg border border-line bg-ink px-3 py-2 text-xs font-bold text-[var(--text-primary)]">
                   <option value={0}>Todas as etapas</option>
                   <option value={1}>Com leads</option>
                   <option value={5}>5+ leads</option>
@@ -187,7 +192,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={filteredFunnel} layout="vertical" margin={{ left: 12, right: 16 }}>
-                    <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
+                    <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
                     <XAxis type="number" stroke="#94A3B8" allowDecimals={false} />
                     <YAxis type="category" dataKey="name" stroke="#94A3B8" width={110} fontSize={11} />
                     <Tooltip contentStyle={{ background: "#0B1220", border: "1px solid #1E293B", color: "#fff" }} />

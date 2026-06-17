@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 
-const LOGO_CANDIDATES = ["/nodere-logo-192.png", "/nodere-logo.png", "/nodere-wordmark.png"];
+const LOGO_CANDIDATES = ["/logo-noderi-full.png", "/nodere-wordmark.png", "/nodere-logo.png", "/nodere-logo-192.png"];
 
 async function getNodereLogoBase64() {
   if (typeof window === "undefined") return null;
@@ -53,9 +53,9 @@ async function addHeaderFooter(doc: jsPDF, title: string, logoBase64: string | n
 
     if (logoBase64) {
       try {
-        doc.addImage(logoBase64, "PNG", 12, 9, 16, 16, undefined, "FAST");
+        doc.addImage(logoBase64, "PNG", 12, 8, 40, 16, undefined, "FAST");
       } catch {
-        doc.setFillColor(30, 111, 219);
+        doc.setFillColor(3, 98, 76);
         doc.roundedRect(12, 9, 16, 16, 3, 3, "F");
         doc.setTextColor(255, 255, 255);
         doc.setFont("helvetica", "bold");
@@ -66,7 +66,7 @@ async function addHeaderFooter(doc: jsPDF, title: string, logoBase64: string | n
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.setTextColor(30, 111, 219);
+    doc.setTextColor(3, 98, 76);
     doc.text(title, 105, 16, { align: "center", maxWidth: 118 });
 
     doc.setFont("helvetica", "normal");
@@ -79,7 +79,7 @@ async function addHeaderFooter(doc: jsPDF, title: string, logoBase64: string | n
     doc.line(12, 278, 198, 278);
     doc.setFontSize(8);
     doc.setTextColor(75, 85, 99);
-    doc.text("Gerado pelo NODERI Nexus · nodere.com.br", 12, 285);
+    doc.text("Gerado pelo NODERE Nexus · nodere.com.br", 12, 285);
     doc.text(`Página ${page} de ${pages}`, 198, 285, { align: "right" });
   }
 }

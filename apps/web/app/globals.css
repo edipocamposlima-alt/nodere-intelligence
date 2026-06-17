@@ -4328,3 +4328,182 @@ aside img[src*="logo-noderi-full"] {
     drop-shadow(0 12px 28px rgba(3, 98, 76, 0.20))
     drop-shadow(0 1px 0 rgba(255, 255, 255, 0.70));
 }
+
+.nodere-doc-tool {
+  display: inline-flex;
+  height: 32px;
+  width: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  color: #334155;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.nodere-doc-tool:hover {
+  border-color: #cbd5e1;
+  background: #ffffff;
+  color: #03624C;
+}
+
+.nodere-rich-editor .w-md-editor,
+.nodere-rich-editor .w-md-editor-toolbar,
+.nodere-rich-editor .w-md-editor-content,
+.nodere-rich-editor .w-md-editor-input,
+.nodere-rich-editor .w-md-editor-text,
+.nodere-rich-editor .w-md-editor-text-input,
+.nodere-rich-editor .w-md-editor-text-pre,
+.nodere-rich-editor .w-md-editor-preview {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+.nodere-rich-editor .w-md-editor {
+  border-radius: 0 !important;
+}
+
+.nodere-rich-editor .w-md-editor-toolbar {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.nodere-rich-editor textarea,
+.nodere-rich-editor .w-md-editor-text-input,
+.nodere-rich-editor .w-md-editor-text-pre > code {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #03624C !important;
+  font-size: 14px !important;
+  line-height: 1.65 !important;
+}
+
+.nodere-rich-editor textarea::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+}
+
+.nodere-rich-preview .wmde-markdown {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.nodere-brand-surface {
+  background:
+    radial-gradient(circle at 17% 18%, rgba(0, 223, 130, 0.24), transparent 32%),
+    linear-gradient(135deg, rgba(203, 213, 225, 0.34), rgba(3, 98, 76, 0.14) 46%, rgba(8, 16, 24, 0.28));
+}
+
+:root[data-theme="light"] .nodere-brand-surface,
+.light .nodere-brand-surface {
+  background:
+    radial-gradient(circle at 17% 18%, rgba(0, 223, 130, 0.24), transparent 34%),
+    linear-gradient(135deg, #f8fafc 0%, #d9e4df 48%, #a9b8b1 100%);
+}
+
+:root[data-theme="dark"] .nodere-brand-surface,
+.dark .nodere-brand-surface {
+  background:
+    radial-gradient(circle at 17% 18%, rgba(0, 223, 130, 0.25), transparent 34%),
+    linear-gradient(135deg, rgba(3, 98, 76, 0.24), rgba(8, 16, 24, 0.82) 58%, rgba(0, 223, 130, 0.08));
+}
+
+.crm-lead-card {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-color: var(--border-soft);
+  --tw-ring-color: rgba(3, 98, 76, 0.12);
+}
+
+.crm-stage {
+  color: #ffffff;
+}
+
+:root[data-theme="light"] .crm-stage,
+.light .crm-stage {
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(226, 232, 240, 0.96)) !important;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.12);
+}
+
+:root[data-theme="light"] .crm-lead-card,
+.light .crm-lead-card {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  --tw-ring-color: rgba(3, 98, 76, 0.10);
+}
+
+:root[data-theme="light"] .text-white,
+.light .text-white,
+:root[data-theme="light"] .text-slate-100,
+.light .text-slate-100,
+:root[data-theme="light"] .text-slate-200,
+.light .text-slate-200,
+:root[data-theme="light"] .text-blue-100,
+.light .text-blue-100,
+:root[data-theme="light"] .text-blue-300,
+.light .text-blue-300,
+:root[data-theme="light"] .text-rose-100,
+.light .text-rose-100,
+:root[data-theme="light"] .text-amber-100,
+.light .text-amber-100,
+:root[data-theme="light"] .text-emerald-100,
+.light .text-emerald-100 {
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="light"] .text-slate-300,
+.light .text-slate-300,
+:root[data-theme="light"] .text-slate-400,
+.light .text-slate-400,
+:root[data-theme="light"] .text-slate-500,
+.light .text-slate-500 {
+  color: var(--text-secondary) !important;
+}
+
+:root[data-theme="light"] .bg-ink,
+.light .bg-ink,
+:root[data-theme="light"] .bg-ink\/70,
+.light .bg-ink\/70,
+:root[data-theme="light"] .bg-ink\/90,
+.light .bg-ink\/90 {
+  background-color: #ffffff !important;
+}
+
+:root[data-theme="light"] header,
+.light header {
+  background: rgba(248, 250, 252, 0.94) !important;
+}
+
+:root[data-theme="light"] .bg-rose-500\/10,
+.light .bg-rose-500\/10,
+:root[data-theme="light"] .bg-danger\/10,
+.light .bg-danger\/10 {
+  background-color: rgba(239, 68, 68, 0.14) !important;
+}
+
+:root[data-theme="light"] .text-red-300,
+.light .text-red-300,
+:root[data-theme="light"] .text-rose-200,
+.light .text-rose-200,
+:root[data-theme="light"] .text-danger,
+.light .text-danger {
+  color: #b91c1c !important;
+}
+
+main,
+section,
+.card,
+.metric-card,
+.crm-lead-card {
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main,
+  section,
+  .card,
+  .metric-card,
+  .crm-lead-card {
+    transition: none;
+  }
+}

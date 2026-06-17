@@ -16,6 +16,7 @@ import {
   deleteCompany,
   removeDocument,
   removeNote,
+  updateNote,
   updateCompany,
   updateDocument,
   saveCompanies,
@@ -652,6 +653,19 @@ router.delete("/:id/contacts/:contactId", async (req, res, next) => {
     if (error) throw error;
     return res.json({ ok: true });
   } catch (error) { return next(error); }
+});
+
+router.patch("/:id/notes/:noteId", async (req, res, next) => {
+  try {
+    const body = z.object({ body: z.string().min(2) }).parse(req.body);
+    const workspaceId = getRequestWorkspaceId(req);
+    const companyId = String(req.params.id);
+    const company = await getCompanyAsync(companyId, workspaceId);
+    if (!company) return res.status(404).json({ message: "Company not found" });
+    const note = await updateNote(companyId, req.params.noteId, body.body, workspaceId);
+    if (!note) return res.status(404).json({ message: "Observação não encontrada." });
+    return res.json(note);
+  } catch (err) { return next(err); }
 });
 
 router.delete("/:id/notes/:noteId", async (req, res, next) => {

@@ -89,6 +89,7 @@ export function LeadOperations({ company }: { company: Company }) {
   const [error, setError] = useState<string | null>(null);
   const [editor, setEditor] = useState("");
   const [noteBody, setNoteBody] = useState("");
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [taskDescription, setTaskDescription] = useState("");
   const [contactNotes, setContactNotes] = useState("");
   const [communicationBody, setCommunicationBody] = useState("");
@@ -245,6 +246,33 @@ export function LeadOperations({ company }: { company: Company }) {
     } catch (err) {
       showError(err);
     }
+  }
+
+  async function saveEditedNote() {
+    const body = noteBody.trim();
+    if (!editingNoteId || !body) return;
+    try {
+      const note = await api<Note>(`${companyPath}/notes/${encodeURIComponent(editingNoteId)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ body })
+      });
+      setNotes((items) => items.map((item) => item.id === editingNoteId ? note : item));
+      setEditingNoteId(null);
+      setNoteBody("");
+      showSuccess("Observação atualizada.");
+    } catch (err) {
+      showError(err);
+    }
+  }
+
+  function startEditNote(note: Note) {
+    setEditingNoteId(note.id);
+    setNoteBody(note.body);
+  }
+
+  function cancelEditNote() {
+    setEditingNoteId(null);
+    setNoteBody("");
   }
 
   async function deleteNote(noteId: string) {
@@ -624,7 +652,16 @@ export function LeadOperations({ company }: { company: Company }) {
             </select>
             <input type="hidden" name="body" value={noteBody} />
             <RichTextEditor value={noteBody} onChange={setNoteBody} minHeight={220} placeholder="Escreva uma observação real do atendimento..." />
-            <button className="btn-action px-4 py-2 text-sm"><Save className="h-4 w-4" />Salvar observação</button>
+            <div className="flex flex-wrap gap-2">
+              {editingNoteId ? (
+                <>
+                  <button type="button" onClick={() => void saveEditedNote()} className="btn-action px-4 py-2 text-sm"><Save className="h-4 w-4" />Atualizar observação</button>
+                  <button type="button" onClick={cancelEditNote} className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2 text-sm font-semibold text-[var(--text-primary)]"><RotateCcw className="h-4 w-4" />Cancelar edição</button>
+                </>
+              ) : (
+                <button className="btn-action px-4 py-2 text-sm"><Save className="h-4 w-4" />Salvar observação</button>
+              )}
+            </div>
           </form>
           <div className="space-y-3">
             {notes.length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhuma observação salva ainda.</p>}
@@ -635,7 +672,10 @@ export function LeadOperations({ company }: { company: Company }) {
                     <p className="text-xs text-cyan">{note.type || "Observação"} · {new Date(note.createdAt).toLocaleString("pt-BR")}</p>
                     <div className="mt-3"><RichTextPreview value={note.body} /></div>
                   </div>
-                  <button onClick={() => deleteNote(note.id)} className="rounded-md border border-line p-2 text-slate-400 hover:text-red-300" aria-label="Excluir observação"><Trash2 className="h-4 w-4" /></button>
+                  <div className="flex shrink-0 gap-2">
+                    <button onClick={() => startEditNote(note)} className="rounded-md border border-line p-2 text-slate-400 hover:text-cyan" aria-label="Editar observação"><Pencil className="h-4 w-4" /></button>
+                    <button onClick={() => deleteNote(note.id)} className="rounded-md border border-line p-2 text-slate-400 hover:text-red-300" aria-label="Excluir observação"><Trash2 className="h-4 w-4" /></button>
+                  </div>
                 </div>
               </div>
             ))}

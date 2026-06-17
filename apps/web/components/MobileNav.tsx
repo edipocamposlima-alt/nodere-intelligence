@@ -6,7 +6,7 @@ import { useState } from "react";
 import { BarChart3, Building2, CalendarDays, CircleHelp, CreditCard, Inbox, KanbanSquare, LineChart, Megaphone, Menu, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, X, Zap } from "lucide-react";
 
 const primaryItems = [
-  { href: "/", label: "Início", icon: BarChart3 },
+  { href: "/dashboard", label: "Início", icon: BarChart3 },
   { href: "/searches", label: "Busca", icon: Search },
   { href: "/crm", label: "CRM", icon: KanbanSquare },
   { href: "/calendario", label: "Calendário", icon: CalendarDays }
@@ -36,7 +36,7 @@ export function MobileNav() {
     <>
       <nav className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-line bg-ink/95 px-1 py-1.5 shadow-[0_-14px_40px_rgba(0,0,0,0.35)] backdrop-blur lg:hidden">
         {primaryItems.map((item) => (
-          <MobileLink key={item.href} item={item} active={pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))} onClick={() => setOpen(false)} />
+          <MobileLink key={item.href} item={item} active={pathname === item.href || pathname.startsWith(`${item.href}/`)} onClick={() => setOpen(false)} />
         ))}
         <button
           type="button"

@@ -91,6 +91,7 @@ export interface CrmNote {
   companyId: string;
   body: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface SearchRequest {

@@ -83,21 +83,21 @@ export default async function DashboardPage() {
       <section className="rounded-lg border border-electric/25 bg-panel/90 p-6 shadow-glow">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0 flex-1">
-            <div className="dashboard-brand-logo inline-flex rounded-2xl border border-electric/30 bg-ink/75 p-4 shadow-[0_0_34px_rgba(0,223,130,0.18)]">
+            <div className="dashboard-brand-logo nodere-brand-surface inline-flex rounded-2xl border border-electric/30 p-4 shadow-[0_0_34px_rgba(0,223,130,0.18)]">
               <Image src="/logo-noderi-full.png" alt="NODERE Nexus" width={560} height={190} priority className="h-auto w-full max-w-xl object-contain" />
             </div>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
               Central comercial para busca de empresas, CRM, funil, WhatsApp, propostas e inteligência operacional.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm md:min-w-72">
             <div className="rounded-lg border border-line bg-ink p-3">
-              <p className="text-slate-400">CRM ativo</p>
-              <p className="mt-1 text-2xl font-semibold text-white">{metrics.totalCompanies}</p>
+              <p className="text-[var(--text-secondary)]">CRM ativo</p>
+              <p className="mt-1 text-2xl font-semibold text-[var(--text-primary)]">{metrics.totalCompanies}</p>
             </div>
             <div className="rounded-lg border border-line bg-ink p-3">
-              <p className="text-slate-400">Score médio</p>
-              <p className="mt-1 text-2xl font-semibold text-white">{metrics.averageScore}</p>
+              <p className="text-[var(--text-secondary)]">Score médio</p>
+              <p className="mt-1 text-2xl font-semibold text-[var(--text-primary)]">{metrics.averageScore}</p>
             </div>
           </div>
         </div>
