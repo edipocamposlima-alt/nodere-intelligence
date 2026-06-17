@@ -22,24 +22,24 @@ const defaultColumns = [
 ] as string[];
 
 const defaultStageColors: Record<string, string> = {
-  "Novo Lead": "#0EA5E9",
-  "Qualificado": "#14B8A6",
-  "Contatado": "#FACC15",
-  "Diagnóstico enviado": "#D946EF",
-  "Reunião marcada": "#6366F1",
+  "Novo Lead": "#2563EB",
+  "Qualificado": "#16A34A",
+  "Contatado": "#F59E0B",
+  "Diagnóstico enviado": "#7C3AED",
+  "Reunião marcada": "#2563EB",
   "Proposta enviada": "#F97316",
   "Negociação": "#F59E0B",
-  "Fechado": "#22C55E",
-  "Perdido": "#F43F5E"
+  "Fechado": "#16A34A",
+  "Perdido": "#DC2626"
 };
 
-const stagePalette = ["#0EA5E9", "#14B8A6", "#FACC15", "#D946EF", "#6366F1", "#F97316", "#F59E0B", "#22C55E", "#F43F5E", "#8B5CF6", "#06B6D4", "#84CC16"];
+const stagePalette = ["#2563EB", "#16A34A", "#F59E0B", "#7C3AED", "#F97316", "#DC2626", "#64748B", "#03624C"];
 
 function hexToRgba(hex: string, alpha: number) {
   const clean = hex.replace("#", "");
   const value = clean.length === 3 ? clean.split("").map((char) => `${char}${char}`).join("") : clean;
   const int = Number.parseInt(value, 16);
-  if (Number.isNaN(int)) return `rgba(14, 165, 233, ${alpha})`;
+  if (Number.isNaN(int)) return `rgba(3, 98, 76, ${alpha})`;
   const r = (int >> 16) & 255;
   const g = (int >> 8) & 255;
   const b = int & 255;
@@ -135,7 +135,7 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
   }
 
   function colorForStage(stage: string, index: number) {
-    return stageColors[stage] || stagePalette[index % stagePalette.length] || "#0EA5E9";
+    return stageColors[stage] || stagePalette[index % stagePalette.length] || "#03624C";
   }
 
   const filtered = useMemo(() => {

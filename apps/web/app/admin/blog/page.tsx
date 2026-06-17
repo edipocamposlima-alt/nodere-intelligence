@@ -116,7 +116,7 @@ export default function AdminBlogPage() {
             </div>
             <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
               <button style={style.btn} onClick={() => setEditing(post)}>Editar</button>
-              <button style={{ ...style.btn, background: post.published ? 'rgba(245,158,11,.15)' : 'rgba(34,197,94,.15)', color: post.published ? '#F59E0B' : '#22C55E', border: `1px solid ${post.published ? 'rgba(245,158,11,.3)' : 'rgba(34,197,94,.3)'}` }} onClick={() => togglePublish(post)}>
+              <button style={{ ...style.btn, background: post.published ? 'rgba(245,158,11,.15)' : 'rgba(22,163,74,.15)', color: post.published ? '#F59E0B' : '#16A34A', border: `1px solid ${post.published ? 'rgba(245,158,11,.3)' : 'rgba(22,163,74,.3)'}` }} onClick={() => togglePublish(post)}>
                 {post.published ? 'Despublicar' : 'Publicar'}
               </button>
               <button style={style.btnRed} onClick={() => deletePost(post.id)}>Deletar</button>

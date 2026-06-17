@@ -232,7 +232,7 @@ export function InboxClient() {
               <label className="space-y-2 text-sm text-slate-300">Assunto<input name="subject" className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white" /></label>
               <label className="space-y-2 text-sm text-slate-300">Data/hora<input name="sentAt" type="datetime-local" className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white" /></label>
               <label className="space-y-2 text-sm text-slate-300">Responsável<input name="sentBy" defaultValue="Operador" className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white" /></label>
-              <label className="space-y-2 text-sm text-slate-300">Cor da marcação<input name="flagColor" type="color" defaultValue="#FACC15" className="h-12 w-full rounded-lg border border-line bg-ink px-2" /></label>
+              <label className="space-y-2 text-sm text-slate-300">Cor da marcação<input name="flagColor" type="color" defaultValue="#F59E0B" className="h-12 w-full rounded-lg border border-line bg-ink px-2" /></label>
               <div className="md:col-span-2">
                 <RichTextEditor value={body} onChange={setBody} minHeight={220} placeholder="Conteúdo da interação..." />
               </div>

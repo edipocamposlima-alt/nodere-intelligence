@@ -53,6 +53,11 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="pt-BR" className="dark" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var s=JSON.parse(localStorage.getItem('nodere_settings')||'{}');var t=s.theme||'Escuro';var m=s.mode||(t==='Claro'?'light':t==='Sistema'?'system':'dark');if(m==='system')m=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.dataset.theme=m;document.documentElement.classList.toggle('light',m==='light');document.documentElement.classList.toggle('dark',m!=='light');}catch(e){}`
+          }}
+        />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

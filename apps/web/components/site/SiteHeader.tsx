@@ -23,9 +23,9 @@ export default function SiteHeader() {
         <div className="site-header__inner">
           <Link href="/" className="site-logo" aria-label="NODERI Nexus">
             <img
-              src="/logo-noderi-icon.png"
+              src="/logo-noderi-full.png"
               alt="NODERI Nexus"
-              height={32}
+              height={44}
               className="site-logo__image"
               onError={(event) => {
                 const target = event.currentTarget as HTMLImageElement;

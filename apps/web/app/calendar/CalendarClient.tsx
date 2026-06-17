@@ -19,16 +19,16 @@ const localizer = dateFnsLocalizer({
 });
 
 const eventTypes = [
-  { value: "ligacao", label: "Ligacao", color: "#22C55E", icon: Phone },
-  { value: "reuniao", label: "Reuniao", color: "#8B5CF6", icon: CalendarDays },
-  { value: "demonstracao", label: "Demonstracao", color: "#06B6D4", icon: Presentation },
+  { value: "ligacao", label: "Ligacao", color: "#16A34A", icon: Phone },
+  { value: "reuniao", label: "Reuniao", color: "#7C3AED", icon: CalendarDays },
+  { value: "demonstracao", label: "Demonstracao", color: "#2563EB", icon: Presentation },
   { value: "proposta", label: "Proposta", color: "#F59E0B", icon: Send },
-  { value: "retorno", label: "Retorno", color: "#3B82F6", icon: RotateCcw },
-  { value: "pos_venda", label: "Pos-venda", color: "#10B981", icon: Check },
-  { value: "followup", label: "Follow-up", color: "#3B82F6", icon: Clock },
-  { value: "tarefa", label: "Tarefa", color: "#EAB308", icon: ListChecks },
-  { value: "interno", label: "Interno", color: "#6B7280", icon: BellRing },
-  { value: "postagem", label: "Postagem", color: "#EC4899", icon: Megaphone }
+  { value: "retorno", label: "Retorno", color: "#2563EB", icon: RotateCcw },
+  { value: "pos_venda", label: "Pos-venda", color: "#16A34A", icon: Check },
+  { value: "followup", label: "Follow-up", color: "#2563EB", icon: Clock },
+  { value: "tarefa", label: "Tarefa", color: "#F59E0B", icon: ListChecks },
+  { value: "interno", label: "Interno", color: "#64748B", icon: BellRing },
+  { value: "postagem", label: "Postagem", color: "#7C3AED", icon: Megaphone }
 ];
 
 const aliases: Record<string, string> = {

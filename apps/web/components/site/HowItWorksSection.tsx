@@ -6,13 +6,13 @@ const STEPS = [
     stat: "127 empresas analisadas/dia"
   },
   {
-    n: "02", icon: "🧠", color: "#8B5CF6",
+    n: "02", icon: "🧠", color: "#7C3AED",
     title: "Analise e priorize",
     desc: "Score digital 0-100 por empresa. IA identifica dores, sugere o produto certo e estima propensão de compra em segundos.",
     stat: "Score gerado em < 3s"
   },
   {
-    n: "03", icon: "💬", color: "#10B981",
+    n: "03", icon: "💬", color: "#16A34A",
     title: "Aborde e feche",
     desc: "CRM integrado, scripts gerados por IA, WhatsApp e e-mail na mesma tela. Do primeiro contato ao PDF da proposta assinada.",
     stat: "Taxa de conversão 3x maior"

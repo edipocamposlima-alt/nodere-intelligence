@@ -24,7 +24,7 @@ type Cities = Awaited<ReturnType<typeof getReportCities>>;
 type Origins = Awaited<ReturnType<typeof getReportOrigin>>;
 type Intelligence = Awaited<ReturnType<typeof getReportIntelligence>>;
 
-const COLORS = ["#22D3EE", "#16C784", "#FACC15", "#A855F7", "#F97316", "#EF4444", "#60A5FA", "#EC4899"];
+const COLORS = ["#03624C", "#00DF82", "#F59E0B", "#7C3AED", "#F97316", "#DC2626", "#2563EB", "#64748B"];
 
 function metric(value: number, suffix = "") {
   return `${Number(value || 0).toLocaleString("pt-BR")}${suffix}`;
@@ -170,7 +170,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
                     <XAxis dataKey="date" stroke="#94A3B8" fontSize={12} />
                     <YAxis stroke="#94A3B8" fontSize={12} allowDecimals={false} />
                     <Tooltip contentStyle={{ background: "#0B1220", border: "1px solid #1E293B", color: "#fff" }} />
-                    <Line type="monotone" dataKey="count" stroke="#22D3EE" strokeWidth={3} dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="count" stroke="#03624C" strokeWidth={3} dot={{ r: 3 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

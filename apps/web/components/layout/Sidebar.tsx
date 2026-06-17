@@ -2,22 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BarChart3, Bot, CalendarDays, FileText, Home, Inbox, KanbanSquare, Lock, Mail, Radio, Search, Settings, Users, Workflow } from "lucide-react";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { Logo } from "@/components/ui/Logo";
 
 const NAV_ITEMS = [
-  { code: "DISC-01", label: "Prospecção", icon: "🔍", href: "/app/discovery", group: "Descoberta" },
-  { code: "CRM-01", label: "Pipeline", icon: "📊", href: "/app/pipeline", group: "CRM" },
-  { code: "CRM-02", label: "Leads", icon: "👥", href: "/app/leads", group: "CRM" },
-  { code: "CRM-03", label: "Agenda", icon: "📅", href: "/app/agenda", group: "CRM" },
-  { code: "CRM-04", label: "Propostas", icon: "📄", href: "/app/proposals", group: "CRM" },
-  { code: "ENG-01", label: "WhatsApp", icon: "💬", href: "/app/whatsapp", group: "Comunicação" },
-  { code: "ENG-03", label: "E-mail", icon: "✉️", href: "/app/email", group: "Comunicação" },
-  { code: "ENG-04", label: "Omnichannel", icon: "📡", href: "/app/inbox", group: "Comunicação" },
-  { code: "AI-01", label: "IA Nexus", icon: "🤖", href: "/app/ai", group: "Inteligência" },
-  { code: "ANA-01", label: "Dashboard", icon: "📈", href: "/app/analytics", group: "Analytics" },
-  { code: "ANA-02", label: "Relatórios", icon: "📋", href: "/app/reports", group: "Analytics" },
-  { code: "OPS-01", label: "Projetos", icon: "🗂️", href: "/app/projects", group: "Operações" }
+  { code: "DISC-01", label: "Prospecção", icon: Search, href: "/app/discovery", group: "Descoberta" },
+  { code: "CRM-01", label: "Pipeline", icon: KanbanSquare, href: "/app/pipeline", group: "CRM" },
+  { code: "CRM-02", label: "Leads", icon: Users, href: "/app/leads", group: "CRM" },
+  { code: "CRM-03", label: "Agenda", icon: CalendarDays, href: "/app/agenda", group: "CRM" },
+  { code: "CRM-04", label: "Propostas", icon: FileText, href: "/app/proposals", group: "CRM" },
+  { code: "ENG-01", label: "WhatsApp", icon: Inbox, href: "/app/whatsapp", group: "Comunicação" },
+  { code: "ENG-03", label: "E-mail", icon: Mail, href: "/app/email", group: "Comunicação" },
+  { code: "ENG-04", label: "Omnichannel", icon: Radio, href: "/app/inbox", group: "Comunicação" },
+  { code: "AI-01", label: "IA Nexus", icon: Bot, href: "/app/ai", group: "Inteligência" },
+  { code: "ANA-01", label: "Dashboard", icon: BarChart3, href: "/app/analytics", group: "Analytics" },
+  { code: "ANA-02", label: "Relatórios", icon: FileText, href: "/app/reports", group: "Analytics" },
+  { code: "OPS-01", label: "Projetos", icon: Workflow, href: "/app/projects", group: "Operações" }
 ];
 
 export default function PlatformSidebar() {
@@ -35,7 +36,7 @@ export default function PlatformSidebar() {
     <nav className="sidebar">
       <div className="sidebar-logo">
         <Link href="/app/dashboard">
-          <Logo variant="full" size="md" />
+          <Logo variant="full" size="xl" />
           <span className="logo-text sr-only">NODERI</span>
           <span className="logo-nexus sr-only">Nexus</span>
         </Link>
@@ -43,7 +44,7 @@ export default function PlatformSidebar() {
 
       <div className="sidebar-nav">
         <Link href="/app/dashboard" className={`nav-item ${pathname === "/app/dashboard" ? "active" : ""}`}>
-          <span>🏠</span> Dashboard
+          <Home className="nav-icon" /> Dashboard
         </Link>
 
         {Object.entries(groups).map(([group, items]) => (
@@ -51,16 +52,17 @@ export default function PlatformSidebar() {
             <span className="nav-group-label">{group}</span>
             {items.map((item) => {
               const active = hasModule(item.code);
+              const Icon = item.icon;
               return (
                 <div key={item.code} className={`nav-item-wrapper ${!active ? "locked" : ""}`}>
                   {active ? (
                     <Link href={item.href} className={`nav-item ${pathname?.startsWith(item.href) ? "active" : ""}`}>
-                      <span>{item.icon}</span> {item.label}
+                      <Icon className="nav-icon" /> {item.label}
                     </Link>
                   ) : (
                     <Link href={`/app/upgrade?module=${item.code}`} className="nav-item nav-item-locked">
-                      <span>{item.icon}</span> {item.label}
-                      <span className="lock-badge">🔒</span>
+                      <Icon className="nav-icon" /> {item.label}
+                      <Lock className="lock-badge" />
                     </Link>
                   )}
                 </div>
@@ -72,7 +74,7 @@ export default function PlatformSidebar() {
 
       <div className="sidebar-footer">
         <Link href="/app/settings" className={`nav-item ${pathname === "/app/settings" ? "active" : ""}`}>
-          <span>⚙️</span> Configurações
+          <Settings className="nav-icon" /> Configurações
         </Link>
       </div>
     </nav>

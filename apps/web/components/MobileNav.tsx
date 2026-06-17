@@ -6,26 +6,26 @@ import { useState } from "react";
 import { BarChart3, Building2, CalendarDays, CircleHelp, CreditCard, Inbox, KanbanSquare, LineChart, Megaphone, Menu, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, X, Zap } from "lucide-react";
 
 const primaryItems = [
-  { href: "/", label: "Início", icon: BarChart3, bg: "linear-gradient(135deg,#0284C7,#38BDF8)" },
-  { href: "/searches", label: "Busca", icon: Search, bg: "linear-gradient(135deg,#0891B2,#22D3EE)" },
-  { href: "/crm", label: "CRM", icon: KanbanSquare, bg: "linear-gradient(135deg,#7C3AED,#C084FC)" },
-  { href: "/calendario", label: "Calendário", icon: CalendarDays, bg: "linear-gradient(135deg,#D97706,#FDE047)" }
+  { href: "/", label: "Início", icon: BarChart3 },
+  { href: "/searches", label: "Busca", icon: Search },
+  { href: "/crm", label: "CRM", icon: KanbanSquare },
+  { href: "/calendario", label: "Calendário", icon: CalendarDays }
 ];
 
 const drawerItems = [
-  { href: "/companies", label: "Empresas", icon: Building2, bg: "linear-gradient(135deg,#1D4ED8,#60A5FA)" },
-  { href: "/intelligence", label: "Inteligência", icon: Zap, bg: "linear-gradient(135deg,#EAB308,#F97316)" },
-  { href: "/inbox", label: "Caixa de entrada", icon: Inbox, bg: "linear-gradient(135deg,#059669,#34D399)" },
-  { href: "/automations", label: "Automações", icon: Workflow, bg: "linear-gradient(135deg,#C026D3,#F0ABFC)" },
-  { href: "/operators", label: "Operadores", icon: Users, bg: "linear-gradient(135deg,#4F46E5,#818CF8)" },
-  { href: "/reports", label: "Relatórios", icon: LineChart, bg: "linear-gradient(135deg,#65A30D,#A3E635)" },
-  { href: "/marketing", label: "Marketing", icon: Megaphone, bg: "linear-gradient(135deg,#DB2777,#FB7185)" },
-  { href: "/catalog", label: "Catálogo", icon: PackageOpen, bg: "linear-gradient(135deg,#16A34A,#86EFAC)" },
-  { href: "/billing", label: "Faturamento", icon: CreditCard, bg: "linear-gradient(135deg,#EA580C,#FDBA74)" },
-  { href: "/integrations", label: "Integrações", icon: Plug, bg: "linear-gradient(135deg,#0D9488,#5EEAD4)" },
-  { href: "/settings", label: "Configurações", icon: Settings, bg: "linear-gradient(135deg,#2563EB,#93C5FD)" },
-  { href: "/manual", label: "Ajuda / Manual", icon: CircleHelp, bg: "linear-gradient(135deg,#E11D48,#FDA4AF)" },
-  { href: "/admin", label: "Administrador", icon: ShieldCheck, bg: "linear-gradient(135deg,#1D4ED8,#22D3EE)" }
+  { href: "/companies", label: "Empresas", icon: Building2 },
+  { href: "/intelligence", label: "Inteligência", icon: Zap },
+  { href: "/inbox", label: "Caixa de entrada", icon: Inbox },
+  { href: "/automations", label: "Automações", icon: Workflow },
+  { href: "/operators", label: "Operadores", icon: Users },
+  { href: "/reports", label: "Relatórios", icon: LineChart },
+  { href: "/marketing", label: "Marketing", icon: Megaphone },
+  { href: "/catalog", label: "Catálogo", icon: PackageOpen },
+  { href: "/billing", label: "Faturamento", icon: CreditCard },
+  { href: "/integrations", label: "Integrações", icon: Plug },
+  { href: "/settings", label: "Configurações", icon: Settings },
+  { href: "/manual", label: "Ajuda / Manual", icon: CircleHelp },
+  { href: "/admin", label: "Administrador", icon: ShieldCheck }
 ];
 
 export function MobileNav() {
@@ -44,8 +44,8 @@ export function MobileNav() {
           className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold text-slate-200"
           aria-label="Abrir menu"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-slate-700 to-slate-950 ring-1 ring-white/10">
-            <Menu className="h-4 w-4 text-white" />
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-electric/15 ring-1 ring-electric/30">
+            <Menu className="h-4 w-4 text-cyan" />
           </span>
           Menu
         </button>
@@ -74,8 +74,8 @@ export function MobileNav() {
                   onClick={() => setOpen(false)}
                   className="flex min-h-14 items-center gap-3 rounded-xl border border-line bg-panel/80 px-3 py-2 text-sm font-semibold text-slate-200"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg shadow-[0_0_18px_rgba(56,189,248,0.22)]" style={{ background: item.bg }}>
-                    <item.icon className="h-4 w-4 text-white" style={{ strokeWidth: 2.9 }} />
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-electric/15 text-cyan shadow-[0_0_18px_rgba(0,223,130,0.18)] ring-1 ring-electric/30">
+                    <item.icon className="h-4 w-4" style={{ strokeWidth: 2.9 }} />
                   </span>
                   {item.label}
                 </Link>
@@ -95,8 +95,8 @@ function MobileLink({ item, active, onClick }: { item: (typeof primaryItems)[num
       onClick={onClick}
       className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold transition ${active ? "bg-white/10 text-white" : "text-slate-300"}`}
     >
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg shadow-[0_0_18px_rgba(56,189,248,0.22)]" style={{ background: item.bg }}>
-        <item.icon className="h-4 w-4 text-white" style={{ strokeWidth: 2.9 }} />
+      <span className={`flex h-8 w-8 items-center justify-center rounded-lg shadow-[0_0_18px_rgba(0,223,130,0.18)] ring-1 ${active ? "bg-electric text-white ring-electric/50" : "bg-electric/12 text-cyan ring-electric/25"}`}>
+        <item.icon className="h-4 w-4" style={{ strokeWidth: 2.9 }} />
       </span>
       {item.label}
     </Link>

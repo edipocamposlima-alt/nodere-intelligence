@@ -37,14 +37,14 @@ export default async function DashboardPage() {
     .slice(0, 10);
 
   const cards = [
-    { label: "Empresas encontradas", value: metrics.totalCompanies, icon: Building2, hex: "#0284C7", bg: "#E0F2FE" },
-    { label: "Baixa avaliação", value: metrics.lowRating, icon: Star, hex: "#F59E0B", bg: "#FEF3C7" },
-    { label: "Sem site", value: metrics.withoutWebsite, icon: Globe2, hex: "#7C3AED", bg: "#EDE9FE" },
-    { label: "Sem Google Ads", value: metrics.withoutGoogleAds, icon: MousePointerClick, hex: "#16A34A", bg: "#DCFCE7" },
-    { label: "Sem WhatsApp", value: metrics.withoutWhatsapp, icon: MessageCircle, hex: "#059669", bg: "#D1FAE5" },
-    { label: "Sem descrição", value: metrics.withoutDescription, icon: AlertTriangle, hex: "#DC2626", bg: "#FEE2E2" },
-    { label: "Sem fotos recentes", value: metrics.withoutRecentPhotos, icon: Camera, hex: "#DB2777", bg: "#FCE7F3" },
-    { label: "Leads quentes", value: metrics.hotLeads, icon: TrendingUp, hex: "#EA580C", bg: "#FFEDD5" }
+    { label: "Empresas encontradas", value: metrics.totalCompanies, icon: Building2, hex: "#03624C" },
+    { label: "Baixa avaliação", value: metrics.lowRating, icon: Star, hex: "#F59E0B" },
+    { label: "Sem site", value: metrics.withoutWebsite, icon: Globe2, hex: "#7C3AED" },
+    { label: "Sem Google Ads", value: metrics.withoutGoogleAds, icon: MousePointerClick, hex: "#16A34A" },
+    { label: "Sem WhatsApp", value: metrics.withoutWhatsapp, icon: MessageCircle, hex: "#03624C" },
+    { label: "Sem descrição", value: metrics.withoutDescription, icon: AlertTriangle, hex: "#DC2626" },
+    { label: "Sem fotos recentes", value: metrics.withoutRecentPhotos, icon: Camera, hex: "#64748B" },
+    { label: "Leads quentes", value: metrics.hotLeads, icon: TrendingUp, hex: "#F97316" }
   ];
   const actionItems = [
     {
@@ -52,21 +52,21 @@ export default async function DashboardPage() {
       value: metrics.hotLeads,
       detail: "Priorize contato consultivo hoje",
       href: "/crm",
-      color: "from-orange-500 to-rose-500"
+      tone: "warning"
     },
     {
       title: "Recuperar empresas sem site",
       value: metrics.withoutWebsite,
       detail: "Oferta direta: landing page + Google Ads",
       href: "/searches",
-      color: "from-violet-500 to-blue-500"
+      tone: "brand"
     },
     {
       title: "Baixa avaliação no Google",
       value: metrics.lowRating,
       detail: "Abordagem: reputação + perfil otimizado",
       href: "/companies",
-      color: "from-amber-400 to-orange-600"
+      tone: "danger"
     }
   ];
 
@@ -104,7 +104,7 @@ export default async function DashboardPage() {
           <div key={card.label} className="metric-card rounded-lg border border-line bg-panel/90 p-4 transition hover:-translate-y-0.5 hover:border-cyan/60 hover:shadow-[0_12px_32px_rgba(34,211,238,0.12)]">
             <div className="flex items-center justify-between">
               <p className="text-sm text-slate-400">{card.label}</p>
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl shadow-[0_0_22px_rgba(56,189,248,0.18)]" style={{ background: `linear-gradient(135deg, ${card.hex}, ${card.bg})` }}>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 shadow-[0_0_22px_rgba(0,223,130,0.16)]" style={{ backgroundColor: card.hex }}>
                 <card.icon className="h-5 w-5 text-white drop-shadow" style={{ strokeWidth: 2.9 }} />
               </span>
             </div>
@@ -117,8 +117,8 @@ export default async function DashboardPage() {
 
       <section className="grid gap-4 lg:grid-cols-3">
         {actionItems.map((item) => (
-          <Link key={item.title} href={item.href} className={`rounded-xl border border-white/10 bg-gradient-to-br ${item.color} p-5 text-white shadow-[0_18px_45px_rgba(0,0,0,0.18)] transition hover:-translate-y-1`}>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-white/75">Ação recomendada</p>
+          <Link key={item.title} href={item.href} className={`rounded-xl border p-5 text-white shadow-[0_18px_45px_rgba(0,0,0,0.18)] transition hover:-translate-y-1 ${item.tone === "brand" ? "border-electric/40 bg-electric/15" : item.tone === "danger" ? "border-danger/40 bg-danger/15" : "border-warning/40 bg-warning/15"}`}>
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">Ação recomendada</p>
             <div className="mt-4 flex items-end justify-between gap-4">
               <div>
                 <p className="text-lg font-semibold">{item.title}</p>
@@ -162,8 +162,8 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-3">
-        <DashboardBarPanel title="Leads por segmento" rows={segmentCounts} accent="#22D3EE" />
-        <DashboardBarPanel title="Origem dos leads" rows={originCounts} accent="#A855F7" />
+        <DashboardBarPanel title="Leads por segmento" rows={segmentCounts} accent="#03624C" />
+        <DashboardBarPanel title="Origem dos leads" rows={originCounts} accent="#00DF82" />
         <div className="rounded-lg border border-line bg-panel/90 p-5">
           <p className="text-sm font-semibold text-white">Pipeline por etapa</p>
           <div className="mt-4 space-y-3">
@@ -234,12 +234,12 @@ export default async function DashboardPage() {
 }
 
 const STAGE_COLORS: Record<string, { solid: string; soft: string }> = {
-  "Novo Lead": { solid: "#0EA5E9", soft: "rgba(14,165,233,0.18)" },
-  Qualificação: { solid: "#22C55E", soft: "rgba(34,197,94,0.18)" },
+  "Novo Lead": { solid: "#2563EB", soft: "rgba(37,99,235,0.18)" },
+  Qualificação: { solid: "#16A34A", soft: "rgba(22,163,74,0.18)" },
   "Em Atendimento": { solid: "#F59E0B", soft: "rgba(245,158,11,0.2)" },
-  Proposta: { solid: "#D946EF", soft: "rgba(217,70,239,0.18)" },
-  Fechamento: { solid: "#6366F1", soft: "rgba(99,102,241,0.18)" },
-  Cliente: { solid: "#14B8A6", soft: "rgba(20,184,166,0.18)" }
+  Proposta: { solid: "#F97316", soft: "rgba(249,115,22,0.18)" },
+  Fechamento: { solid: "#7C3AED", soft: "rgba(124,58,237,0.18)" },
+  Cliente: { solid: "#03624C", soft: "rgba(3,98,76,0.18)" }
 };
 
 function ConversionFunnel({ stages }: { stages: FunnelStage[] }) {
@@ -264,7 +264,7 @@ function ConversionFunnel({ stages }: { stages: FunnelStage[] }) {
           </p>
         )}
         {stages.map((stage) => {
-          const color = STAGE_COLORS[stage.stage] ?? { solid: "#22D3EE", soft: "rgba(34,211,238,0.18)" };
+          const color = STAGE_COLORS[stage.stage] ?? { solid: "#03624C", soft: "rgba(3,98,76,0.18)" };
           return (
             <div key={stage.stage} className="rounded-lg border border-line bg-ink p-4">
               <div className="flex items-center justify-between gap-3">

@@ -10,35 +10,15 @@ const STORAGE_KEY = "nodere_settings";
 const BACKEND_ROOT_URL = getBackendRootUrl();
 
 const themePresets: Record<string, { primary: string; mode: Settings["mode"]; cyan: string; panel: string; ink: string; line: string }> = {
-  "NODERI Verde": { primary: "#03624C", mode: "dark", cyan: "#00DF82", panel: "#111827", ink: "#081018", line: "rgba(255,255,255,0.08)" },
-  "Atlântico premium": { primary: "#0284C7", mode: "dark", cyan: "#22D3EE", panel: "#071827", ink: "#020817", line: "#164E63" },
-  "Azul executivo": { primary: "#2563EB", mode: "dark", cyan: "#06B6D4", panel: "#0D1B2A", ink: "#050A14", line: "#1D3557" },
-  "Executivo Escuro": { primary: "#2DD4BF", mode: "dark", cyan: "#38BDF8", panel: "#0D1624", ink: "#040812", line: "#223047" },
-  "Preto absoluto": { primary: "#3B82F6", mode: "dark", cyan: "#06B6D4", panel: "#030712", ink: "#000000", line: "#1F2937" },
-  "Aço premium": { primary: "#64748B", mode: "dark", cyan: "#38BDF8", panel: "#111827", ink: "#030712", line: "#334155" },
-  "Verde Performance": { primary: "#16C784", mode: "dark", cyan: "#22D3EE", panel: "#071B18", ink: "#04100E", line: "#174239" },
-  "Verde comercial": { primary: "#10B981", mode: "dark", cyan: "#2DD4BF", panel: "#06251F", ink: "#03110E", line: "#14532D" },
-  "Esmeralda forte": { primary: "#059669", mode: "dark", cyan: "#10B981", panel: "#052E2B", ink: "#021412", line: "#047857" },
-  "Roxo SaaS": { primary: "#8B5CF6", mode: "dark", cyan: "#38BDF8", panel: "#111029", ink: "#070716", line: "#2B2852" },
-  "Roxo tecnológico": { primary: "#A855F7", mode: "dark", cyan: "#60A5FA", panel: "#17102A", ink: "#080512", line: "#3B2463" },
-  "Violeta sólido": { primary: "#7C3AED", mode: "dark", cyan: "#A78BFA", panel: "#160B2E", ink: "#070316", line: "#4C1D95" },
-  "Laranja performance": { primary: "#F97316", mode: "dark", cyan: "#22D3EE", panel: "#1F1307", ink: "#0F0803", line: "#7C2D12" },
-  "Solar executivo": { primary: "#F59E0B", mode: "dark", cyan: "#F97316", panel: "#211407", ink: "#0F0702", line: "#92400E" },
-  "Vermelho conversão": { primary: "#EF4444", mode: "dark", cyan: "#F97316", panel: "#220A0A", ink: "#100303", line: "#7F1D1D" },
-  "Magenta premium": { primary: "#EC4899", mode: "dark", cyan: "#A78BFA", panel: "#201020", ink: "#100712", line: "#831843" },
-  "Ciano neon": { primary: "#03624C", mode: "dark", cyan: "#00DF82", panel: "#111827", ink: "#081018", line: "#243244" },
-  "Vibrante NODERI": { primary: "#03624C", mode: "dark", cyan: "#19F5A1", panel: "#10201C", ink: "#050D14", line: "#24594B" },
-  "Vibrante claro": { primary: "#E11D48", mode: "light", cyan: "#2563EB", panel: "#FFFFFF", ink: "#F8FAFC", line: "#CBD5E1" },
-  "Grafite claro": { primary: "#334155", mode: "light", cyan: "#2563EB", panel: "#FFFFFF", ink: "#F1F5F9", line: "#CBD5E1" },
-  "Alto contraste": { primary: "#FACC15", mode: "dark", cyan: "#00E5FF", panel: "#000000", ink: "#000000", line: "#FFFFFF" },
-  "Claro": { primary: "#2563EB", mode: "light", cyan: "#0EA5E9", panel: "#FFFFFF", ink: "#F6F8FC", line: "#D9E2EF" },
-  "Escuro": { primary: "#03624C", mode: "dark", cyan: "#00DF82", panel: "#111827", ink: "#081018", line: "#243244" }
+  "Escuro": { primary: "#03624C", mode: "dark", cyan: "#00DF82", panel: "#111827", ink: "#081018", line: "#243244" },
+  "Claro": { primary: "#03624C", mode: "light", cyan: "#03624C", panel: "#FFFFFF", ink: "#F8FAFC", line: "#E2E8F0" },
+  "Sistema": { primary: "#03624C", mode: "system", cyan: "#00DF82", panel: "#111827", ink: "#081018", line: "#243244" }
 };
 
 type Settings = {
   theme: string;
   colorPrimary: string;
-  mode: "dark" | "light";
+  mode: "dark" | "light" | "system";
   fontFamily: string;
   fontSize: "small" | "normal" | "large";
   layoutDensity: "ultraCompact" | "compact" | "comfortable" | "executive" | "large";
@@ -73,7 +53,7 @@ type DownloadLog = {
 };
 
 const defaults: Settings = {
-  theme: "NODERI Verde",
+  theme: "Escuro",
   colorPrimary: "#03624C",
   mode: "dark",
   fontFamily: "Inter",
@@ -83,18 +63,35 @@ const defaults: Settings = {
   backendUrl: BACKEND_ROOT_URL
 };
 
+function normalizeSettings(settings: Settings): Settings {
+  const theme = settings.theme in themePresets ? settings.theme : "Escuro";
+  const preset = themePresets[theme];
+  return {
+    ...settings,
+    theme,
+    mode: preset.mode,
+    colorPrimary: "#03624C"
+  };
+}
+
 function applySettings(settings: Settings) {
-  const preset = themePresets[settings.theme] || themePresets["NODERI Verde"];
-  document.documentElement.style.setProperty("--nodere-primary", settings.colorPrimary);
-  document.documentElement.style.setProperty("--color-cyan", preset.cyan);
-  document.documentElement.style.setProperty("--color-panel", settings.mode === "light" ? "#FFFFFF" : preset.panel);
-  document.documentElement.style.setProperty("--color-ink", settings.mode === "light" ? "#F6F8FC" : preset.ink);
-  document.documentElement.style.setProperty("--color-line", settings.mode === "light" ? "#D9E2EF" : preset.line);
-  document.documentElement.dataset.theme = settings.mode;
-  document.documentElement.dataset.fontSize = settings.fontSize;
-  document.documentElement.dataset.density = settings.layoutDensity;
-  document.documentElement.dataset.cardStyle = settings.cardStyle;
-  const font = settings.fontFamily === "System default" ? "system-ui" : settings.fontFamily;
+  const normalized = normalizeSettings(settings);
+  const preset = themePresets[normalized.theme];
+  const resolvedMode = normalized.mode === "system"
+    ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
+    : normalized.mode;
+  document.documentElement.style.setProperty("--nodere-primary", "#03624C");
+  document.documentElement.style.setProperty("--color-cyan", resolvedMode === "light" ? "#03624C" : preset.cyan);
+  document.documentElement.style.setProperty("--color-panel", resolvedMode === "light" ? "#FFFFFF" : preset.panel);
+  document.documentElement.style.setProperty("--color-ink", resolvedMode === "light" ? "#F8FAFC" : preset.ink);
+  document.documentElement.style.setProperty("--color-line", resolvedMode === "light" ? "#E2E8F0" : preset.line);
+  document.documentElement.dataset.theme = resolvedMode;
+  document.documentElement.classList.toggle("light", resolvedMode === "light");
+  document.documentElement.classList.toggle("dark", resolvedMode === "dark");
+  document.documentElement.dataset.fontSize = normalized.fontSize;
+  document.documentElement.dataset.density = normalized.layoutDensity;
+  document.documentElement.dataset.cardStyle = normalized.cardStyle;
+  const font = normalized.fontFamily === "System default" ? "system-ui" : normalized.fontFamily;
   document.body.style.fontFamily = `${font}, Inter, system-ui, sans-serif`;
 }
 
@@ -142,14 +139,14 @@ export function SettingsClient() {
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    const next = saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
+    const next = normalizeSettings(saved ? { ...defaults, ...JSON.parse(saved) } : defaults);
     setSettings(next);
     applySettings(next);
 
     getPublicSettings()
       .then((payload) => {
         const remote = payload.preferences ?? {};
-        const merged = { ...next, ...remote } as Settings;
+        const merged = normalizeSettings({ ...next, ...remote } as Settings);
         setSettings(merged);
         applySettings(merged);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
@@ -168,6 +165,8 @@ export function SettingsClient() {
     if (key === "theme") {
       const preset = themePresets[String(value)];
       if (preset) next = { ...next, colorPrimary: preset.primary, mode: preset.mode };
+    } else if (key === "colorPrimary") {
+      next = { ...next, colorPrimary: "#03624C" };
     }
     setSettings(next);
     applySettings(next);
@@ -175,12 +174,15 @@ export function SettingsClient() {
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    const normalized = { ...settings, colorPrimary: "#03624C" };
+    setSettings(normalized);
+    applySettings(normalized);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
     window.dispatchEvent(new Event("nodere:theme-change"));
     setStatus("Configurações salvas neste navegador.");
 
     try {
-      await savePublicSettings(settings as unknown as Record<string, unknown>);
+      await savePublicSettings(normalized as unknown as Record<string, unknown>);
       setStatus("Configurações salvas localmente e enviadas ao backend.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Configurações salvas localmente. Backend indisponível para sincronizar.");
@@ -491,18 +493,19 @@ export function SettingsClient() {
           <label className="space-y-2 text-sm text-slate-300">
             Tema
             <select value={settings.theme} onChange={(event) => update("theme", event.target.value)} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
-              {["Claro", "Grafite claro", "Vibrante claro", "Escuro", "NODERI Verde", "Vibrante NODERI", "Atlântico premium", "Azul executivo", "Executivo Escuro", "Preto absoluto", "Aço premium", "Ciano neon", "Roxo tecnológico", "Roxo SaaS", "Violeta sólido", "Magenta premium", "Verde comercial", "Verde Performance", "Esmeralda forte", "Laranja performance", "Solar executivo", "Vermelho conversão", "Alto contraste"].map((item) => <option key={item}>{item}</option>)}
+              {["Escuro", "Claro", "Sistema"].map((item) => <option key={item}>{item}</option>)}
             </select>
           </label>
           <label className="space-y-2 text-sm text-slate-300">
-            Cor principal
-            <input type="color" value={settings.colorPrimary} onChange={(event) => update("colorPrimary", event.target.value)} className="h-11 w-full rounded-lg border border-line bg-ink px-2" />
+            Cor principal oficial
+            <input type="color" value="#03624C" disabled className="h-11 w-full rounded-lg border border-line bg-ink px-2 opacity-80" />
           </label>
           <label className="space-y-2 text-sm text-slate-300">
             Modo
             <select value={settings.mode} onChange={(event) => update("mode", event.target.value as Settings["mode"])} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
               <option value="dark">Escuro</option>
               <option value="light">Claro</option>
+              <option value="system">Sistema</option>
             </select>
           </label>
           <label className="space-y-2 text-sm text-slate-300">
