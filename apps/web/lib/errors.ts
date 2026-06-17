@@ -27,7 +27,6 @@ const TECHNICAL_MARKERS = [
 
 export function getErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : typeof error === "string" ? error : "";
-  if (message) console.error("[NODERI Internal Error]:", message);
 
   if (/401|unauthorized|login obrigat|sessão expirada/i.test(message)) return ERROR_MESSAGES.AUTH_ERROR;
   if (/403|forbidden|permiss/i.test(message)) return ERROR_MESSAGES.PERMISSION_ERROR;
