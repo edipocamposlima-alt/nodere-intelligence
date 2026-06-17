@@ -66,7 +66,7 @@ function readableTextColor(hex: string) {
   const g = (int >> 8) & 255;
   const b = int & 255;
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.64 ? "#06111F" : "#FFFFFF";
+  return luminance > 0.64 ? "var(--bg-main)" : "#FFFFFF";
 }
 
 function isValidBrazilianMobile(phone?: string) {
@@ -339,7 +339,7 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
               className="crm-stage flex h-[680px] flex-col overflow-hidden rounded-xl border shadow-[0_16px_48px_rgba(0,0,0,0.22)]"
               style={{
                 borderColor: hexToRgba(stageColor, 0.56),
-                background: `linear-gradient(180deg, ${hexToRgba(stageColor, 0.18)} 0%, rgba(8,16,24,0.98) 100%)`
+                background: `linear-gradient(180deg, ${hexToRgba(stageColor, 0.18)} 0%, var(--bg-card) 100%)`
               }}
             >
               <div
@@ -360,7 +360,7 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
                         if (event.key === "Enter") void renameStage(column);
                         if (event.key === "Escape") setEditingStage(null);
                       }}
-                      className="min-w-0 flex-1 rounded-md border border-line bg-ink px-2 py-1 text-xs text-white outline-none focus:border-electric"
+                      className="min-w-0 flex-1 rounded-md border border-line bg-ink px-2 py-1 text-xs text-[var(--text-primary)] outline-none focus:border-electric"
                       autoFocus
                     />
                     <button onClick={() => void renameStage(column)} className="rounded-md bg-success p-1 text-ink" aria-label="Salvar nome da etapa">

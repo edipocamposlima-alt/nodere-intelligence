@@ -43,7 +43,7 @@ export function Sidebar() {
           <Link
             key={item.href}
             href={item.href}
-            className="group flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 text-sm text-[var(--text-secondary)] transition hover:border-[var(--brand-primary)] hover:bg-[rgba(3,98,76,0.14)] hover:text-[var(--text-primary)]"
+            className="group flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 text-sm text-[var(--text-secondary)] transition hover:border-[var(--brand-primary)] hover:bg-[var(--nav-active-bg)] hover:text-[var(--text-primary)]"
           >
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] text-[var(--text-muted)] transition group-hover:border-[var(--brand-primary)] group-hover:text-[var(--brand-glow)]">
               <item.icon className="h-4 w-4" style={{ strokeWidth: 2.4 }} />
@@ -71,7 +71,7 @@ export function Sidebar() {
         </div>
       )}
 
-      <div className="mt-4 rounded-lg border border-[rgba(3,98,76,0.35)] bg-[rgba(3,98,76,0.12)] p-4">
+      <div className="mt-4 rounded-lg border border-[var(--border-brand)] bg-[var(--nav-active-bg)] p-4">
         <ShieldCheck className="h-5 w-5 text-[var(--brand-glow)]" />
         <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">Ambiente seguro</p>
         <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">Dados isolados por workspace, APIs via backend e operação comercial protegida.</p>

@@ -13,11 +13,30 @@ const config: Config = {
         brand: {
           primary: "#03624C",
           hover: "#0A7A5F",
+          dark: "#02483A",
           active: "#024A39",
           mid: "#2A9D6A",
           glow: "#00DF82",
           "glow-soft": "#19F5A1",
           black: "#050D14"
+        },
+        bg: {
+          main: "var(--bg-main)",
+          sidebar: "var(--bg-sidebar)",
+          card: "var(--bg-card)",
+          modal: "var(--bg-modal)",
+          hover: "var(--bg-hover)",
+          input: "var(--bg-input)"
+        },
+        border: {
+          default: "var(--border-default)",
+          soft: "var(--border-soft)"
+        },
+        text: {
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          muted: "var(--text-muted)",
+          disabled: "var(--text-disabled)"
         },
         "bg-main": "var(--bg-main)",
         "bg-sidebar": "var(--bg-sidebar)",
@@ -46,12 +65,19 @@ const config: Config = {
         md: "10px",
         lg: "16px",
         xl: "20px",
-        "2xl": "28px"
+        "2xl": "28px",
+        card: "16px",
+        modal: "20px",
+        button: "10px",
+        badge: "6px",
+        input: "8px"
       },
       boxShadow: {
         card: "0 4px 24px rgba(0,0,0,0.35), 0 1px 4px rgba(0,0,0,0.25)",
+        "card-light": "0 8px 24px rgba(15, 23, 42, 0.08)",
         modal: "0 8px 48px rgba(0,0,0,0.50), 0 2px 8px rgba(0,0,0,0.35)",
         glow: "0 0 24px rgba(0,223,130,0.20)",
+        "glow-strong": "0 0 40px rgba(0,223,130,0.35)",
         "glow-sm": "0 0 12px rgba(0,223,130,0.15)",
         brand: "0 4px 16px rgba(3,98,76,0.30)"
       },

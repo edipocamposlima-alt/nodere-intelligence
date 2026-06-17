@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { AppShell } from "@/components/AppShell";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://nodere.com.br"),
@@ -55,7 +56,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var s=JSON.parse(localStorage.getItem('nodere_settings')||'{}');var t=s.theme||'Escuro';var m=s.mode||(t==='Claro'?'light':t==='Sistema'?'system':'dark');if(m==='system')m=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.dataset.theme=m;document.documentElement.classList.toggle('light',m==='light');document.documentElement.classList.toggle('dark',m!=='light');}catch(e){}`
+            __html: `try{var m=localStorage.getItem('nodere-theme');if(!m){var s=JSON.parse(localStorage.getItem('nodere_settings')||'{}');var t=s.theme||'Escuro';m=s.mode||(t==='Claro'?'light':t==='Sistema'?'system':'dark');}if(m==='system')m=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.dataset.theme=m;document.documentElement.classList.toggle('light',m==='light');document.documentElement.classList.toggle('dark',m!=='light');}catch(e){}`
           }}
         />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -69,7 +70,9 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png" />
       </head>
       <body>
-        <AppShell>{children}</AppShell>
+        <ThemeProvider>
+          <AppShell>{children}</AppShell>
+        </ThemeProvider>
       </body>
     </html>
   );

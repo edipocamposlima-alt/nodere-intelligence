@@ -4,12 +4,12 @@ import { useRouter } from "next/navigation";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 const PLAN_LABELS: Record<string, { label: string; color: string }> = {
-  trial: { label: "Trial", color: "#f59e0b" },
-  starter: { label: "Starter", color: "#6366f1" },
-  pro: { label: "Pro", color: "#3b82f6" },
-  agency: { label: "Agency", color: "#10b981" },
-  enterprise: { label: "Enterprise", color: "#8b5cf6" },
-  locked: { label: "Expirado", color: "#ef4444" }
+  trial: { label: "Trial", color: "var(--warning)" },
+  starter: { label: "Starter", color: "var(--info)" },
+  pro: { label: "Pro", color: "var(--brand-primary)" },
+  agency: { label: "Agency", color: "var(--success)" },
+  enterprise: { label: "Enterprise", color: "var(--purple)" },
+  locked: { label: "Expirado", color: "var(--danger)" }
 };
 
 export default function PlatformTopbar() {

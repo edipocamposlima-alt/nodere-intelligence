@@ -39,14 +39,14 @@ export default async function DashboardPage() {
     .slice(0, 10);
 
   const cards = [
-    { label: "Empresas encontradas", value: metrics.totalCompanies, icon: Building2, hex: "#03624C" },
-    { label: "Baixa avaliação", value: metrics.lowRating, icon: Star, hex: "#03624C" },
-    { label: "Sem site", value: metrics.withoutWebsite, icon: Globe2, hex: "#03624C" },
-    { label: "Sem Google Ads", value: metrics.withoutGoogleAds, icon: MousePointerClick, hex: "#03624C" },
-    { label: "Sem WhatsApp", value: metrics.withoutWhatsapp, icon: MessageCircle, hex: "#03624C" },
-    { label: "Sem descrição", value: metrics.withoutDescription, icon: AlertTriangle, hex: "#03624C" },
-    { label: "Sem fotos recentes", value: metrics.withoutRecentPhotos, icon: Camera, hex: "#03624C" },
-    { label: "Leads quentes", value: metrics.hotLeads, icon: TrendingUp, hex: "#03624C" }
+    { label: "Empresas encontradas", value: metrics.totalCompanies, icon: Building2, hex: "var(--brand-primary)" },
+    { label: "Baixa avaliação", value: metrics.lowRating, icon: Star, hex: "var(--warning)" },
+    { label: "Sem site", value: metrics.withoutWebsite, icon: Globe2, hex: "var(--purple)" },
+    { label: "Sem Google Ads", value: metrics.withoutGoogleAds, icon: MousePointerClick, hex: "var(--success)" },
+    { label: "Sem WhatsApp", value: metrics.withoutWhatsapp, icon: MessageCircle, hex: "var(--brand-primary)" },
+    { label: "Sem descrição", value: metrics.withoutDescription, icon: AlertTriangle, hex: "var(--danger)" },
+    { label: "Sem fotos recentes", value: metrics.withoutRecentPhotos, icon: Camera, hex: "var(--chart-neutral)" },
+    { label: "Leads quentes", value: metrics.hotLeads, icon: TrendingUp, hex: "var(--orange)" }
   ];
   const actionItems = [
     {
@@ -166,8 +166,8 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-3">
-        <DashboardBarPanel title="Leads por segmento" rows={segmentCounts} accent="#03624C" />
-        <DashboardBarPanel title="Origem dos leads" rows={originCounts} accent="#00DF82" />
+        <DashboardBarPanel title="Leads por segmento" rows={segmentCounts} accent="var(--brand-primary)" />
+        <DashboardBarPanel title="Origem dos leads" rows={originCounts} accent="var(--score-excellent)" />
         <div className="rounded-lg border border-line bg-panel/90 p-5">
           <p className="text-sm font-semibold text-white">Pipeline por etapa</p>
           <div className="mt-4 space-y-3">
@@ -238,12 +238,12 @@ export default async function DashboardPage() {
 }
 
 const STAGE_COLORS: Record<string, { solid: string; soft: string }> = {
-  "Novo Lead": { solid: "#2563EB", soft: "rgba(37,99,235,0.18)" },
-  Qualificação: { solid: "#16A34A", soft: "rgba(22,163,74,0.18)" },
-  "Em Atendimento": { solid: "#F59E0B", soft: "rgba(245,158,11,0.2)" },
-  Proposta: { solid: "#F97316", soft: "rgba(249,115,22,0.18)" },
-  Fechamento: { solid: "#7C3AED", soft: "rgba(124,58,237,0.18)" },
-  Cliente: { solid: "#03624C", soft: "rgba(3,98,76,0.18)" }
+  "Novo Lead": { solid: "var(--crm-new)", soft: "var(--crm-new-bg-dark)" },
+  Qualificação: { solid: "var(--crm-won)", soft: "var(--crm-won-bg-dark)" },
+  "Em Atendimento": { solid: "var(--crm-active)", soft: "var(--crm-active-bg-dark)" },
+  Proposta: { solid: "var(--crm-proposal)", soft: "var(--crm-proposal-bg-dark)" },
+  Fechamento: { solid: "var(--crm-qualified)", soft: "var(--crm-qualified-bg-dark)" },
+  Cliente: { solid: "var(--brand-primary)", soft: "var(--nav-active-bg)" }
 };
 
 function ConversionFunnel({ stages }: { stages: FunnelStage[] }) {
@@ -268,7 +268,7 @@ function ConversionFunnel({ stages }: { stages: FunnelStage[] }) {
           </p>
         )}
         {stages.map((stage) => {
-          const color = STAGE_COLORS[stage.stage] ?? { solid: "#03624C", soft: "rgba(3,98,76,0.18)" };
+          const color = STAGE_COLORS[stage.stage] ?? { solid: "var(--brand-primary)", soft: "var(--nav-active-bg)" };
           return (
             <div key={stage.stage} className="rounded-lg border border-line bg-ink p-4">
               <div className="flex items-center justify-between gap-3">
