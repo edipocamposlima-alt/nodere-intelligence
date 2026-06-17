@@ -43,6 +43,10 @@ export const emptyDashboard: DashboardMetrics = {
   topOpportunities: []
 };
 
+function withAuthToken(token?: string | null): RequestInit | undefined {
+  return token ? { headers: authHeaders(token) } : undefined;
+}
+
 async function api<T>(path: string, options?: RequestInit, fallback?: T): Promise<T> {
   try {
     const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
@@ -82,12 +86,12 @@ async function api<T>(path: string, options?: RequestInit, fallback?: T): Promis
   }
 }
 
-export function getDashboard() {
-  return api<DashboardMetrics>("/dashboard", undefined, emptyDashboard);
+export function getDashboard(token?: string | null) {
+  return api<DashboardMetrics>("/dashboard", withAuthToken(token), emptyDashboard);
 }
 
-export function getCompanies() {
-  return api<Company[]>("/companies");
+export function getCompanies(token?: string | null) {
+  return api<Company[]>("/companies", withAuthToken(token));
 }
 
 export function searchCompanyOptions(q: string, limit = 10) {
@@ -466,19 +470,19 @@ export function setOperatorGoals(operatorId: string, goals: Omit<OperatorGoal, "
   return api<OperatorGoal>(`/operators/${operatorId}/goals`, { method: "PUT", body: JSON.stringify(goals) });
 }
 
-export function getPipelineReport() {
-  return api<PipelineReport>("/reports/pipeline");
+export function getPipelineReport(token?: string | null) {
+  return api<PipelineReport>("/reports/pipeline", withAuthToken(token));
 }
 
-export function getForecastReport() {
-  return api<ForecastReport>("/reports/forecast");
+export function getForecastReport(token?: string | null) {
+  return api<ForecastReport>("/reports/forecast", withAuthToken(token));
 }
 
 export function getMonthlyTrends() {
   return api<MonthlyTrend[]>("/reports/trends", undefined, []);
 }
 
-export function getReportSummary(period = "30d") {
+export function getReportSummary(period = "30d", token?: string | null) {
   return api<{
     total_companies: number;
     total_leads_in_crm: number;
@@ -487,7 +491,7 @@ export function getReportSummary(period = "30d") {
     credits_used: number;
     new_this_period: number;
     funnel?: Array<{ stage: string; count: number; conversion_from_prev: number }>;
-  }>(`/reports/summary?period=${encodeURIComponent(period)}`);
+  }>(`/reports/summary?period=${encodeURIComponent(period)}`, withAuthToken(token));
 }
 
 export function getReportFunnel(period = "30d") {

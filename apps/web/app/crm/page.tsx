@@ -1,10 +1,12 @@
 import { getCompanies } from "@/lib/api";
+import { getServerSessionToken } from "@/lib/serverSession";
 import { CrmSwitcher } from "./CrmSwitcher";
 
 export const dynamic = "force-dynamic";
 
 export default async function CrmPage() {
-  const { companies, error } = await getCompanies()
+  const sessionToken = await getServerSessionToken();
+  const { companies, error } = await getCompanies(sessionToken)
     .then((companies) => ({ companies, error: "" }))
     .catch((error) => ({
       companies: [],

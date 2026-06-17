@@ -323,15 +323,16 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
               }}
               className="flex h-[680px] flex-col overflow-hidden rounded-xl border shadow-[0_16px_48px_rgba(0,0,0,0.22)]"
               style={{
-                borderColor: hexToRgba(stageColor, 0.88),
-                background: `linear-gradient(180deg, ${hexToRgba(stageColor, 0.18)} 0%, ${hexToRgba(stageColor, 0.08)} 100%)`
+                borderColor: hexToRgba(stageColor, 0.56),
+                background: "linear-gradient(180deg, rgba(17,24,39,0.96) 0%, rgba(8,16,24,0.98) 100%)"
               }}
             >
               <div
-                className="rounded-t-xl border-b border-white/20 px-3 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)]"
+                className="rounded-t-xl border-b px-3 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)]"
                 style={{
-                  backgroundColor: stageColor,
-                  color: stageTextColor
+                  background: `linear-gradient(180deg, ${hexToRgba(stageColor, 0.24)} 0%, rgba(17,24,39,0.92) 100%)`,
+                  borderColor: hexToRgba(stageColor, 0.42),
+                  color: "#FFFFFF"
                 }}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -358,7 +359,7 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
                   <h3 className="min-w-0 truncate text-sm font-black text-white">{column}</h3>
                 )}
                 <div className="flex items-center gap-2">
-                  <span className="rounded-md bg-white/25 px-2 py-1 text-xs font-black" style={{ color: stageTextColor }}>{leads.length}</span>
+                  <span className="rounded-md px-2 py-1 text-xs font-black" style={{ color: stageColor, backgroundColor: hexToRgba(stageColor, 0.16) }}>{leads.length}</span>
                   <input
                     type="color"
                     value={stageColor}

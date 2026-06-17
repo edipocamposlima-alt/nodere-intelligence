@@ -12,7 +12,7 @@ import { useCredits } from "@/context/CreditsProvider";
 type CompanyListItem = { id: string; name: string };
 type TaskItem = { id: string; title: string; dueAt?: string; status: string; companyId: string; companyName: string };
 type UserPrefs = {
-  theme: "dark" | "light";
+  theme: "dark" | "light" | "system";
   fontSize: "small" | "normal" | "large";
   density: "compact" | "comfortable" | "large";
   avatarUrl: string;
@@ -44,11 +44,22 @@ function readPrefs(): UserPrefs {
 function applyPrefs(prefs: UserPrefs) {
   if (typeof window === "undefined") return;
   const root = document.documentElement;
-  root.dataset.theme = prefs.theme;
+  const resolvedTheme = prefs.theme === "system"
+    ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
+    : prefs.theme;
+  root.dataset.theme = resolvedTheme;
+  root.classList.toggle("light", resolvedTheme === "light");
+  root.classList.toggle("dark", resolvedTheme === "dark");
   root.dataset.fontSize = prefs.fontSize;
   root.dataset.density = prefs.density;
   const currentSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...currentSettings, mode: prefs.theme, layoutDensity: prefs.density }));
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+    ...currentSettings,
+    theme: prefs.theme === "system" ? "Sistema" : prefs.theme === "light" ? "Claro" : "Escuro",
+    mode: prefs.theme,
+    layoutDensity: prefs.density,
+    colorPrimary: "#03624C"
+  }));
   localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
   window.dispatchEvent(new Event("nodere:theme-change"));
 }
@@ -115,10 +126,12 @@ export function Header() {
     let cancelled = false;
     async function loadTasks() {
       try {
-        const companies = (await fetch(`${API_URL}/companies`, { cache: "no-store" }).then((res) => res.json())) as CompanyListItem[];
+        const token = localStorage.getItem("nodere_admin_token") || "";
+        const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+        const companies = (await fetch(`${API_URL}/companies`, { cache: "no-store", headers }).then((res) => res.ok ? res.json() : [])) as CompanyListItem[];
         const taskGroups = await Promise.all(
           companies.slice(0, 80).map(async (company) => {
-            const companyTasks = await fetch(`${API_URL}/companies/${company.id}/tasks`, { cache: "no-store" }).then((res) => res.ok ? res.json() : []);
+            const companyTasks = await fetch(`${API_URL}/companies/${company.id}/tasks`, { cache: "no-store", headers }).then((res) => res.ok ? res.json() : []);
             return (companyTasks as TaskItem[]).map((task) => ({ ...task, companyName: company.name }));
           })
         );
@@ -307,6 +320,7 @@ export function Header() {
                 <select value={prefs.theme} onChange={(event) => updatePrefs({ theme: event.target.value as UserPrefs["theme"] })} className="mt-2 min-h-11 w-full rounded-lg border border-line bg-ink px-3 text-sm outline-none">
                   <option value="dark">Escuro</option>
                   <option value="light">Claro</option>
+                  <option value="system">Sistema</option>
                 </select>
               </label>
               <label className="block">
@@ -335,9 +349,14 @@ export function Header() {
               </label>
             </div>
 
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-5 flex flex-wrap justify-between gap-2">
+              <button type="button" onClick={logout} className="rounded-lg border border-danger/40 bg-danger/10 px-4 py-2 text-sm font-semibold text-danger hover:bg-danger/15">
+                Sair
+              </button>
+              <div className="flex gap-2">
               <button type="button" onClick={() => updatePrefs({ ...defaultPrefs, avatarUrl })} className="btn-secondary-action px-4 py-2 text-sm">Restaurar</button>
               <button type="button" onClick={() => setShowPrefsModal(false)} className="btn-action px-4 py-2 text-sm">Salvar</button>
+              </div>
             </div>
           </section>
         </div>

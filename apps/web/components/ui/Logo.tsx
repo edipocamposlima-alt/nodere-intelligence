@@ -11,7 +11,7 @@ const SIZES = {
   sm: { icon: 28, height: 18 },
   md: { icon: 36, height: 22 },
   lg: { icon: 48, height: 30 },
-  xl: { icon: 64, height: 40 }
+  xl: { icon: 96, height: 74 }
 };
 
 export function Logo({ variant = "full", size = "md", className = "" }: LogoProps) {

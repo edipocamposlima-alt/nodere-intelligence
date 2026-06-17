@@ -1,5 +1,6 @@
 import { CompanyTable } from "@/components/CompanyTable";
 import { getCompanies } from "@/lib/api";
+import { getServerSessionToken } from "@/lib/serverSession";
 import { ManualCompanyForm } from "./ManualCompanyForm";
 
 export const dynamic = "force-dynamic";
@@ -7,7 +8,8 @@ export const dynamic = "force-dynamic";
 export default async function CompaniesPage({ searchParams }: { searchParams?: Promise<{ q?: string }> }) {
   const params = await searchParams;
   const query = typeof params?.q === "string" ? params.q : "";
-  const { companies, error } = await getCompanies()
+  const sessionToken = await getServerSessionToken();
+  const { companies, error } = await getCompanies(sessionToken)
     .then((companies) => ({ companies, error: "" }))
     .catch((error) => ({
       companies: [],

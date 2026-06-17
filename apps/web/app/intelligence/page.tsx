@@ -1,11 +1,13 @@
 import { AlertTriangle, CheckCircle2, TrendingUp, Zap } from "lucide-react";
 import { getCompanies } from "@/lib/api";
+import { getServerSessionToken } from "@/lib/serverSession";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function IntelligencePage() {
-  const { companies, error } = await getCompanies()
+  const sessionToken = await getServerSessionToken();
+  const { companies, error } = await getCompanies(sessionToken)
     .then((companies) => ({ companies, error: "" }))
     .catch((error) => ({
       companies: [],

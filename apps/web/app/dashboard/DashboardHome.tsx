@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AlertTriangle, Building2, Camera, Globe2, KanbanSquare, MessageCircle, MousePointerClick, Search, Star, TrendingUp } from "lucide-react";
 import { CompanyTable } from "@/components/CompanyTable";
 import { getCompanies, getDashboard, getOnboardingStatus, getReportSummary } from "@/lib/api";
+import { getServerSessionToken } from "@/lib/serverSession";
 import { OnboardingBanner } from "./OnboardingBanner";
 
 export const dynamic = "force-dynamic";
@@ -10,14 +11,15 @@ export const dynamic = "force-dynamic";
 type FunnelStage = { stage: string; count: number; conversion_from_prev: number };
 
 export default async function DashboardPage() {
+  const sessionToken = await getServerSessionToken();
   const [metrics, companiesResult, onboardingStatus, reportSummary] = await Promise.all([
-    getDashboard(),
-    getCompanies().then((companies) => ({ companies, error: "" })).catch((error) => ({
+    getDashboard(sessionToken),
+    getCompanies(sessionToken).then((companies) => ({ companies, error: "" })).catch((error) => ({
       companies: [],
       error: error instanceof Error ? error.message : "Não foi possível carregar leads persistidos."
     })),
     getOnboardingStatus().catch(() => null),
-    getReportSummary().catch(() => null)
+    getReportSummary("30d", sessionToken).catch(() => null)
   ]);
   const companies = companiesResult.companies;
   const segmentCounts = groupAndSort(companies.map((company) => company.category || "Sem segmento")).slice(0, 6);
@@ -38,13 +40,13 @@ export default async function DashboardPage() {
 
   const cards = [
     { label: "Empresas encontradas", value: metrics.totalCompanies, icon: Building2, hex: "#03624C" },
-    { label: "Baixa avaliação", value: metrics.lowRating, icon: Star, hex: "#F59E0B" },
-    { label: "Sem site", value: metrics.withoutWebsite, icon: Globe2, hex: "#7C3AED" },
-    { label: "Sem Google Ads", value: metrics.withoutGoogleAds, icon: MousePointerClick, hex: "#16A34A" },
+    { label: "Baixa avaliação", value: metrics.lowRating, icon: Star, hex: "#03624C" },
+    { label: "Sem site", value: metrics.withoutWebsite, icon: Globe2, hex: "#03624C" },
+    { label: "Sem Google Ads", value: metrics.withoutGoogleAds, icon: MousePointerClick, hex: "#03624C" },
     { label: "Sem WhatsApp", value: metrics.withoutWhatsapp, icon: MessageCircle, hex: "#03624C" },
-    { label: "Sem descrição", value: metrics.withoutDescription, icon: AlertTriangle, hex: "#DC2626" },
-    { label: "Sem fotos recentes", value: metrics.withoutRecentPhotos, icon: Camera, hex: "#64748B" },
-    { label: "Leads quentes", value: metrics.hotLeads, icon: TrendingUp, hex: "#F97316" }
+    { label: "Sem descrição", value: metrics.withoutDescription, icon: AlertTriangle, hex: "#03624C" },
+    { label: "Sem fotos recentes", value: metrics.withoutRecentPhotos, icon: Camera, hex: "#03624C" },
+    { label: "Leads quentes", value: metrics.hotLeads, icon: TrendingUp, hex: "#03624C" }
   ];
   const actionItems = [
     {
@@ -78,10 +80,12 @@ export default async function DashboardPage() {
           <strong>Persistência precisa de atenção:</strong> {companiesResult.error}
         </div>
       )}
-      <section className="rounded-lg border border-electric/25 bg-panel/90 p-5 shadow-glow">
-        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-          <div>
-            <Image src="/logo-noderi-full.png" alt="NODERI Nexus" width={360} height={120} priority className="h-auto w-full max-w-sm rounded-xl object-contain" />
+      <section className="rounded-lg border border-electric/25 bg-panel/90 p-6 shadow-glow">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="dashboard-brand-logo inline-flex rounded-2xl border border-electric/30 bg-ink/75 p-4 shadow-[0_0_34px_rgba(0,223,130,0.18)]">
+              <Image src="/logo-noderi-full.png" alt="NODERI Nexus" width={560} height={190} priority className="h-auto w-full max-w-xl object-contain" />
+            </div>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
               Central comercial para busca de empresas, CRM, funil, WhatsApp, propostas e inteligência operacional.
             </p>
@@ -104,8 +108,8 @@ export default async function DashboardPage() {
           <div key={card.label} className="metric-card rounded-lg border border-line bg-panel/90 p-4 transition hover:-translate-y-0.5 hover:border-cyan/60 hover:shadow-[0_12px_32px_rgba(34,211,238,0.12)]">
             <div className="flex items-center justify-between">
               <p className="text-sm text-slate-400">{card.label}</p>
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 shadow-[0_0_22px_rgba(0,223,130,0.16)]" style={{ backgroundColor: card.hex }}>
-                <card.icon className="h-5 w-5 text-white drop-shadow" style={{ strokeWidth: 2.9 }} />
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-electric/25 bg-electric/10 text-cyan shadow-[0_0_22px_rgba(0,223,130,0.12)]" style={{ color: card.hex }}>
+                <card.icon className="h-5 w-5 drop-shadow" style={{ strokeWidth: 2.9 }} />
               </span>
             </div>
             <p className="mt-3 text-3xl font-semibold text-white">{card.value}</p>

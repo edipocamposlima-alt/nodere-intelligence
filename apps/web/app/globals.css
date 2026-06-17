@@ -1436,6 +1436,13 @@ body {
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
 }
 
+:root[data-theme="light"] .sidebar-logo a,
+:root[data-theme="light"] .dashboard-brand-logo {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+  border-color: rgba(3, 98, 76, 0.24);
+  box-shadow: 0 16px 44px rgba(3, 98, 76, 0.14);
+}
+
 :root[data-theme="light"] svg.text-cyan,
 :root[data-theme="light"] .text-cyan {
   color: var(--nodere-primary);
@@ -1649,7 +1656,7 @@ body {
 }
 
 .crm-stage-scroll::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #94a3b8, #38bdf8);
+  background: linear-gradient(180deg, #03624C, #00DF82);
   border-radius: 999px;
   border: 2px solid rgba(15, 23, 42, 0.22);
 }
@@ -1776,21 +1783,21 @@ textarea {
 :root[data-theme="light"] .text-cyan,
 :root[data-theme="light"] svg.text-cyan,
 :root[data-theme="light"] .hover\:text-cyan:hover {
-  color: #075985;
+  color: #03624C;
 }
 
 :root[data-theme="light"] .bg-cyan\/10,
 :root[data-theme="light"] .bg-electric\/10,
 :root[data-theme="light"] .bg-success\/10,
 :root[data-theme="light"] .bg-warning\/10 {
-  background-color: rgba(37, 99, 235, 0.12);
+  background-color: rgba(3, 98, 76, 0.10);
 }
 
 :root[data-theme="light"] .border-cyan\/40,
 :root[data-theme="light"] .border-electric\/30,
 :root[data-theme="light"] .border-success\/30,
 :root[data-theme="light"] .border-warning\/40 {
-  border-color: rgba(37, 99, 235, 0.55);
+  border-color: rgba(3, 98, 76, 0.40);
 }
 
 :root[data-theme="light"] .shadow-glow {
@@ -3076,19 +3083,20 @@ textarea {
 }
 
 .sidebar-logo {
-  padding: 24px 18px;
+  padding: 20px 12px 24px;
   border-bottom: 1px solid var(--border-soft);
 }
 
 .sidebar-logo a {
   align-items: center;
-  background: var(--bg-card);
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.96), rgba(8, 16, 24, 0.98));
   border: 1px solid var(--border-soft);
-  border-radius: 12px;
+  border-radius: 16px;
   display: flex;
   justify-content: center;
-  min-height: 76px;
-  padding: 12px;
+  min-height: 112px;
+  padding: 16px;
+  box-shadow: 0 18px 46px rgba(0, 223, 130, 0.14);
   font-weight: 900;
   letter-spacing: -0.02em;
 }
@@ -4274,5 +4282,5 @@ body {
 .sidebar-logo img,
 .site-footer__brand,
 .site-logo {
-  filter: drop-shadow(0 0 16px rgba(0, 223, 130, 0.18));
+  filter: drop-shadow(0 0 18px rgba(0, 223, 130, 0.24));
 }
