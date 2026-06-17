@@ -38,7 +38,7 @@ export function RichTextEditor({ value, onChange, minHeight = 220, placeholder }
         <button type="button" onClick={() => line("1. ")} className="nodere-doc-tool" title="Lista numerada"><ListOrdered className="h-4 w-4" /></button>
         <button type="button" onClick={() => line("> ", "citação")} className="nodere-doc-tool" title="Citação"><Quote className="h-4 w-4" /></button>
         <span className="mx-1 h-6 w-px bg-slate-200" />
-        <button type="button" onClick={() => wrap('<span style="color:#03624C">', "</span>", "texto verde NODERE")} className="nodere-doc-tool" title="Cor NODERE"><Palette className="h-4 w-4" /></button>
+        <button type="button" onClick={() => wrap('<span style="color:#03624C">', "</span>", "texto verde NODERI")} className="nodere-doc-tool" title="Cor NODERI"><Palette className="h-4 w-4" /></button>
         <button type="button" onClick={() => wrap('<mark style="background:#DDFBEF;color:#06111F">', "</mark>", "destaque")} className="nodere-doc-tool" title="Destacar"><Highlighter className="h-4 w-4" /></button>
         <button type="button" onClick={() => wrap("[", "](https://)", "link")} className="nodere-doc-tool" title="Link"><Link className="h-4 w-4" /></button>
         <button type="button" onClick={() => line("---", "")} className="nodere-doc-tool" title="Linha divisória"><AlignLeft className="h-4 w-4" /></button>

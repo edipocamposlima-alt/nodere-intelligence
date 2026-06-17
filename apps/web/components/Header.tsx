@@ -6,6 +6,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { Bell, CreditCard, Download, Search, X } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { getInboxUnreadCount } from "@/lib/api";
+import { getPageTitle } from "@/lib/page-titles";
 import { useAuth } from "@/context/AuthProvider";
 import { useCredits } from "@/context/CreditsProvider";
 
@@ -71,31 +72,14 @@ export function Header() {
   const [prefs, setPrefs] = useState<UserPrefs>(defaultPrefs);
   const [globalQuery, setGlobalQuery] = useState("");
   const [unreadInbox, setUnreadInbox] = useState(0);
-  const [brandName, setBrandName] = useState("NODERE Nexus");
+  const [brandName, setBrandName] = useState("NODERI Nexus");
   const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
   const pathname = usePathname();
   const router = useRouter();
   const { user, workspace, logout } = useAuth();
   const { credits } = useCredits();
 
-  const pageTitle = useMemo(() => {
-    const path = pathname || "/";
-    if (path.startsWith("/searches") || path.startsWith("/busca-de-empresas")) return "Busca de empresas";
-    if (path.startsWith("/companies")) return "Ficha 360° da empresa";
-    if (path.startsWith("/crm") || path.startsWith("/pipeline")) return "CRM Comercial";
-    if (path.startsWith("/reports") || path.startsWith("/relatorios")) return "Relatórios executivos";
-    if (path.startsWith("/integrations") || path.startsWith("/integracoes")) return "Integrações";
-    if (path.startsWith("/operators")) return "Operadores";
-    if (path.startsWith("/manual") || path.startsWith("/ajuda") || path.startsWith("/help")) return "Ajuda / Manual";
-    if (path.startsWith("/settings") || path.startsWith("/configuracoes")) return "Configurações";
-    if (path.startsWith("/admin")) return "Administrador";
-    if (path.startsWith("/intelligence") || path.startsWith("/ia")) return "Inteligência comercial";
-    if (path.startsWith("/inbox")) return "Caixa de entrada";
-    if (path.startsWith("/calendar") || path.startsWith("/calendario")) return "Calendário comercial";
-    if (path.startsWith("/marketing")) return "Marketing";
-    if (path.startsWith("/billing")) return "Faturamento";
-    return "Dashboard Executivo";
-  }, [pathname]);
+  const pageTitle = useMemo(() => getPageTitle(pathname || "/"), [pathname]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -117,7 +101,7 @@ export function Header() {
         }
         if (brand?.primaryColor) document.documentElement.style.setProperty("--color-primary", brand.primaryColor);
       } catch {
-        // Keep NODERE default branding.
+        // Keep NODERI default branding.
       }
     }
     if (typeof window !== "undefined") void loadBranding();
@@ -222,7 +206,7 @@ export function Header() {
       setInstallPrompt(null);
       return;
     }
-    alert("Para instalar o app NODERE Nexus, abra o menu do navegador e selecione 'Instalar app' ou 'Adicionar à tela inicial'.");
+    alert("Para instalar o app NODERI Nexus, abra o menu do navegador e selecione 'Instalar app' ou 'Adicionar à tela inicial'.");
   }
 
   return (
@@ -266,7 +250,7 @@ export function Header() {
             type="button"
             onClick={() => void installApp()}
             className="hidden items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 text-xs font-semibold text-[var(--text-primary)] hover:border-electric/60 hover:bg-electric/10 md:inline-flex"
-            title="Instalar aplicativo NODERE Nexus"
+            title="Instalar aplicativo NODERI Nexus"
           >
             <Download className="h-4 w-4" />
             App

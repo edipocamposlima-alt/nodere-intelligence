@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { getApiBaseUrl } from "@/lib/apiBase";
+
+const API_URL = getApiBaseUrl();
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "https://qhopjggnbzewuuktqntp.supabase.co",
@@ -33,7 +36,7 @@ export default function SettingsWorkspace() {
       try {
         const { data } = await supabase.auth.getSession();
         const token = data.session?.access_token || localStorage.getItem("nodere_admin_token") || "";
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings`, {
+        const res = await fetch(`${API_URL}/api/settings`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const payload = await res.json().catch(() => ({}));
@@ -59,7 +62,7 @@ export default function SettingsWorkspace() {
     try {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token || localStorage.getItem("nodere_admin_token") || "";
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/workspace`, {
+      const res = await fetch(`${API_URL}/api/settings/workspace`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(form)

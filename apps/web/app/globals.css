@@ -4030,7 +4030,7 @@ textarea {
   }
 }
 /* ================================================================
-   NODERE NEXUS — DESIGN SYSTEM v2.0
+   NODERI NEXUS — DESIGN SYSTEM v2.0
    Camada oficial de identidade visual preservando compatibilidade
    com classes legadas já usadas na plataforma.
    ================================================================ */
@@ -4285,7 +4285,7 @@ body {
   filter: drop-shadow(0 0 18px rgba(0, 223, 130, 0.24));
 }
 
-/* NODERE visual stabilization: cropped official logos now fill the available
+/* NODERI visual stabilization: cropped official logos now fill the available
    brand surfaces without forcing bigger cards or dashboard containers. */
 .sidebar a:has(img[src*="logo-noderi-full"]),
 .sidebar-logo a,

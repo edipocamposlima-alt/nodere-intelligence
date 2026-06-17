@@ -14,10 +14,10 @@ function missingSupabaseAuthVars() {
 
 export function assertSupabaseAuthConfig() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    throw new Error("[NODERI] NEXT_PUBLIC_SUPABASE_URL is not set. Check your environment variables.");
+    throw new Error("Cadastro temporariamente indisponível. Tente novamente em instantes.");
   }
   if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    throw new Error("[NODERI] NEXT_PUBLIC_SUPABASE_ANON_KEY is not set. Check your environment variables.");
+    throw new Error("Cadastro temporariamente indisponível. Tente novamente em instantes.");
   }
 }
 

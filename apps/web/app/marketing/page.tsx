@@ -1,7 +1,7 @@
 import { MarketingClient } from "./MarketingClient";
 
 export const metadata = {
-  title: "Marketing | NODERE"
+  title: "Marketing | NODERI"
 };
 
 export default function MarketingPage() {

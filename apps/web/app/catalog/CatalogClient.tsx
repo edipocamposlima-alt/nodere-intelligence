@@ -10,6 +10,7 @@ export function CatalogClient() {
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<"list" | "create">("list");
 
   useEffect(() => {
     refresh();
@@ -86,6 +87,7 @@ export function CatalogClient() {
       });
       event.currentTarget.reset();
       await refresh();
+      setView("list");
       setMessage("Item salvo no catálogo.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Falha ao salvar item.");
@@ -95,15 +97,27 @@ export function CatalogClient() {
   return (
     <main className="space-y-6">
       <section className="rounded-2xl border border-line bg-panel/90 p-6 shadow-glow">
-        <p className="flex items-center gap-2 text-sm font-semibold text-cyan">
-          <PackageOpen className="h-4 w-4" />
-          Catálogo comercial
-        </p>
-        <h1 className="mt-2 text-2xl font-black text-white">Produtos e serviços</h1>
-        <p className="text-sm text-slate-300">Cadastre ofertas reais para usar em propostas, contratos e IA comercial.</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="flex items-center gap-2 text-sm font-semibold text-cyan">
+              <PackageOpen className="h-4 w-4" />
+              Catálogo comercial
+            </p>
+            <h1 className="mt-2 text-2xl font-black text-[var(--text-primary)]">Produtos e serviços</h1>
+            <p className="text-sm text-[var(--text-secondary)]">Cadastre ofertas reais para usar em propostas, contratos e IA comercial.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setView(view === "create" ? "list" : "create")}
+            className={view === "create" ? "btn-secondary-action px-4 py-2 text-sm" : "btn-action px-4 py-2 text-sm"}
+          >
+            <Plus className="h-4 w-4" />
+            {view === "create" ? "Voltar para lista" : "Novo item"}
+          </button>
+        </div>
       </section>
 
-      <form onSubmit={onSubmit} className="space-y-5 rounded-2xl border border-line bg-panel/80 p-4">
+      {view === "create" && <form onSubmit={onSubmit} className="space-y-5 rounded-2xl border border-line bg-panel/80 p-4">
         <CatalogSection title="1. Identificação">
           <Input name="code" label="Código opcional" placeholder="SRV-0001, PRD-0001 ou MKT-0025" />
           <label className="block">
@@ -188,7 +202,7 @@ export function CatalogClient() {
           <Plus className="h-4 w-4" />
           Salvar item
         </button>
-      </form>
+      </form>}
 
       {message && <p className="rounded-lg border border-cyan/30 bg-cyan/10 px-4 py-3 text-sm text-cyan">{message}</p>}
 
@@ -199,7 +213,15 @@ export function CatalogClient() {
         {loading ? (
           <p className="p-4 text-sm text-slate-400">Carregando...</p>
         ) : items.length === 0 ? (
-          <p className="p-4 text-sm text-slate-400">Nenhum item cadastrado.</p>
+          <div className="p-8 text-center">
+            <PackageOpen className="mx-auto h-9 w-9 text-cyan" />
+            <p className="mt-3 text-sm font-semibold text-[var(--text-primary)]">Nenhum item cadastrado.</p>
+            <p className="mt-1 text-xs text-[var(--text-secondary)]">Crie o primeiro produto ou serviço para usar em propostas, contratos e IA.</p>
+            <button type="button" onClick={() => setView("create")} className="btn-action mx-auto mt-4 px-4 py-2 text-sm">
+              <Plus className="h-4 w-4" />
+              Criar primeiro item
+            </button>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-sm">

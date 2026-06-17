@@ -1,4 +1,4 @@
--- NODERE Nexus - RLS complementar para persistencia multi-tenant
+-- NODERI Nexus - RLS complementar para persistencia multi-tenant
 -- Aplicar no Supabase SQL Editor depois do schema principal.
 -- Seguro para reexecucao: nao usa DROP TABLE nem DROP COLUMN.
 

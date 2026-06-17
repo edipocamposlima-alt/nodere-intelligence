@@ -11,7 +11,7 @@ router.get("/export", requireWorkspaceRole("owner", "admin"), async (req, res, n
   try {
     const workspaceId = getRequestWorkspaceId(req);
     const payload = {
-      app: "NODERE Nexus",
+      app: "NODERI Nexus",
       workspaceId,
       exportedAt: new Date().toISOString(),
       companies: await listCompaniesAsync(workspaceId),

@@ -15,7 +15,7 @@ const systemTemplates = [
     workspace_id: null,
     service_type: "Google Ads",
     name: "Gestão Google Ads",
-    content: "# Proposta Google Ads para {{company}}\n\nCidade: {{city}}\nSegmento: {{segment}}\nScore NODERE: {{score}}\n\nRecomendamos uma operação inicial de campanhas de pesquisa local, extensões de chamada e otimização semanal orientada por conversões.",
+    content: "# Proposta Google Ads para {{company}}\n\nCidade: {{city}}\nSegmento: {{segment}}\nScore NODERI: {{score}}\n\nRecomendamos uma operação inicial de campanhas de pesquisa local, extensões de chamada e otimização semanal orientada por conversões.",
     variables: ["company", "city", "segment", "score", "phone", "website", "google_rating"]
   },
   {
@@ -46,7 +46,7 @@ const systemTemplates = [
     id: "system-complete",
     workspace_id: null,
     service_type: "Complete Package",
-    name: "Pacote Completo NODERE",
+    name: "Pacote Completo NODERI",
     content: "# Plano completo para {{company}}\n\nInclui Google Meu Negócio, Google Ads, landing page, rastreamento e acompanhamento comercial para {{segment}} em {{city}}.",
     variables: ["company", "city", "segment", "score", "phone", "website", "google_rating"]
   }
@@ -144,7 +144,7 @@ router.post("/generate", async (req, res, next) => {
       google_rating: lead.rating ? String(lead.rating) : ""
     });
     if (body.enhance) {
-      const ai = await callAI("Você é consultor comercial NODERE. Melhore a proposta mantendo dados reais e tom profissional.", rendered);
+      const ai = await callAI("Você é consultor comercial NODERI. Melhore a proposta mantendo dados reais e tom profissional.", rendered);
       rendered = ai.content;
     }
     logRequestMetric(req, "proposal_generated", lead.id, {

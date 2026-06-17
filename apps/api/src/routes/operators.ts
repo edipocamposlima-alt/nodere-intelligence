@@ -28,7 +28,7 @@ router.post("/invite", requireWorkspaceRole("owner", "admin"), async (req: Reque
   try {
     const { email, name, password } = req.body;
     if (!email) return res.status(400).json({ message: "email obrigatório" });
-    const generatedPassword = password || `Nodere@${Math.random().toString(36).slice(2, 8)}`;
+    const generatedPassword = password || `Noderi@${Math.random().toString(36).slice(2, 8)}`;
     const user = await createWorkspaceUser(getRequestWorkspaceId(req), {
       name: name || String(email).split("@")[0],
       email,

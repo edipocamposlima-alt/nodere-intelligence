@@ -5,7 +5,7 @@ import { CalendarClock, Copy, Download, Eye, FileText, ImageIcon, MessageCircle,
 import { Company } from "@/lib/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { createCalendarEvent, updateCompany as saveCompanyData } from "@/lib/api";
-import { downloadNoderePdf } from "@/lib/pdf";
+import { downloadNoderiPdf } from "@/lib/pdf";
 import { RichTextEditor, RichTextPreview } from "@/components/RichTextEditor";
 import { CompanyMiniCalendar } from "@/app/calendar/CalendarClient";
 
@@ -323,7 +323,7 @@ export function LeadOperations({ company }: { company: Company }) {
         });
       }
       if ("Notification" in window && Notification.permission === "granted") {
-        new Notification("Follow-up criado no NODERE", { body: `${task.title} · ${company.name}` });
+        new Notification("Follow-up criado no NODERI", { body: `${task.title} · ${company.name}` });
       } else if ("Notification" in window && Notification.permission === "default") {
         void Notification.requestPermission();
       }
@@ -545,7 +545,7 @@ export function LeadOperations({ company }: { company: Company }) {
   }
 
   async function downloadPdf(title: string, content: string, fileName?: string) {
-    await downloadNoderePdf({
+    await downloadNoderiPdf({
       title,
       subtitle: `${lead.name} · ${lead.category || "Sem segmento"}`,
       body: content,
@@ -779,7 +779,7 @@ export function LeadOperations({ company }: { company: Company }) {
               <input type="hidden" name="body" value={emailBody || editor} />
               <RichTextEditor value={emailBody || editor} onChange={setEmailBody} minHeight={170} placeholder="Mensagem" />
               <button className="inline-flex items-center gap-2 rounded-lg bg-cyan px-4 py-2 text-sm font-semibold text-ink"><MessageCircle className="h-4 w-4" />Enviar e registrar</button>
-              <p className="text-xs text-slate-400">Se SMTP não estiver configurado no Render, o backend retorna aviso claro e nada é enviado.</p>
+              <p className="text-xs text-slate-400">Se o envio real ainda não estiver ativo, o sistema retorna um aviso claro e nada é enviado.</p>
             </form>
           </div>
           <div className="space-y-3">

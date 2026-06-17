@@ -63,7 +63,7 @@ const priorityAliases: Record<string, string> = { high: "alta", medium: "media",
 const messages = {
   today: "Hoje",
   previous: "Anterior",
-  next: "Proximo",
+  next: "Próximo",
   month: "Mes",
   week: "Semana",
   day: "Dia",
@@ -160,7 +160,7 @@ export function CalendarClient({
         const delay = new Date(event.reminder_at || "").getTime() - Date.now();
         if (delay <= 0 || delay > 2147483647) return null;
         return window.setTimeout(() => {
-          new Notification("Lembrete NODERE", { body: `${event.title} · ${new Date(event.start_at).toLocaleString("pt-BR")}` });
+          new Notification("Lembrete NODERI", { body: `${event.title} · ${new Date(event.start_at).toLocaleString("pt-BR")}` });
         }, delay);
       })
       .filter((timer): timer is number => timer !== null);
@@ -278,7 +278,7 @@ export function CalendarClient({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="flex items-center gap-2 text-sm font-semibold text-cyan"><CalendarDays className="h-4 w-4" /> Calendario comercial</p>
-              <h1 className="mt-2 text-2xl font-black text-white">Agenda central NODERE</h1>
+              <h1 className="mt-2 text-2xl font-black text-white">Agenda central NODERI</h1>
               <p className="text-sm text-slate-300">Visoes de mes, semana, dia e agenda com filtros por lead, operador, tipo e status.</p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -298,7 +298,7 @@ export function CalendarClient({
       {!compact && (
         <section className="grid gap-4 md:grid-cols-3">
           <Metric label="Eventos carregados" value={events.length} />
-          <Metric label="Proximos compromissos" value={upcoming.length} />
+          <Metric label="Próximos compromissos" value={upcoming.length} />
           <Metric label="Pendentes vencidos" value={overdue.length} tone={overdue.length ? "danger" : "default"} />
         </section>
       )}
@@ -350,7 +350,7 @@ export function CalendarClient({
       </section>
 
       <section className="rounded-2xl border border-line bg-panel/80 p-4">
-        <h3 className="font-bold text-white">{compact ? "Timeline do lead" : "Proximos eventos"}</h3>
+        <h3 className="font-bold text-white">{compact ? "Timeline do lead" : "Próximos eventos"}</h3>
         <div className="mt-3 space-y-2">
           {upcoming.length === 0 && <p className="text-sm text-slate-400">Nenhum proximo evento.</p>}
           {upcoming.map((event) => {

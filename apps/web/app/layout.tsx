@@ -7,14 +7,14 @@ import { AppShell } from "@/components/AppShell";
 export const metadata: Metadata = {
   metadataBase: new URL("https://nodere.com.br"),
   title: {
-    default: "NODERE Nexus — Revenue Intelligence Platform",
-    template: "%s | NODERE Nexus"
+    default: "NODERI Nexus — Revenue Intelligence Platform",
+    template: "%s | NODERI Nexus"
   },
   description: "Encontre empresas que precisam dos seus serviços. Diagnóstico digital automático, CRM com IA e prospecção inteligente em um único fluxo.",
-  applicationName: "NODERE Nexus",
-  authors: [{ name: "NODERE" }],
-  creator: "NODERE",
-  publisher: "NODERE",
+  applicationName: "NODERI Nexus",
+  authors: [{ name: "NODERI" }],
+  creator: "NODERI",
+  publisher: "NODERI",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
@@ -26,17 +26,17 @@ export const metadata: Metadata = {
     other: [{ rel: "mask-icon", url: "/logo-noderi-icon.png", color: "#03624C" }]
   },
   openGraph: {
-    title: "NODERE Nexus — Revenue Intelligence Platform",
+    title: "NODERI Nexus — Revenue Intelligence Platform",
     description: "A plataforma que conecta inteligência comercial, prospecção e vendas em um único fluxo.",
     url: "https://nodere.com.br",
-    siteName: "NODERE Nexus",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "NODERE Nexus" }],
+    siteName: "NODERI Nexus",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "NODERI Nexus" }],
     locale: "pt_BR",
     type: "website"
   },
   twitter: {
     card: "summary_large_image",
-    title: "NODERE Nexus",
+    title: "NODERI Nexus",
     description: "Inteligência comercial, CRM e IA para agências e times de vendas.",
     images: ["/og-image.png"]
   }
@@ -61,7 +61,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="NODERE" />
+        <meta name="apple-mobile-web-app-title" content="NODERI" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />

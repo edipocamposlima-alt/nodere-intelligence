@@ -48,7 +48,7 @@ import multer from "multer";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 12 * 1024 * 1024 } });
-const embeddedLogoDataUri = loadNodereLogoDataUri();
+const embeddedLogoDataUri = loadNoderiLogoDataUri();
 
 const companyUpdateSchema = z.object({
   name: z.string().min(2).optional(),
@@ -1152,14 +1152,14 @@ router.get("/:id/export-pdf", async (req, res, next) => {
 </head>
 <body>
   <header class="pdf-header">
-    <img src="${embeddedLogoDataUri}" alt="NODERE">
-    <div class="pdf-header-title">Relatório Comercial NODERE</div>
+    <img src="${embeddedLogoDataUri}" alt="NODERI">
+    <div class="pdf-header-title">Relatório Comercial NODERI</div>
     <div class="pdf-header-date">${formatPtBrDate(new Date().toISOString())}</div>
   </header>
   <div class="brand">
-    <img src="${embeddedLogoDataUri}" alt="NODERE">
+    <img src="${embeddedLogoDataUri}" alt="NODERI">
     <div>
-      <div class="brand-title">NODERE</div>
+      <div class="brand-title">NODERI</div>
       <div class="brand-sub">Nexus</div>
     </div>
   </div>
@@ -1217,7 +1217,7 @@ router.get("/:id/export-pdf", async (req, res, next) => {
   ${diagHtml}
 
   <footer class="print-footer">
-    <span>Gerado pelo NODERE Nexus · nodere.com.br</span>
+    <span>Gerado pelo NODERI Nexus · nodere.com.br</span>
     <span>Página <span class="page-number"></span> de <span class="page-total"></span></span>
   </footer>
 </body>
@@ -1256,7 +1256,7 @@ function escapeHtml(value: unknown) {
     .replace(/'/g, "&#039;");
 }
 
-function loadNodereLogoDataUri() {
+function loadNoderiLogoDataUri() {
   const candidates = [
     path.join(process.cwd(), "public", "nodere-logo.png"),
     path.join(process.cwd(), "public", "nodere-wordmark.png"),
@@ -1267,7 +1267,7 @@ function loadNodereLogoDataUri() {
   ];
   const found = candidates.find((candidate) => existsSync(candidate));
   if (!found) {
-    console.warn("NODERE PDF logo not found locally; using inline SVG fallback", { candidates });
+    console.warn("NODERI PDF logo not found locally; using inline SVG fallback", { candidates });
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="#1E6FDB"/><text x="256" y="318" text-anchor="middle" font-family="Arial, sans-serif" font-size="230" font-weight="800" fill="#FFFFFF">N</text></svg>`;
     return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
   }

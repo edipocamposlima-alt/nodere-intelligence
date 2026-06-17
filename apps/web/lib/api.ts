@@ -1,5 +1,6 @@
 import { AuditLogEvent, BillingStatus, CommercialDiagnosis, Company, CreditAccount, DashboardMetrics, DigitalAudit, EmailSequenceTemplate, EnrichmentJob, ForecastReport, GoogleIntelligence, InboxConversation, KeywordSuggestion, MonthlyTrend, Operator, OperatorGoal, OperatorMetrics, PipelineReport, Plan, QueueStatus, SavedSearch, SequenceInstance, UsageEvent } from "./types";
 import { getApiBaseUrl } from "./apiBase";
+import { getErrorMessage } from "./errors";
 
 const API_URL = getApiBaseUrl();
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
@@ -70,7 +71,7 @@ async function api<T>(path: string, options?: RequestInit, fallback?: T): Promis
       } catch {
         detail = "";
       }
-      throw new ApiRequestError(detail || `API retornou HTTP ${response.status}`, response.status, payload);
+      throw new ApiRequestError(getErrorMessage(new Error(detail || `API retornou HTTP ${response.status}`)), response.status, payload);
     }
     try {
       return (await response.json()) as T;
@@ -80,9 +81,7 @@ async function api<T>(path: string, options?: RequestInit, fallback?: T): Promis
   } catch (error) {
     if (fallback !== undefined) return fallback;
     if (error instanceof ApiRequestError) throw error;
-    throw new ApiRequestError(
-      `Nao foi possivel conectar ao backend em ${API_URL}${path}. Verifique NEXT_PUBLIC_API_URL/Vercel e CORS no Render.`
-    );
+    throw new ApiRequestError(getErrorMessage(error));
   }
 }
 

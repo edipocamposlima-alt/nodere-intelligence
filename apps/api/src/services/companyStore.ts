@@ -310,7 +310,7 @@ async function dbUpsert(items: Company[], workspaceId = "default"): Promise<void
     console.error("[COMPANIES] Data attempted:", JSON.stringify(rows, null, 2));
     throw new Error("Erro ao salvar empresa: " + ((error as any)?.message || String(error)));
   }
-  throw new Error("Nao foi possivel persistir empresas: schema Supabase tem colunas incompatíveis demais. Aplique apps/api/src/db/schema.sql.");
+  throw new Error("Não foi possível salvar empresas. A estrutura do banco precisa ser revisada antes de continuar.");
 }
 
 async function dbUpdateFields(id: string, fields: Record<string, unknown>, workspaceId = "default"): Promise<void> {
@@ -334,7 +334,7 @@ async function dbUpdateFields(id: string, fields: Record<string, unknown>, works
     console.error("[COMPANIES] Data attempted:", JSON.stringify(nextFields, null, 2));
     throw new Error("Erro ao atualizar empresa: " + ((error as any)?.message || String(error)));
   }
-  throw new Error("Nao foi possivel atualizar empresa: schema Supabase tem colunas incompatíveis demais. Aplique apps/api/src/db/schema.sql.");
+  throw new Error("Não foi possível atualizar a empresa. A estrutura do banco precisa ser revisada antes de continuar.");
 }
 
 async function dbDeleteCompany(id: string, workspaceId = "default"): Promise<void> {

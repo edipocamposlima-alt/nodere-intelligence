@@ -19,10 +19,10 @@ export function Logo({ variant = "full", size = "md", className = "" }: LogoProp
   const source = variant === "icon" ? "/logo-noderi-icon.png" : "/logo-noderi-full.png";
 
   return (
-    <div className={`flex shrink-0 items-center gap-2.5 ${className}`} aria-label="NODERE Nexus">
+    <div className={`flex shrink-0 items-center gap-2.5 ${className}`} aria-label="NODERI Nexus">
       <img
         src={source}
-        alt={variant === "icon" ? "NODERE" : "NODERE Nexus"}
+        alt={variant === "icon" ? "NODERI" : "NODERI Nexus"}
         width={variant === "icon" ? iconSize : undefined}
         height={variant === "icon" ? iconSize : textHeight}
         style={{
@@ -41,7 +41,7 @@ export function LogoIcon({ size = 32, className = "" }: { size?: number; classNa
   return (
     <img
       src="/logo-noderi-icon.png"
-      alt="NODERE"
+      alt="NODERI"
       width={size}
       height={size}
       className={className}

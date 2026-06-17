@@ -307,13 +307,13 @@ export function MarketingClient() {
               {connectionPlatform.configured ? (
                 <>
                   <ConnectionStep index={1} title={`Faça login no ${connectionPlatform.name}`} text="Abra uma nova aba segura do provedor e confirme que está usando a conta correta." />
-                  <ConnectionStep index={2} title="Autorize o NODERE a gerenciar esta conexão" text="As permissões solicitadas seguem o escopo necessário para leitura, publicação, métricas ou anúncios da integração." />
+                  <ConnectionStep index={2} title="Autorize o NODERI a gerenciar esta conexão" text="As permissões solicitadas seguem o escopo necessário para leitura, publicação, métricas ou anúncios da integração." />
                   <ConnectionStep index={3} title="Finalize a conexão simplificada" text="O backend troca o code por token e salva tudo criptografado por workspace. Nenhum token é exposto no frontend." />
                 </>
               ) : (
                 <>
-                  <ConnectionStep index={1} title="Credenciais ainda não configuradas" text={`Adicione no Render: ${connectionPlatform.requiredEnv.join(", ")}.`} muted />
-                  <ConnectionStep index={2} title="Depois faça redeploy do backend" text="A conexão só fica ativa quando as variáveis reais estiverem disponíveis no serviço Render." muted />
+                  <ConnectionStep index={1} title="Credenciais ainda não configuradas" text="Peça ao administrador para ativar as credenciais desta integração." muted />
+                  <ConnectionStep index={2} title="Depois atualize a conexão" text="A conexão fica ativa quando as credenciais reais estiverem disponíveis no backend." muted />
                   <ConnectionStep index={3} title="Volte aqui e clique em Conectar" text="O card passará para CREDENCIAIS OK e abrirá o OAuth real." muted />
                 </>
               )}

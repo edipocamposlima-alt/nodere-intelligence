@@ -71,6 +71,14 @@ const roleLabels: Record<AdminUserRole, string> = {
 
 const defaultPermissions = Object.fromEntries(modules.map((item) => [item, true]));
 
+function withAdminTimeout<T>(promise: Promise<T>, ms = 10000): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout>;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => reject(new Error("Não foi possível carregar o painel. Tente novamente.")), ms);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeout!));
+}
+
 export function AdminClient() {
   const [authorized, setAuthorized] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("users");
@@ -100,13 +108,13 @@ export function AdminClient() {
 
   async function load() {
     try {
-      await adminFetch("/admin/status");
-      const [data, userData, roleData, auditData] = await Promise.allSettled([
+      await withAdminTimeout(adminFetch("/admin/status"));
+      const [data, userData, roleData, auditData] = await withAdminTimeout(Promise.allSettled([
         adminFetch<{ keys: ApiKeyStatus[] }>("/admin/api-keys"),
         adminFetch<{ users: AdminUser[] }>("/admin/users"),
         adminFetch<{ roles: CustomRole[] }>("/admin/roles"),
         adminFetch<{ activityLogs: AuditRow[]; downloadLogs: AuditRow[] }>("/admin/audit")
-      ]);
+      ]));
       const warnings: string[] = [];
       if (data.status === "fulfilled") setKeys(Array.isArray(data.value.keys) ? data.value.keys : []);
       else warnings.push(`APIs: ${data.reason instanceof Error ? data.reason.message : "falha ao carregar"}`);
@@ -264,7 +272,7 @@ export function AdminClient() {
       <section className="overflow-hidden rounded-xl border border-electric/30 bg-panel shadow-glow">
         <div className="grid gap-6 p-6 lg:grid-cols-[330px_1fr]">
           <div className="rounded-2xl border border-electric/20 bg-electric/10 p-4">
-            <Image src="/logo-noderi-full.png" alt="NODERE" width={500} height={180} priority className="h-auto w-full rounded-xl object-contain" />
+            <Image src="/logo-noderi-full.png" alt="NODERI" width={500} height={180} priority className="h-auto w-full rounded-xl object-contain" />
           </div>
           <div>
             <div className="flex flex-wrap items-center justify-between gap-3">

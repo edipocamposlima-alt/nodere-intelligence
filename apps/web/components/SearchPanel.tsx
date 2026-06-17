@@ -212,7 +212,7 @@ export function SearchPanel() {
       <form onSubmit={onSubmit} className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] p-4 shadow-glow">
         <div className="flex items-center gap-2 text-sm font-medium text-[var(--text-primary)]">
           <Sparkles className="h-4 w-4 text-cyan" />
-          Busca NODERE
+          Busca NODERI
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-6">
           <select name="mode" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="places">
@@ -325,15 +325,15 @@ export function SearchPanel() {
 function formatSearchError(error: unknown) {
   if (error instanceof ApiRequestError) {
     if (error.code === "KEY_NOT_CONFIGURED") {
-      return "Google Places indisponível: configure GOOGLE_PLACES_API_KEY no backend/Admin ou Render.";
+      return "Busca temporariamente indisponível. A integração de mapas precisa ser ativada pelo administrador.";
     }
     if (error.code === "PERMISSION_DENIED" || error.message.includes("API key not valid")) {
-      return "A chave Google Places configurada no backend foi rejeitada. Verifique permissões, billing e API Places no Google Cloud.";
+      return "A integração de mapas recusou a consulta. Peça ao administrador para revisar a configuração.";
     }
     if (error.code === "GOOGLE_PLACES_UNREACHABLE") {
-      return "Não foi possível conectar ao Google Places pelo backend. Verifique rede, Render e logs da API.";
+      return "Não foi possível consultar o serviço de mapas agora. Tente novamente em alguns instantes.";
     }
-    return error.message || `Backend retornou HTTP ${error.status}.`;
+    return error.message || "Não foi possível concluir a busca.";
   }
   return error instanceof Error ? error.message : "Falha ao buscar empresas.";
 }
@@ -451,7 +451,7 @@ function GoogleMapPanel({
             referrerPolicy="no-referrer-when-downgrade"
           />
         )}
-        {!mapsKey && <p className="border-t border-[var(--border-soft)] px-4 py-3 text-xs text-[var(--text-secondary)]">Mapa visual por incorporação Google. Para pins interativos avançados, configure NEXT_PUBLIC_GOOGLE_MAPS_KEY na Vercel/GitHub.</p>}
+        {!mapsKey && <p className="border-t border-[var(--border-soft)] px-4 py-3 text-xs text-[var(--text-secondary)]">Mapa visual por incorporação Google. Pins interativos ficam disponíveis quando a integração avançada de mapas estiver ativa.</p>}
         {mapMessage && <p className="border-t border-[var(--border-soft)] px-4 py-3 text-xs text-[var(--warning)]">{mapMessage}</p>}
       </div>
       <div className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] p-4">

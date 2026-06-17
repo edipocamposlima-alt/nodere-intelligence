@@ -7,7 +7,7 @@ import { CheckCircle2, Download, ExternalLink, FileText, MessageCircle, Save, Se
 import { Company } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
 import { addCompanyNote, getCompanies, updateCompany } from "@/lib/api";
-import { downloadNoderePdf } from "@/lib/pdf";
+import { downloadNoderiPdf } from "@/lib/pdf";
 
 const whatsappMessage =
   "Ola, tudo bem? Estive analisando a presenca digital da sua empresa no Google e identifiquei algumas oportunidades que podem ajudar voces a gerar mais contatos e melhorar o posicionamento online. Posso te mostrar rapidamente?";
@@ -161,7 +161,7 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
   async function exportPdf() {
     const list = (selectedCompanies.length ? selectedCompanies : visibleCompanies).slice(0, 50);
     const content = [
-      "NODERE Nexus",
+      "NODERI Nexus",
       `Relatorio de empresas - ${new Date().toLocaleString("pt-BR")}`,
       "",
       ...list.flatMap((company, index) => [
@@ -172,8 +172,8 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
         ""
       ])
     ].join("\n");
-    await downloadNoderePdf({
-      title: "Relatório NODERE",
+    await downloadNoderiPdf({
+      title: "Relatório NODERI",
       subtitle: `Empresas exportadas em ${new Date().toLocaleString("pt-BR")}`,
       body: content,
       fileName: `relatorio-nodere-${Date.now()}.pdf`

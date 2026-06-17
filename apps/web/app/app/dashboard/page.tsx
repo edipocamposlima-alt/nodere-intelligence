@@ -10,7 +10,7 @@ export default function AppDashboardPage() {
   return (
     <div className="app-dashboard-page">
       <div className="app-dashboard-hero">
-        <p>NODERE Nexus</p>
+        <p>NODERI Nexus</p>
         <h1>Hub central da plataforma</h1>
         <span>Gerencie seu workspace, módulos e configurações em um único lugar.</span>
       </div>

@@ -52,6 +52,7 @@ configureWebPush();
 
 const allowedOrigins = new Set([
   config.webOrigin,
+  config.frontendUrl,
   "https://nodere.com.br",
   "https://www.nodere.com.br",
   "http://localhost:3000",
@@ -69,6 +70,8 @@ app.use(
       return callback(new Error(`Origin not allowed: ${origin}`));
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-workspace-id", "x-nodere-api-key"],
   })
 );
 
@@ -92,7 +95,7 @@ app.use(express.json());
 app.use(attachSession);
 
 app.get("/health", (_req, res) => {
-  res.json({ ok: true, name: "NODERE Nexus API" });
+  res.json({ ok: true, name: "NODERI Nexus API" });
 });
 
 app.get("/api/health", (_req, res) => {
@@ -101,7 +104,7 @@ app.get("/api/health", (_req, res) => {
     status: "ok",
     timestamp: new Date().toISOString(),
     version: "1.0.0",
-    name: "NODERE Nexus API",
+    name: "NODERI Nexus API",
     googlePlacesConfigured: Boolean(config.google.placesKey),
     pageSpeedConfigured: Boolean(config.google.pageSpeedKey),
     openaiConfigured: Boolean(config.openai.apiKey),
@@ -167,7 +170,7 @@ app.post("/api/auth/forgot-password", async (req, res, next) => {
     if (error) throw error;
     return res.json({
       ok: true,
-      message: "Se o e-mail existir no NODERE, enviaremos um link de redefinicao de senha.",
+      message: "Se o e-mail existir no NODERI, enviaremos um link de redefinicao de senha.",
       redirectTo
     });
   } catch (error) {
@@ -177,7 +180,7 @@ app.post("/api/auth/forgot-password", async (req, res, next) => {
 
 function publicIntegrationSettings() {
   return {
-    appName: "NODERE Nexus",
+    appName: "NODERI Nexus",
     environment: process.env.NODE_ENV ?? "development",
     apiUrl: "https://nodere-api.onrender.com",
     enabledIntegrations: {
@@ -275,7 +278,7 @@ app.post("/api/openai/analyze", requireWorkspaceSession, async (req, res, next) 
     const context = req.body?.context ?? {};
 
     const systemPrompt =
-      "Voce e o assistente operacional do NODERE Nexus, especialista em prospeccao B2B, CRM, Google Ads, Google Meu Negocio, PageSpeed, WhatsApp comercial e vendas consultivas. " +
+      "Voce e o assistente operacional do NODERI Nexus, especialista em prospeccao B2B, CRM, Google Ads, Google Meu Negocio, PageSpeed, WhatsApp comercial e vendas consultivas. " +
       "Responda APENAS com JSON valido, sem markdown, em portugues do Brasil, com conteudo pratico e especifico para o lead informado.";
 
     const userPrompt = JSON.stringify({
@@ -290,7 +293,7 @@ app.post("/api/openai/analyze", requireWorkspaceSession, async (req, res, next) 
         whatsappMessage: "Mensagem curta de WhatsApp pronta para envio.",
         emailSubject: "Assunto de e-mail comercial.",
         emailBody: "Corpo de e-mail comercial.",
-        nextSteps: ["Proximos passos comerciais."],
+        nextSteps: ["Próximos passos comerciais."],
         googleAdsStrategy: "Estrategia inicial de Google Ads recomendada."
       }
     });
@@ -439,8 +442,8 @@ app.use("/api/developer", requireWorkspaceSession, developerRouter);
 app.use("/api/admin/verticals", verticalsRouter);
 app.use("/v1", publicApiRouter);
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customSiteTitle: "NODERE Nexus API",
-  customCss: ".swagger-ui .topbar{background:#0A0F1E}.swagger-ui .topbar-wrapper img{display:none}.swagger-ui .topbar-wrapper:before{content:'NODERE API';color:#fff;font-weight:700;font-size:18px}"
+  customSiteTitle: "NODERI Nexus API",
+  customCss: ".swagger-ui .topbar{background:#0A0F1E}.swagger-ui .topbar-wrapper img{display:none}.swagger-ui .topbar-wrapper:before{content:'NODERI API';color:#fff;font-weight:700;font-size:18px}"
 }));
 
 app.use("/api", requireAuth);
@@ -467,7 +470,7 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
 setInterval(() => { processDueSteps().catch(console.error); }, 5 * 60 * 1000);
 
 app.listen(config.port, () => {
-  console.log(`NODERE Nexus API running on http://localhost:${config.port}`);
+  console.log(`NODERI Nexus API running on http://localhost:${config.port}`);
   if (process.env.NODE_ENV === "production" && process.env.RENDER_EXTERNAL_URL) {
     const pingUrl = `${process.env.RENDER_EXTERNAL_URL.replace(/\/+$/, "")}/api/health`;
     setInterval(async () => {

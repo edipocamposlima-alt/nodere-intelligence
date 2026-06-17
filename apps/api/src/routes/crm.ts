@@ -298,7 +298,7 @@ router.get("/leads/:id/proposal.pdf", async (req, res, next) => {
       res.setHeader("Content-Disposition", `attachment; filename="proposta-${safeFileName(lead.name)}.pdf"`);
       res.send(pdf);
     });
-    doc.fontSize(20).text("Proposta Comercial NODERE Nexus", { align: "center" });
+    doc.fontSize(20).text("Proposta Comercial NODERI Nexus", { align: "center" });
     doc.moveDown();
     doc.fontSize(14).text(`Lead: ${lead.name}`);
     doc.text(`Segmento: ${lead.category || "Não informado"}`);

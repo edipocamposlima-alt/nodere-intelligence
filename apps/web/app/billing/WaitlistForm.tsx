@@ -17,7 +17,7 @@ export function WaitlistForm() {
     setError("");
     try {
       await joinBillingWaitlist({ email, plan });
-      setMessage("Interesse registrado. A equipe NODERE pode ativar o checkout ou entrar em contato.");
+      setMessage("Interesse registrado. A equipe NODERI pode ativar o checkout ou entrar em contato.");
       setEmail("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível registrar o interesse.");
@@ -30,7 +30,7 @@ export function WaitlistForm() {
     <form onSubmit={onSubmit} className="rounded-xl border border-amber-300/30 bg-amber-300/10 p-5">
       <p className="text-sm font-semibold text-amber-100">Checkout Stripe ainda não configurado</p>
       <p className="mt-1 text-sm text-amber-100/80">
-        Quando os links `STRIPE_STARTER_URL`, `STRIPE_PRO_URL` e `STRIPE_AGENCY_URL` forem configurados no backend, os botões mudam automaticamente para assinatura.
+        Quando o checkout estiver ativo, os botões mudam automaticamente para assinatura.
       </p>
       <div className="mt-4 grid gap-3 md:grid-cols-[1fr_180px_auto]">
         <input

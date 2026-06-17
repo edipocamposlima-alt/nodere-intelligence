@@ -14,6 +14,8 @@ import {
   getReportTimeline,
   downloadReportPdf
 } from "@/lib/api";
+import { getErrorMessage } from "@/lib/errors";
+import { ErrorState } from "@/components/ui/ErrorState";
 import type { ForecastReport, MonthlyTrend, PipelineReport } from "@/lib/types";
 
 type Summary = Awaited<ReturnType<typeof getReportSummary>>;
@@ -91,7 +93,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
         setIntelligence(nextIntelligence);
       })
       .catch((err) => {
-        if (alive) setError(err instanceof Error ? err.message : "Não foi possível carregar relatórios.");
+        if (alive) setError(getErrorMessage(err));
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -110,7 +112,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
     try {
       await downloadReportPdf(period, groupBy);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível exportar o PDF.");
+      setError(getErrorMessage(err));
     }
   }
 
@@ -120,7 +122,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
       <section className="rounded-xl border border-line bg-panel/90 p-5 print:border-0 print:bg-white">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
-            <Image src="/logo-noderi-full.png" alt="NODERE" width={220} height={76} className="hidden h-auto w-44 rounded-lg object-contain print:block" />
+            <Image src="/logo-noderi-full.png" alt="NODERI" width={220} height={76} className="hidden h-auto w-44 rounded-lg object-contain print:block" />
             <div>
               <h2 className="text-2xl font-semibold text-[var(--text-primary)] print:text-slate-950">Relatórios executivos</h2>
               <p className="mt-1 text-sm text-[var(--text-secondary)] print:text-slate-600">Métricas reais do CRM, origem, funil e inteligência digital.</p>
@@ -146,7 +148,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
       </section>
 
       {loading && <p className="rounded-xl border border-line bg-panel p-4 text-sm text-[var(--text-secondary)]">Carregando relatórios...</p>}
-      {error && <p className="rounded-xl border border-danger/45 bg-danger/10 p-4 text-sm font-semibold text-[var(--text-primary)]">{error}</p>}
+      {error && <ErrorState message={error} onRetry={() => window.location.reload()} />}
       {!loading && !error && !hasData && (
         <section className="rounded-xl border border-line bg-panel/90 p-8 text-center">
           <BarChart3 className="mx-auto h-10 w-10 text-cyan" />

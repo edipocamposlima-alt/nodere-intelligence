@@ -17,7 +17,7 @@ async function generate() {
   await icon.clone().resize(512, 512).toFile(path.join(publicDir, "icon-512.png"));
   await icon.clone().resize(192, 192).toFile(path.join(publicDir, "nodere-logo-192.png"));
   await icon.clone().resize(512, 512).toFile(path.join(publicDir, "nodere-logo-512.png"));
-  console.log("NODERE PWA icons generated.");
+  console.log("NODERI PWA icons generated.");
 }
 
 generate().catch((error) => {

@@ -16,7 +16,7 @@ export function CheckoutButton({ planId, label, paymentLinkUrl }: { planId: stri
       const { url } = await createCheckoutSession(planId);
       window.location.href = url;
     } catch {
-      alert("Checkout ainda não configurado. Configure STRIPE_STARTER_URL, STRIPE_PRO_URL ou STRIPE_AGENCY_URL no Render.");
+      alert("Checkout temporariamente indisponível. Tente novamente em instantes ou fale com o comercial.");
       setLoading(false);
     }
   }

@@ -132,7 +132,7 @@ export function SettingsClient() {
     port: "587",
     user: "",
     pass: "",
-    fromName: "NODERE Nexus",
+    fromName: "NODERI Nexus",
     fromEmail: ""
   });
   const [smtpStatus, setSmtpStatus] = useState("Não testado");
@@ -380,7 +380,7 @@ export function SettingsClient() {
           <h3 className="font-semibold text-white">SMTP para automações</h3>
         </div>
         <p className="mt-2 text-sm leading-6 text-slate-400">
-          Teste credenciais SMTP de envio real. Em produção, salve os valores finais no Render como <code className="text-cyan">SMTP_HOST</code>, <code className="text-cyan">SMTP_USER</code>, <code className="text-cyan">SMTP_PASS</code> e <code className="text-cyan">SMTP_FROM</code>.
+          Teste as credenciais de envio real. Em produção, mantenha os valores finais protegidos no backend.
         </p>
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <input value={smtpSettings.host} onChange={(event) => setSmtpSettings((current) => ({ ...current, host: event.target.value }))} placeholder="SMTP Host" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />

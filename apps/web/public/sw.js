@@ -35,7 +35,7 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("push", (event) => {
   const data = event.data ? event.data.json() : {};
   event.waitUntil(
-    self.registration.showNotification(data.title || "NODERE", {
+    self.registration.showNotification(data.title || "NODERI", {
       body: data.body || "",
       icon: "/android-chrome-192x192.png",
       badge: "/android-chrome-192x192.png",

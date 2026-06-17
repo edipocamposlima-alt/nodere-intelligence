@@ -29,7 +29,7 @@ router.get("/me", requireWorkspaceSession, async (req, res, next) => {
       },
       workspace: workspace.data ?? {
         id: workspaceId,
-        name: "Workspace NODERE",
+        name: "Workspace NODERI",
         plan: "trial"
       },
       credits: isPrivilegedSession(req)
@@ -58,7 +58,7 @@ router.post("/", requireWorkspaceSession, async (req, res, next) => {
   try {
     const session = (req as any).session;
     const body = z.object({
-      name: z.string().min(2).default("Workspace NODERE")
+      name: z.string().min(2).default("Workspace NODERI")
     }).parse(req.body ?? {});
     const user = await ensureSupabaseAuthUser({
       authUserId: session.userId || session.email,
@@ -141,7 +141,7 @@ router.get("/branding", async (req, res, next) => {
     if (!data || !data.wl_enabled) return res.json(defaultBranding());
     res.json({
       workspaceId: data.id,
-      name: data.wl_name || data.name || "NODERE Nexus",
+      name: data.wl_name || data.name || "NODERI Nexus",
       logoUrl: data.wl_logo_url || "/nodere-wordmark.png",
       primaryColor: data.wl_primary_color || "#1E6FDB",
       enabled: Boolean(data.wl_enabled)
@@ -177,7 +177,7 @@ router.patch("/branding", requireWorkspaceRole("owner", "admin"), async (req, re
 
 function defaultBranding() {
   return {
-    name: "NODERE Nexus",
+    name: "NODERI Nexus",
     logoUrl: "/nodere-wordmark.png",
     primaryColor: "#1E6FDB",
     enabled: false

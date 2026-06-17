@@ -36,7 +36,7 @@ export function RegisterClient() {
 
     try {
       if (!hasSupabaseAuthConfig()) {
-        throw new Error("Configuração de cadastro indisponível. Revise as variáveis públicas do Supabase na Vercel.");
+        throw new Error("Cadastro temporariamente indisponível. A equipe técnica precisa concluir a configuração de autenticação.");
       }
 
       const auth = await signUpWithPassword(form.email, form.password, form.name);
@@ -50,7 +50,7 @@ export function RegisterClient() {
       await fetch(`${getApiBaseUrl()}/workspace`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.access_token}` },
-        body: JSON.stringify({ name: form.company || "Workspace NODERE" })
+        body: JSON.stringify({ name: form.company || "Workspace NODERI" })
       });
       router.push("/dashboard");
     } catch (error) {
@@ -64,9 +64,9 @@ export function RegisterClient() {
     return (
       <main className="site-auth">
         <section className="site-auth__card site-auth__card--center">
-          <img className="site-auth__logo" src="/logo-noderi-full.png" alt="NODERE Nexus" />
+          <img className="site-auth__logo" src="/logo-noderi-full.png" alt="NODERI Nexus" />
           <h1>Verifique seu e-mail</h1>
-          <p>Enviamos um link de confirmação para <strong>{form.email}</strong>. Confirme para acessar o NODERE Nexus.</p>
+          <p>Enviamos um link de confirmação para <strong>{form.email}</strong>. Confirme para acessar o NODERI Nexus.</p>
           <Link href="/login">Ir para o login</Link>
         </section>
       </main>
@@ -76,7 +76,7 @@ export function RegisterClient() {
   return (
     <main className="site-auth">
       <section className="site-auth__card">
-        <img className="site-auth__logo" src="/logo-noderi-full.png" alt="NODERE Nexus" />
+        <img className="site-auth__logo" src="/logo-noderi-full.png" alt="NODERI Nexus" />
         <p className="site-auth__caption">Revenue Intelligence Platform</p>
         <h1>Criar conta grátis</h1>
         <p className="site-auth__subtitle">14 dias grátis · Sem cartão de crédito</p>

@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { getApiBaseUrl } from "@/lib/apiBase";
+
+const API_URL = getApiBaseUrl();
 
 const INTEGRATIONS = [
   { key: "openai_key", label: "OpenAI API Key", hint: "sk-...", testEndpoint: "/api/settings/test/openai" },
@@ -11,7 +14,7 @@ const INTEGRATIONS = [
   { key: "smtp_port", label: "SMTP Porta", hint: "587" },
   { key: "smtp_user", label: "SMTP Usuário", hint: "email@dominio.com" },
   { key: "smtp_pass", label: "SMTP Senha", hint: "••••••••", type: "password" },
-  { key: "smtp_from", label: "E-mail Remetente", hint: "NODERE <noreply@nodere.com.br>" }
+  { key: "smtp_from", label: "E-mail Remetente", hint: "NODERI <noreply@nodere.com.br>" }
 ];
 
 const supabase = createClient(
@@ -33,7 +36,7 @@ export default function SettingsIntegrations() {
 
   useEffect(() => {
     getToken().then((token) =>
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/integrations`, {
+      fetch(`${API_URL}/api/settings/integrations`, {
         headers: { Authorization: `Bearer ${token}` }
       }).then((response) => response.json()).then((data) => setValues(data || {})).catch(() => setValues({}))
     );
@@ -44,7 +47,7 @@ export default function SettingsIntegrations() {
     setTesting((current) => ({ ...current, [key]: true }));
     try {
       const token = await getToken();
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
+      const res = await fetch(`${API_URL}${endpoint}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json().catch(() => ({}));
@@ -60,7 +63,7 @@ export default function SettingsIntegrations() {
     setSaving(true);
     try {
       const token = await getToken();
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/integrations`, {
+      const res = await fetch(`${API_URL}/api/settings/integrations`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(values)
