@@ -136,7 +136,7 @@ export function ExternalSearchTabs() {
             <LinkedInButton href={linkedInUrls.jobs} label="Buscar cargos/vagas no LinkedIn" />
           </div>
           <p className="rounded-lg border border-sky-400/30 bg-sky-400/10 px-3 py-2 text-xs leading-5 text-sky-100">
-            Para conectar LinkedIn automaticamente e necessario produto/API oficial liberado pelo LinkedIn. Ate la, o NODERI abre buscas oficiais por nome e contexto, evitando links genericos como linkedin.com/company.
+            Para conectar LinkedIn automaticamente e necessario produto/API oficial liberado pelo LinkedIn. Ate la, o NODERE abre buscas oficiais por nome e contexto, evitando links genericos como linkedin.com/company.
           </p>
         </div>
       )}

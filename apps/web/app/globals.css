@@ -4030,7 +4030,7 @@ textarea {
   }
 }
 /* ================================================================
-   NODERI NEXUS — DESIGN SYSTEM v2.0
+   NODERE NEXUS — DESIGN SYSTEM v2.0
    Camada oficial de identidade visual preservando compatibilidade
    com classes legadas já usadas na plataforma.
    ================================================================ */
@@ -4283,4 +4283,48 @@ body {
 .site-footer__brand,
 .site-logo {
   filter: drop-shadow(0 0 18px rgba(0, 223, 130, 0.24));
+}
+
+/* NODERE visual stabilization: cropped official logos now fill the available
+   brand surfaces without forcing bigger cards or dashboard containers. */
+.sidebar a:has(img[src*="logo-noderi-full"]),
+.sidebar-logo a,
+aside a:has(img[src*="logo-noderi-full"]) {
+  background:
+    radial-gradient(circle at 20% 10%, rgba(0, 223, 130, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(3, 98, 76, 0.20), var(--bg-card) 58%, rgba(0, 223, 130, 0.08));
+}
+
+aside img[src*="logo-noderi-full"] {
+  min-height: 82px;
+  max-height: 88px;
+  width: min(100%, 226px) !important;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 24px rgba(0, 223, 130, 0.22));
+}
+
+.dashboard-brand-logo,
+.site-auth__logo,
+.site-logo {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(0, 223, 130, 0.18), transparent 36%),
+    linear-gradient(135deg, rgba(3, 98, 76, 0.10), rgba(8, 16, 24, 0.02));
+}
+
+.dashboard-brand-logo img[src*="logo-noderi-full"] {
+  max-width: 640px;
+  filter: drop-shadow(0 18px 42px rgba(0, 223, 130, 0.18));
+}
+
+:root[data-theme="light"] aside img[src*="logo-noderi-full"],
+.light aside img[src*="logo-noderi-full"],
+:root[data-theme="light"] .dashboard-brand-logo img[src*="logo-noderi-full"],
+.light .dashboard-brand-logo img[src*="logo-noderi-full"],
+:root[data-theme="light"] .site-auth__logo,
+.light .site-auth__logo,
+:root[data-theme="light"] .site-logo,
+.light .site-logo {
+  filter:
+    drop-shadow(0 12px 28px rgba(3, 98, 76, 0.20))
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.70));
 }

@@ -22,18 +22,29 @@ const defaultColumns = [
 ] as string[];
 
 const defaultStageColors: Record<string, string> = {
-  "Novo Lead": "#2563EB",
-  "Qualificado": "#16A34A",
-  "Contatado": "#F59E0B",
-  "Diagnóstico enviado": "#7C3AED",
-  "Reunião marcada": "#2563EB",
-  "Proposta enviada": "#F97316",
-  "Negociação": "#F59E0B",
+  "Novo Lead": "#03624C",
+  "Qualificado": "#0A7A5F",
+  "Contatado": "#2A9D6A",
+  "Diagnóstico enviado": "#00A66A",
+  "Reunião marcada": "#00DF82",
+  "Proposta enviada": "#047857",
+  "Negociação": "#065F46",
   "Fechado": "#16A34A",
-  "Perdido": "#DC2626"
+  "Perdido": "#64748B"
 };
 
-const stagePalette = ["#2563EB", "#16A34A", "#F59E0B", "#7C3AED", "#F97316", "#DC2626", "#64748B", "#03624C"];
+const stagePalette = ["#03624C", "#0A7A5F", "#2A9D6A", "#00A66A", "#00DF82", "#047857", "#065F46", "#16A34A", "#64748B"];
+const allowedStageColors = new Set(stagePalette.map((color) => color.toLowerCase()));
+
+function normalizeStageColors(colors: Record<string, string>, columns: string[] = defaultColumns) {
+  const normalized: Record<string, string> = {};
+  columns.forEach((stage, index) => {
+    const preferred = defaultStageColors[stage] || stagePalette[index % stagePalette.length];
+    const current = colors[stage];
+    normalized[stage] = current && allowedStageColors.has(current.toLowerCase()) ? current : preferred;
+  });
+  return normalized;
+}
 
 function hexToRgba(hex: string, alpha: number) {
   const clean = hex.replace("#", "");
@@ -81,15 +92,19 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
 
   useEffect(() => {
     try {
+      let loadedColumns = defaultColumns;
       const saved = localStorage.getItem(STAGES_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved) as string[];
-        if (Array.isArray(parsed) && parsed.length > 0) setColumns(parsed);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          loadedColumns = parsed;
+          setColumns(parsed);
+        }
       }
       const savedColors = localStorage.getItem(STAGE_COLORS_STORAGE_KEY);
       if (savedColors) {
         const parsedColors = JSON.parse(savedColors) as Record<string, string>;
-        setStageColors({ ...defaultStageColors, ...parsedColors });
+        setStageColors(normalizeStageColors({ ...defaultStageColors, ...parsedColors }, loadedColumns));
       }
     } catch {
       setColumns(defaultColumns);
@@ -105,7 +120,7 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
           localStorage.setItem(STAGES_STORAGE_KEY, JSON.stringify(remoteStages));
         }
         if (remoteColors && typeof remoteColors === "object") {
-          const merged = { ...defaultStageColors, ...remoteColors };
+          const merged = normalizeStageColors({ ...defaultStageColors, ...remoteColors }, remoteStages || columns);
           setStageColors(merged);
           localStorage.setItem(STAGE_COLORS_STORAGE_KEY, JSON.stringify(merged));
         }
@@ -304,7 +319,7 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
         </button>
       </div>
 
-      {message && <p className="rounded-lg border border-electric/30 bg-electric/10 px-3 py-2 text-sm text-blue-100">{message}</p>}
+      {message && <p className="rounded-lg border border-electric/30 bg-electric/10 px-3 py-2 text-sm text-[var(--text-primary)]">{message}</p>}
 
       <div className="grid auto-cols-[19rem] grid-flow-col gap-4 overflow-x-auto pb-2">
         {columns.map((column, index) => {

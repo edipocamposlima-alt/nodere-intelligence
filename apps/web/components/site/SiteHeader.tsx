@@ -21,10 +21,10 @@ export default function SiteHeader() {
     <>
       <header className={`site-header ${scrolled ? "site-header--scrolled" : ""}`}>
         <div className="site-header__inner">
-          <Link href="/" className="site-logo" aria-label="NODERI Nexus">
+          <Link href="/" className="site-logo" aria-label="NODERE Nexus">
             <img
               src="/logo-noderi-full.png"
-              alt="NODERI Nexus"
+              alt="NODERE Nexus"
               height={44}
               className="site-logo__image"
               onError={(event) => {
@@ -36,7 +36,7 @@ export default function SiteHeader() {
             />
             <span className="site-logo__fallback">
               <span className="site-logo__mark">N</span>
-              <span>NODERI <strong>Nexus</strong></span>
+              <span>NODERE <strong>Nexus</strong></span>
             </span>
           </Link>
 

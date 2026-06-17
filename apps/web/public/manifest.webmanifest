@@ -1,15 +1,18 @@
 {
-  "name": "NODERI Nexus",
-  "short_name": "NODERI",
+  "name": "NODERE Nexus",
+  "short_name": "NODERE",
   "description": "Plataforma de inteligência comercial, CRM, análise digital e prospecção com IA.",
-  "start_url": "/dashboard",
+  "id": "/?app=nodere-nexus",
+  "start_url": "/login?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "portrait-primary",
   "background_color": "#081018",
   "theme_color": "#03624C",
   "lang": "pt-BR",
   "categories": ["business", "productivity"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -35,6 +38,26 @@
       "sizes": "1200x630",
       "type": "image/png",
       "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Busca de empresas",
+      "short_name": "Busca",
+      "url": "/searches",
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "CRM",
+      "short_name": "CRM",
+      "url": "/crm",
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
     }
   ]
 }

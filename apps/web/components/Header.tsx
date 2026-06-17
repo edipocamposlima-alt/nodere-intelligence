@@ -71,7 +71,7 @@ export function Header() {
   const [prefs, setPrefs] = useState<UserPrefs>(defaultPrefs);
   const [globalQuery, setGlobalQuery] = useState("");
   const [unreadInbox, setUnreadInbox] = useState(0);
-  const [brandName, setBrandName] = useState("NODERI Nexus");
+  const [brandName, setBrandName] = useState("NODERE Nexus");
   const pathname = usePathname();
   const router = useRouter();
   const { user, workspace, logout } = useAuth();
@@ -116,7 +116,7 @@ export function Header() {
         }
         if (brand?.primaryColor) document.documentElement.style.setProperty("--color-primary", brand.primaryColor);
       } catch {
-        // Keep NODERI default branding.
+        // Keep NODERE default branding.
       }
     }
     if (typeof window !== "undefined") void loadBranding();

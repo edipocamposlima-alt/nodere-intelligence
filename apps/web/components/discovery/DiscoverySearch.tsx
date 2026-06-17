@@ -28,28 +28,28 @@ export function DiscoverySearch({ onResults }: { onResults: (companies: Company[
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-3 rounded-lg border border-slate-800 bg-slate-900/80 p-4 md:grid-cols-[1fr_1fr_96px_130px]">
+    <form onSubmit={submit} className="grid gap-3 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] p-4 md:grid-cols-[1fr_1fr_96px_130px]">
       <label className="grid gap-1 text-sm">
-        <span className="font-semibold text-slate-200">Segmento</span>
-        <input value={segment} onChange={(e) => setSegment(e.target.value)} className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-blue-400" />
+        <span className="font-semibold text-[var(--text-primary)]">Segmento</span>
+        <input value={segment} onChange={(e) => setSegment(e.target.value)} className="rounded-md border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
       </label>
       <label className="grid gap-1 text-sm">
-        <span className="font-semibold text-slate-200">Cidade</span>
-        <input value={city} onChange={(e) => setCity(e.target.value)} className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-blue-400" />
+        <span className="font-semibold text-[var(--text-primary)]">Cidade</span>
+        <input value={city} onChange={(e) => setCity(e.target.value)} className="rounded-md border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
       </label>
       <label className="grid gap-1 text-sm">
-        <span className="font-semibold text-slate-200">UF</span>
-        <input value={state} onChange={(e) => setState(e.target.value)} maxLength={2} className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-blue-400" />
+        <span className="font-semibold text-[var(--text-primary)]">UF</span>
+        <input value={state} onChange={(e) => setState(e.target.value)} maxLength={2} className="rounded-md border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
       </label>
       <label className="grid gap-1 text-sm">
-        <span className="font-semibold text-slate-200">Limite</span>
-        <input type="number" min={1} max={100} value={limit} onChange={(e) => setLimit(Number(e.target.value))} className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-blue-400" />
+        <span className="font-semibold text-[var(--text-primary)]">Limite</span>
+        <input type="number" min={1} max={100} value={limit} onChange={(e) => setLimit(Number(e.target.value))} className="rounded-md border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
       </label>
       <div className="md:col-span-4">
-        <button disabled={busy} className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-60">
+        <button disabled={busy} className="inline-flex items-center gap-2 rounded-md bg-[var(--brand-primary)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--brand-primary-hover)] disabled:opacity-60">
           <Search className="h-4 w-4" /> {busy ? "Buscando..." : "Buscar no Google Maps"}
         </button>
-        {error && <span className="ml-3 text-sm text-red-300">{error}</span>}
+        {error && <span className="ml-3 text-sm text-[var(--danger)]">{error}</span>}
       </div>
     </form>
   );

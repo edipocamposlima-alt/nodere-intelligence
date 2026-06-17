@@ -37,6 +37,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     return (
       <>
         {children}
+        <PwaRegister />
         <ThemeRuntime />
       </>
     );

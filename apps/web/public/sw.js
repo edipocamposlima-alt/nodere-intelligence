@@ -1,4 +1,4 @@
-const CACHE_NAME = "noderi-shell-v2";
+const CACHE_NAME = "nodere-shell-v3";
 const SHELL_ASSETS = ["/", "/manifest.webmanifest", "/logo-noderi-icon.png"];
 
 self.addEventListener("install", (event) => {
@@ -35,7 +35,7 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("push", (event) => {
   const data = event.data ? event.data.json() : {};
   event.waitUntil(
-    self.registration.showNotification(data.title || "NODERI", {
+    self.registration.showNotification(data.title || "NODERE", {
       body: data.body || "",
       icon: "/android-chrome-192x192.png",
       badge: "/android-chrome-192x192.png",

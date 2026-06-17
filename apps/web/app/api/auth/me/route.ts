@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     },
     workspace: {
       id: payload.workspace?.id,
-      name: payload.workspace?.name ?? "Workspace NODERI"
+      name: payload.workspace?.name ?? "Workspace NODERE"
     }
   });
 }

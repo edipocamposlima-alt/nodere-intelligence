@@ -8,13 +8,13 @@ export function CompanyMap({ company }: { company?: Company | null }) {
   const mapsUrl = company?.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
-      <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-        <div className="flex items-center gap-2 text-sm font-semibold text-white">
-          <MapPin className="h-4 w-4 text-blue-400" />
+    <div className="overflow-hidden rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)]">
+      <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-4 py-3">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+          <MapPin className="h-4 w-4 text-[var(--brand-primary)]" />
           Google Maps
         </div>
-        <a className="text-xs font-semibold text-blue-300 hover:text-blue-200" href={mapsUrl} target="_blank" rel="noreferrer">Abrir mapa</a>
+        <a className="text-xs font-semibold text-[var(--brand-primary)] hover:text-[var(--brand-glow)]" href={mapsUrl} target="_blank" rel="noreferrer">Abrir mapa</a>
       </div>
       <iframe
         title="Mapa da empresa"

@@ -11,11 +11,11 @@ export function ScoreGauge({ score, level }: { score: number; level?: string }) 
         style={{ background: `conic-gradient(${color} ${normalized * 3.6}deg, #1f2937 0deg)` }}
         title={`Score ${normalized}/100`}
       >
-        <div className="grid h-12 w-12 place-items-center rounded-full bg-slate-950">{normalized}</div>
+        <div className="grid h-12 w-12 place-items-center rounded-full bg-[var(--bg-main)]">{normalized}</div>
       </div>
       <div>
-        <p className="text-xs uppercase tracking-wide text-slate-400">Score digital</p>
-        <p className="text-sm font-semibold text-white">{level || "Baixa"}</p>
+        <p className="text-xs uppercase tracking-wide text-[var(--text-muted)]">Score digital</p>
+        <p className="text-sm font-semibold text-[var(--text-primary)]">{level || "Baixa"}</p>
       </div>
     </div>
   );

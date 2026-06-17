@@ -37,7 +37,7 @@ export default function PlatformSidebar() {
       <div className="sidebar-logo">
         <Link href="/app/dashboard">
           <Logo variant="full" size="xl" />
-          <span className="logo-text sr-only">NODERI</span>
+          <span className="logo-text sr-only">NODERE</span>
           <span className="logo-nexus sr-only">Nexus</span>
         </Link>
       </div>

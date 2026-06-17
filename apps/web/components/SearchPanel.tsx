@@ -209,47 +209,47 @@ export function SearchPanel() {
 
   return (
     <section className="space-y-5">
-      <form onSubmit={onSubmit} className="rounded-lg border border-line bg-panel/90 p-4 shadow-glow">
-        <div className="flex items-center gap-2 text-sm font-medium text-white">
+      <form onSubmit={onSubmit} className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] p-4 shadow-glow">
+        <div className="flex items-center gap-2 text-sm font-medium text-[var(--text-primary)]">
           <Sparkles className="h-4 w-4 text-cyan" />
-          Busca inteligente
+          Busca NODERE
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-6">
-          <select name="mode" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" defaultValue="places">
-            <option value="places">Google Places local</option>
+          <select name="mode" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="places">
+            <option value="places">Google Places</option>
             <option value="cnpj">CNPJ direto</option>
-            <option value="global">Global / Internacional</option>
+            <option value="global">Busca internacional</option>
           </select>
-          <input name="cnpj" value={cnpj} onChange={(event) => setCnpj(formatCnpj(event.target.value))} placeholder="CNPJ (modo CNPJ)" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
-          <input name="companyName" placeholder="Nome da empresa" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
-          <select value={selectedSegment} onChange={(event) => setSelectedSegment(event.target.value)} name="segment" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric">
+          <input name="cnpj" value={cnpj} onChange={(event) => setCnpj(formatCnpj(event.target.value))} placeholder="CNPJ (modo CNPJ)" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
+          <input name="companyName" placeholder="Nome da empresa" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
+          <select value={selectedSegment} onChange={(event) => setSelectedSegment(event.target.value)} name="segment" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]">
             <option value="">Segmento</option>
             {allSegments.map((segment) => <option key={segment} value={segment}>{segment}</option>)}
             <option value={ADD_SEGMENT}>Adicionar segmento...</option>
           </select>
           {selectedSegment === ADD_SEGMENT ? (
-            <input value={customSegment} onChange={(event) => setCustomSegment(event.target.value)} placeholder="Novo segmento" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
+            <input value={customSegment} onChange={(event) => setCustomSegment(event.target.value)} placeholder="Novo segmento" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
           ) : (
-            <input name="keyword" placeholder="Palavra-chave" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
+            <input name="keyword" placeholder="Palavra-chave" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
           )}
-          <input name="city" placeholder="Cidade" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
-          <input name="state" placeholder="Estado" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
-          <select name="country" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" defaultValue="BR">
+          <input name="city" placeholder="Cidade" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
+          <input name="state" placeholder="Estado" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
+          <select name="country" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="BR">
             {COUNTRIES.map((country) => <option key={country.code} value={country.code}>{country.name}</option>)}
           </select>
-          {selectedSegment === ADD_SEGMENT && <input name="keyword" placeholder="Palavra-chave" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />}
+          {selectedSegment === ADD_SEGMENT && <input name="keyword" placeholder="Palavra-chave" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />}
           <button disabled={loading} className="btn-action disabled:opacity-60">
             <Search className="h-4 w-4" />
             {loading ? "Buscando" : "Buscar"}
           </button>
         </div>
         <div className="mt-3 grid gap-3 md:grid-cols-[1fr_160px_auto_auto]">
-          <input name="referenceAddress" placeholder="Endereço de referência para busca por raio" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" />
-          <select name="radiusKm" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm outline-none focus:border-electric" defaultValue="">
+          <input name="referenceAddress" placeholder="Endereço de referência para busca por raio" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
+          <select name="radiusKm" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="">
             <option value="">Cidade inteira</option>
             {[1, 5, 10, 25, 50].map((km) => <option key={km} value={km}>{km} km</option>)}
           </select>
-          <button type="button" onClick={(event) => geocodeReference(event.currentTarget.form!)} className="rounded-lg border border-line bg-white/5 px-3 py-2 text-sm font-semibold text-slate-200 hover:text-white">
+          <button type="button" onClick={(event) => geocodeReference(event.currentTarget.form!)} className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
             Usar endereço
           </button>
           <button type="button" onClick={useMyLocation} className="inline-flex items-center justify-center gap-2 rounded-lg border border-cyan/40 bg-cyan/10 px-3 py-2 text-sm font-semibold text-cyan hover:bg-cyan/20">
@@ -259,12 +259,12 @@ export function SearchPanel() {
         </div>
         {geo.label && <p className="mt-2 text-xs text-cyan">Referência ativa: {geo.label}</p>}
         <div className="mt-3 space-y-2">
-          <p className="flex items-center gap-2 text-xs text-slate-400">
+          <p className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
             <CheckCircle2 className="h-3.5 w-3.5 text-cyan" />
             {message}
           </p>
           {warning && (
-            <p className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs leading-5 text-amber-100">
+            <p className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs leading-5 text-[var(--text-primary)]">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
               {warning}
             </p>
@@ -272,7 +272,7 @@ export function SearchPanel() {
         </div>
       </form>
       <div className="lg:hidden">
-        <button type="button" onClick={() => setMapOpen((value) => !value)} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-line bg-panel px-3 py-2 text-sm font-semibold text-white">
+        <button type="button" onClick={() => setMapOpen((value) => !value)} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)]">
           {mapOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           {mapOpen ? "Ocultar mapa" : "Mostrar mapa"}
         </button>
@@ -287,15 +287,15 @@ export function SearchPanel() {
       {results.length > 0 && <CompanyTable companies={results} />}
       {upgradeOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-line bg-panel p-6 shadow-glow">
+          <div className="w-full max-w-lg rounded-2xl border border-[var(--border-soft)] bg-[var(--bg-card)] p-6 shadow-glow">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-lg font-semibold text-white">Ative um plano para continuar buscando</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
+                <p className="text-lg font-semibold text-[var(--text-primary)]">Ative um plano para continuar buscando</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
                   O acesso ao CRM, empresas salvas e histórico continua funcionando. Para novas buscas no Google Places, escolha um plano ou solicite ativação comercial.
                 </p>
               </div>
-              <button type="button" onClick={() => setUpgradeOpen(false)} className="rounded-lg border border-line px-3 py-1 text-sm text-slate-300 hover:text-white">
+              <button type="button" onClick={() => setUpgradeOpen(false)} className="rounded-lg border border-[var(--border-soft)] px-3 py-1 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                 Fechar
               </button>
             </div>
@@ -305,10 +305,10 @@ export function SearchPanel() {
                 ["Pro", "600 créditos", "R$ 197/mês"],
                 ["Agency", "Ilimitado", "R$ 397/mês"]
               ].map(([name, creditsLabel, price]) => (
-                <div key={name} className="rounded-xl border border-line bg-ink/80 p-4">
-                  <p className="font-semibold text-white">{name}</p>
+                <div key={name} className="rounded-xl border border-[var(--border-soft)] bg-[var(--bg-hover)] p-4">
+                  <p className="font-semibold text-[var(--text-primary)]">{name}</p>
                   <p className="mt-1 text-xs text-cyan">{creditsLabel}</p>
-                  <p className="mt-2 text-sm text-slate-300">{price}</p>
+                  <p className="mt-2 text-sm text-[var(--text-secondary)]">{price}</p>
                 </div>
               ))}
             </div>
@@ -432,39 +432,39 @@ function GoogleMapPanel({
 
   return (
     <section className={`${open ? "grid" : "hidden lg:grid"} gap-4 lg:grid-cols-[1.2fr_0.8fr]`}>
-      <div className="overflow-hidden rounded-lg border border-line bg-panel/90">
+      <div className="overflow-hidden rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)]">
         <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
-          <div className="flex items-center gap-2 text-sm font-semibold text-white">
-            <MapPin className="h-4 w-4 text-rose-400" />
+          <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+            <MapPin className="h-4 w-4 text-[var(--brand-primary)]" />
             Google Maps visual
           </div>
-          <span className="truncate text-xs text-slate-400">{query}</span>
+          <span className="truncate text-xs text-[var(--text-secondary)]">{query}</span>
         </div>
         {mapsKey ? (
-          <div ref={mapRef} className="h-[360px] w-full bg-ink" />
+          <div ref={mapRef} className="h-[360px] w-full bg-[var(--bg-hover)]" />
         ) : (
           <iframe
             title="Google Maps visual"
             src={embedUrl}
-            className="h-[360px] w-full border-0 bg-ink"
+            className="h-[360px] w-full border-0 bg-[var(--bg-hover)]"
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
           />
         )}
-        {!mapsKey && <p className="border-t border-line px-4 py-3 text-xs text-slate-400">Mapa visual por incorporação Google. Para pins interativos avançados, configure NEXT_PUBLIC_GOOGLE_MAPS_KEY na Vercel/GitHub.</p>}
-        {mapMessage && <p className="border-t border-line px-4 py-3 text-xs text-amber-100">{mapMessage}</p>}
+        {!mapsKey && <p className="border-t border-[var(--border-soft)] px-4 py-3 text-xs text-[var(--text-secondary)]">Mapa visual por incorporação Google. Para pins interativos avançados, configure NEXT_PUBLIC_GOOGLE_MAPS_KEY na Vercel/GitHub.</p>}
+        {mapMessage && <p className="border-t border-[var(--border-soft)] px-4 py-3 text-xs text-[var(--warning)]">{mapMessage}</p>}
       </div>
-      <div className="rounded-lg border border-line bg-panel/90 p-4">
+      <div className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] p-4">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-semibold text-white">Empresas no mapa</p>
+          <p className="text-sm font-semibold text-[var(--text-primary)]">Empresas no mapa</p>
           <span className="rounded-full bg-cyan/10 px-2 py-1 text-xs font-bold text-cyan">{mappedCompanies.length}/{results.length}</span>
         </div>
-        <p className="mt-2 text-xs leading-5 text-slate-400">
+        <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
           Clique em uma empresa para centralizar no mapa e rolar até o resultado correspondente.
         </p>
         <div className="mt-3 max-h-[276px] space-y-2 overflow-y-auto pr-1">
           {results.length === 0 && (
-            <p className="rounded-lg border border-dashed border-line p-3 text-xs text-slate-500">
+            <p className="rounded-lg border border-dashed border-[var(--border-soft)] p-3 text-xs text-[var(--text-muted)]">
               Execute uma busca para carregar empresas reais e visualizar a região no mapa.
             </p>
           )}
@@ -476,10 +476,10 @@ function GoogleMapPanel({
                 onFocus(company);
                 document.getElementById(`result-${company.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
               }}
-              className={`w-full rounded-lg border px-3 py-2 text-left transition hover:border-cyan ${focusedId === company.id ? "border-cyan bg-cyan/10" : "border-line bg-ink"}`}
+              className={`w-full rounded-lg border px-3 py-2 text-left transition hover:border-cyan ${focusedId === company.id ? "border-cyan bg-cyan/10" : "border-[var(--border-soft)] bg-[var(--bg-hover)]"}`}
             >
-              <span className="block truncate text-sm font-semibold text-white">{company.name}</span>
-              <span className="mt-1 block truncate text-xs text-slate-400">{company.address || `${company.city}/${company.state}`} · Score {company.score}</span>
+              <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">{company.name}</span>
+              <span className="mt-1 block truncate text-xs text-[var(--text-secondary)]">{company.address || `${company.city}/${company.state}`} · Score {company.score}</span>
             </button>
           ))}
         </div>

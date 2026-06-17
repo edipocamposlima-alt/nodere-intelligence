@@ -160,7 +160,7 @@ export function CalendarClient({
         const delay = new Date(event.reminder_at || "").getTime() - Date.now();
         if (delay <= 0 || delay > 2147483647) return null;
         return window.setTimeout(() => {
-          new Notification("Lembrete NODERI", { body: `${event.title} · ${new Date(event.start_at).toLocaleString("pt-BR")}` });
+          new Notification("Lembrete NODERE", { body: `${event.title} · ${new Date(event.start_at).toLocaleString("pt-BR")}` });
         }, delay);
       })
       .filter((timer): timer is number => timer !== null);
@@ -278,7 +278,7 @@ export function CalendarClient({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="flex items-center gap-2 text-sm font-semibold text-cyan"><CalendarDays className="h-4 w-4" /> Calendario comercial</p>
-              <h1 className="mt-2 text-2xl font-black text-white">Agenda central NODERI</h1>
+              <h1 className="mt-2 text-2xl font-black text-white">Agenda central NODERE</h1>
               <p className="text-sm text-slate-300">Visoes de mes, semana, dia e agenda com filtros por lead, operador, tipo e status.</p>
             </div>
             <div className="flex flex-wrap gap-2">

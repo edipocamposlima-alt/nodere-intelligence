@@ -307,7 +307,7 @@ export function MarketingClient() {
               {connectionPlatform.configured ? (
                 <>
                   <ConnectionStep index={1} title={`Faça login no ${connectionPlatform.name}`} text="Abra uma nova aba segura do provedor e confirme que está usando a conta correta." />
-                  <ConnectionStep index={2} title="Autorize o NODERI a gerenciar esta conexão" text="As permissões solicitadas seguem o escopo necessário para leitura, publicação, métricas ou anúncios da integração." />
+                  <ConnectionStep index={2} title="Autorize o NODERE a gerenciar esta conexão" text="As permissões solicitadas seguem o escopo necessário para leitura, publicação, métricas ou anúncios da integração." />
                   <ConnectionStep index={3} title="Finalize a conexão simplificada" text="O backend troca o code por token e salva tudo criptografado por workspace. Nenhum token é exposto no frontend." />
                 </>
               ) : (
