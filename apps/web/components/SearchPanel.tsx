@@ -212,7 +212,7 @@ export function SearchPanel() {
       <form onSubmit={onSubmit} className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] p-4 shadow-glow">
         <div className="flex items-center gap-2 text-sm font-medium text-[var(--text-primary)]">
           <Sparkles className="h-4 w-4 text-cyan" />
-          Busca NODERI
+          Busca NODERE
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-6">
           <select name="mode" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="places">

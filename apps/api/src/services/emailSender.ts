@@ -34,7 +34,7 @@ export async function sendAutomationEmail(input: {
   }
   try {
     await transport.sendMail({
-      from: `"${input.fromName || "NODERI Nexus"}" <${input.fromEmail || config.smtp.from || config.smtp.user}>`,
+      from: `"${input.fromName || "NODERE Nexus"}" <${input.fromEmail || config.smtp.from || config.smtp.user}>`,
       to: input.to,
       subject: input.subject,
       html: input.body.replace(/\n/g, "<br />")

@@ -90,9 +90,9 @@ export function LoginClient() {
   return (
     <main className="site-auth">
       <section className="site-auth__card">
-        <img className="site-auth__logo" src="/logo-noderi-full.png" alt="NODERI Nexus" />
+        <img className="site-auth__logo" src="/logo-nodere-full.png" alt="NODERE Nexus" />
         <p className="site-auth__caption">Revenue Intelligence Platform</p>
-        <h1>Entrar no NODERI Nexus</h1>
+        <h1>Entrar no NODERE Nexus</h1>
         <p className="site-auth__subtitle">Acesse seu workspace comercial.</p>
         <form onSubmit={submit} className="site-auth__form">
           <label>

@@ -1,4 +1,4 @@
--- NODERI Nexus — apps/api schema
+-- NODERE Nexus — apps/api schema
 -- Execute no Supabase SQL editor ou via psql DATABASE_URL
 
 create extension if not exists pgcrypto;

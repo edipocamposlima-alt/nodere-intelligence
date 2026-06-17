@@ -4,8 +4,8 @@ import PlansSection from "@/components/site/PlansSection";
 import SitePageShell from "@/components/site/SitePageShell";
 
 export const metadata: Metadata = {
-  title: "Planos | NODERI Nexus",
-  description: "Escolha o plano NODERI Nexus para prospecção, CRM e inteligência comercial."
+  title: "Planos | NODERE Nexus",
+  description: "Escolha o plano NODERE Nexus para prospecção, CRM e inteligência comercial."
 };
 
 export default function PlansPage() {

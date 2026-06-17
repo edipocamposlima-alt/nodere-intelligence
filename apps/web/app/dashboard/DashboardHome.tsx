@@ -84,7 +84,7 @@ export default async function DashboardPage() {
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0 flex-1">
             <div className="dashboard-brand-logo nodere-brand-surface inline-flex rounded-2xl border border-electric/30 p-4 shadow-[0_0_34px_rgba(0,223,130,0.18)]">
-              <Image src="/logo-noderi-full.png" alt="NODERI Nexus" width={560} height={190} priority className="h-auto w-full max-w-xl object-contain" />
+              <Image src="/logo-nodere-full.png" alt="NODERE Nexus" width={560} height={190} priority className="h-auto w-full max-w-xl object-contain" />
             </div>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
               Central comercial para busca de empresas, CRM, funil, WhatsApp, propostas e inteligência operacional.

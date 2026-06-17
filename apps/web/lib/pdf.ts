@@ -1,8 +1,8 @@
 import { jsPDF } from "jspdf";
 
-const LOGO_CANDIDATES = ["/logo-noderi-full.png", "/nodere-wordmark.png", "/nodere-logo.png", "/nodere-logo-192.png"];
+const LOGO_CANDIDATES = ["/logo-nodere-full.png", "/brand-logo-official.png", "/nodere-wordmark.png", "/nodere-logo.png"];
 
-async function getNoderiLogoBase64() {
+async function getNodereLogoBase64() {
   if (typeof window === "undefined") return null;
   for (const candidate of LOGO_CANDIDATES) {
     try {
@@ -79,13 +79,13 @@ async function addHeaderFooter(doc: jsPDF, title: string, logoBase64: string | n
     doc.line(12, 278, 198, 278);
     doc.setFontSize(8);
     doc.setTextColor(75, 85, 99);
-    doc.text("Gerado pelo NODERI Nexus · nodere.com.br", 12, 285);
+    doc.text("Gerado pelo NODERE Nexus · nodere.com.br", 12, 285);
     doc.text(`Página ${page} de ${pages}`, 198, 285, { align: "right" });
   }
 }
 
-export async function downloadNoderiPdf({ title, subtitle, body, fileName }: { title: string; subtitle?: string; body: string; fileName?: string }) {
-  const logoBase64 = await getNoderiLogoBase64();
+export async function downloadNoderePdf({ title, subtitle, body, fileName }: { title: string; subtitle?: string; body: string; fileName?: string }) {
+  const logoBase64 = await getNodereLogoBase64();
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
   const cleanBody = stripMarkdown(body);
   const lines = doc.splitTextToSize(cleanBody || "Sem conteúdo.", 176);

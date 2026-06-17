@@ -72,7 +72,7 @@ export function Header() {
   const [prefs, setPrefs] = useState<UserPrefs>(defaultPrefs);
   const [globalQuery, setGlobalQuery] = useState("");
   const [unreadInbox, setUnreadInbox] = useState(0);
-  const [brandName, setBrandName] = useState("NODERI Nexus");
+  const [brandName, setBrandName] = useState("NODERE Nexus");
   const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
   const pathname = usePathname();
   const router = useRouter();
@@ -101,7 +101,7 @@ export function Header() {
         }
         if (brand?.primaryColor) document.documentElement.style.setProperty("--color-primary", brand.primaryColor);
       } catch {
-        // Keep NODERI default branding.
+        // Keep NODERE default branding.
       }
     }
     if (typeof window !== "undefined") void loadBranding();
@@ -206,7 +206,7 @@ export function Header() {
       setInstallPrompt(null);
       return;
     }
-    alert("Para instalar o app NODERI Nexus, abra o menu do navegador e selecione 'Instalar app' ou 'Adicionar à tela inicial'.");
+    alert("Para instalar o app NODERE Nexus, abra o menu do navegador e selecione 'Instalar app' ou 'Adicionar à tela inicial'.");
   }
 
   return (
@@ -250,7 +250,7 @@ export function Header() {
             type="button"
             onClick={() => void installApp()}
             className="hidden items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 text-xs font-semibold text-[var(--text-primary)] hover:border-electric/60 hover:bg-electric/10 md:inline-flex"
-            title="Instalar aplicativo NODERI Nexus"
+            title="Instalar aplicativo NODERE Nexus"
           >
             <Download className="h-4 w-4" />
             App

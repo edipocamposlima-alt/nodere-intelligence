@@ -1,6 +1,6 @@
 {
-  "name": "NODERI Nexus",
-  "short_name": "NODERI",
+  "name": "NODERE Nexus",
+  "short_name": "NODERE",
   "description": "Plataforma de inteligência comercial, CRM, análise digital e prospecção com IA.",
   "id": "/?app=nodere-nexus",
   "start_url": "/login?source=pwa",

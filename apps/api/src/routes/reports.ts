@@ -171,7 +171,7 @@ router.post("/pdf", async (req: any, res, next) => {
     ]);
 
     const fileName = `relatorio-nodere-${Date.now()}.pdf`;
-    const doc = new PDFDocument({ size: "A4", margin: 42, bufferPages: true, info: { Title: "Relatorio NODERI", Author: "NODERI Nexus" } });
+    const doc = new PDFDocument({ size: "A4", margin: 42, bufferPages: true, info: { Title: "Relatorio NODERE", Author: "NODERE Nexus" } });
     const chunks: Buffer[] = [];
     doc.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
     doc.on("end", async () => {
@@ -187,12 +187,12 @@ router.post("/pdf", async (req: any, res, next) => {
     });
 
     const logoCandidates = [
-      path.resolve(process.cwd(), "../web/public/logo-noderi-full.png"),
-      path.resolve(process.cwd(), "apps/web/public/logo-noderi-full.png"),
-      path.resolve(process.cwd(), "public/logo-noderi-full.png"),
-      path.resolve(process.cwd(), "../web/public/nodere-wordmark.png"),
-      path.resolve(process.cwd(), "apps/web/public/nodere-wordmark.png"),
-      path.resolve(process.cwd(), "public/nodere-wordmark.png")
+      path.resolve(process.cwd(), "../web/public/logo-nodere-full.png"),
+      path.resolve(process.cwd(), "../web/public/brand-logo-official.png"),
+      path.resolve(process.cwd(), "apps/web/public/logo-nodere-full.png"),
+      path.resolve(process.cwd(), "apps/web/public/brand-logo-official.png"),
+      path.resolve(process.cwd(), "public/logo-nodere-full.png"),
+      path.resolve(process.cwd(), "public/brand-logo-official.png")
     ];
     const logoPath = logoCandidates.find((candidate) => fs.existsSync(candidate));
 
@@ -201,9 +201,9 @@ router.post("/pdf", async (req: any, res, next) => {
     if (logoPath) {
       doc.image(logoPath, 56, 39, { width: 150 });
     } else {
-      doc.fillColor("#03624C").fontSize(22).text("NODERI", 56, 42);
+      doc.fillColor("#03624C").fontSize(22).text("NODERE", 56, 42);
     }
-    doc.fillColor("#334155").fontSize(9).text("Relatorio comercial gerado pelo NODERI Nexus", 56, 78);
+    doc.fillColor("#334155").fontSize(9).text("Relatorio comercial gerado pelo NODERE Nexus", 56, 78);
     doc.fillColor("#03624C").fontSize(11).text(`Periodo: ${period}`, 420, 42, { align: "right" });
     doc.fillColor("#64748B").fontSize(8).text(new Date().toLocaleString("pt-BR"), 420, 62, { align: "right" });
 
@@ -252,7 +252,7 @@ router.post("/pdf", async (req: any, res, next) => {
     const pages = doc.bufferedPageRange();
     for (let i = 0; i < pages.count; i += 1) {
       doc.switchToPage(i);
-      doc.fillColor("#64748B").fontSize(8).text(`NODERI Nexus - pagina ${i + 1}/${pages.count}`, 42, doc.page.height - 38, { align: "center" });
+      doc.fillColor("#64748B").fontSize(8).text(`NODERE Nexus - pagina ${i + 1}/${pages.count}`, 42, doc.page.height - 38, { align: "center" });
     }
 
     doc.end();

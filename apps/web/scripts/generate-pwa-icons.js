@@ -3,7 +3,7 @@ const path = require("path");
 
 async function generate() {
   const publicDir = path.join(process.cwd(), "public");
-  const src = path.join(publicDir, "logo-noderi-icon.png");
+  const src = path.join(publicDir, "logo-nodere-icon.png");
   const icon = sharp(src)
     .resize(640, 640, { fit: "cover", position: "center" })
     .png();
@@ -17,7 +17,7 @@ async function generate() {
   await icon.clone().resize(512, 512).toFile(path.join(publicDir, "icon-512.png"));
   await icon.clone().resize(192, 192).toFile(path.join(publicDir, "nodere-logo-192.png"));
   await icon.clone().resize(512, 512).toFile(path.join(publicDir, "nodere-logo-512.png"));
-  console.log("NODERI PWA icons generated.");
+  console.log("NODERE PWA icons generated.");
 }
 
 generate().catch((error) => {

@@ -5,7 +5,7 @@ import { CalendarClock, Copy, Download, Eye, FileText, ImageIcon, MessageCircle,
 import { Company } from "@/lib/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { createCalendarEvent, updateCompany as saveCompanyData } from "@/lib/api";
-import { downloadNoderiPdf } from "@/lib/pdf";
+import { downloadNoderePdf } from "@/lib/pdf";
 import { RichTextEditor, RichTextPreview } from "@/components/RichTextEditor";
 import { CompanyMiniCalendar } from "@/app/calendar/CalendarClient";
 
@@ -323,7 +323,7 @@ export function LeadOperations({ company }: { company: Company }) {
         });
       }
       if ("Notification" in window && Notification.permission === "granted") {
-        new Notification("Follow-up criado no NODERI", { body: `${task.title} · ${company.name}` });
+        new Notification("Follow-up criado no NODERE", { body: `${task.title} · ${company.name}` });
       } else if ("Notification" in window && Notification.permission === "default") {
         void Notification.requestPermission();
       }
@@ -545,7 +545,7 @@ export function LeadOperations({ company }: { company: Company }) {
   }
 
   async function downloadPdf(title: string, content: string, fileName?: string) {
-    await downloadNoderiPdf({
+    await downloadNoderePdf({
       title,
       subtitle: `${lead.name} · ${lead.category || "Sem segmento"}`,
       body: content,

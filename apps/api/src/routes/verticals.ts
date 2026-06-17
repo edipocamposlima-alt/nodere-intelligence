@@ -50,7 +50,7 @@ router.post("/:id/test", requireWorkspaceRole("owner", "admin"), async (req, res
   try {
     const sample = req.body?.lead ?? { name: "Clínica Exemplo", segment: "clínica odontológica", city: "Caxias do Sul", score: 62 };
     const prompt = `Gere diagnóstico curto para lead de teste: ${JSON.stringify(sample)}`;
-    const ai = await callAI("Você é especialista NODERI em diagnósticos verticais.", prompt);
+    const ai = await callAI("Você é especialista NODERE em diagnósticos verticais.", prompt);
     res.json({ id: randomUUID(), output: ai.content, provider: ai.provider });
   } catch (error) {
     next(error);

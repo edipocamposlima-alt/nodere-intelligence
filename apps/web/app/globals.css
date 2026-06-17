@@ -4030,7 +4030,7 @@ textarea {
   }
 }
 /* ================================================================
-   NODERI NEXUS — DESIGN SYSTEM v2.0
+   NODERE NEXUS — DESIGN SYSTEM v2.0
    Camada oficial de identidade visual preservando compatibilidade
    com classes legadas já usadas na plataforma.
    ================================================================ */
@@ -4285,17 +4285,17 @@ body {
   filter: drop-shadow(0 0 18px rgba(0, 223, 130, 0.24));
 }
 
-/* NODERI visual stabilization: cropped official logos now fill the available
+/* NODERE visual stabilization: cropped official logos now fill the available
    brand surfaces without forcing bigger cards or dashboard containers. */
-.sidebar a:has(img[src*="logo-noderi-full"]),
+.sidebar a:has(img[src*="logo-nodere-full"]),
 .sidebar-logo a,
-aside a:has(img[src*="logo-noderi-full"]) {
+aside a:has(img[src*="logo-nodere-full"]) {
   background:
     radial-gradient(circle at 20% 10%, rgba(0, 223, 130, 0.18), transparent 34%),
     linear-gradient(135deg, rgba(3, 98, 76, 0.20), var(--bg-card) 58%, rgba(0, 223, 130, 0.08));
 }
 
-aside img[src*="logo-noderi-full"] {
+aside img[src*="logo-nodere-full"] {
   min-height: 82px;
   max-height: 88px;
   width: min(100%, 226px) !important;
@@ -4311,15 +4311,15 @@ aside img[src*="logo-noderi-full"] {
     linear-gradient(135deg, rgba(3, 98, 76, 0.10), rgba(8, 16, 24, 0.02));
 }
 
-.dashboard-brand-logo img[src*="logo-noderi-full"] {
+.dashboard-brand-logo img[src*="logo-nodere-full"] {
   max-width: 640px;
   filter: drop-shadow(0 18px 42px rgba(0, 223, 130, 0.18));
 }
 
-:root[data-theme="light"] aside img[src*="logo-noderi-full"],
-.light aside img[src*="logo-noderi-full"],
-:root[data-theme="light"] .dashboard-brand-logo img[src*="logo-noderi-full"],
-.light .dashboard-brand-logo img[src*="logo-noderi-full"],
+:root[data-theme="light"] aside img[src*="logo-nodere-full"],
+.light aside img[src*="logo-nodere-full"],
+:root[data-theme="light"] .dashboard-brand-logo img[src*="logo-nodere-full"],
+.light .dashboard-brand-logo img[src*="logo-nodere-full"],
 :root[data-theme="light"] .site-auth__logo,
 .light .site-auth__logo,
 :root[data-theme="light"] .site-logo,

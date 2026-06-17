@@ -59,7 +59,7 @@ export function MobileNav() {
           >
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-white">Menu NODERI</p>
+                <p className="text-sm font-semibold text-white">Menu NODERE</p>
                 <p className="text-xs text-slate-400">Todas as funcionalidades da plataforma.</p>
               </div>
               <button type="button" onClick={() => setOpen(false)} className="rounded-lg border border-line bg-panel p-2 text-white" aria-label="Fechar menu">

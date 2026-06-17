@@ -50,7 +50,7 @@ export function OnboardingBanner({ initialSteps }: { initialSteps: OnboardingSta
         <div className="flex items-center gap-3 text-[var(--text-primary)]">
           <CheckCircle2 className="h-5 w-5 text-success" />
           <div>
-            <h3 className="font-semibold text-[var(--text-primary)]">NODERI configurado com sucesso.</h3>
+            <h3 className="font-semibold text-[var(--text-primary)]">NODERE configurado com sucesso.</h3>
             <p className="text-sm text-[var(--text-secondary)]">Você concluiu os 3 passos iniciais.</p>
           </div>
         </div>
@@ -58,7 +58,7 @@ export function OnboardingBanner({ initialSteps }: { initialSteps: OnboardingSta
         <>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h3 className="mb-2 font-semibold text-[var(--text-primary)]">Configure o NODERI em 3 passos — {progress}/{total} concluídos</h3>
+              <h3 className="mb-2 font-semibold text-[var(--text-primary)]">Configure o NODERE em 3 passos — {progress}/{total} concluídos</h3>
               <div className="flex flex-wrap gap-3 text-sm">
                 {steps.map((step) => {
                   const done = Boolean(status[step.key]);

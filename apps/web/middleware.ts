@@ -26,7 +26,7 @@ const PUBLIC_PATHS = [
   "/favicon",
   "/favicon-",
   "/nodere",
-  "/logo-noderi",
+  "/logo-nodere",
   "/android-chrome",
   "/apple-touch-icon",
   "/icon-",

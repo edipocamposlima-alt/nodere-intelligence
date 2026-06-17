@@ -156,7 +156,7 @@ export default function HomeDefinitiveClient() {
 
       <section className="def-section def-section--alt">
         <div className="def-container">
-          <h2 className="def-title-center">Quem já usa o NODERI Nexus</h2>
+          <h2 className="def-title-center">Quem já usa o NODERE Nexus</h2>
           <div className="def-testimonials">{TESTIMONIALS.map((item) => <article key={item.name}><div>★★★★★</div><p>"{item.text}"</p><footer><span>{item.avatar}</span><b>{item.name}</b><small>{item.role} · {item.company}</small></footer></article>)}</div>
         </div>
       </section>

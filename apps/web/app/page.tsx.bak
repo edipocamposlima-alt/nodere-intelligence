@@ -5,7 +5,7 @@ import WhatsAppButton from "@/components/site/WhatsAppButton";
 import HomeDefinitiveClient from "@/components/site/HomeDefinitiveClient";
 
 export const metadata: Metadata = {
-  title: "NODERI Nexus — Revenue Intelligence Platform",
+  title: "NODERE Nexus — Revenue Intelligence Platform",
   description: "Encontre empresas que precisam dos seus serviços. Diagnóstico digital automático, CRM com IA e prospecção inteligente em um único fluxo."
 };
 

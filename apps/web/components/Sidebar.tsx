@@ -21,7 +21,7 @@ const items = [
   { href: "/billing", label: "Faturamento", icon: CreditCard },
   { href: "/integrations", label: "Integrações", icon: Plug },
   { href: "/settings", label: "Configurações", icon: Settings },
-  { href: "/manual", label: "Ajuda / Manual NODERI", icon: CircleHelp },
+  { href: "/manual", label: "Ajuda / Manual NODERE", icon: CircleHelp },
   { href: "/admin", label: "Administrador", icon: ShieldCheck }
 ];
 

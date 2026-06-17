@@ -9,8 +9,8 @@ import { CsvImportPanel } from "./CsvImportPanel";
 import { ExternalSearchTabs } from "./ExternalSearchTabs";
 
 export const metadata: Metadata = {
-  title: "Busca de empresas | NODERI Nexus",
-  description: "Busque empresas no Google Places, salve oportunidades no CRM e acompanhe enriquecimento comercial no NODERI Nexus."
+  title: "Busca de empresas | NODERE Nexus",
+  description: "Busque empresas no Google Places, salve oportunidades no CRM e acompanhe enriquecimento comercial no NODERE Nexus."
 };
 
 export default async function SearchesPage() {
@@ -20,7 +20,7 @@ export default async function SearchesPage() {
     <div className="space-y-8 p-4 md:p-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-[var(--text-primary)]">Busca de empresas NODERI</h1>
+          <h1 className="text-xl font-semibold text-[var(--text-primary)]">Busca de empresas NODERE</h1>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">Pesquise empresas reais, salve leads e acompanhe enriquecimento comercial.</p>
         </div>
 
@@ -36,7 +36,7 @@ export default async function SearchesPage() {
 
       <section className="space-y-3">
         <div className="nodere-brand-surface overflow-hidden rounded-lg border border-[rgba(3,98,76,0.32)] p-4 shadow-glow">
-          <Image src="/logo-noderi-full.png" alt="NODERI Nexus" width={520} height={180} priority className="h-auto w-full max-w-md object-contain" />
+          <Image src="/logo-nodere-full.png" alt="NODERE Nexus" width={520} height={180} priority className="h-auto w-full max-w-md object-contain" />
           <h2 className="mt-4 text-lg font-semibold text-[var(--text-primary)]">Busca inteligente de empresas</h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">Pesquise, selecione empresas em massa, salve leads, exporte CSV ou baixe relatório PDF.</p>
         </div>
