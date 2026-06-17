@@ -51,19 +51,19 @@ async function main() {
   const width = metadata.width ?? 1536;
   const height = metadata.height ?? 1024;
 
-  // Official source is a 3:2 brand image. The crops below only remove empty canvas,
-  // preserving the artwork, colors and proportions from the official file.
+  // Official source is the standalone NODERE symbol. The crop below preserves
+  // the symbol, glow and proportions while removing excess empty canvas.
   const fullCrop = {
-    left: Math.round(width * 0.16),
-    top: Math.round(height * 0.29),
-    width: Math.round(width * 0.67),
-    height: Math.round(height * 0.36)
+    left: Math.round(width * 0.29),
+    top: Math.round(height * 0.2),
+    width: Math.round(width * 0.42),
+    height: Math.round(width * 0.42)
   };
   const iconCrop = {
-    left: Math.round(width * 0.145),
-    top: Math.round(height * 0.3),
-    width: Math.round(width * 0.235),
-    height: Math.round(width * 0.235)
+    left: Math.round(width * 0.29),
+    top: Math.round(height * 0.2),
+    width: Math.round(width * 0.42),
+    height: Math.round(width * 0.42)
   };
 
   await writePng("logo-nodere-full.png", sharp(source).rotate().extract(fullCrop).resize({ width: 900, withoutEnlargement: true }));
