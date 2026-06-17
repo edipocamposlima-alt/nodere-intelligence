@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Check, GripVertical, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { Company, CrmStatus } from "@/lib/types";
 import { getPublicSettings, savePipelineSettings, updateCompany, updateCompanyStatus } from "@/lib/api";
+import { LeadCard } from "@/components/crm/LeadCard";
 
 const STAGES_STORAGE_KEY = "nodere_pipeline_stages";
 const STAGE_COLORS_STORAGE_KEY = "nodere_pipeline_stage_colors";
@@ -75,7 +75,7 @@ function isValidBrazilianMobile(phone?: string) {
   return local.length === 11 && local[2] === "9";
 }
 
-export function CrmBoard({ companies }: { companies: Company[] }) {
+export function CrmBoard({ companies, onLeadClick }: { companies: Company[]; onLeadClick?: (lead: Company) => void }) {
   const [items, setItems] = useState(companies);
   const [query, setQuery] = useState("");
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -418,25 +418,17 @@ export function CrmBoard({ companies }: { companies: Company[] }) {
                         setDraggedId(company.id);
                         event.dataTransfer.setData("text/plain", company.id);
                       }}
-                      className={`crm-lead-card rounded-lg border p-3 shadow-sm ring-1 transition hover:-translate-y-0.5 ${stale?.className || ""}`}
+                      className={`crm-lead-card rounded-lg border p-2 shadow-sm ring-1 transition hover:-translate-y-0.5 ${stale?.className || ""}`}
                       style={{
                         borderColor: hexToRgba(stageColor, 0.34),
                         boxShadow: `inset 3px 0 0 ${stageColor}`
                       }}
                     >
-                      <div className="flex items-start gap-2">
-                        <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
-                        <div className="min-w-0">
-                          <Link href={`/companies/${encodeURIComponent(company.id)}`} className="block truncate text-sm font-bold text-[var(--text-primary)] hover:text-[var(--cyan)]">
-                            {company.name}
-                          </Link>
-                          <p className="mt-1 truncate text-xs text-[var(--text-secondary)]">{company.category} · {company.city}/{company.state}</p>
-                        </div>
+                      <div className="mb-2 flex items-center gap-2 text-xs text-text-muted">
+                        <GripVertical className="h-4 w-4 shrink-0" />
+                        <span>Arraste para mudar etapa</span>
                       </div>
-                      <div className="mt-3 flex items-center justify-between text-xs">
-                        <span className="text-[var(--text-secondary)]">Score</span>
-                        <span className="font-semibold text-[var(--cyan)]">{company.score}</span>
-                      </div>
+                      <LeadCard lead={company} onEdit={onLeadClick} />
                       {stale && <p className="mt-2 rounded-md bg-black/20 px-2 py-1 text-[11px] font-semibold text-amber-100">{stale.label}</p>}
                       {company.whatsapp && !isValidBrazilianMobile(company.whatsapp) && (
                         <div className="mt-2">

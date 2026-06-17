@@ -5,35 +5,53 @@ import Link from "next/link";
 import { Download, LayoutGrid, ListFilter, Plus, Search, SlidersHorizontal } from "lucide-react";
 import type { Company } from "@/lib/types";
 import { CrmBoard } from "./CrmBoard";
+import { LeadDrawer } from "@/components/crm/LeadDrawer";
 
 export function CrmSwitcher({ companies }: { companies: Company[] }) {
+  const [items, setItems] = useState(companies);
   const [view, setView] = useState<"kanban" | "list">("kanban");
   const [query, setQuery] = useState("");
   const [stage, setStage] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Company | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("crm_view_preference");
     if (saved === "list") setView("list");
   }, []);
 
+  useEffect(() => {
+    setItems(companies);
+  }, [companies]);
+
   function changeView(next: "kanban" | "list") {
     setView(next);
     localStorage.setItem("crm_view_preference", next);
   }
 
-  const filtered = useMemo(() => companies.filter((company) =>
+  const filtered = useMemo(() => items.filter((company) =>
     (!query || company.name.toLowerCase().includes(query.toLowerCase())) &&
     (!stage || company.status === stage)
-  ), [companies, query, stage]);
-  const stages = useMemo(() => Array.from(new Set(companies.map((company) => company.status).filter(Boolean))), [companies]);
-  const won = companies.filter((company) => ["Fechado", "Ganho", "Ganho(a)"].includes(String(company.status))).length;
-  const stale = companies.filter((company) => {
+  ), [items, query, stage]);
+  const stages = useMemo(() => Array.from(new Set(items.map((company) => company.status).filter(Boolean))), [items]);
+  const won = items.filter((company) => ["Fechado", "Ganho", "Ganho(a)"].includes(String(company.status))).length;
+  const stale = items.filter((company) => {
     const source = company.lastContactAt || company.updatedAt || company.createdAt;
     if (!source) return false;
     const days = Math.floor((Date.now() - new Date(source).getTime()) / 86400000);
     return Number.isFinite(days) && days >= 7 && !["Fechado", "Perdido", "Ganho", "Ganho(a)"].includes(String(company.status));
   }).length;
-  const avgScore = companies.length ? Math.round(companies.reduce((sum, company) => sum + Number(company.score || 0), 0) / companies.length) : 0;
+  const avgScore = items.length ? Math.round(items.reduce((sum, company) => sum + Number(company.score || 0), 0) / items.length) : 0;
+
+  function openNewLead() {
+    setSelectedLead(null);
+    setDrawerOpen(true);
+  }
+
+  function openLead(lead: Company) {
+    setSelectedLead(lead);
+    setDrawerOpen(true);
+  }
 
   return (
     <section className="space-y-5">
@@ -47,10 +65,10 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href="/searches" className="inline-flex items-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-black text-white transition hover:bg-brand-hover">
+            <button type="button" onClick={openNewLead} className="inline-flex items-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-black text-white transition hover:bg-brand-hover">
               <Plus className="h-4 w-4" />
               Novo lead
-            </Link>
+            </button>
             <Link href="/companies" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10">
               <Download className="h-4 w-4" />
               Importar / exportar
@@ -59,7 +77,7 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-5">
           {[
-            ["Leads totais", companies.length.toLocaleString("pt-BR")],
+            ["Leads totais", items.length.toLocaleString("pt-BR")],
             ["Etapas ativas", stages.length.toLocaleString("pt-BR")],
             ["Ganhos", won.toLocaleString("pt-BR")],
             ["Score médio", `${avgScore}/100`],
@@ -100,7 +118,7 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
           </div>
         </div>
       </div>
-      {view === "kanban" ? <CrmBoard companies={filtered} /> : (
+      {view === "kanban" ? <CrmBoard companies={filtered} onLeadClick={openLead} /> : (
         <div className="overflow-x-auto rounded-2xl border border-line bg-panel/90 shadow-card">
           <table className="w-full min-w-[760px] text-sm">
             <thead className="border-b border-line text-left text-xs text-slate-400">
@@ -115,13 +133,13 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
             </thead>
             <tbody className="divide-y divide-line">
               {filtered.map((company) => (
-                <tr key={company.id} className="hover:bg-white/[0.03]">
+                <tr key={company.id} className="cursor-pointer hover:bg-white/[0.03]" onClick={() => openLead(company)}>
                   <td className="px-4 py-3 font-semibold text-white">{company.name}</td>
                   <td className="px-4 py-3 text-cyan">{company.score}</td>
                   <td className="px-4 py-3">{company.status}</td>
                   <td className="px-4 py-3 text-slate-300">{company.city}/{company.state}</td>
                   <td className="px-4 py-3 text-slate-400">{company.lastContactAt ? new Date(company.lastContactAt).toLocaleDateString("pt-BR") : "Sem contato"}</td>
-                  <td className="px-4 py-3"><Link href={`/companies/${encodeURIComponent(company.id)}`} className="text-cyan">Abrir ficha</Link></td>
+                  <td className="px-4 py-3"><Link href={`/companies/${encodeURIComponent(company.id)}`} className="text-cyan" onClick={(event) => event.stopPropagation()}>Abrir ficha 360º</Link></td>
                 </tr>
               ))}
               {filtered.length === 0 && (
@@ -133,6 +151,12 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
           </table>
         </div>
       )}
+      <LeadDrawer
+        lead={selectedLead}
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onCreated={(lead) => setItems((current) => [lead, ...current])}
+      />
     </section>
   );
 }

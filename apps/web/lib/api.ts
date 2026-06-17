@@ -136,6 +136,67 @@ export function createCompany(payload: {
   return api<Company>("/companies", { method: "POST", body: JSON.stringify(payload) });
 }
 
+export function createLead(payload: {
+  name: string;
+  legalName?: string;
+  cnpj?: string;
+  category?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  cep?: string;
+  phone?: string;
+  whatsapp?: string;
+  email?: string;
+  website?: string;
+  status?: string;
+  temperature?: string;
+  serviceInterest?: string;
+  notes?: string;
+}) {
+  return api<Company>("/leads", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function updateLeadStage(id: string, newStage: string, reason?: string) {
+  return api<Company>(`/leads/${encodeURIComponent(id)}/stage`, {
+    method: "PATCH",
+    body: JSON.stringify({ newStage, reason })
+  });
+}
+
+export function getLeadActivities(id: string) {
+  return api<Array<Record<string, unknown>>>(`/leads/${encodeURIComponent(id)}/activities`, undefined, []);
+}
+
+export function addLeadActivity(id: string, payload: { type: string; title?: string; body?: string; content?: string }) {
+  return api<Record<string, unknown>>(`/leads/${encodeURIComponent(id)}/activities`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function getLeadContacts(id: string) {
+  return api<Array<Record<string, unknown>>>(`/leads/${encodeURIComponent(id)}/contacts`, undefined, []);
+}
+
+export function addLeadContact(id: string, payload: Record<string, unknown>) {
+  return api<Record<string, unknown>>(`/leads/${encodeURIComponent(id)}/contacts`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function getLeadDeals(id: string) {
+  return api<Array<Record<string, unknown>>>(`/leads/${encodeURIComponent(id)}/deals`, undefined, []);
+}
+
+export function addLeadDeal(id: string, payload: Record<string, unknown>) {
+  return api<Record<string, unknown>>(`/leads/${encodeURIComponent(id)}/deals`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
 export function searchCompanies(payload: { mode?: "places" | "cnpj" | "global"; city?: string; state?: string; country?: string; segment?: string; keyword?: string; companyName?: string; limit?: number; lat?: number; lng?: number; radiusKm?: number }) {
   return api<{
     companies: Company[];
