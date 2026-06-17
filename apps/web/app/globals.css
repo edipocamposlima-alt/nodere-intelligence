@@ -4408,6 +4408,24 @@ aside img[src*="logo-nodere-full"] {
     linear-gradient(135deg, rgba(3, 98, 76, 0.24), rgba(8, 16, 24, 0.82) 58%, rgba(0, 223, 130, 0.08));
 }
 
+/* Official NODERE logo backplate. The provided wordmark has a designed neutral
+   background, so logo containers use the same base to avoid a second visible layer. */
+.sidebar a:has(img[src*="logo-nodere-full"]),
+.sidebar-logo a,
+aside a:has(img[src*="logo-nodere-full"]),
+.dashboard-brand-logo,
+.nodere-brand-surface {
+  background: #68716d !important;
+  border-color: rgba(0, 223, 130, 0.24) !important;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.18), 0 0 34px rgba(0, 223, 130, 0.12) !important;
+}
+
+img[src*="logo-nodere-full"],
+img[src*="nodere-logo.png"],
+img[src*="nodere-wordmark.png"] {
+  border-radius: 14px;
+}
+
 .crm-lead-card {
   background: var(--bg-card);
   color: var(--text-primary);
