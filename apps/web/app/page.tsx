@@ -17,7 +17,7 @@ const solutions = [
 ];
 
 const modules = [
-  { id: "discovery", label: "🔍 Intelligence & Discovery", title: "Busca comercial com dados reais", desc: "Encontre empresas por cidade, segmento, raio e sinais de maturidade digital." },
+  { id: "discovery", label: "🔍 Inteligência e Discovery", title: "Busca comercial com dados reais", desc: "Encontre empresas por cidade, segmento, raio e sinais de maturidade digital." },
   { id: "score", label: "📊 Score NODERE", title: "Priorização objetiva", desc: "Classifique oportunidades por presença digital, tráfego, reputação, site, WhatsApp e intenção comercial." },
   { id: "crm", label: "💼 CRM Comercial", title: "Pipeline pronto para vender", desc: "Transforme resultados em leads, acompanhe etapas, tarefas, contatos, histórico e propostas." },
   { id: "ai", label: "🤖 IA Comercial", title: "Abordagem com contexto", desc: "Crie diagnósticos, mensagens, scripts e propostas usando dados reais de cada empresa." }
@@ -54,7 +54,7 @@ const faqs = [
 ];
 
 export const metadata: Metadata = {
-  title: "NODERE — Intelligence Comercial, CRM e IA",
+  title: "NODERE — Inteligência Comercial, CRM e IA",
   description: "Encontre empresas, analise presença digital, priorize oportunidades e venda mais com IA.",
   openGraph: {
     title: "NODERE",
@@ -108,7 +108,7 @@ export default function LandingPage() {
       <section className="landing-section" id="funcionalidades">
         <div className="landing-section__title">
           <span>A solução NODERE</span>
-          <h2>Intelligence + CRM + IA em um só lugar</h2>
+          <h2>Inteligência + CRM + IA em um só lugar</h2>
         </div>
         <div className="landing-solution-grid">
           {solutions.map((item) => (

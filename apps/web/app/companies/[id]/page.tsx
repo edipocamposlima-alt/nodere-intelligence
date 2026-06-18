@@ -314,7 +314,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
           <div className="space-y-5">
             <div className="flex items-center gap-2">
               <Zap className="h-4 w-4 text-cyan" />
-              <h3 className="font-semibold text-white">Google Intelligence</h3>
+              <h3 className="font-semibold text-white">Inteligência Google</h3>
             </div>
             {intel
               ? <IntelligencePanel intel={intel} />

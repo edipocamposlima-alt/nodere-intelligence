@@ -47,7 +47,7 @@ export default async function IntelligencePage() {
         </div>
       )}
       <div>
-        <h1 className="text-xl font-semibold text-white">Google Intelligence</h1>
+        <h1 className="text-xl font-semibold text-white">Inteligência Google</h1>
         <p className="mt-1 text-sm text-slate-400">Visão consolidada de prontidão para tráfego pago, keywords e Business Profile.</p>
       </div>
 

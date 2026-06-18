@@ -13,7 +13,7 @@ const ALL_POSTS = [
   { tag: "IA NODERE", color: "var(--ai-primary)", slug: "copiloto-ia-scripts-abordagem", title: "Copiloto comercial: como a IA gera scripts de abordagem em segundos", desc: "O IA NODERE usa o contexto real do lead para criar mensagens de WhatsApp e e-mails personalizados com um clique.", read: "6 min", date: "Mai 2026" },
   { tag: "Engage", color: "#16A34A", slug: "whatsapp-b2b-sem-spam", title: "WhatsApp B2B: como escalar prospecção sem virar spam", desc: "Estratégias de disparos em massa responsáveis, templates que convertem e como usar o inbox do NODERE para gestão de conversas.", read: "5 min", date: "Mai 2026" },
   { tag: "Analytics", color: "#2563EB", slug: "forecast-receita-85-precisao", title: "Forecast de receita: como prever seu faturamento com precisão", desc: "Configure probabilidades por estágio do funil e veja o NODERE calcular automaticamente sua receita prevista.", read: "4 min", date: "Abr 2026" },
-  { tag: "Intelligence", color: "#7C3AED", slug: "enriquecimento-apollo-receita-federal", title: "Enriquecimento de dados: Apollo + Receita Federal na mesma tela", desc: "Como o conjunto Intelligence combina múltiplas fontes para entregar faturamento, sócios, CNPJ e contatos decisores automaticamente.", read: "3 min", date: "Abr 2026" }
+  { tag: "Inteligência", color: "#7C3AED", slug: "enriquecimento-apollo-receita-federal", title: "Enriquecimento de dados: Apollo + Receita Federal na mesma tela", desc: "Como o conjunto Intelligence combina múltiplas fontes para entregar faturamento, sócios, CNPJ e contatos decisores automaticamente.", read: "3 min", date: "Abr 2026" }
 ];
 
 export default function BlogPage() {

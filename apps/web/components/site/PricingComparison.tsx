@@ -12,8 +12,8 @@ const planPrices = {
 const features = [
   { category: "Discovery", items: [
     { name: "Busca por Google Maps", starter: true, pro: true, agency: true, enterprise: true },
-    { name: "GBP Intelligence (avaliacoes)", starter: true, pro: true, agency: true, enterprise: true },
-    { name: "Website Intelligence", starter: true, pro: true, agency: true, enterprise: true },
+    { name: "GBP Inteligência (avaliações)", starter: true, pro: true, agency: true, enterprise: true },
+    { name: "Inteligência de Website", starter: true, pro: true, agency: true, enterprise: true },
     { name: "Digital Presence Score", starter: true, pro: true, agency: true, enterprise: true },
     { name: "Oportunidades Automaticas (IA)", starter: true, pro: true, agency: true, enterprise: true },
     { name: "Social Scanner", starter: false, pro: true, agency: true, enterprise: true }

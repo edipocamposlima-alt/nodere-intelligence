@@ -4,7 +4,7 @@ import { useState } from "react";
 
 const SOLUTION_CARDS = [
   { icon: "🔍", code: "DISC", name: "Discovery", tag: "Busca", color: "#F59E0B", desc: "Encontre empresas por Google Maps, score digital e redes sociais.", features: ["Google Maps", "Score digital", "Filtros por cidade"] },
-  { icon: "🧠", code: "INTEL", name: "Intelligence", tag: "Dados", color: "#7C3AED", desc: "Enriqueça com Apollo, Receita Federal e diagnóstico por IA.", features: ["Enriquecimento", "Diagnóstico IA", "Dores prováveis"] },
+  { icon: "🧠", code: "INTEL", name: "Inteligência", tag: "Dados", color: "#7C3AED", desc: "Enriqueça com Apollo, Receita Federal e diagnóstico por IA.", features: ["Enriquecimento", "Diagnóstico IA", "Dores prováveis"] },
   { icon: "📊", code: "CRM", name: "CRM", tag: "Pipeline", color: "var(--crm-new)", desc: "Pipeline, ficha inteligente, propostas em PDF e agenda.", features: ["Ficha completa", "Propostas PDF", "Agenda"] },
   { icon: "💬", code: "ENG", name: "Engage", tag: "Ativação", color: "#16A34A", desc: "WhatsApp, e-mail e omnichannel com automações por funil.", features: ["WhatsApp", "E-mail", "Automações"] },
   { icon: "🤖", code: "AI", name: "IA NODERE", tag: "Copiloto", color: "var(--ai-primary)", desc: "Copiloto comercial com contexto real do lead.", features: ["Scripts", "Objeções", "Próxima ação"] },

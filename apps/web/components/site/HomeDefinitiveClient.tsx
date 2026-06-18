@@ -14,7 +14,7 @@ const STATS = [
 
 const SOLUTIONS = [
   { icon: "🔍", code: "DISC", name: "Discovery", color: "#F59E0B", desc: "Encontre empresas com baixa presença digital e alto potencial de compra por segmento e cidade." },
-  { icon: "🧠", code: "INTEL", name: "Intelligence", color: "#7C3AED", desc: "Enriquecimento automático com Apollo, Receita Federal e diagnóstico por IA." },
+  { icon: "🧠", code: "INTEL", name: "Inteligência", color: "#7C3AED", desc: "Enriquecimento automático com Apollo, Receita Federal e diagnóstico por IA." },
   { icon: "📊", code: "CRM", name: "CRM", color: "var(--crm-new)", desc: "Pipeline visual, ficha 360, propostas em PDF e agenda de follow-ups integrados." },
   { icon: "💬", code: "ENGAGE", name: "Engage", color: "#16A34A", desc: "WhatsApp inbox, disparos em massa, e-mail e central omnichannel com automações." },
   { icon: "🤖", code: "AI", name: "IA NODERE", color: "var(--ai-primary)", desc: "Copiloto comercial com contexto real do lead. Scripts, análise e respostas inteligentes." },
@@ -42,7 +42,7 @@ const INTEGRATIONS = [
 
 const PLANS = [
   { name: "Starter", price: 97, users: "1 usuário", highlight: false, features: ["Discovery completo", "CRM essencial", "Dashboard básico", "IA limitada", "300 créditos/mês"] },
-  { name: "Pro", price: 247, users: "Até 3 usuários", highlight: true, features: ["Tudo do Starter", "Intelligence completo", "WhatsApp + E-mail", "IA copiloto ilimitado", "1.000 créditos/mês"] },
+  { name: "Pro", price: 247, users: "Até 3 usuários", highlight: true, features: ["Tudo do Starter", "Inteligência completa", "WhatsApp + E-mail", "IA copiloto ilimitado", "1.000 créditos/mês"] },
   { name: "Agency", price: 497, users: "Até 10 usuários", highlight: false, features: ["Tudo do Pro", "Omnichannel completo", "Automações avançadas", "Analytics completo", "Operations + Marketplace"] },
   { name: "Enterprise", price: null, users: "Ilimitado", highlight: false, features: ["Todos os módulos", "White-label disponível", "API pública", "SLA dedicado", "Gerente de conta"] }
 ];
@@ -59,7 +59,7 @@ const BLOG_POSTS = [
   { tag: "IA NODERE", color: "var(--ai-primary)", title: "Copiloto comercial: como a IA gera scripts de abordagem em segundos", read: "6 min", date: "Mai 2026" },
   { tag: "Engage", color: "#16A34A", title: "WhatsApp B2B: como escalar prospecção sem virar spam", read: "5 min", date: "Mai 2026" },
   { tag: "Analytics", color: "#2563EB", title: "Forecast de receita: como prever seu faturamento com precisão", read: "4 min", date: "Abr 2026" },
-  { tag: "Intelligence", color: "#7C3AED", title: "Enriquecimento de dados: Apollo + Receita Federal na mesma tela", read: "3 min", date: "Abr 2026" }
+  { tag: "Inteligência", color: "#7C3AED", title: "Enriquecimento de dados: Apollo + Receita Federal na mesma tela", read: "3 min", date: "Abr 2026" }
 ];
 
 function slugify(value: string) {

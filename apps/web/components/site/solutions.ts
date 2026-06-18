@@ -2,7 +2,7 @@ import { BarChart3, Bot, BriefcaseBusiness, Handshake, LayoutGrid, MessageSquare
 
 export const SOLUTIONS = [
   { icon: Search, code: "DISC", name: "Discovery", desc: "Encontre empresas por Google Maps, score digital e redes sociais.", href: "/solucoes#discovery" },
-  { icon: Bot, code: "INTEL", name: "Intelligence", desc: "Enriqueça com Apollo, Receita Federal e diagnóstico por IA.", href: "/solucoes#intelligence" },
+  { icon: Bot, code: "INTEL", name: "Inteligência", desc: "Enriqueça com Apollo, Receita Federal e diagnóstico por IA.", href: "/solucoes#intelligence" },
   { icon: LayoutGrid, code: "CRM", name: "CRM", desc: "Pipeline, ficha inteligente, propostas em PDF e agenda.", href: "/solucoes#crm" },
   { icon: MessageSquareText, code: "ENG", name: "Engage", desc: "WhatsApp, e-mail e omnichannel com automações por funil.", href: "/solucoes#engage" },
   { icon: Bot, code: "AI", name: "IA NODERE", desc: "Copiloto comercial com contexto real do lead.", href: "/solucoes#ai" },

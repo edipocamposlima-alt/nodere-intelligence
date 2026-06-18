@@ -6,7 +6,7 @@ import { CheckCircle2 } from "lucide-react";
 
 const plans = [
   { name: "Starter", monthly: 97, yearly: 77, desc: "Para validar prospecção local.", modules: ["Discovery", "CRM essencial", "300 créditos/mês"] },
-  { name: "Pro", monthly: 197, yearly: 157, desc: "Para operação recorrente com IA.", modules: ["Discovery + Intelligence", "CRM completo", "1.000 créditos/mês", "Relatórios comerciais"], featured: true },
+  { name: "Pro", monthly: 197, yearly: 157, desc: "Para operação recorrente com IA.", modules: ["Discovery + Inteligência", "CRM completo", "1.000 créditos/mês", "Relatórios comerciais"], featured: true },
   { name: "Agency", monthly: 397, yearly: 317, desc: "Para equipes e agências.", modules: ["Todos os módulos Pro", "Operadores", "Analytics avançado", "Integrações"] },
   { name: "Enterprise", monthly: 0, yearly: 0, desc: "Para times com processos sob medida.", modules: ["SLA dedicado", "Workspaces avançados", "Integrações customizadas"] }
 ];
