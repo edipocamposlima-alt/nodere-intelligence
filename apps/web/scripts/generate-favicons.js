@@ -3,7 +3,7 @@ const path = require("path");
 const sharp = require("sharp");
 
 const publicDir = path.join(__dirname, "..", "public");
-const iconSvg = path.join(publicDir, "nodere-icon.svg");
+const iconPng = path.join(publicDir, "nodere-icon-official.png");
 
 const targets = [
   ["favicon-16x16.png", 16],
@@ -14,10 +14,10 @@ const targets = [
 ];
 
 async function generate() {
-  const svg = fs.readFileSync(iconSvg);
+  const icon = fs.readFileSync(iconPng);
 
   for (const [file, size] of targets) {
-    await sharp(svg).resize(size, size).png().toFile(path.join(publicDir, file));
+    await sharp(icon).resize(size, size).png().toFile(path.join(publicDir, file));
   }
 
   fs.copyFileSync(path.join(publicDir, "favicon-32x32.png"), path.join(publicDir, "favicon.ico"));

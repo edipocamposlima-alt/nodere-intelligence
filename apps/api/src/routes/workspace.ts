@@ -142,7 +142,7 @@ router.get("/branding", async (req, res, next) => {
     res.json({
       workspaceId: data.id,
       name: data.wl_name || data.name || "NODERE Nexus",
-      logoUrl: data.wl_logo_url || "/nodere-logo.svg",
+      logoUrl: data.wl_logo_url || "/nodere-logo-official.png",
       primaryColor: data.wl_primary_color || "#1E6FDB",
       enabled: Boolean(data.wl_enabled)
     });
@@ -178,7 +178,7 @@ router.patch("/branding", requireWorkspaceRole("owner", "admin"), async (req, re
 function defaultBranding() {
   return {
     name: "NODERE Nexus",
-    logoUrl: "/nodere-logo.svg",
+    logoUrl: "/nodere-logo-official.png",
     primaryColor: "#1E6FDB",
     enabled: false
   };
