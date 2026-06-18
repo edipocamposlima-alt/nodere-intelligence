@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { updatePasswordWithRecoveryToken } from "@/lib/supabaseAuthRest";
+import { Logo } from "@/components/brand/Logo";
 
 function readRecoveryToken() {
   if (typeof window === "undefined") return "";
@@ -60,7 +60,7 @@ export function ResetPasswordClient() {
     <main className="min-h-screen bg-ink px-5 py-10">
       <section className="mx-auto max-w-md rounded-xl border border-line bg-panel/95 p-6 shadow-glow">
         <div className="mb-6 flex justify-center">
-          <Image src="/logo-nodere-full.png" alt="NODERE" width={360} height={120} priority className="h-auto w-full max-w-xs rounded-xl object-contain" />
+          <Logo variant="full" height={44} className="site-auth__logo" />
         </div>
         <h1 className="text-xl font-semibold text-white">Redefinir senha</h1>
         <p className="mt-2 text-sm leading-6 text-slate-400">

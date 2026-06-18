@@ -7,6 +7,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { setAdminToken } from "@/lib/adminAuth";
 import { hasSupabaseAuthConfig, signUpWithPassword } from "@/lib/supabaseAuthRest";
+import { Logo } from "@/components/brand/Logo";
 
 function passwordStrength(password: string) {
   if (password.length < 4) return { label: "Fraca", level: 1 };
@@ -64,7 +65,7 @@ export function RegisterClient() {
     return (
       <main className="site-auth">
         <section className="site-auth__card site-auth__card--center">
-          <img className="site-auth__logo" src="/logo-nodere-full.png" alt="NODERE Nexus" />
+          <Logo variant="full" height={44} className="site-auth__logo" />
           <h1>Verifique seu e-mail</h1>
           <p>Enviamos um link de confirmação para <strong>{form.email}</strong>. Confirme para acessar o NODERE Nexus.</p>
           <Link href="/login">Ir para o login</Link>
@@ -76,7 +77,7 @@ export function RegisterClient() {
   return (
     <main className="site-auth">
       <section className="site-auth__card">
-        <img className="site-auth__logo" src="/logo-nodere-full.png" alt="NODERE Nexus" />
+        <Logo variant="full" height={44} className="site-auth__logo" />
         <p className="site-auth__caption">Revenue Intelligence Platform</p>
         <h1>Criar conta grátis</h1>
         <p className="site-auth__subtitle">14 dias grátis · Sem cartão de crédito</p>

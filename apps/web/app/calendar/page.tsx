@@ -1,7 +1,7 @@
 import { CalendarClient } from "./CalendarClient";
 
 export const metadata = {
-  title: "Calendário | NODERE"
+  title: "Calendário | NODERE Nexus"
 };
 
 export default function CalendarPage() {

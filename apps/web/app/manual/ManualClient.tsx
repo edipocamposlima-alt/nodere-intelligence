@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useMemo, useState } from "react";
 import { BookOpen, CheckCircle2, Download, Search } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 
 function slugify(value: string) {
   return value
@@ -28,7 +28,7 @@ export function ManualClient({ sections }: { sections: string[][] }) {
       <section className="rounded-xl border border-line bg-panel/90 p-6 print:border-0 print:bg-white">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
-              <Image src="/logo-nodere-full.png" alt="NODERE" width={260} height={90} priority className="h-auto w-52 rounded-lg object-contain" />
+              <Logo variant="full" height={48} />
             <div>
               <div className="flex items-center gap-2">
                 <BookOpen className="h-5 w-5 text-cyan print:text-blue-700" />

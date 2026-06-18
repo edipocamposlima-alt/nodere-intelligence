@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import SitePageShell from "@/components/site/SitePageShell";
+import { Logo } from "@/components/brand/Logo";
 
 const problems = [
   "Prospecção manual consome horas sem resultado",
@@ -71,7 +71,7 @@ export default function LandingPage() {
     <SitePageShell>
       <section className="landing-hero">
         <div className="landing-hero__content">
-          <Image src="/logo-nodere-full.png" alt="NODERE Nexus" width={280} height={96} priority className="landing-hero__logo" />
+          <Logo variant="full" height={60} className="landing-hero__logo" />
           <p className="landing-tagline">Encontre empresas, analise presença digital, priorize oportunidades e venda mais — com IA.</p>
           <h1>Encontre empresas com baixa presença digital e venda seus serviços para quem realmente precisa.</h1>
           <p className="landing-subtitle">

@@ -1,5 +1,7 @@
 "use client";
 
+import { Logo as BrandLogo } from "@/components/brand/Logo";
+
 interface LogoProps {
   variant?: "icon" | "full";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
@@ -16,37 +18,9 @@ const SIZES = {
 
 export function Logo({ variant = "full", size = "md", className = "" }: LogoProps) {
   const { icon: iconSize, height: textHeight } = SIZES[size];
-  const source = variant === "icon" ? "/logo-nodere-icon.png" : "/logo-nodere-full.png";
-
-  return (
-    <div className={`flex shrink-0 items-center gap-2.5 ${className}`} aria-label="NODERE Nexus">
-      <img
-        src={source}
-        alt={variant === "icon" ? "NODERE" : "NODERE Nexus"}
-        width={variant === "icon" ? iconSize : undefined}
-        height={variant === "icon" ? iconSize : textHeight}
-        style={{
-          objectFit: "contain",
-          flexShrink: 0,
-          height: variant === "icon" ? iconSize : textHeight,
-          width: "auto"
-        }}
-        draggable={false}
-      />
-    </div>
-  );
+  return <BrandLogo variant={variant} height={variant === "icon" ? iconSize : textHeight} className={className} />;
 }
 
 export function LogoIcon({ size = 32, className = "" }: { size?: number; className?: string }) {
-  return (
-    <img
-      src="/logo-nodere-icon.png"
-      alt="NODERE"
-      width={size}
-      height={size}
-      className={className}
-      style={{ objectFit: "contain" }}
-      draggable={false}
-    />
-  );
+  return <BrandLogo variant="icon" height={size} className={className} />;
 }

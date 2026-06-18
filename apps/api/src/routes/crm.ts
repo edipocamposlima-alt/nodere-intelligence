@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 import PDFDocument from "pdfkit";
 import { parse as parseCsvSync } from "csv-parse/sync";
 import { z } from "zod";
@@ -18,6 +20,15 @@ import {
 } from "../services/companyStore.js";
 
 const router = Router();
+
+function findNoderePdfIcon() {
+  const candidates = [
+    path.resolve(process.cwd(), "../web/public/android-chrome-192x192.png"),
+    path.resolve(process.cwd(), "apps/web/public/android-chrome-192x192.png"),
+    path.resolve(process.cwd(), "public/android-chrome-192x192.png")
+  ];
+  return candidates.find((candidate) => fs.existsSync(candidate));
+}
 
 router.get("/cards", async (req, res, next) => {
   try {
@@ -298,7 +309,9 @@ router.get("/leads/:id/proposal.pdf", async (req, res, next) => {
       res.setHeader("Content-Disposition", `attachment; filename="proposta-${safeFileName(lead.name)}.pdf"`);
       res.send(pdf);
     });
-    doc.fontSize(20).text("Proposta Comercial NODERE Nexus", { align: "center" });
+    const logoPath = findNoderePdfIcon();
+    if (logoPath) doc.image(logoPath, 48, 44, { width: 28, height: 28 });
+    doc.fillColor("#00382F").fontSize(20).text("Proposta Comercial NODERE Nexus", logoPath ? 86 : 48, 48);
     doc.moveDown();
     doc.fontSize(14).text(`Lead: ${lead.name}`);
     doc.text(`Segmento: ${lead.category || "Não informado"}`);

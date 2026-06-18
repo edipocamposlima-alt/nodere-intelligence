@@ -1,4 +1,9 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Dashboard | NODERE Nexus"
+};
 
 const cards = [
   { label: "Módulos ativos", value: "Plano trial", desc: "A sidebar mostra módulos liberados e bloqueados por workspace." },

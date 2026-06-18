@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { BarChart3, Building2, CalendarDays, CircleHelp, CreditCard, Inbox, KanbanSquare, LineChart, Megaphone, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
 import { useCredits } from "@/context/CreditsProvider";
-import { Logo } from "@/components/ui/Logo";
+import { Logo } from "@/components/brand/Logo";
 
 const items = [
   { href: "/dashboard", label: "Início", icon: BarChart3 },
@@ -35,7 +35,7 @@ export function Sidebar() {
   return (
     <aside className="hidden min-h-screen w-72 border-r border-[var(--border-soft)] bg-[var(--bg-sidebar)] p-5 text-[var(--text-secondary)] lg:block">
       <Link href="/dashboard" className="flex items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--bg-card)] px-4 py-5 transition hover:border-[var(--brand-primary)]">
-        <Logo variant="full" size="xl" />
+        <Logo variant="full" height={38} />
       </Link>
 
       <nav className="mt-8 space-y-1">

@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 import { z } from "zod";
 import PDFDocument from "pdfkit";
 import { getRequestWorkspaceId, requireWorkspaceRole } from "../middleware/session.js";
@@ -407,6 +409,15 @@ function safeFileName(value: string) {
   return String(value || "proposta").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
 }
 
+function findNoderePdfIcon() {
+  const candidates = [
+    path.resolve(process.cwd(), "../web/public/android-chrome-192x192.png"),
+    path.resolve(process.cwd(), "apps/web/public/android-chrome-192x192.png"),
+    path.resolve(process.cwd(), "public/android-chrome-192x192.png")
+  ];
+  return candidates.find((candidate) => fs.existsSync(candidate));
+}
+
 async function insertProposalAudit(workspaceId: string, userId: string, action: string, resourceId: string, metadata: Record<string, unknown>) {
   const sb = getSupabase();
   if (!sb) return;
@@ -428,7 +439,9 @@ async function renderProposalPdf(proposal: any, lead: any) {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
-    doc.fillColor("#00382F").fontSize(22).text("NODERE Nexus", { continued: false });
+    const logoPath = findNoderePdfIcon();
+    if (logoPath) doc.image(logoPath, 48, 44, { width: 28, height: 28 });
+    doc.fillColor("#00382F").fontSize(22).text("NODERE Nexus", logoPath ? 86 : 48, 48, { continued: false });
     doc.moveDown(0.4);
     doc.fillColor("#00D69E").fontSize(12).text("Proposta comercial", { continued: false });
     doc.moveDown(1);

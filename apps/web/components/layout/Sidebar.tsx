@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BarChart3, Bot, CalendarDays, FileText, Home, Inbox, KanbanSquare, Lock, Mail, Radio, Search, Settings, Users, Workflow } from "lucide-react";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
-import { Logo } from "@/components/ui/Logo";
+import { Logo } from "@/components/brand/Logo";
 
 const NAV_ITEMS = [
   { code: "DISC-01", label: "Prospecção", icon: Search, href: "/app/discovery", group: "Descoberta" },
@@ -36,7 +36,7 @@ export default function PlatformSidebar() {
     <nav className="sidebar">
       <div className="sidebar-logo">
         <Link href="/app/dashboard">
-          <Logo variant="full" size="xl" />
+          <Logo variant="full" height={32} />
           <span className="logo-text sr-only">NODERE</span>
           <span className="logo-nexus sr-only">Nexus</span>
         </Link>

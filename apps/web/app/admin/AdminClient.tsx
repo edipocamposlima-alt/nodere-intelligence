@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Activity, CheckCircle2, Copy, KeyRound, LogOut, ShieldCheck, SlidersHorizontal, Trash2, UserCog, UserPlus, UsersRound } from "lucide-react";
 import { AdminFetchError, adminFetch, clearAdminToken } from "@/lib/adminAuth";
+import { Logo } from "@/components/brand/Logo";
 
 const fields = [
   "GOOGLE_PLACES_API_KEY",
@@ -272,7 +272,7 @@ export function AdminClient() {
       <section className="overflow-hidden rounded-xl border border-electric/30 bg-panel shadow-glow">
         <div className="grid gap-6 p-6 lg:grid-cols-[330px_1fr]">
           <div className="rounded-2xl border border-electric/20 bg-electric/10 p-4">
-            <Image src="/logo-nodere-full.png" alt="NODERE" width={500} height={180} priority className="h-auto w-full rounded-xl object-contain" />
+            <Logo variant="full" height={72} />
           </div>
           <div>
             <div className="flex flex-wrap items-center justify-between gap-3">

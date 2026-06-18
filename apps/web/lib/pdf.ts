@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 
-const LOGO_CANDIDATES = ["/logo-nodere-full.png", "/brand-logo-official.png", "/nodere-wordmark.png", "/nodere-logo.png"];
+const LOGO_CANDIDATES = ["/android-chrome-192x192.png", "/nodere-icon.svg", "/favicon-32x32.png"];
 
 async function getNodereLogoBase64() {
   if (typeof window === "undefined") return null;
@@ -53,7 +53,11 @@ async function addHeaderFooter(doc: jsPDF, title: string, logoBase64: string | n
 
     if (logoBase64) {
       try {
-        doc.addImage(logoBase64, "PNG", 12, 8, 40, 16, undefined, "FAST");
+        doc.addImage(logoBase64, "PNG", 12, 8, 16, 16, undefined, "FAST");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.setTextColor(3, 98, 76);
+        doc.text("NODERE", 31, 18);
       } catch {
         doc.setFillColor(3, 98, 76);
         doc.roundedRect(12, 9, 16, 16, 3, 3, "F");

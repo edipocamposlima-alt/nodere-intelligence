@@ -236,19 +236,17 @@ router.post("/pdf", async (req: any, res, next) => {
     });
 
     const logoCandidates = [
-      path.resolve(process.cwd(), "../web/public/logo-nodere-full.png"),
-      path.resolve(process.cwd(), "../web/public/brand-logo-official.png"),
-      path.resolve(process.cwd(), "apps/web/public/logo-nodere-full.png"),
-      path.resolve(process.cwd(), "apps/web/public/brand-logo-official.png"),
-      path.resolve(process.cwd(), "public/logo-nodere-full.png"),
-      path.resolve(process.cwd(), "public/brand-logo-official.png")
+      path.resolve(process.cwd(), "../web/public/android-chrome-192x192.png"),
+      path.resolve(process.cwd(), "apps/web/public/android-chrome-192x192.png"),
+      path.resolve(process.cwd(), "public/android-chrome-192x192.png")
     ];
     const logoPath = logoCandidates.find((candidate) => fs.existsSync(candidate));
 
     doc.rect(0, 0, doc.page.width, doc.page.height).fill("#FFFFFF");
     doc.roundedRect(42, 28, doc.page.width - 84, 72, 12).strokeColor("#D9E4DF").lineWidth(1).stroke();
     if (logoPath) {
-      doc.image(logoPath, 56, 39, { width: 150 });
+      doc.image(logoPath, 56, 40, { width: 32, height: 32 });
+      doc.fillColor("#03624C").fontSize(20).text("NODERE", 96, 46);
     } else {
       doc.fillColor("#03624C").fontSize(22).text("NODERE", 56, 42);
     }

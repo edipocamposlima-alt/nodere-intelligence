@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { BarChart, Bar, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { BarChart3, Download, Gauge, MapPin, PieChart as PieIcon, TrendingUp } from "lucide-react";
@@ -19,6 +18,7 @@ import {
 import { getErrorMessage } from "@/lib/errors";
 import { ErrorState } from "@/components/ui/ErrorState";
 import type { ForecastReport, MonthlyTrend, PipelineReport } from "@/lib/types";
+import { Logo } from "@/components/brand/Logo";
 
 type Summary = Awaited<ReturnType<typeof getReportSummary>>;
 type Funnel = Awaited<ReturnType<typeof getReportFunnel>>;
@@ -152,7 +152,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
       <section className="rounded-xl border border-line bg-panel/90 p-5 print:border-0 print:bg-white">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
-            <Image src="/logo-nodere-full.png" alt="NODERE" width={220} height={76} className="hidden h-auto w-44 rounded-lg object-contain print:block" />
+            <Logo variant="full" height={42} className="hidden print:flex" />
             <div>
               <h2 className="text-2xl font-semibold text-[var(--text-primary)] print:text-slate-950">Relatórios executivos</h2>
               <p className="mt-1 text-sm text-[var(--text-secondary)] print:text-slate-600">Métricas reais do CRM, origem, funil e inteligência digital.</p>

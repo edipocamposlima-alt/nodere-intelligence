@@ -7,6 +7,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { setAdminToken } from "@/lib/adminAuth";
 import { hasSupabaseAuthConfig, sendPasswordRecovery, signInWithPassword } from "@/lib/supabaseAuthRest";
+import { Logo } from "@/components/brand/Logo";
 
 export function LoginClient() {
   const router = useRouter();
@@ -90,7 +91,7 @@ export function LoginClient() {
   return (
     <main className="site-auth">
       <section className="site-auth__card">
-        <img className="site-auth__logo" src="/logo-nodere-full.png" alt="NODERE Nexus" />
+        <Logo variant="full" height={44} className="site-auth__logo" />
         <p className="site-auth__caption">Revenue Intelligence Platform</p>
         <h1>Entrar no NODERE Nexus</h1>
         <p className="site-auth__subtitle">Acesse seu workspace comercial.</p>

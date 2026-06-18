@@ -1258,12 +1258,9 @@ function escapeHtml(value: unknown) {
 
 function loadNodereLogoDataUri() {
   const candidates = [
-    path.join(process.cwd(), "public", "logo-nodere-full.png"),
-    path.join(process.cwd(), "public", "brand-logo-official.png"),
-    path.join(process.cwd(), "..", "web", "public", "logo-nodere-full.png"),
-    path.join(process.cwd(), "..", "web", "public", "brand-logo-official.png"),
-    path.join(process.cwd(), "..", "..", "apps", "web", "public", "logo-nodere-full.png"),
-    path.join(process.cwd(), "..", "..", "apps", "web", "public", "brand-logo-official.png")
+    path.join(process.cwd(), "public", "android-chrome-192x192.png"),
+    path.join(process.cwd(), "..", "web", "public", "android-chrome-192x192.png"),
+    path.join(process.cwd(), "..", "..", "apps", "web", "public", "android-chrome-192x192.png")
   ];
   const found = candidates.find((candidate) => existsSync(candidate));
   if (!found) {

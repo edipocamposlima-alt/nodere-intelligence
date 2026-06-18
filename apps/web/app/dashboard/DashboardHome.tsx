@@ -1,10 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import { AlertTriangle, Building2, Camera, Globe2, KanbanSquare, MessageCircle, MousePointerClick, Search, Star, TrendingUp } from "lucide-react";
 import { CompanyTable } from "@/components/CompanyTable";
 import { getCompanies, getDashboard, getOnboardingStatus, getReportSummary } from "@/lib/api";
 import { getServerSessionToken } from "@/lib/serverSession";
 import { OnboardingBanner } from "./OnboardingBanner";
+import { Logo } from "@/components/brand/Logo";
 
 export const dynamic = "force-dynamic";
 
@@ -84,7 +84,7 @@ export default async function DashboardPage() {
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0 flex-1">
             <div className="dashboard-brand-logo nodere-brand-surface inline-flex rounded-2xl border border-electric/30 p-4 shadow-[0_0_34px_rgba(0,223,130,0.18)]">
-              <Image src="/logo-nodere-full.png" alt="NODERE Nexus" width={560} height={190} priority className="h-auto w-full max-w-xl object-contain" />
+              <Logo variant="full" height={76} />
             </div>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
               Central comercial para busca de empresas, CRM, funil, WhatsApp, propostas e inteligência operacional.

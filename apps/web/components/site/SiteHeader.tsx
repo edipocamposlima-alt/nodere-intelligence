@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { SOLUTIONS } from "./solutions";
+import { Logo } from "@/components/brand/Logo";
 
 export default function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
@@ -22,22 +23,7 @@ export default function SiteHeader() {
       <header className={`site-header ${scrolled ? "site-header--scrolled" : ""}`}>
         <div className="site-header__inner">
           <Link href="/" className="site-logo" aria-label="NODERE Nexus">
-            <img
-              src="/logo-nodere-full.png"
-              alt="NODERE Nexus"
-              height={44}
-              className="site-logo__image"
-              onError={(event) => {
-                const target = event.currentTarget as HTMLImageElement;
-                target.style.display = "none";
-                const fallback = target.nextElementSibling as HTMLElement | null;
-                if (fallback) fallback.style.display = "flex";
-              }}
-            />
-            <span className="site-logo__fallback">
-              <span className="site-logo__mark">N</span>
-              <span>NODERE <strong>Nexus</strong></span>
-            </span>
+            <Logo variant="full" height={38} className="site-logo__image" />
           </Link>
 
           <nav className="site-nav desktop-nav" aria-label="Navegação principal">

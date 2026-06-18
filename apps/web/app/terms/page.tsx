@@ -1,6 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { Logo } from "@/components/brand/Logo";
 
 async function getTerms() {
   try {
@@ -24,7 +24,7 @@ export default async function TermsPage() {
   return (
     <main className="mx-auto max-w-4xl space-y-6 p-5 md:p-10">
       <div className="flex items-center justify-between gap-4">
-        <Image src="/logo-nodere-full.png" alt="NODERE" width={220} height={80} className="h-auto w-44 rounded-lg object-contain" priority />
+        <Logo variant="full" height={44} />
         <Link href="/login" className="text-sm font-semibold text-cyan">Voltar</Link>
       </div>
       <div>
