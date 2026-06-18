@@ -205,14 +205,15 @@ async function deleteCustomRole(workspaceId: string, roleId: string) {
 
 async function listAuditRows(workspaceId: string) {
   const sb = getSupabase();
-  if (!sb) return { activityLogs: [], downloadLogs: [] };
-  const [activity, downloads] = await Promise.all([
+  if (!sb) return { activityLogs: [], downloadLogs: [], auditLogs: [] };
+  const [activity, downloads, audit] = await Promise.all([
     sb.from("activity_logs").select("*").eq("workspace_id", workspaceId).order("created_at", { ascending: false }).limit(80),
-    sb.from("download_logs").select("*").eq("workspace_id", workspaceId).order("created_at", { ascending: false }).limit(80)
+    sb.from("download_logs").select("*").eq("workspace_id", workspaceId).order("created_at", { ascending: false }).limit(80),
+    sb.from("nodere_audit_logs").select("*").eq("workspace_id", workspaceId).order("created_at", { ascending: false }).limit(80)
   ]);
   if (activity.error) throw activity.error;
   if (downloads.error) throw downloads.error;
-  return { activityLogs: activity.data || [], downloadLogs: downloads.data || [] };
+  return { activityLogs: activity.data || [], downloadLogs: downloads.data || [], auditLogs: audit.error ? [] : audit.data || [] };
 }
 
 router.post("/login", async (request, response, next) => {

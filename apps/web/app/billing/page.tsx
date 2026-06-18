@@ -2,7 +2,7 @@ import { CreditCard, CheckCircle, Zap } from "lucide-react";
 import { getBillingStatus, getBillingPlans, getUsageLog, getCreditStatus, getBillingPlanLinks } from "@/lib/api";
 import { WaitlistForm } from "./WaitlistForm";
 
-const PLAN_ORDER = ["demo", "starter", "pro", "agency"];
+const PLAN_ORDER = ["demo", "starter", "pro", "agency", "enterprise"];
 
 function formatBRL(cents: number) {
   if (cents === 0) return "Grátis";

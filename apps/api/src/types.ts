@@ -252,7 +252,7 @@ export interface GbpInsights {
 
 // Phase 6 — Revenue Operations
 
-export type PlanId = "demo" | "starter" | "pro" | "agency";
+export type PlanId = "demo" | "starter" | "pro" | "agency" | "enterprise";
 
 export interface Plan {
   id: PlanId;

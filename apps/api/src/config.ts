@@ -87,13 +87,13 @@ export const config = {
     prices: {
       starter: process.env.STRIPE_PRICE_STARTER,
       starterMonthly: process.env.STRIPE_PRICE_STARTER_MONTHLY || process.env.STRIPE_PRICE_STARTER,
-      starterYearly: process.env.STRIPE_PRICE_STARTER_YEARLY || process.env.STRIPE_PRICE_STARTER,
+      starterYearly: process.env.STRIPE_PRICE_STARTER_YEARLY || process.env.STRIPE_PRICE_STARTER_ANNUAL || process.env.STRIPE_PRICE_STARTER,
       pro: process.env.STRIPE_PRICE_PRO,
       proMonthly: process.env.STRIPE_PRICE_PRO_MONTHLY || process.env.STRIPE_PRICE_PRO,
-      proYearly: process.env.STRIPE_PRICE_PRO_YEARLY || process.env.STRIPE_PRICE_PRO,
+      proYearly: process.env.STRIPE_PRICE_PRO_YEARLY || process.env.STRIPE_PRICE_PRO_ANNUAL || process.env.STRIPE_PRICE_PRO,
       agency: process.env.STRIPE_PRICE_AGENCY,
       agencyMonthly: process.env.STRIPE_PRICE_AGENCY_MONTHLY || process.env.STRIPE_PRICE_AGENCY,
-      agencyYearly: process.env.STRIPE_PRICE_AGENCY_YEARLY || process.env.STRIPE_PRICE_AGENCY
+      agencyYearly: process.env.STRIPE_PRICE_AGENCY_YEARLY || process.env.STRIPE_PRICE_AGENCY_ANNUAL || process.env.STRIPE_PRICE_AGENCY
     }
   }
 };

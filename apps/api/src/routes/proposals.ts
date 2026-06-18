@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
+import PDFDocument from "pdfkit";
 import { getRequestWorkspaceId, requireWorkspaceRole } from "../middleware/session.js";
 import { getSupabase } from "../db/supabase.js";
 import { getCompanyAsync } from "../services/companyStore.js";
@@ -8,6 +9,25 @@ import { callAI } from "../services/ai.js";
 import { logRequestMetric } from "../services/metricsStore.js";
 
 const router = Router();
+
+const proposalItemSchema = z.object({
+  description: z.string().min(1),
+  quantity: z.coerce.number().min(0).default(1),
+  unit_price: z.coerce.number().min(0).default(0),
+  total: z.coerce.number().min(0).optional()
+});
+
+const proposalPayloadSchema = z.object({
+  lead_id: z.string().min(1),
+  title: z.string().min(2).default("Proposta comercial NODERE"),
+  service_type: z.string().optional(),
+  content: z.string().optional(),
+  items: z.array(proposalItemSchema).default([]),
+  discount: z.coerce.number().min(0).default(0),
+  currency: z.string().default("BRL"),
+  status: z.enum(["draft", "sent", "accepted", "rejected", "expired"]).default("draft"),
+  valid_until: z.string().nullable().optional()
+});
 
 const systemTemplates = [
   {
@@ -51,6 +71,60 @@ const systemTemplates = [
     variables: ["company", "city", "segment", "score", "phone", "website", "google_rating"]
   }
 ];
+
+router.get("/", async (req, res, next) => {
+  try {
+    const sb = getSupabase();
+    if (!sb) return res.status(503).json({ message: "Supabase não configurado para listar propostas." });
+    const workspaceId = getRequestWorkspaceId(req);
+    const { data, error } = await sb
+      .from("nodere_proposals")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .order("updated_at", { ascending: false });
+    if (error) throw error;
+    res.json(data ?? []);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/", requireWorkspaceRole("owner", "admin", "operator"), async (req, res, next) => {
+  try {
+    const body = proposalPayloadSchema.parse(req.body ?? {});
+    const workspaceId = getRequestWorkspaceId(req);
+    const lead = await getCompanyAsync(body.lead_id, workspaceId);
+    if (!lead) return res.status(404).json({ message: "Lead não encontrado para gerar proposta." });
+    const sb = getSupabase();
+    if (!sb) return res.status(503).json({ message: "Supabase não configurado para salvar propostas." });
+    const totals = calculateProposalTotals(body.items, body.discount);
+    const row = {
+      id: randomUUID(),
+      workspace_id: workspaceId,
+      lead_id: lead.id,
+      title: body.title,
+      status: body.status,
+      service_type: body.service_type || lead.category || null,
+      content: body.content || buildDefaultProposalContent(lead),
+      items: normalizeItems(body.items),
+      subtotal: totals.subtotal,
+      discount: totals.discount,
+      total: totals.total,
+      currency: body.currency || "BRL",
+      valid_until: body.valid_until || null,
+      version: 1,
+      created_by: String((req as any).session?.userId || (req as any).admin?.userId || ""),
+      metadata: { lead_name: lead.name, lead_city: lead.city, lead_state: lead.state }
+    };
+    const { data, error } = await sb.from("nodere_proposals").insert(row).select("*").single();
+    if (error) throw error;
+    await insertProposalAudit(workspaceId, row.created_by, "proposal_created", row.id, { lead_id: lead.id, total: row.total }).catch(() => undefined);
+    logRequestMetric(req, "proposal_generated", lead.id, { proposalId: row.id, source: "block05" });
+    res.status(201).json(data);
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get("/templates", async (req, res, next) => {
   try {
@@ -219,6 +293,78 @@ router.get("/leads/:id/:version", async (req, res, next) => {
   }
 });
 
+router.get("/:id", async (req, res, next) => {
+  try {
+    const sb = getSupabase();
+    if (!sb) return res.status(503).json({ message: "Supabase não configurado." });
+    const { data, error } = await sb
+      .from("nodere_proposals")
+      .select("*")
+      .eq("workspace_id", getRequestWorkspaceId(req))
+      .eq("id", req.params.id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return res.status(404).json({ message: "Proposta não encontrada." });
+    res.json(data);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/:id", requireWorkspaceRole("owner", "admin", "operator"), async (req, res, next) => {
+  try {
+    const body = proposalPayloadSchema.partial().parse(req.body ?? {});
+    const workspaceId = getRequestWorkspaceId(req);
+    const sb = getSupabase();
+    if (!sb) return res.status(503).json({ message: "Supabase não configurado." });
+    const updates: Record<string, unknown> = { ...body, updated_at: new Date().toISOString() };
+    if (body.items || body.discount !== undefined) {
+      const totals = calculateProposalTotals(body.items ?? [], body.discount ?? 0);
+      updates.items = body.items ? normalizeItems(body.items) : body.items;
+      updates.subtotal = totals.subtotal;
+      updates.discount = totals.discount;
+      updates.total = totals.total;
+    }
+    const { data, error } = await sb
+      .from("nodere_proposals")
+      .update(updates)
+      .eq("workspace_id", workspaceId)
+      .eq("id", req.params.id)
+      .select("*")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return res.status(404).json({ message: "Proposta não encontrada." });
+    await insertProposalAudit(workspaceId, String((req as any).session?.userId || ""), "proposal_updated", String(req.params.id), { status: data.status }).catch(() => undefined);
+    res.json(data);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/:id/pdf", async (req, res, next) => {
+  try {
+    const sb = getSupabase();
+    if (!sb) return res.status(503).json({ message: "Supabase não configurado." });
+    const workspaceId = getRequestWorkspaceId(req);
+    const { data, error } = await sb
+      .from("nodere_proposals")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .eq("id", req.params.id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return res.status(404).json({ message: "Proposta não encontrada." });
+    const lead = data.lead_id ? await getCompanyAsync(String(data.lead_id), workspaceId).catch(() => null) : null;
+    const pdf = await renderProposalPdf(data, lead);
+    await insertProposalAudit(workspaceId, String((req as any).session?.userId || ""), "proposal_pdf_generated", String(req.params.id), { lead_id: data.lead_id }).catch(() => undefined);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="proposta-nodere-${safeFileName(data.title || data.id)}.pdf"`);
+    res.send(pdf);
+  } catch (error) {
+    next(error);
+  }
+});
+
 async function resolveTemplate(id: string, workspaceId: string) {
   const system = systemTemplates.find((item) => item.id === id);
   if (system) return system;
@@ -230,6 +376,89 @@ async function resolveTemplate(id: string, workspaceId: string) {
 
 function interpolate(content: string, variables: Record<string, string>) {
   return content.replace(/\{\{(\w+)\}\}/g, (_match, key) => variables[key] ?? "");
+}
+
+function normalizeItems(items: Array<z.infer<typeof proposalItemSchema>>) {
+  return items.map((item) => ({
+    ...item,
+    total: Number(item.total ?? item.quantity * item.unit_price)
+  }));
+}
+
+function calculateProposalTotals(items: Array<z.infer<typeof proposalItemSchema>>, discountInput = 0) {
+  const subtotal = normalizeItems(items).reduce((sum, item) => sum + Number(item.total || 0), 0);
+  const discount = Math.min(Math.max(Number(discountInput || 0), 0), subtotal);
+  return { subtotal, discount, total: Math.max(0, subtotal - discount) };
+}
+
+function buildDefaultProposalContent(lead: any) {
+  return [
+    `Proposta comercial para ${lead.name}`,
+    "",
+    `Segmento: ${lead.category || "Não informado"}`,
+    `Cidade: ${lead.city || ""}${lead.state ? `/${lead.state}` : ""}`,
+    "",
+    "Escopo inicial: diagnóstico comercial, priorização de oportunidades digitais e execução de campanhas orientadas por conversão.",
+    "A NODERE Nexus acompanha indicadores, follow-ups e próximos passos dentro do CRM."
+  ].join("\n");
+}
+
+function safeFileName(value: string) {
+  return String(value || "proposta").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+}
+
+async function insertProposalAudit(workspaceId: string, userId: string, action: string, resourceId: string, metadata: Record<string, unknown>) {
+  const sb = getSupabase();
+  if (!sb) return;
+  await sb.from("nodere_audit_logs").insert({
+    workspace_id: workspaceId,
+    user_id: userId || null,
+    action,
+    resource_type: "proposal",
+    resource_id: resourceId,
+    metadata
+  });
+}
+
+async function renderProposalPdf(proposal: any, lead: any) {
+  return new Promise<Buffer>((resolve, reject) => {
+    const doc = new PDFDocument({ size: "A4", margin: 48 });
+    const chunks: Buffer[] = [];
+    doc.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+
+    doc.fillColor("#00382F").fontSize(22).text("NODERE Nexus", { continued: false });
+    doc.moveDown(0.4);
+    doc.fillColor("#00D69E").fontSize(12).text("Proposta comercial", { continued: false });
+    doc.moveDown(1);
+    doc.fillColor("#111827").fontSize(18).text(String(proposal.title || "Proposta comercial"));
+    if (lead?.name) doc.fontSize(12).fillColor("#374151").text(`Cliente: ${lead.name}`);
+    if (lead?.city || lead?.state) doc.text(`Localidade: ${[lead.city, lead.state].filter(Boolean).join(" / ")}`);
+    doc.moveDown();
+    doc.fontSize(11).fillColor("#1F2937").text(String(proposal.content || ""), { align: "left" });
+
+    const items = Array.isArray(proposal.items) ? proposal.items : [];
+    if (items.length) {
+      doc.moveDown();
+      doc.fillColor("#00382F").fontSize(13).text("Itens da proposta");
+      doc.moveDown(0.4);
+      items.forEach((item: any) => {
+        doc.fillColor("#111827").fontSize(10).text(`${item.description} - ${formatMoney(item.total ?? item.quantity * item.unit_price)}`);
+      });
+    }
+
+    doc.moveDown();
+    doc.fillColor("#00382F").fontSize(12).text(`Total: ${formatMoney(proposal.total || 0)}`);
+    if (proposal.valid_until) doc.fillColor("#6B7280").fontSize(9).text(`Validade: ${new Date(proposal.valid_until).toLocaleDateString("pt-BR")}`);
+    doc.moveDown(2);
+    doc.fillColor("#6B7280").fontSize(9).text("Documento gerado automaticamente pela plataforma NODERE Nexus.");
+    doc.end();
+  });
+}
+
+function formatMoney(value: number) {
+  return Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 export default router;

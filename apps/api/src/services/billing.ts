@@ -48,6 +48,14 @@ export const PLANS: Plan[] = [
     stripePriceYearlyId: config.stripe.prices.agencyYearly,
     paymentLinkUrl: config.stripe.paymentLinks.agency,
     features: ["Créditos ilimitados", "10 operadores", "White-label", "Audit log completo", "Suporte dedicado"]
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    monthlyCredits: 999999,
+    priceMonthly: 0,
+    priceYearly: 0,
+    features: ["Créditos e operadores sob contrato", "SLA dedicado", "Implantação assistida", "Governança avançada", "Suporte executivo"]
   }
 ];
 
@@ -119,7 +127,7 @@ export function getUsageLog(limit = 200) {
 }
 
 export async function createCheckoutSession(input: {
-  planId: Exclude<PlanId, "demo">;
+  planId: Exclude<PlanId, "demo" | "enterprise">;
   billingCycle: "monthly" | "yearly";
   workspaceId: string;
   customerId?: string;
@@ -263,6 +271,7 @@ function getStripePriceId(plan: Plan | undefined, billingCycle: "monthly" | "yea
 }
 
 function seatsForPlan(planId: string) {
+  if (planId === "enterprise") return 999;
   if (planId === "agency") return 10;
   if (planId === "pro") return 3;
   if (planId === "starter") return 1;

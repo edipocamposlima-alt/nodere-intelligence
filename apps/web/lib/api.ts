@@ -310,6 +310,72 @@ export function saveProposalVersion(payload: { lead_id: string; content: string;
   return api("/proposals/versions", { method: "POST", body: JSON.stringify(payload) });
 }
 
+export type ProposalItemPayload = {
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total?: number;
+};
+
+export type NodereProposal = {
+  id: string;
+  workspace_id: string;
+  lead_id: string;
+  title: string;
+  status: "draft" | "sent" | "accepted" | "rejected" | "expired";
+  service_type?: string | null;
+  content?: string | null;
+  items: ProposalItemPayload[];
+  subtotal: number;
+  discount: number;
+  total: number;
+  currency: string;
+  valid_until?: string | null;
+  version: number;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export function getProposals() {
+  return api<NodereProposal[]>("/proposals", undefined, []);
+}
+
+export function createProposal(payload: {
+  lead_id: string;
+  title: string;
+  service_type?: string;
+  content?: string;
+  items: ProposalItemPayload[];
+  discount?: number;
+  status?: NodereProposal["status"];
+  valid_until?: string | null;
+}) {
+  return api<NodereProposal>("/proposals", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export async function downloadProposalPdf(id: string, fileName = "proposta-nodere.pdf") {
+  const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
+  const response = await fetch(`${API_URL}/proposals/${encodeURIComponent(id)}/pdf`, {
+    method: "POST",
+    headers: {
+      ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {})
+    }
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new ApiRequestError(payload.message || `API retornou HTTP ${response.status}`, response.status, payload);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function getCrmCards(params = "") {
   return api<{ data: Company[]; total: number; page: number; limit: number }>(`/crm/cards${params}`, undefined, { data: [], total: 0, page: 1, limit: 25 });
 }
