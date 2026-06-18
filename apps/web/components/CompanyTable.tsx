@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Download, ExternalLink, FileText, MessageCircle, Save, Search, Trash2, X } from "lucide-react";
+import { Bot, CheckCircle2, Download, ExternalLink, FileText, MessageCircle, PhoneCall, Save, Search, Trash2, X } from "lucide-react";
 import { Company } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
-import { addCompanyNote, getCompanies, updateCompany } from "@/lib/api";
+import { addCompanyNote, generateAiCallScript, generateAiDiagnosis, generateAiWhatsappMessage, getCompanies, updateCompany } from "@/lib/api";
 import { downloadNoderePdf } from "@/lib/pdf";
 
 const whatsappMessage =
@@ -63,6 +63,8 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
   const [loadError, setLoadError] = useState("");
   const [saved, setSaved] = useState<Record<string, "saving" | "saved" | "error">>({});
   const [messages, setMessages] = useState<Record<string, string>>({});
+  const [aiMessages, setAiMessages] = useState<Record<string, string>>({});
+  const [aiLoading, setAiLoading] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [invalidWhatsappOnly, setInvalidWhatsappOnly] = useState(false);
   const [editingWhatsapp, setEditingWhatsapp] = useState<Record<string, boolean>>({});
@@ -217,6 +219,31 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
     }
   }
 
+  async function runAi(company: Company, kind: "diagnosis" | "whatsapp" | "call") {
+    setAiLoading((current) => ({ ...current, [company.id]: kind }));
+    setAiMessages((current) => ({ ...current, [company.id]: "" }));
+    try {
+      const payload = { lead_id: company.id, company_data: company };
+      let text = "";
+      if (kind === "diagnosis") {
+        text = (await generateAiDiagnosis(payload)).diagnosis;
+      } else if (kind === "whatsapp") {
+        text = (await generateAiWhatsappMessage({ ...payload, approach_type: "first_contact" })).message;
+      } else {
+        text = (await generateAiCallScript(payload)).script;
+      }
+      setAiMessages((current) => ({ ...current, [company.id]: text }));
+    } catch (error) {
+      setAiMessages((current) => ({ ...current, [company.id]: error instanceof Error ? error.message : "IA indisponível no momento." }));
+    } finally {
+      setAiLoading((current) => {
+        const next = { ...current };
+        delete next[company.id];
+        return next;
+      });
+    }
+  }
+
   return (
     <div className="overflow-hidden rounded-lg border border-line bg-panel/90">
       <div className="flex flex-col gap-3 border-b border-line p-3">
@@ -319,14 +346,25 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
                 </td>
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg font-semibold text-white">{company.score}</span>
-                    <StatusBadge value={company.opportunityLevel} />
+                    <div>
+                      <span className="text-lg font-semibold text-white">{company.nexusScore ?? company.score * 10}</span>
+                      <span className="text-xs text-slate-500">/1000</span>
+                      <p className="text-[11px] text-slate-500">Legado {company.score}/100</p>
+                    </div>
+                    <StatusBadge value={company.nexusClassification || company.opportunityLevel} />
                   </div>
                 </td>
                 <td className="px-4 py-4 text-slate-300">
                   {company.rating ?? "-"} · {company.reviewCount ?? 0} avaliações
                 </td>
-                <td className="px-4 py-4 text-slate-400">{company.detectedOpportunities[0] ?? "Sem alerta critico"}</td>
+                <td className="px-4 py-4 text-slate-400">
+                  <div className="flex max-w-xs flex-wrap gap-1">
+                    {(company.digitalGaps?.length ? company.digitalGaps : company.detectedOpportunities.slice(0, 3)).slice(0, 4).map((gap) => (
+                      <span key={gap} className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-100">{gap}</span>
+                    ))}
+                    {!(company.digitalGaps?.length || company.detectedOpportunities.length) && <span>Sem alerta crítico</span>}
+                  </div>
+                </td>
                 <td className="px-4 py-4">
                   <StatusBadge value={company.status} />
                 </td>
@@ -372,7 +410,22 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
                         <ExternalLink className="h-4 w-4" />
                       </a>
                     )}
+                    <button type="button" onClick={() => void runAi(company, "diagnosis")} className="rounded-lg border border-cyan/30 bg-cyan/10 p-2 text-cyan hover:bg-cyan/20" aria-label="Gerar diagnóstico IA">
+                      <Bot className="h-4 w-4" />
+                    </button>
+                    <button type="button" onClick={() => void runAi(company, "whatsapp")} className="rounded-lg border border-emerald-400/30 bg-emerald-400/10 p-2 text-emerald-200 hover:bg-emerald-400/20" aria-label="Gerar WhatsApp IA">
+                      <MessageCircle className="h-4 w-4" />
+                    </button>
+                    <button type="button" onClick={() => void runAi(company, "call")} className="rounded-lg border border-violet-400/30 bg-violet-400/10 p-2 text-violet-200 hover:bg-violet-400/20" aria-label="Gerar roteiro de ligação">
+                      <PhoneCall className="h-4 w-4" />
+                    </button>
                   </div>
+                  {aiLoading[company.id] && <p className="mt-2 text-xs text-cyan">Gerando IA comercial...</p>}
+                  {aiMessages[company.id] && (
+                    <div className="mt-2 max-w-xl whitespace-pre-wrap rounded-lg border border-cyan/25 bg-cyan/10 p-3 text-xs leading-5 text-[var(--text-primary)]">
+                      {aiMessages[company.id]}
+                    </div>
+                  )}
                   {editingWhatsapp[company.id] && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       <input

@@ -73,6 +73,11 @@ export interface Company {
   maturityScore?: number;
   commercialScore?: number;
   paidTrafficScore?: number;
+  nexusScore?: number;
+  nexusClassification?: string;
+  nexusScoreBreakdown?: Array<{ reason: string; points: number }>;
+  digitalGaps?: string[];
+  suggestedApproach?: string;
   enrichmentStatus?: EnrichmentStatus;
   status: CrmStatus;
   score: number;
@@ -106,6 +111,13 @@ export interface SearchRequest {
   lat?: number;
   lng?: number;
   radiusKm?: number;
+  minRating?: number;
+  maxRating?: number;
+  hasWebsite?: boolean | null;
+  hasWhatsApp?: boolean | null;
+  minReviews?: number;
+  sortBy?: "relevance" | "rating" | "review_count" | "nexus_score";
+  sortDir?: "asc" | "desc";
 }
 
 export interface DecisionMaker {

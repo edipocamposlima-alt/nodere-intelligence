@@ -3,81 +3,164 @@ import { Company, OpportunityLevel, WebsiteScan } from "../types.js";
 type ScoreInput = Partial<Company>;
 
 export function calculateOpportunityScore(company: ScoreInput) {
+  const nexus = calculateNexusScore(company, { targetCity: company.city });
+  const normalizedLegacyScore = Math.min(100, Math.round(nexus.total / 10));
+  const level: OpportunityLevel = nexus.total >= 650 ? "Alta" : nexus.total >= 400 ? "Media" : "Baixa";
+
+  return {
+    score: normalizedLegacyScore,
+    opportunityLevel: level,
+    detectedOpportunities: dedupe(nexus.digitalGaps.map((gap) => `Gap digital: ${gap}`)),
+    suggestions: dedupe([nexus.suggestedApproach, ...nexus.breakdown.slice(0, 3).map((item) => actionForReason(item.reason))]),
+    nexusScore: nexus.total,
+    nexusClassification: nexus.classification.label,
+    nexusScoreBreakdown: nexus.breakdown,
+    digitalGaps: nexus.digitalGaps,
+    suggestedApproach: nexus.suggestedApproach
+  };
+}
+
+export function calculateNexusScore(company: ScoreInput, context: { targetCity?: string } = {}) {
   const opportunities: string[] = [];
-  const suggestions: string[] = [];
+  const breakdown: Array<{ reason: string; points: number }> = [];
   let score = 0;
 
-  if ((company.rating ?? 5) < 4.2) {
-    score += 18;
-    opportunities.push(`Empresa possui nota ${company.rating ?? "baixa"} no Google.`);
-    suggestions.push("Criar plano de recuperacao de reputacao e avaliacoes.");
-  }
-
-  if ((company.reviewCount ?? 0) < 50) {
-    score += 14;
-    opportunities.push("Empresa tem poucas avaliacoes para gerar autoridade local.");
-    suggestions.push("Implantar campanha de captura de avaliacoes via WhatsApp.");
-  }
+  const add = (reason: string, points: number) => {
+    score += points;
+    breakdown.push({ reason, points });
+    opportunities.push(reason);
+  };
 
   if (!company.website) {
-    score += 18;
-    opportunities.push("Empresa sem site detectado.");
-    suggestions.push("Criar site ou landing page focada em conversao local.");
+    add("Sem site", 150);
+  }
+
+  if (!company.instagram && !company.facebook && !company.linkedin && !company.youtube) {
+    add("Sem redes sociais identificadas", 80);
+  }
+
+  const reviewCount = company.reviewCount ?? 0;
+  if (reviewCount === 0) {
+    add("Sem avaliações no Google", 100);
+  } else if (reviewCount < 10) {
+    add("Poucas avaliações no Google (<10)", 70);
+  } else if (reviewCount < 50) {
+    add("Avaliações moderadas no Google (<50)", 40);
+  }
+
+  const rating = company.rating ?? 0;
+  if (rating > 0 && rating < 3.5) {
+    add(`Nota baixa no Google (${rating})`, 80);
+  } else if (rating >= 3.5 && rating < 4) {
+    add(`Nota mediana no Google (${rating})`, 40);
   }
 
   if (company.hasGoogleAds === false) {
-    score += 14;
-    opportunities.push("Não foram detectados sinais de Google Ads.");
-    suggestions.push("Oferecer campanha de pesquisa para buscas de alta intenção.");
+    add("Sem Google Ads detectado", 60);
   }
 
-  if (!company.whatsapp) {
-    score += 8;
-    opportunities.push("WhatsApp não aparece como canal claro de contato.");
-    suggestions.push("Adicionar WhatsApp Business e rastreamento de conversões.");
+  if (!company.whatsapp && !company.phone) {
+    add("Sem contato WhatsApp/telefone claro", 50);
   }
 
   if (company.hasDescription === false) {
-    score += 8;
-    opportunities.push("Perfil Google sem descrição otimizada.");
+    add("Perfil Google sem descrição otimizada", 35);
   }
 
   if (company.hasRecentPhotos === false) {
-    score += 6;
-    opportunities.push("Perfil sem fotos recentes.");
+    add("Perfil sem fotos recentes", 30);
   }
 
   if (company.hasRecentPosts === false) {
-    score += 5;
-    opportunities.push("Perfil sem postagens recentes no Google Business.");
+    add("Perfil sem postagens recentes", 25);
   }
 
   if (company.respondsReviews === false) {
-    score += 7;
-    opportunities.push("Empresa não responde avaliações com frequência.");
+    add("Empresa não responde avaliações com frequência", 35);
   }
 
   if (company.pageSpeed !== undefined && company.pageSpeed > 0 && company.pageSpeed < 60) {
-    score += 8;
-    opportunities.push("Site lento no mobile segundo PageSpeed.");
-    suggestions.push("Otimizar velocidade e experiência mobile antes de escalar mídia.");
+    add("Site lento no mobile segundo PageSpeed", 55);
   }
 
-  const normalized = Math.min(100, score);
-  let level: OpportunityLevel = "Baixa";
-  if (normalized >= 65) level = "Alta";
-  else if (normalized >= 40) level = "Media";
+  if (isHighPotentialSegment(company.category)) {
+    add("Segmento com alto potencial digital", 100);
+  }
+
+  if (reviewCount > 100 && !company.website) {
+    add("Empresa ativa sem presença digital estruturada", 80);
+  }
+
+  if (context.targetCity && company.city?.toLowerCase().includes(context.targetCity.toLowerCase())) {
+    add("Localização na cidade alvo", 50);
+  }
+
+  if (company.phone || company.website || company.whatsapp) {
+    add("Dados de contato disponíveis", 30);
+  }
+
+  add("Negócio ativo para prospecção", 50);
+
+  if (!company.website && reviewCount > 20 && isHighPotentialSegment(company.category)) {
+    add("Oportunidade crítica: sem site, avaliações e segmento relevante", 100);
+  }
+
+  const total = Math.min(1000, score);
+  const digitalGaps = identifyDigitalGaps(company);
 
   return {
-    score: normalized,
-    opportunityLevel: level,
-    detectedOpportunities: dedupe(opportunities),
-    suggestions: dedupe(suggestions)
+    total,
+    breakdown: breakdown.sort((a, b) => b.points - a.points),
+    classification: classifyNexusScore(total),
+    digitalGaps,
+    suggestedApproach: getSuggestedApproach(total)
   };
 }
 
 function dedupe(items: string[]) {
   return Array.from(new Set(items));
+}
+
+function classifyNexusScore(score: number) {
+  if (score <= 250) return { label: "Baixa oportunidade", color: "var(--score-critical)" };
+  if (score <= 500) return { label: "Oportunidade moderada", color: "var(--score-low)" };
+  if (score <= 750) return { label: "Alta oportunidade", color: "var(--score-good)" };
+  return { label: "Oportunidade crítica", color: "var(--score-excellent)" };
+}
+
+export function identifyDigitalGaps(company: ScoreInput) {
+  const gaps: string[] = [];
+  if (!company.website) gaps.push("Sem site");
+  if (!company.whatsapp) gaps.push("Sem WhatsApp");
+  if (!company.instagram && !company.facebook && !company.linkedin && !company.youtube) gaps.push("Sem redes sociais");
+  if ((company.reviewCount ?? 0) < 10) gaps.push("Poucas avaliações");
+  if ((company.rating ?? 5) < 4) gaps.push("Nota baixa no Google");
+  if (company.hasGoogleAds === false) gaps.push("Sem Google Ads");
+  return gaps;
+}
+
+function getSuggestedApproach(score: number) {
+  if (score > 750) return "Abordagem imediata recomendada. Empresa com múltiplos gaps digitais críticos.";
+  if (score > 500) return "Boa oportunidade. Apresentar diagnóstico de presença digital.";
+  if (score > 250) return "Oportunidade moderada. Qualificar antes de investir tempo.";
+  return "Baixa prioridade. Focar em leads com Score Nexus maior.";
+}
+
+function actionForReason(reason: string) {
+  if (reason.includes("Sem site")) return "Oferecer landing page/site focado em conversão local.";
+  if (reason.includes("avalia")) return "Propor campanha de reputação e captura de avaliações.";
+  if (reason.includes("Google Ads")) return "Apresentar plano de campanhas de pesquisa para demanda local.";
+  if (reason.includes("WhatsApp")) return "Configurar WhatsApp Business e rastreamento de conversões.";
+  if (reason.includes("PageSpeed")) return "Otimizar performance mobile antes de escalar mídia.";
+  return `Explorar oportunidade: ${reason}.`;
+}
+
+function isHighPotentialSegment(category?: string) {
+  const text = String(category || "").toLowerCase();
+  return [
+    "clínica", "clinica", "saúde", "saude", "dent", "estética", "estetica", "salão", "salao", "academia",
+    "restaurante", "oficina", "imobili", "advoc", "contab", "veterin", "escola", "hotel", "pizzaria"
+  ].some((segment) => text.includes(segment));
 }
 
 export function calculateMaturityScore(scan: Partial<WebsiteScan>): number {

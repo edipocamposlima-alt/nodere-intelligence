@@ -76,6 +76,11 @@ export interface Company {
   maturityScore?: number;
   commercialScore?: number;
   paidTrafficScore?: number;
+  nexusScore?: number;
+  nexusClassification?: string;
+  nexusScoreBreakdown?: Array<{ reason: string; points: number }>;
+  digitalGaps?: string[];
+  suggestedApproach?: string;
   enrichmentStatus?: EnrichmentStatus;
   status: CrmStatus;
   score: number;

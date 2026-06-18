@@ -197,7 +197,7 @@ export function addLeadDeal(id: string, payload: Record<string, unknown>) {
   });
 }
 
-export function searchCompanies(payload: { mode?: "places" | "cnpj" | "global"; city?: string; state?: string; country?: string; segment?: string; keyword?: string; companyName?: string; limit?: number; lat?: number; lng?: number; radiusKm?: number }) {
+export function searchCompanies(payload: { mode?: "places" | "cnpj" | "global"; city?: string; state?: string; country?: string; segment?: string; keyword?: string; companyName?: string; limit?: number; lat?: number; lng?: number; radiusKm?: number; minRating?: number; maxRating?: number; hasWebsite?: boolean | null; hasWhatsApp?: boolean | null; minReviews?: number; sortBy?: "relevance" | "rating" | "review_count" | "nexus_score"; sortDir?: "asc" | "desc" }) {
   return api<{
     companies: Company[];
     search: {
@@ -277,6 +277,22 @@ export function discoveryAddToCrm(company: Partial<Company>) {
     method: "POST",
     body: JSON.stringify({ company })
   });
+}
+
+export function generateAiDiagnosis(payload: { lead_id?: string; company_data?: Partial<Company> }) {
+  return api<{ diagnosis: string }>("/ai/diagnosis", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function generateAiWhatsappMessage(payload: { lead_id?: string; company_data?: Partial<Company>; approach_type?: "first_contact" | "follow_up" | "proposal" | "recovery" }) {
+  return api<{ message: string }>("/ai/whatsapp-message", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function generateAiCallScript(payload: { lead_id?: string; company_data?: Partial<Company> }) {
+  return api<{ script: string }>("/ai/call-script", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function generateAiNextStep(payload: { lead_data: Record<string, unknown>; activities_summary?: string }) {
+  return api<{ suggestion: string }>("/ai/next-step", { method: "POST", body: JSON.stringify(payload) });
 }
 export function geocodeAddress(address: string) {
   return api<{ status: string; results: Array<{ address?: string; lat?: number; lng?: number }> }>(`/geocode?address=${encodeURIComponent(address)}`);

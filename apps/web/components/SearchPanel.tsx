@@ -44,6 +44,7 @@ export function SearchPanel() {
   const [cnpj, setCnpj] = useState("");
   const [mapOpen, setMapOpen] = useState(true);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const activeSearchId = useRef(0);
   const { credits, trialExpired } = useCredits();
 
@@ -123,7 +124,14 @@ export function SearchPanel() {
       limit: 60,
       lat: geo.lat,
       lng: geo.lng,
-      radiusKm: Number(form.get("radiusKm") || 0) || undefined
+      radiusKm: Number(form.get("radiusKm") || 0) || undefined,
+      minRating: Number(form.get("minRating") || "") || undefined,
+      maxRating: Number(form.get("maxRating") || "") || undefined,
+      minReviews: Number(form.get("minReviews") || "") || undefined,
+      hasWebsite: parseTriState(form.get("hasWebsite")),
+      hasWhatsApp: parseTriState(form.get("hasWhatsApp")),
+      sortBy: String(form.get("sortBy") || "nexus_score") as "relevance" | "rating" | "review_count" | "nexus_score",
+      sortDir: String(form.get("sortDir") || "desc") as "asc" | "desc"
     };
 
     const readableQuery = [payload.companyName, payload.segment, payload.keyword, payload.city, payload.state, payload.country].filter(Boolean).join(" ");
@@ -258,6 +266,41 @@ export function SearchPanel() {
           </button>
         </div>
         {geo.label && <p className="mt-2 text-xs text-cyan">Referência ativa: {geo.label}</p>}
+        <div className="mt-3">
+          <button type="button" onClick={() => setAdvancedOpen((value) => !value)} className="inline-flex items-center gap-2 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-xs font-semibold text-[var(--text-primary)]">
+            {advancedOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            Filtros avançados e Score Nexus
+          </button>
+        </div>
+        {advancedOpen && (
+          <div className="mt-3 grid gap-3 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-main)] p-3 md:grid-cols-6">
+            <input name="minRating" type="number" min="0" max="5" step="0.1" placeholder="Nota mínima" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
+            <input name="maxRating" type="number" min="0" max="5" step="0.1" placeholder="Nota máxima" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
+            <input name="minReviews" type="number" min="0" placeholder="Mín. avaliações" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
+            <select name="hasWebsite" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="">
+              <option value="">Site: qualquer</option>
+              <option value="true">Com site</option>
+              <option value="false">Sem site</option>
+            </select>
+            <select name="hasWhatsApp" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="">
+              <option value="">WhatsApp: qualquer</option>
+              <option value="true">Com WhatsApp</option>
+              <option value="false">Sem WhatsApp</option>
+            </select>
+            <div className="grid grid-cols-2 gap-2">
+              <select name="sortBy" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="nexus_score">
+                <option value="nexus_score">Score Nexus</option>
+                <option value="rating">Avaliação</option>
+                <option value="review_count">Avaliações</option>
+                <option value="relevance">Relevância</option>
+              </select>
+              <select name="sortDir" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="desc">
+                <option value="desc">Maior</option>
+                <option value="asc">Menor</option>
+              </select>
+            </div>
+          </div>
+        )}
         <div className="mt-3 space-y-2">
           <p className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
             <CheckCircle2 className="h-3.5 w-3.5 text-cyan" />
@@ -336,6 +379,12 @@ function formatSearchError(error: unknown) {
     return error.message || "Não foi possível concluir a busca.";
   }
   return error instanceof Error ? error.message : "Falha ao buscar empresas.";
+}
+
+function parseTriState(value: FormDataEntryValue | null) {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return null;
 }
 
 function GoogleMapPanel({

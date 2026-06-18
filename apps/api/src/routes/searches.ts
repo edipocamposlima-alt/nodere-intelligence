@@ -8,6 +8,7 @@ import { calculateOpportunityScore } from "../services/scoring.js";
 import { config } from "../config.js";
 import { markOnboardingStep } from "../services/onboardingStore.js";
 import { logRequestMetric } from "../services/metricsStore.js";
+import type { Company } from "../types.js";
 
 const router = Router();
 const apolloSearchSchema = z.object({
@@ -37,7 +38,14 @@ const searchSchema = z.object({
   limit: z.coerce.number().min(1).max(100).optional(),
   lat: z.coerce.number().optional(),
   lng: z.coerce.number().optional(),
-  radiusKm: z.coerce.number().min(1).max(50).optional()
+  radiusKm: z.coerce.number().min(1).max(50).optional(),
+  minRating: z.coerce.number().min(0).max(5).optional(),
+  maxRating: z.coerce.number().min(0).max(5).optional(),
+  hasWebsite: z.boolean().nullable().optional(),
+  hasWhatsApp: z.boolean().nullable().optional(),
+  minReviews: z.coerce.number().min(0).optional(),
+  sortBy: z.enum(["relevance", "rating", "review_count", "nexus_score"]).optional(),
+  sortDir: z.enum(["asc", "desc"]).optional()
 }).refine(
   (input) => [input.companyName, input.city, input.state, input.segment, input.keyword].some((value) => value && value.trim().length >= 2),
   { message: "Informe nome da empresa, segmento, cidade, estado ou palavra-chave." }
@@ -213,8 +221,9 @@ router.post("/", async (req, res, next) => {
       await consumeSearch([input.companyName, input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" "), workspaceId);
     }
     const result = await searchCompaniesWithMeta(input, workspaceId);
-    const companyIds = result.companies.map((c) => c.id);
-    if (result.companies.length > 0) {
+    const companies = filterAndSortCompanies(result.companies as Company[], input);
+    const companyIds = companies.map((c) => c.id);
+    if (companies.length > 0) {
       await markOnboardingStep(workspaceId, "search").catch(() => undefined);
     }
 
@@ -225,14 +234,14 @@ router.post("/", async (req, res, next) => {
         segment: input.segment || input.companyName || input.keyword || "Busca livre",
         keyword: input.keyword || input.companyName
       },
-      result.companies.length,
+      companies.length,
       result.source,
       companyIds,
       workspaceId
     );
     logRequestMetric(req, "search_performed", null, {
       query: [input.companyName, input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" "),
-      resultCount: result.companies.length,
+      resultCount: companies.length,
       source: result.source
     });
 
@@ -241,12 +250,12 @@ router.post("/", async (req, res, next) => {
         id: saved.id,
         ...input,
         createdAt: saved.createdAt,
-        resultCount: result.companies.length,
+        resultCount: companies.length,
         source: result.source,
         warning: (result as any).warning,
         error: (result as any).error
       },
-      companies: result.companies
+      companies
     });
   } catch (error) {
     next(error);
@@ -265,18 +274,19 @@ router.post("/:id/rerun", async (req, res, next) => {
       segment: saved.segment,
       keyword: saved.keyword
     }, workspaceId);
-    if (result.companies.length > 0) {
+    const companies = filterAndSortCompanies(result.companies as Company[], {});
+    if (companies.length > 0) {
       await markOnboardingStep(workspaceId, "search").catch(() => undefined);
     }
 
-    const companyIds = result.companies.map((c) => c.id);
+    const companyIds = companies.map((c) => c.id);
     if (!isPrivilegedSession(req)) {
       await consumeSearch(`${saved.segment} em ${saved.city} (rerun)`, workspaceId);
     }
-    await touchSearch(saved.id, result.companies.length, result.source, companyIds, workspaceId);
+    await touchSearch(saved.id, companies.length, result.source, companyIds, workspaceId);
     logRequestMetric(req, "search_performed", null, {
       query: `${saved.segment} em ${saved.city}`,
-      resultCount: result.companies.length,
+      resultCount: companies.length,
       source: result.source,
       rerun: true
     });
@@ -289,11 +299,11 @@ router.post("/:id/rerun", async (req, res, next) => {
         segment: saved.segment,
         keyword: saved.keyword,
         lastRanAt: saved.lastRanAt,
-        resultCount: result.companies.length,
+        resultCount: companies.length,
         source: result.source,
         warning: (result as any).warning
       },
-      companies: result.companies
+      companies
     });
   } catch (error) {
     return next(error);
@@ -350,6 +360,24 @@ function normalizeWhatsapp(phone: string) {
   if (!digits) return "";
   const local = digits.startsWith("55") ? digits.slice(2) : digits;
   return local.length === 11 && local[2] === "9" ? (digits.startsWith("55") ? `+${digits}` : `+55${digits}`) : "";
+}
+
+function filterAndSortCompanies<T extends { rating?: number; reviewCount?: number; website?: string; whatsapp?: string; score?: number; nexusScore?: number }>(companies: T[], input: Partial<z.infer<typeof searchSchema>>) {
+  const filtered = companies.filter((company) => {
+    if (input.minRating !== undefined && (company.rating ?? 0) < input.minRating) return false;
+    if (input.maxRating !== undefined && (company.rating ?? 0) > input.maxRating) return false;
+    if (input.minReviews !== undefined && (company.reviewCount ?? 0) < input.minReviews) return false;
+    if (input.hasWebsite !== null && input.hasWebsite !== undefined && Boolean(company.website) !== input.hasWebsite) return false;
+    if (input.hasWhatsApp !== null && input.hasWhatsApp !== undefined && Boolean(company.whatsapp) !== input.hasWhatsApp) return false;
+    return true;
+  });
+  const dir = input.sortDir === "asc" ? 1 : -1;
+  const sortBy = input.sortBy || "nexus_score";
+  return filtered.sort((a, b) => {
+    const av = sortBy === "rating" ? (a.rating ?? 0) : sortBy === "review_count" ? (a.reviewCount ?? 0) : sortBy === "relevance" ? (a.score ?? 0) : (a.nexusScore ?? (a.score ?? 0) * 10);
+    const bv = sortBy === "rating" ? (b.rating ?? 0) : sortBy === "review_count" ? (b.reviewCount ?? 0) : sortBy === "relevance" ? (b.score ?? 0) : (b.nexusScore ?? (b.score ?? 0) * 10);
+    return (av - bv) * dir;
+  });
 }
 
 
