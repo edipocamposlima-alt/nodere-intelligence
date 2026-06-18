@@ -1,39 +1,64 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import SitePageShell from "@/components/site/SitePageShell";
 
-const techLogos = ["Google Maps", "Google Business", "Apollo.io", "OpenAI", "WhatsApp Business", "Receita Federal"];
-
-const steps = [
-  { n: "01", title: "Encontre", desc: "Busque empresas por segmento, cidade ou raio. Receba diagnostico digital automatico em segundos." },
-  { n: "02", title: "Analise e priorize", desc: "Score de oportunidade 0-100. IA identifica quem precisa de site, Google Ads, reputacao ou social." },
-  { n: "03", title: "Aborde e feche", desc: "CRM integrado, scripts gerados por IA, WhatsApp e e-mail na mesma tela. Menos tempo, mais vendas." }
+const problems = [
+  "Prospecção manual consome horas sem resultado",
+  "Não sabe quais empresas precisam do seu serviço",
+  "Leads frios demais para converter"
 ];
 
 const solutions = [
-  { icon: "🔍", name: "Discovery", desc: "Encontre oportunidades por Google Maps, score digital e redes sociais." },
-  { icon: "🧠", name: "Intelligence", desc: "Enriqueça dados com Apollo, Receita Federal e diagnostico por IA." },
-  { icon: "📊", name: "CRM", desc: "Pipeline, ficha de lead, propostas em PDF e agenda integrados." },
-  { icon: "💬", name: "Engage", desc: "WhatsApp, e-mail e omnichannel com automacoes por estagio do funil." },
-  { icon: "🤖", name: "AI Nexus", desc: "Copiloto comercial com contexto real do lead. Prospeccao por linguagem natural." },
-  { icon: "📈", name: "Analytics", desc: "Dashboard executivo, forecast de receita e ranking de operadores." },
-  { icon: "🗂️", name: "Operations", desc: "Projetos, portal do cliente e gestao de documentos pos-venda." },
-  { icon: "🤝", name: "Marketplace", desc: "Rede de parceiros, comissionamento e integracao com ERPs." }
+  { icon: "🔍", title: "Encontre empresas", desc: "Busque por segmento, cidade e raio geográfico. Acesse dados reais do Google com 1 clique." },
+  { icon: "📊", title: "Analise oportunidades", desc: "O Score Nexus pontua cada empresa de 0 a 1000 com base em presença digital e potencial comercial." },
+  { icon: "💼", title: "Organize no CRM", desc: "Salve leads direto no funil, acompanhe atividades e registre o histórico de relacionamento." },
+  { icon: "🤖", title: "Feche com IA", desc: "Gere diagnósticos, abordagens, mensagens de WhatsApp e propostas com IA em segundos." }
+];
+
+const modules = [
+  { id: "discovery", label: "🔍 Intelligence & Discovery", title: "Busca comercial com dados reais", desc: "Encontre empresas por cidade, segmento, raio e sinais de maturidade digital." },
+  { id: "score", label: "📊 Score Nexus", title: "Priorização objetiva", desc: "Classifique oportunidades por presença digital, tráfego, reputação, site, WhatsApp e intenção comercial." },
+  { id: "crm", label: "💼 CRM Comercial", title: "Pipeline pronto para vender", desc: "Transforme resultados em leads, acompanhe etapas, tarefas, contatos, histórico e propostas." },
+  { id: "ai", label: "🤖 IA Comercial", title: "Abordagem com contexto", desc: "Crie diagnósticos, mensagens, scripts e propostas usando dados reais de cada empresa." }
+];
+
+const audiences = [
+  "Agências de marketing digital",
+  "Consultores de tráfego pago",
+  "Times de vendas B2B",
+  "Profissionais de prospecção ativa",
+  "Empresas que prestam serviços digitais para PMEs"
+];
+
+const steps = [
+  { title: "Busque empresas na sua cidade por segmento", desc: "Resultados reais do Google com dados de presença digital." },
+  { title: "Analise o Score Nexus de cada empresa", desc: "Saiba exatamente quem tem mais potencial para contratar você." },
+  { title: "Aborde com IA e organize no CRM", desc: "Mensagens, diagnósticos e funil de vendas prontos para usar." }
 ];
 
 const plans = [
-  { name: "Starter", price: "R$ 97", period: "/mes", highlight: false, cta: "Comecar gratis", desc: "Para validar prospeccao com 1 usuario." },
-  { name: "Pro", price: "R$ 247", period: "/mes", highlight: true, cta: "Comecar gratis", desc: "Para operacao comercial com IA completa. Ate 3 usuarios." },
-  { name: "Agency", price: "R$ 497", period: "/mes", highlight: false, cta: "Comecar gratis", desc: "Para times com omnichannel e analytics. Ate 10 usuarios." },
-  { name: "Enterprise", price: "Consulta", period: "", highlight: false, cta: "Falar com vendas", desc: "Customizacao completa, API publica e SLA." }
+  { name: "Starter", monthly: "R$97/mês", yearly: "R$77/mês", users: "2 usuários", credits: "200 créditos", features: ["CRM", "Discovery"] },
+  { name: "Pro", monthly: "R$197/mês", yearly: "R$157/mês", users: "5 usuários", credits: "1000 créditos", features: ["CRM", "Discovery", "IA", "Propostas"] },
+  { name: "Agency", monthly: "R$397/mês", yearly: "R$317/mês", users: "15 usuários", credits: "5000 créditos", features: ["CRM", "Discovery", "IA", "Propostas", "WhatsApp"] },
+  { name: "Enterprise", monthly: "Consultar", yearly: "Consultar", users: "Ilimitado", credits: "API + White-label", features: ["Tudo", "SLA", "Governança"] }
+];
+
+const faqs = [
+  ["Como funciona o período de trial?", "Você pode testar a plataforma por 14 dias antes de escolher um plano."],
+  ["Quantas empresas posso buscar por mês?", "Cada plano possui uma franquia de créditos. Buscas e enriquecimentos consomem créditos."],
+  ["O NODERE funciona para qualquer segmento?", "Sim. A busca funciona por cidade, segmento, palavra-chave e dados reais de presença digital."],
+  ["Preciso cadastrar cartão para testar?", "Não. O trial pode ser iniciado sem cartão de crédito."],
+  ["Como funciona o Score Nexus?", "O score combina sinais de site, reputação, tráfego, redes, dados comerciais e oportunidades digitais."],
+  ["Posso cancelar quando quiser?", "Sim. O cancelamento pode ser feito ao fim do ciclo contratado."]
 ];
 
 export const metadata: Metadata = {
-  title: "NODERE Nexus — Revenue Intelligence Platform",
-  description: "A plataforma que conecta inteligencia comercial, prospeccao e vendas em um unico fluxo. Encontre empresas, analise oportunidades e feche mais contratos.",
+  title: "NODERE Nexus — Intelligence Comercial, CRM e IA",
+  description: "Encontre empresas, analise presença digital, priorize oportunidades e venda mais com IA.",
   openGraph: {
     title: "NODERE Nexus",
-    description: "Revenue Intelligence Platform para agencias e times comerciais.",
+    description: "Plataforma de inteligência comercial para agências e times de marketing.",
     url: "https://nodere.com.br",
     siteName: "NODERE Nexus",
     locale: "pt_BR",
@@ -41,88 +66,143 @@ export const metadata: Metadata = {
   }
 };
 
-export default function HomePage() {
+export default function LandingPage() {
   return (
     <SitePageShell>
-      <section className="hero">
-        <div className="hero-inner">
-          <div className="hero-badge">🚀 Revenue Intelligence Platform</div>
-          <h1>Encontre empresas que precisam<br />dos seus servicos. Feche mais.</h1>
-          <p>Prospeccao inteligente com diagnostico digital, CRM e IA — tudo em um unico fluxo.</p>
-          <div className="hero-ctas">
-            <Link href="/app/register" className="btn-primary-lg">Comecar gratis por 14 dias →</Link>
-            <Link href="/solucoes" className="btn-ghost-lg">Ver como funciona</Link>
+      <section className="landing-hero">
+        <div className="landing-hero__content">
+          <Image src="/logo-nodere-full.png" alt="NODERE Nexus" width={280} height={96} priority className="landing-hero__logo" />
+          <p className="landing-tagline">Encontre empresas, analise presença digital, priorize oportunidades e venda mais — com IA.</p>
+          <h1>Encontre empresas com baixa presença digital e venda seus serviços para quem realmente precisa.</h1>
+          <p className="landing-subtitle">
+            O NODERE Nexus é a plataforma de inteligência comercial para agências e times de marketing que querem prospectar com dados reais e fechar mais negócios.
+          </p>
+          <div className="landing-actions">
+            <Link href="/app/register" className="btn-primary-lg">Começar grátis 14 dias</Link>
+            <Link href="#demo" className="btn-ghost-lg">Ver demonstração →</Link>
           </div>
-          <p className="hero-note">Sem cartao de credito · Cancele quando quiser</p>
         </div>
-        <div className="hero-preview">
-          <div className="preview-card">
-            <div className="preview-score">Score 82 · Alta intencao</div>
-            <div className="preview-items">
-              <div>🏋️ Academias sem site — <strong>42 leads</strong></div>
-              <div>⭐ Clinicas com baixa avaliacao — <strong>18 alertas</strong></div>
-              <div>📢 Empresas sem Google Ads — <strong>31 oportunidades</strong></div>
-            </div>
+        <div className="landing-preview" id="demo">
+          <div className="landing-preview__bar"><span /> <span /> <span /></div>
+          <div className="landing-preview__grid">
+            <div><strong>Score Nexus</strong><b>842</b><small>Alta oportunidade</small></div>
+            <div><strong>Empresas encontradas</strong><b>128</b><small>Clínicas em Goiânia</small></div>
+            <div><strong>CRM ativo</strong><b>37</b><small>Leads priorizados</small></div>
+          </div>
+          <div className="landing-preview__pipeline">
+            {["Novo lead", "Qualificado", "Proposta", "Fechado"].map((item, index) => <span key={item} style={{ width: `${92 - index * 14}%` }}>{item}</span>)}
           </div>
         </div>
       </section>
 
-      <section className="tech-logos">
-        <p>Conectado as melhores fontes de dados</p>
-        <div className="logos-row">
-          {techLogos.map((logo) => <span key={logo}>{logo}</span>)}
+      <section className="landing-section">
+        <div className="landing-section__title">
+          <span>O problema</span>
+          <h2>Você sabe onde estão seus próximos clientes?</h2>
+        </div>
+        <div className="landing-problem-grid">
+          {problems.map((item) => <article key={item}>❌ {item}</article>)}
         </div>
       </section>
 
-      <section className="how-it-works">
-        <h2>Como funciona</h2>
-        <div className="steps-grid">
-          {steps.map((step) => (
-            <div key={step.n} className="step-card">
-              <span className="step-number">{step.n}</span>
-              <h3>{step.title}</h3>
-              <p>{step.desc}</p>
-            </div>
+      <section className="landing-section" id="funcionalidades">
+        <div className="landing-section__title">
+          <span>A solução NODERE</span>
+          <h2>Intelligence + CRM + IA em um só lugar</h2>
+        </div>
+        <div className="landing-solution-grid">
+          {solutions.map((item) => (
+            <article key={item.title}>
+              <span>{item.icon}</span>
+              <h3>{item.title}</h3>
+              <p>{item.desc}</p>
+            </article>
           ))}
         </div>
       </section>
 
-      <section className="solutions">
-        <h2>Uma plataforma. Oito conjuntos integrados.</h2>
-        <p>Use o que voce precisa agora. Expanda conforme cresce.</p>
-        <div className="solutions-grid">
-          {solutions.map((solution) => (
-            <div key={solution.name} className="solution-card">
-              <span className="solution-icon">{solution.icon}</span>
-              <h3>{solution.name}</h3>
-              <p>{solution.desc}</p>
-            </div>
+      <section className="landing-section landing-modules">
+        <div className="landing-section__title">
+          <span>Módulos principais</span>
+          <h2>Quatro frentes para transformar prospecção em vendas</h2>
+        </div>
+        <div className="landing-tabs">
+          {modules.map((item, index) => (
+            <article key={item.id} className={index === 0 ? "active" : ""}>
+              <strong>{item.label}</strong>
+              <h3>{item.title}</h3>
+              <p>{item.desc}</p>
+            </article>
           ))}
         </div>
       </section>
 
-      <section className="plans-preview">
-        <h2>Planos que crescem com voce</h2>
-        <div className="plans-grid">
+      <section className="landing-section landing-two-col">
+        <div>
+          <span className="site-eyebrow">Para quem é</span>
+          <h2>NODERE Nexus foi pensado para quem vende serviços digitais.</h2>
+        </div>
+        <div className="landing-checks">
+          {audiences.map((item) => <span key={item}>✅ {item}</span>)}
+        </div>
+      </section>
+
+      <section className="landing-section">
+        <div className="landing-section__title">
+          <span>Como funciona</span>
+          <h2>Da busca ao fechamento em 3 passos</h2>
+        </div>
+        <div className="landing-steps">
+          {steps.map((item, index) => (
+            <article key={item.title}>
+              <b>{index + 1}</b>
+              <h3>{item.title}</h3>
+              <p>→ {item.desc}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-section" id="planos">
+        <div className="landing-section__title">
+          <span>Planos</span>
+          <h2>Escolha mensal ou anual — economize 20%</h2>
+        </div>
+        <div className="landing-plan-toggle"><span>Mensal</span><span>Anual — economize 20%</span></div>
+        <div className="landing-pricing">
           {plans.map((plan) => (
-            <div key={plan.name} className={`plan-card ${plan.highlight ? "plan-featured" : ""}`}>
-              {plan.highlight && <div className="plan-badge">Mais popular</div>}
+            <article key={plan.name} className={plan.name === "Pro" ? "featured" : ""}>
               <h3>{plan.name}</h3>
-              <div className="plan-price">{plan.price}<span>{plan.period}</span></div>
-              <p>{plan.desc}</p>
-              <Link href={plan.name === "Enterprise" ? "/contato" : "/app/register"} className={plan.highlight ? "btn-primary" : "btn-ghost"}>
-                {plan.cta}
-              </Link>
-            </div>
+              <strong>{plan.monthly}</strong>
+              <small>{plan.yearly} no anual</small>
+              <p>{plan.credits}</p>
+              <p>{plan.users}</p>
+              <ul>{plan.features.map((feature) => <li key={feature}>✓ {feature}</li>)}</ul>
+              <Link href={plan.name === "Enterprise" ? "/contato" : "/app/register"}>{plan.name === "Enterprise" ? "Contato →" : "Começar →"}</Link>
+            </article>
           ))}
         </div>
-        <p><Link href="/precos">Ver comparativo completo →</Link></p>
       </section>
 
-      <section className="cta-final">
-        <h2>Pronto para encontrar seus proximos clientes?</h2>
-        <p>14 dias gratis. Sem cartao. Sem compromisso.</p>
-        <Link href="/app/register" className="btn-primary-lg">Criar conta gratis →</Link>
+      <section className="landing-section" id="faq">
+        <div className="landing-section__title">
+          <span>FAQ</span>
+          <h2>Perguntas frequentes</h2>
+        </div>
+        <div className="landing-faq">
+          {faqs.map(([question, answer]) => (
+            <details key={question}>
+              <summary>{question}</summary>
+              <p>{answer}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-final">
+        <h2>Comece a prospectar com inteligência hoje mesmo.</h2>
+        <Link href="/app/register" className="btn-primary-lg">Criar conta grátis — 14 dias</Link>
+        <p>Sem cartão de crédito. Cancele quando quiser.</p>
       </section>
     </SitePageShell>
   );

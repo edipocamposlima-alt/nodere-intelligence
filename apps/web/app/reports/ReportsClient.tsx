@@ -9,6 +9,8 @@ import {
   getReportFunnel,
   getReportIntelligence,
   getReportOrigin,
+  getReportOperators,
+  getReportProposals,
   getReportSegments,
   getReportSummary,
   getReportTimeline,
@@ -25,6 +27,8 @@ type Segments = Awaited<ReturnType<typeof getReportSegments>>;
 type Cities = Awaited<ReturnType<typeof getReportCities>>;
 type Origins = Awaited<ReturnType<typeof getReportOrigin>>;
 type Intelligence = Awaited<ReturnType<typeof getReportIntelligence>>;
+type Operators = Awaited<ReturnType<typeof getReportOperators>>;
+type Proposals = Awaited<ReturnType<typeof getReportProposals>>;
 
 const COLORS = ["#03624C", "#00DF82", "#F59E0B", "#7C3AED", "#F97316", "#DC2626", "#2563EB", "#64748B"];
 
@@ -64,6 +68,8 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
   const [cities, setCities] = useState<Cities>({ cities: [] });
   const [origins, setOrigins] = useState<Origins>({ origins: [] });
   const [intelligence, setIntelligence] = useState<Intelligence | null>(null);
+  const [operators, setOperators] = useState<Operators>([]);
+  const [proposals, setProposals] = useState<Proposals>({ by_status: [], pipeline_value: 0, accepted_value: 0 });
   const [funnelMin, setFunnelMin] = useState(0);
   const [segmentLimit, setSegmentLimit] = useState(8);
   const [cityLimit, setCityLimit] = useState(10);
@@ -80,9 +86,11 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
       getReportSegments(period),
       getReportCities(period),
       getReportOrigin(period),
-      getReportIntelligence(period)
+      getReportIntelligence(period),
+      getReportOperators(),
+      getReportProposals(period)
     ]))
-      .then(([nextSummary, nextFunnel, nextTimeline, nextSegments, nextCities, nextOrigins, nextIntelligence]) => {
+      .then(([nextSummary, nextFunnel, nextTimeline, nextSegments, nextCities, nextOrigins, nextIntelligence, nextOperators, nextProposals]) => {
         if (!alive) return;
         setSummary(nextSummary);
         setFunnel(nextFunnel);
@@ -91,6 +99,8 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
         setCities(nextCities);
         setOrigins(nextOrigins);
         setIntelligence(nextIntelligence);
+        setOperators(nextOperators);
+        setProposals(nextProposals);
       })
       .catch((err) => {
         if (alive) setError(getErrorMessage(err));
@@ -114,6 +124,26 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
     } catch (err) {
       setError(getErrorMessage(err));
     }
+  }
+
+  function exportCsv() {
+    const rows = [
+      ["tipo", "nome", "quantidade", "valor"],
+      ...filteredFunnel.map((item) => ["funil", item.name, item.count, ""]),
+      ...filteredSegments.map((item) => ["segmento", item.segment, item.count, item.avg_score]),
+      ...filteredOrigins.map((item) => ["origem", item.source, item.count, ""]),
+      ...proposals.by_status.map((item) => ["proposta", item.status, item.count, item.value])
+    ];
+    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `relatorio-nodere-${period}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   }
 
 
@@ -143,6 +173,10 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
               <Download className="h-4 w-4" />
               Exportar PDF
             </button>
+            <button onClick={exportCsv} className="inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-xs font-bold text-[var(--text-primary)]">
+              <Download className="h-4 w-4" />
+              Exportar CSV
+            </button>
           </div>
         </div>
       </section>
@@ -165,6 +199,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
             <Card label="Score médio" value={metric(summary.avg_score)} sub="/100" />
             <Card label="Conversão" value={metric(summary.conversion_rate, "%")} sub="fechado vs perdido" />
             <Card label="Créditos usados" value={metric(summary.credits_used)} sub="período selecionado" />
+            <Card label="Propostas" value={metric(proposals.by_status.reduce((sum, item) => sum + item.count, 0))} sub={`Pipeline ${Number(proposals.pipeline_value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`} />
           </section>
 
           <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
@@ -255,6 +290,41 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
                   </PieChart>
                 </ResponsiveContainer>
               </div>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-line bg-panel/90 p-5">
+            <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+              <BarChart3 className="h-4 w-4 text-cyan" /> Desempenho por operador
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] text-sm">
+                <thead>
+                  <tr className="border-b border-line text-left text-[var(--text-secondary)]">
+                    <th className="px-3 py-3">Operador</th>
+                    <th className="px-3 py-3">Perfil</th>
+                    <th className="px-3 py-3 text-right">Leads</th>
+                    <th className="px-3 py-3 text-right">Atividades</th>
+                    <th className="px-3 py-3 text-right">Fechados</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {operators.map((operator) => (
+                    <tr key={operator.user_id} className="border-b border-line/60 text-[var(--text-primary)]">
+                      <td className="px-3 py-3 font-semibold">{operator.name}</td>
+                      <td className="px-3 py-3 text-[var(--text-secondary)]">{operator.role}</td>
+                      <td className="px-3 py-3 text-right">{operator.leads_created}</td>
+                      <td className="px-3 py-3 text-right">{operator.followups_done}</td>
+                      <td className="px-3 py-3 text-right">{operator.leads_closed}</td>
+                    </tr>
+                  ))}
+                  {!operators.length && (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-6 text-center text-[var(--text-secondary)]">Nenhum operador com métricas no período.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </section>
 

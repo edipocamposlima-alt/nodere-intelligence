@@ -668,6 +668,15 @@ export function getReportIntelligence(period = "30d") {
   }>(`/reports/intelligence?period=${encodeURIComponent(period)}`);
 }
 
+export function getReportProposals(period = "30d") {
+  return api<{
+    by_status: Array<{ status: string; count: number; value: number }>;
+    pipeline_value: number;
+    accepted_value: number;
+    warning?: string;
+  }>(`/reports/proposals?period=${encodeURIComponent(period)}`, undefined, { by_status: [], pipeline_value: 0, accepted_value: 0 });
+}
+
 export function getReportOperators() {
   return api<Array<{
     user_id: string;
