@@ -8,7 +8,7 @@ export default function TestimonialsSection() {
   return (
     <section className="site-section">
       <div className="site-container">
-        <h2 className="site-title site-title--center">Quem já usa o NODERE Nexus</h2>
+        <h2 className="site-title site-title--center">Quem já usa o NODERE</h2>
         <div className="site-card-grid site-card-grid--3">
           {testimonials.map((item) => (
             <article className="site-testimonial" key={item.name}>

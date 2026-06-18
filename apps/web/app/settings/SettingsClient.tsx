@@ -132,7 +132,7 @@ export function SettingsClient() {
     port: "587",
     user: "",
     pass: "",
-    fromName: "NODERE Nexus",
+    fromName: "NODERE",
     fromEmail: ""
   });
   const [smtpStatus, setSmtpStatus] = useState("Não testado");

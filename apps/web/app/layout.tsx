@@ -8,11 +8,11 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 export const metadata: Metadata = {
   metadataBase: new URL("https://nodere.com.br"),
   title: {
-    default: "NODERE Nexus — Revenue Intelligence Platform",
-    template: "%s | NODERE Nexus"
+    default: "NODERE",
+    template: "%s | NODERE"
   },
   description: "Encontre empresas que precisam dos seus serviços. Diagnóstico digital automático, CRM com IA e prospecção inteligente em um único fluxo.",
-  applicationName: "NODERE Nexus",
+  applicationName: "NODERE",
   authors: [{ name: "NODERE" }],
   creator: "NODERE",
   publisher: "NODERE",
@@ -27,17 +27,17 @@ export const metadata: Metadata = {
     other: [{ rel: "mask-icon", url: "/nodere-favicon.png?v=nodere-n-20260618", color: "#03624C" }]
   },
   openGraph: {
-    title: "NODERE Nexus — Revenue Intelligence Platform",
+    title: "NODERE",
     description: "A plataforma que conecta inteligência comercial, prospecção e vendas em um único fluxo.",
     url: "https://nodere.com.br",
-    siteName: "NODERE Nexus",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "NODERE Nexus" }],
+    siteName: "NODERE",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "NODERE" }],
     locale: "pt_BR",
     type: "website"
   },
   twitter: {
     card: "summary_large_image",
-    title: "NODERE Nexus",
+    title: "NODERE",
     description: "Inteligência comercial, CRM e IA para agências e times de vendas.",
     images: ["/og-image.png"]
   }

@@ -4,8 +4,8 @@ import SitePageShell from "@/components/site/SitePageShell";
 import SolutionsSection from "@/components/site/SolutionsSection";
 
 export const metadata: Metadata = {
-  title: "Soluções | NODERE Nexus",
-  description: "Conheça os módulos integrados da plataforma NODERE Nexus."
+  title: "Soluções | NODERE",
+  description: "Conheça os módulos integrados da plataforma NODERE."
 };
 
 export default function SolutionsPage() {

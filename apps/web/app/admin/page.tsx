@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { AdminClient } from "./AdminClient";
 
-export const metadata: Metadata = { title: "Administração | NODERE Nexus" };
+export const metadata: Metadata = { title: "Administração | NODERE" };
 
 export default function AdminPage() {
   return <AdminClient />;

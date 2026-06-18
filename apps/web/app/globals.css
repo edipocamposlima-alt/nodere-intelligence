@@ -3105,10 +3105,6 @@ textarea {
   color: #eff6ff;
 }
 
-.logo-nexus {
-  color: var(--brand-glow);
-}
-
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;

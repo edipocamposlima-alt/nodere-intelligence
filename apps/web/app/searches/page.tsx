@@ -9,8 +9,8 @@ import { ExternalSearchTabs } from "./ExternalSearchTabs";
 import { Logo } from "@/components/brand/Logo";
 
 export const metadata: Metadata = {
-  title: "Busca de empresas | NODERE Nexus",
-  description: "Busque empresas no Google Places, salve oportunidades no CRM e acompanhe enriquecimento comercial no NODERE Nexus."
+  title: "Busca de empresas | NODERE",
+  description: "Busque empresas no Google Places, salve oportunidades no CRM e acompanhe enriquecimento comercial no NODERE."
 };
 
 export default async function SearchesPage() {

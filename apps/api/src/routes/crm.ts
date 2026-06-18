@@ -311,7 +311,7 @@ router.get("/leads/:id/proposal.pdf", async (req, res, next) => {
     });
     const logoPath = findNoderePdfIcon();
     if (logoPath) doc.image(logoPath, 48, 44, { width: 28, height: 28 });
-    doc.fillColor("#00382F").fontSize(20).text("Proposta Comercial NODERE Nexus", logoPath ? 86 : 48, 48);
+    doc.fillColor("#00382F").fontSize(20).text("Proposta Comercial NODERE", logoPath ? 86 : 48, 48);
     doc.moveDown();
     doc.fontSize(14).text(`Lead: ${lead.name}`);
     doc.text(`Segmento: ${lead.category || "Não informado"}`);

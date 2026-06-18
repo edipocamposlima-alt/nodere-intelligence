@@ -17,7 +17,7 @@ const SOLUTIONS = [
   { icon: "🧠", code: "INTEL", name: "Intelligence", color: "#7C3AED", desc: "Enriquecimento automático com Apollo, Receita Federal e diagnóstico por IA." },
   { icon: "📊", code: "CRM", name: "CRM", color: "var(--crm-new)", desc: "Pipeline visual, ficha 360, propostas em PDF e agenda de follow-ups integrados." },
   { icon: "💬", code: "ENGAGE", name: "Engage", color: "#16A34A", desc: "WhatsApp inbox, disparos em massa, e-mail e central omnichannel com automações." },
-  { icon: "🤖", code: "AI", name: "AI Nexus", color: "var(--ai-primary)", desc: "Copiloto comercial com contexto real do lead. Scripts, análise e respostas inteligentes." },
+  { icon: "🤖", code: "AI", name: "IA NODERE", color: "var(--ai-primary)", desc: "Copiloto comercial com contexto real do lead. Scripts, análise e respostas inteligentes." },
   { icon: "📈", code: "ANA", name: "Analytics", color: "#2563EB", desc: "Dashboard executivo, forecast de receita e ranking de operadores em tempo real." },
   { icon: "🗂️", code: "OPS", name: "Operations", color: "#F97316", desc: "Projetos kanban, portal do cliente e controle de documentos pós-venda." },
   { icon: "🤝", code: "MKT", name: "Marketplace", color: "#03624C", desc: "Rede de parceiros, comissionamento e integração nativa com ERPs brasileiros." }
@@ -56,7 +56,7 @@ const TESTIMONIALS = [
 const BLOG_POSTS = [
   { tag: "Discovery", color: "#F59E0B", title: "Como prospectar 200 empresas por semana com score digital automatizado", read: "5 min", date: "Jun 2026" },
   { tag: "CRM", color: "var(--crm-new)", title: "Pipeline inteligente: como parar de perder leads no funil de vendas", read: "4 min", date: "Jun 2026" },
-  { tag: "AI Nexus", color: "var(--ai-primary)", title: "Copiloto comercial: como a IA gera scripts de abordagem em segundos", read: "6 min", date: "Mai 2026" },
+  { tag: "IA NODERE", color: "var(--ai-primary)", title: "Copiloto comercial: como a IA gera scripts de abordagem em segundos", read: "6 min", date: "Mai 2026" },
   { tag: "Engage", color: "#16A34A", title: "WhatsApp B2B: como escalar prospecção sem virar spam", read: "5 min", date: "Mai 2026" },
   { tag: "Analytics", color: "#2563EB", title: "Forecast de receita: como prever seu faturamento com precisão", read: "4 min", date: "Abr 2026" },
   { tag: "Intelligence", color: "#7C3AED", title: "Enriquecimento de dados: Apollo + Receita Federal na mesma tela", read: "3 min", date: "Abr 2026" }
@@ -96,7 +96,7 @@ export default function HomeDefinitiveClient() {
         <div className="def-orb def-orb--cyan" />
         <div className="def-container def-hero__grid">
           <div className={visible ? "def-hero__copy is-visible" : "def-hero__copy"}>
-            <div className="def-live"><span />Revenue Intelligence Platform</div>
+            <div className="def-live"><span />Plataforma comercial</div>
             <h1>Encontre empresas<br />que precisam<br /><strong>dos seus serviços.</strong></h1>
             <div className="def-ticker"><span>Feito para</span><b>{TICKER[ticker]}</b></div>
             <p>Prospecção inteligente com diagnóstico digital, CRM e copiloto de IA — do primeiro contato ao fechamento.</p>
@@ -156,7 +156,7 @@ export default function HomeDefinitiveClient() {
 
       <section className="def-section def-section--alt">
         <div className="def-container">
-          <h2 className="def-title-center">Quem já usa o NODERE Nexus</h2>
+          <h2 className="def-title-center">Quem já usa o NODERE</h2>
           <div className="def-testimonials">{TESTIMONIALS.map((item) => <article key={item.name}><div>★★★★★</div><p>"{item.text}"</p><footer><span>{item.avatar}</span><b>{item.name}</b><small>{item.role} · {item.company}</small></footer></article>)}</div>
         </div>
       </section>

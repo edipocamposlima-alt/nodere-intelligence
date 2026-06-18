@@ -12,11 +12,11 @@ export default function SiteFooter() {
       <div className="site-container">
         <div className="site-footer__grid">
           <div>
-            <div className="site-footer__brand">NODERE <strong>Nexus</strong></div>
-            <p>Revenue Intelligence Platform. A plataforma que conecta inteligência comercial, prospecção e vendas em um único fluxo.</p>
+            <div className="site-footer__brand">NODERE</div>
+            <p>Plataforma comercial. A plataforma que conecta inteligência comercial, prospecção e vendas em um único fluxo.</p>
             <div className="site-footer__social">
               <a href="https://linkedin.com/company/nodere" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-              <a href="https://instagram.com/nodere.nexus" target="_blank" rel="noopener noreferrer">Instagram</a>
+              <a href="https://instagram.com/nodere" target="_blank" rel="noopener noreferrer">Instagram</a>
             </div>
           </div>
           {columns.map((column) => (
@@ -29,8 +29,8 @@ export default function SiteFooter() {
           ))}
         </div>
         <div className="site-footer__bottom">
-          <span>© 2026 NODERE Nexus. Todos os direitos reservados.</span>
-          <span>Revenue Intelligence Platform · nodere.com.br</span>
+          <span>© 2026 NODERE. Todos os direitos reservados.</span>
+          <span>Plataforma comercial · nodere.com.br</span>
         </div>
       </div>
     </footer>

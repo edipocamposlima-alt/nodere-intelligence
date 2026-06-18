@@ -1,4 +1,4 @@
--- BLOCO 04 - Billing persistente NODERE Nexus
+-- BLOCO 04 - Billing persistente NODERE
 -- Aplicar manualmente no Supabase SQL Editor do projeto correto.
 -- Este script NAO cria users, workspaces ou companies paralelos.
 -- Ele preserva nodere_workspaces e usa workspace_id text para compatibilidade com o schema real atual.

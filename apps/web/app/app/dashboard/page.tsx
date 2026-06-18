@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Dashboard | NODERE Nexus"
+  title: "Dashboard | NODERE"
 };
 
 const cards = [
@@ -15,7 +15,7 @@ export default function AppDashboardPage() {
   return (
     <div className="app-dashboard-page">
       <div className="app-dashboard-hero">
-        <p>NODERE Nexus</p>
+        <p>NODERE</p>
         <h1>Hub central da plataforma</h1>
         <span>Gerencie seu workspace, módulos e configurações em um único lugar.</span>
       </div>

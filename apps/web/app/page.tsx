@@ -11,14 +11,14 @@ const problems = [
 
 const solutions = [
   { icon: "🔍", title: "Encontre empresas", desc: "Busque por segmento, cidade e raio geográfico. Acesse dados reais do Google com 1 clique." },
-  { icon: "📊", title: "Analise oportunidades", desc: "O Score Nexus pontua cada empresa de 0 a 1000 com base em presença digital e potencial comercial." },
+  { icon: "📊", title: "Analise oportunidades", desc: "O Score NODERE pontua cada empresa de 0 a 1000 com base em presença digital e potencial comercial." },
   { icon: "💼", title: "Organize no CRM", desc: "Salve leads direto no funil, acompanhe atividades e registre o histórico de relacionamento." },
   { icon: "🤖", title: "Feche com IA", desc: "Gere diagnósticos, abordagens, mensagens de WhatsApp e propostas com IA em segundos." }
 ];
 
 const modules = [
   { id: "discovery", label: "🔍 Intelligence & Discovery", title: "Busca comercial com dados reais", desc: "Encontre empresas por cidade, segmento, raio e sinais de maturidade digital." },
-  { id: "score", label: "📊 Score Nexus", title: "Priorização objetiva", desc: "Classifique oportunidades por presença digital, tráfego, reputação, site, WhatsApp e intenção comercial." },
+  { id: "score", label: "📊 Score NODERE", title: "Priorização objetiva", desc: "Classifique oportunidades por presença digital, tráfego, reputação, site, WhatsApp e intenção comercial." },
   { id: "crm", label: "💼 CRM Comercial", title: "Pipeline pronto para vender", desc: "Transforme resultados em leads, acompanhe etapas, tarefas, contatos, histórico e propostas." },
   { id: "ai", label: "🤖 IA Comercial", title: "Abordagem com contexto", desc: "Crie diagnósticos, mensagens, scripts e propostas usando dados reais de cada empresa." }
 ];
@@ -33,7 +33,7 @@ const audiences = [
 
 const steps = [
   { title: "Busque empresas na sua cidade por segmento", desc: "Resultados reais do Google com dados de presença digital." },
-  { title: "Analise o Score Nexus de cada empresa", desc: "Saiba exatamente quem tem mais potencial para contratar você." },
+  { title: "Analise o Score NODERE de cada empresa", desc: "Saiba exatamente quem tem mais potencial para contratar você." },
   { title: "Aborde com IA e organize no CRM", desc: "Mensagens, diagnósticos e funil de vendas prontos para usar." }
 ];
 
@@ -49,18 +49,18 @@ const faqs = [
   ["Quantas empresas posso buscar por mês?", "Cada plano possui uma franquia de créditos. Buscas e enriquecimentos consomem créditos."],
   ["O NODERE funciona para qualquer segmento?", "Sim. A busca funciona por cidade, segmento, palavra-chave e dados reais de presença digital."],
   ["Preciso cadastrar cartão para testar?", "Não. O trial pode ser iniciado sem cartão de crédito."],
-  ["Como funciona o Score Nexus?", "O score combina sinais de site, reputação, tráfego, redes, dados comerciais e oportunidades digitais."],
+  ["Como funciona o Score NODERE?", "O score combina sinais de site, reputação, tráfego, redes, dados comerciais e oportunidades digitais."],
   ["Posso cancelar quando quiser?", "Sim. O cancelamento pode ser feito ao fim do ciclo contratado."]
 ];
 
 export const metadata: Metadata = {
-  title: "NODERE Nexus — Intelligence Comercial, CRM e IA",
+  title: "NODERE — Intelligence Comercial, CRM e IA",
   description: "Encontre empresas, analise presença digital, priorize oportunidades e venda mais com IA.",
   openGraph: {
-    title: "NODERE Nexus",
+    title: "NODERE",
     description: "Plataforma de inteligência comercial para agências e times de marketing.",
     url: "https://nodere.com.br",
-    siteName: "NODERE Nexus",
+    siteName: "NODERE",
     locale: "pt_BR",
     type: "website"
   }
@@ -75,7 +75,7 @@ export default function LandingPage() {
           <p className="landing-tagline">Encontre empresas, analise presença digital, priorize oportunidades e venda mais — com IA.</p>
           <h1>Encontre empresas com baixa presença digital e venda seus serviços para quem realmente precisa.</h1>
           <p className="landing-subtitle">
-            O NODERE Nexus é a plataforma de inteligência comercial para agências e times de marketing que querem prospectar com dados reais e fechar mais negócios.
+            O NODERE é a plataforma de inteligência comercial para agências e times de marketing que querem prospectar com dados reais e fechar mais negócios.
           </p>
           <div className="landing-actions">
             <Link href="/app/register" className="btn-primary-lg">Começar grátis 14 dias</Link>
@@ -85,7 +85,7 @@ export default function LandingPage() {
         <div className="landing-preview" id="demo">
           <div className="landing-preview__bar"><span /> <span /> <span /></div>
           <div className="landing-preview__grid">
-            <div><strong>Score Nexus</strong><b>842</b><small>Alta oportunidade</small></div>
+            <div><strong>Score NODERE</strong><b>842</b><small>Alta oportunidade</small></div>
             <div><strong>Empresas encontradas</strong><b>128</b><small>Clínicas em Goiânia</small></div>
             <div><strong>CRM ativo</strong><b>37</b><small>Leads priorizados</small></div>
           </div>
@@ -140,7 +140,7 @@ export default function LandingPage() {
       <section className="landing-section landing-two-col">
         <div>
           <span className="site-eyebrow">Para quem é</span>
-          <h2>NODERE Nexus foi pensado para quem vende serviços digitais.</h2>
+          <h2>NODERE foi pensado para quem vende serviços digitais.</h2>
         </div>
         <div className="landing-checks">
           {audiences.map((item) => <span key={item}>✅ {item}</span>)}

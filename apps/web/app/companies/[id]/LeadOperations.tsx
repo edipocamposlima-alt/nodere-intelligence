@@ -93,6 +93,7 @@ export function LeadOperations({ company }: { company: Company }) {
   const [taskDescription, setTaskDescription] = useState("");
   const [contactNotes, setContactNotes] = useState("");
   const [communicationBody, setCommunicationBody] = useState("");
+  const [dealNotes, setDealNotes] = useState("");
   const [emailBody, setEmailBody] = useState("");
   const [instruction, setInstruction] = useState("");
   const [generationType, setGenerationType] = useState("Proposta comercial");
@@ -234,10 +235,19 @@ export function LeadOperations({ company }: { company: Company }) {
     const form = new FormData(target);
     const body = String(form.get("body") || "").trim();
     if (!body) return;
+    const nextAction = String(form.get("nextAction") || "").trim();
+    const owner = String(form.get("owner") || "").trim();
+    const performedAt = String(form.get("performedAt") || "").trim();
+    const enrichedBody = [
+      performedAt ? `**Data e hora:** ${new Date(performedAt).toLocaleString("pt-BR")}` : "",
+      owner ? `**Responsável:** ${owner}` : "",
+      nextAction ? `**Próxima ação:** ${nextAction}` : "",
+      body
+    ].filter(Boolean).join("\n\n");
     try {
       const note = await api<Note>(`${companyPath}/notes`, {
         method: "POST",
-        body: JSON.stringify({ body, type: form.get("type") || "Observação" })
+        body: JSON.stringify({ body: enrichedBody, type: form.get("type") || "Observação" })
       });
       setNotes((items) => [note, ...items]);
       target?.reset();
@@ -339,6 +349,8 @@ export function LeadOperations({ company }: { company: Company }) {
     event.preventDefault();
     const target = event.currentTarget;
     const form = new FormData(target);
+    const influenceLevel = String(form.get("influenceLevel") || "").trim();
+    const notes = String(form.get("notes") || "").trim();
     try {
       const contact = await api<Contact>(`${companyPath}/contacts`, {
         method: "POST",
@@ -349,13 +361,43 @@ export function LeadOperations({ company }: { company: Company }) {
           phone: form.get("phone"),
           whatsapp: form.get("whatsapp"),
           linkedinUrl: form.get("linkedinUrl"),
-          notes: form.get("notes")
+          notes: [influenceLevel ? `**Nível de influência:** ${influenceLevel}` : "", notes].filter(Boolean).join("\n\n")
         })
       });
       setContacts((items) => [contact, ...items]);
       target.reset();
       setContactNotes("");
       showSuccess("Decisor salvo.");
+    } catch (err) {
+      showError(err);
+    }
+  }
+
+  async function addNegotiation(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const target = event.currentTarget;
+    const form = new FormData(target);
+    const title = `Negociação - ${String(form.get("service") || "Produto/serviço")}`;
+    const content = [
+      `**Valor da negociação:** ${String(form.get("value") || "Não informado")}`,
+      `**Produto/serviço de interesse:** ${String(form.get("service") || "Não informado")}`,
+      `**Etapa da negociação:** ${String(form.get("stage") || "Não informada")}`,
+      `**Probabilidade de fechamento:** ${String(form.get("probability") || "0")}%`,
+      `**Data prevista de fechamento:** ${String(form.get("expectedClose") || "Não informada")}`,
+      `**Motivo de perda:** ${String(form.get("lossReason") || "Não aplicável")}`,
+      `**Próxima ação comercial:** ${String(form.get("nextAction") || "Não informada")}`,
+      "",
+      dealNotes || "Sem observações."
+    ].join("\n");
+    try {
+      const document = await api<DocumentItem>(`${companyPath}/documents`, {
+        method: "POST",
+        body: JSON.stringify({ type: "negociacao", title, content })
+      });
+      setDocuments((items) => [document, ...items]);
+      setDealNotes("");
+      target.reset();
+      showSuccess("Negociação registrada.");
     } catch (err) {
       showError(err);
     }
@@ -558,12 +600,12 @@ export function LeadOperations({ company }: { company: Company }) {
   }
 
   const tabs: [Tab, string][] = [
-    ["dados", "Dados"],
+    ["dados", "Visão Geral"],
     ["observacoes", "Observações"],
     ["agenda", "Agenda"],
-    ["decisores", "Decisores"],
+    ["decisores", "Contatos"],
     ["historico", "Histórico"],
-    ["contratos", "Serviços contratados"],
+    ["contratos", "Negociações"],
     ["enriquecimento", "Apollo/Econodata"],
     ["ia", "IA / Editor"],
     ["documentos", "Propostas e contratos"],
@@ -647,11 +689,16 @@ export function LeadOperations({ company }: { company: Company }) {
       {tab === "observacoes" && (
         <div className="mt-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
           <form onSubmit={addNote} className="space-y-3">
-            <select name="type" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm">
-              {["Observação", "Ligação", "WhatsApp", "Email", "Reunião", "Objeção", "Interno"].map((item) => <option key={item}>{item}</option>)}
-            </select>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <select name="type" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm">
+                {["Observação", "Ligação", "WhatsApp", "E-mail", "Reunião", "Proposta", "Interno"].map((item) => <option key={item}>{item}</option>)}
+              </select>
+              <input name="performedAt" type="datetime-local" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <input name="owner" placeholder="Responsável pelo registro" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <input name="nextAction" placeholder="Próxima ação" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+            </div>
             <input type="hidden" name="body" value={noteBody} />
-            <RichTextEditor value={noteBody} onChange={setNoteBody} minHeight={220} placeholder="Escreva uma observação real do atendimento..." />
+            <RichTextEditor value={noteBody} onChange={setNoteBody} minHeight={220} placeholder="Registre a atividade realizada e observações detalhadas..." />
             <div className="flex flex-wrap gap-2">
               {editingNoteId ? (
                 <>
@@ -721,20 +768,26 @@ export function LeadOperations({ company }: { company: Company }) {
       {tab === "decisores" && (
         <div className="mt-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
           <form onSubmit={addContact} className="space-y-3">
-            <input name="name" required placeholder="Nome do decisor" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-            <input name="role" placeholder="Cargo" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+            <input name="name" required placeholder="Nome do contato" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+            <input name="role" placeholder="Cargo/função" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
             <div className="grid gap-3 sm:grid-cols-2">
               <input name="email" placeholder="Email" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
               <input name="phone" placeholder="Telefone" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
               <input name="whatsapp" placeholder="WhatsApp celular" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
               <input name="linkedinUrl" placeholder="LinkedIn URL" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <select name="influenceLevel" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm">
+                <option value="">Nível de influência</option>
+                <option value="Decisor">Decisor</option>
+                <option value="Influenciador">Influenciador</option>
+                <option value="Operacional">Operacional</option>
+              </select>
             </div>
             <input type="hidden" name="notes" value={contactNotes} />
-            <RichTextEditor value={contactNotes} onChange={setContactNotes} minHeight={150} placeholder="Notas sobre o decisor" />
-            <button className="btn-action px-4 py-2 text-sm"><Plus className="h-4 w-4" />Salvar decisor</button>
+            <RichTextEditor value={contactNotes} onChange={setContactNotes} minHeight={150} placeholder="Observações do contato, influência, abordagem e relacionamento..." />
+            <button className="btn-action px-4 py-2 text-sm"><Plus className="h-4 w-4" />Adicionar contato</button>
           </form>
           <div className="space-y-3">
-            {contacts.length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhum decisor cadastrado.</p>}
+            {contacts.length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhum contato cadastrado.</p>}
             {contacts.map((contact) => (
               <article key={contact.id} className="rounded-lg border border-line bg-ink p-4">
                 <div className="grid gap-3 md:grid-cols-2">
@@ -814,20 +867,51 @@ export function LeadOperations({ company }: { company: Company }) {
       )}
 
       {tab === "contratos" && (
-        <div className="mt-5 space-y-3">
-          {contracts.length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhum produto ou serviço contratado vinculado. Use o catálogo e a API /companies/:id/contracts para vincular itens.</p>}
-          {contracts.map((contract) => (
-            <article key={contract.id} className="rounded-lg border border-line bg-ink p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-white">{contract.catalog_items?.name || "Item do catálogo"}</p>
-                  <p className="mt-1 text-xs text-slate-400">{contract.catalog_items?.code || "Sem código"} · {contract.status || "active"}</p>
+        <div className="mt-5 grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+          <form onSubmit={addNegotiation} className="space-y-3 rounded-lg border border-line bg-panel/70 p-4">
+            <p className="text-sm font-semibold text-white">Criar nova negociação</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <input name="value" placeholder="Valor da negociação" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <input name="service" placeholder="Produto/serviço de interesse" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <input name="stage" placeholder="Etapa da negociação" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <input name="probability" type="number" min={0} max={100} placeholder="Probabilidade (%)" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <input name="expectedClose" type="date" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <input name="lossReason" placeholder="Motivo de perda, se houver" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <input name="nextAction" placeholder="Próxima ação comercial" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm sm:col-span-2" />
+            </div>
+            <RichTextEditor value={dealNotes} onChange={setDealNotes} minHeight={170} placeholder="Observações da negociação, próximos passos, objeções e contexto..." />
+            <button className="btn-action px-4 py-2 text-sm"><Plus className="h-4 w-4" />Criar nova negociação</button>
+          </form>
+          <div className="space-y-3">
+            {documents.filter((item) => item.type === "negociacao").map((document) => (
+              <article key={document.id} className="rounded-lg border border-line bg-ink p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="font-semibold text-white">{document.title}</p>
+                  <span className="text-xs text-slate-400">{new Date(document.createdAt).toLocaleString("pt-BR")}</span>
                 </div>
-                <p className="text-lg font-black text-cyan">{Number(contract.contracted_price || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
-              </div>
-              {contract.notes && <p className="mt-3 text-sm text-slate-300">{contract.notes}</p>}
-            </article>
-          ))}
+                <div className="mt-3 text-sm text-slate-300">
+                  <RichTextPreview value={document.content} />
+                </div>
+              </article>
+            ))}
+            {documents.filter((item) => item.type === "negociacao").length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhuma negociação registrada ainda.</p>}
+            <div className="rounded-lg border border-line bg-panel/70 p-4">
+              <p className="text-sm font-semibold text-white">Serviços contratados</p>
+              {contracts.length === 0 && <p className="mt-3 rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhum produto ou serviço contratado vinculado. Use o catálogo e a API /companies/:id/contracts para vincular itens.</p>}
+              {contracts.map((contract) => (
+                <article key={contract.id} className="mt-3 rounded-lg border border-line bg-ink p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-white">{contract.catalog_items?.name || "Item do catálogo"}</p>
+                      <p className="mt-1 text-xs text-slate-400">{contract.catalog_items?.code || "Sem código"} · {contract.status || "active"}</p>
+                    </div>
+                    <p className="text-lg font-black text-cyan">{Number(contract.contracted_price || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+                  </div>
+                  {contract.notes && <p className="mt-3 text-sm text-slate-300">{contract.notes}</p>}
+                </article>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

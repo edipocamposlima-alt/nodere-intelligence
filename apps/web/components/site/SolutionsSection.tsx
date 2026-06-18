@@ -7,7 +7,7 @@ const SOLUTION_CARDS = [
   { icon: "🧠", code: "INTEL", name: "Intelligence", tag: "Dados", color: "#7C3AED", desc: "Enriqueça com Apollo, Receita Federal e diagnóstico por IA.", features: ["Enriquecimento", "Diagnóstico IA", "Dores prováveis"] },
   { icon: "📊", code: "CRM", name: "CRM", tag: "Pipeline", color: "var(--crm-new)", desc: "Pipeline, ficha inteligente, propostas em PDF e agenda.", features: ["Ficha completa", "Propostas PDF", "Agenda"] },
   { icon: "💬", code: "ENG", name: "Engage", tag: "Ativação", color: "#16A34A", desc: "WhatsApp, e-mail e omnichannel com automações por funil.", features: ["WhatsApp", "E-mail", "Automações"] },
-  { icon: "🤖", code: "AI", name: "AI Nexus", tag: "Copiloto", color: "var(--ai-primary)", desc: "Copiloto comercial com contexto real do lead.", features: ["Scripts", "Objeções", "Próxima ação"] },
+  { icon: "🤖", code: "AI", name: "IA NODERE", tag: "Copiloto", color: "var(--ai-primary)", desc: "Copiloto comercial com contexto real do lead.", features: ["Scripts", "Objeções", "Próxima ação"] },
   { icon: "📈", code: "ANA", name: "Analytics", tag: "Gestão", color: "#2563EB", desc: "Dashboard executivo, forecast e ranking de operadores.", features: ["Forecast", "Ranking", "Metas"] },
   { icon: "🗂️", code: "OPS", name: "Operations", tag: "Entrega", color: "#F97316", desc: "Projetos, portal do cliente e documentos pós-venda.", features: ["Projetos", "Portal", "Documentos"] },
   { icon: "🤝", code: "MKT", name: "Marketplace", tag: "Parceiros", color: "#03624C", desc: "Parceiros, comissionamento e integração com ERPs.", features: ["Parceiros", "Comissões", "ERPs"] }

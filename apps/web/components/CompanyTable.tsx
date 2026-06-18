@@ -163,7 +163,7 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
   async function exportPdf() {
     const list = (selectedCompanies.length ? selectedCompanies : visibleCompanies).slice(0, 50);
     const content = [
-      "NODERE Nexus",
+      "NODERE",
       `Relatorio de empresas - ${new Date().toLocaleString("pt-BR")}`,
       "",
       ...list.flatMap((company, index) => [
@@ -351,7 +351,7 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
                       <span className="text-xs text-slate-500">/1000</span>
                       <p className="text-[11px] text-slate-500">Legado {company.score}/100</p>
                     </div>
-                    <StatusBadge value={company.nexusClassification || company.opportunityLevel} />
+                      <StatusBadge value={company.nexusClassification || company.opportunityLevel} />
                   </div>
                 </td>
                 <td className="px-4 py-4 text-slate-300">

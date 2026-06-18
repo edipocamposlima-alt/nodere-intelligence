@@ -6,10 +6,10 @@ export default function WhatsAppButton() {
   return (
     <a
       className="site-whatsapp"
-      href={`https://wa.me/${number}?text=${encodeURIComponent("Olá! Quero saber mais sobre o NODERE Nexus.")}`}
+      href={`https://wa.me/${number}?text=${encodeURIComponent("Olá! Quero saber mais sobre o NODERE.")}`}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Falar com NODERE Nexus no WhatsApp"
+      aria-label="Falar com NODERE no WhatsApp"
     >
       <MessageCircle size={24} />
     </a>

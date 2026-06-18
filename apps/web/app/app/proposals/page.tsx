@@ -21,9 +21,9 @@ export default function AppProposalsPage() {
   const [message, setMessage] = useState("Carregando propostas...");
   const [loading, setLoading] = useState(false);
   const [leadId, setLeadId] = useState("");
-  const [title, setTitle] = useState("Proposta comercial NODERE Nexus");
+  const [title, setTitle] = useState("Proposta comercial NODERE");
   const [serviceType, setServiceType] = useState("Google Ads + CRM");
-  const [content, setContent] = useState("Diagnóstico, plano de ação comercial e execução acompanhada pelo CRM NODERE Nexus.");
+  const [content, setContent] = useState("Diagnóstico, plano de ação comercial e execução acompanhada pelo CRM NODERE.");
   const [items, setItems] = useState<ProposalItemPayload[]>([defaultItem]);
   const [discount, setDiscount] = useState(0);
   const [validUntil, setValidUntil] = useState("");

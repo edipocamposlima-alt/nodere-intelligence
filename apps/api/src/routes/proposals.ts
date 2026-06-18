@@ -401,7 +401,7 @@ function buildDefaultProposalContent(lead: any) {
     `Cidade: ${lead.city || ""}${lead.state ? `/${lead.state}` : ""}`,
     "",
     "Escopo inicial: diagnóstico comercial, priorização de oportunidades digitais e execução de campanhas orientadas por conversão.",
-    "A NODERE Nexus acompanha indicadores, follow-ups e próximos passos dentro do CRM."
+    "A NODERE acompanha indicadores, follow-ups e próximos passos dentro do CRM."
   ].join("\n");
 }
 
@@ -441,7 +441,7 @@ async function renderProposalPdf(proposal: any, lead: any) {
 
     const logoPath = findNoderePdfIcon();
     if (logoPath) doc.image(logoPath, 48, 44, { width: 28, height: 28 });
-    doc.fillColor("#00382F").fontSize(22).text("NODERE Nexus", logoPath ? 86 : 48, 48, { continued: false });
+    doc.fillColor("#00382F").fontSize(22).text("NODERE", logoPath ? 86 : 48, 48, { continued: false });
     doc.moveDown(0.4);
     doc.fillColor("#00D69E").fontSize(12).text("Proposta comercial", { continued: false });
     doc.moveDown(1);
@@ -465,7 +465,7 @@ async function renderProposalPdf(proposal: any, lead: any) {
     doc.fillColor("#00382F").fontSize(12).text(`Total: ${formatMoney(proposal.total || 0)}`);
     if (proposal.valid_until) doc.fillColor("#6B7280").fontSize(9).text(`Validade: ${new Date(proposal.valid_until).toLocaleDateString("pt-BR")}`);
     doc.moveDown(2);
-    doc.fillColor("#6B7280").fontSize(9).text("Documento gerado automaticamente pela plataforma NODERE Nexus.");
+    doc.fillColor("#6B7280").fontSize(9).text("Documento gerado automaticamente pela plataforma NODERE.");
     doc.end();
   });
 }

@@ -1,4 +1,4 @@
--- BLOCO 04 - Discovery, Score Nexus e IA Comercial
+-- BLOCO 04 - Discovery, Score NODERE e IA Comercial
 -- Schema existente NODERE: usa nodere_companies como fonte de leads.
 -- Nao criar tabelas paralelas users/workspaces/leads/companies.
 

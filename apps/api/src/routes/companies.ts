@@ -1160,7 +1160,7 @@ router.get("/:id/export-pdf", async (req, res, next) => {
     <img src="${embeddedLogoDataUri}" alt="NODERE">
     <div>
       <div class="brand-title">NODERE</div>
-      <div class="brand-sub">Nexus</div>
+      <div class="brand-sub">Plataforma comercial</div>
     </div>
   </div>
   <h1>Relatório Comercial — ${escapeHtml(company.name)}</h1>
@@ -1217,7 +1217,7 @@ router.get("/:id/export-pdf", async (req, res, next) => {
   ${diagHtml}
 
   <footer class="print-footer">
-    <span>Gerado pelo NODERE Nexus · nodere.com.br</span>
+    <span>Gerado pelo NODERE · nodere.com.br</span>
     <span>Página <span class="page-number"></span> de <span class="page-total"></span></span>
   </footer>
 </body>

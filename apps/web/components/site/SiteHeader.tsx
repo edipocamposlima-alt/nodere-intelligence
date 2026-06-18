@@ -22,7 +22,7 @@ export default function SiteHeader() {
     <>
       <header className={`site-header ${scrolled ? "site-header--scrolled" : ""}`}>
         <div className="site-header__inner">
-          <Link href="/" className="site-logo" aria-label="NODERE Nexus">
+          <Link href="/" className="site-logo" aria-label="NODERE">
             <Logo variant="full" height={38} className="site-logo__image" />
           </Link>
 

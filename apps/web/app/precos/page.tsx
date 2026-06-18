@@ -3,8 +3,8 @@ import PricingComparison from "@/components/site/PricingComparison";
 import SitePageShell from "@/components/site/SitePageShell";
 
 export const metadata: Metadata = {
-  title: "Precos | NODERE Nexus",
-  description: "Compare os planos Starter, Pro, Agency e Enterprise do NODERE Nexus com cobranca mensal ou anual."
+  title: "Precos | NODERE",
+  description: "Compare os planos Starter, Pro, Agency e Enterprise do NODERE com cobranca mensal ou anual."
 };
 
 export default function PricingPage() {

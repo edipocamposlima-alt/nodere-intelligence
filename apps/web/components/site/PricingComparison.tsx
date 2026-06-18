@@ -26,7 +26,7 @@ const features = [
     { name: "Import/Export CSV", starter: false, pro: true, agency: true, enterprise: true },
     { name: "Equipes multiusuario", starter: false, pro: true, agency: true, enterprise: true }
   ] },
-  { category: "IA Nexus", items: [
+  { category: "IA NODERE", items: [
     { name: "Assistente de prospeccao", starter: "50 req/mes", pro: true, agency: true, enterprise: true },
     { name: "Assistente comercial (scripts)", starter: false, pro: true, agency: true, enterprise: true },
     { name: "Diagnostico comercial automatico", starter: false, pro: true, agency: true, enterprise: true },

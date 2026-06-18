@@ -52,7 +52,7 @@ export default function HeroSection() {
       <div className="site-hero__orb site-hero__orb--cyan" />
       <div className="site-container hero-grid site-hero__inner">
         <div className={visible ? "site-hero__copy is-visible" : "site-hero__copy"}>
-          <div className="badge badge-blue site-hero__badge"><span /> Revenue Intelligence Platform</div>
+          <div className="badge badge-blue site-hero__badge"><span /> Plataforma comercial</div>
           <h1>
             Encontre empresas<br />
             que precisam dos<br />

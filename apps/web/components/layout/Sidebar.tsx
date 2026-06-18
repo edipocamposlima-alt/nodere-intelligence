@@ -15,7 +15,7 @@ const NAV_ITEMS = [
   { code: "ENG-01", label: "WhatsApp", icon: Inbox, href: "/app/whatsapp", group: "Comunicação" },
   { code: "ENG-03", label: "E-mail", icon: Mail, href: "/app/email", group: "Comunicação" },
   { code: "ENG-04", label: "Omnichannel", icon: Radio, href: "/app/inbox", group: "Comunicação" },
-  { code: "AI-01", label: "IA Nexus", icon: Bot, href: "/app/ai", group: "Inteligência" },
+  { code: "AI-01", label: "IA NODERE", icon: Bot, href: "/app/ai", group: "Inteligência" },
   { code: "ANA-01", label: "Dashboard", icon: BarChart3, href: "/app/analytics", group: "Analytics" },
   { code: "ANA-02", label: "Relatórios", icon: FileText, href: "/app/reports", group: "Analytics" },
   { code: "OPS-01", label: "Projetos", icon: Workflow, href: "/app/projects", group: "Operações" }
@@ -38,7 +38,6 @@ export default function PlatformSidebar() {
         <Link href="/app/dashboard">
           <Logo variant="full" height={32} />
           <span className="logo-text sr-only">NODERE</span>
-          <span className="logo-nexus sr-only">Nexus</span>
         </Link>
       </div>
 

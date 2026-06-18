@@ -74,6 +74,15 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
   const [segmentLimit, setSegmentLimit] = useState(8);
   const [cityLimit, setCityLimit] = useState(10);
   const [originLimit, setOriginLimit] = useState(8);
+  const [operatorFilter, setOperatorFilter] = useState("");
+  const [companyFilter, setCompanyFilter] = useState("");
+  const [segmentFilter, setSegmentFilter] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
+  const [originFilter, setOriginFilter] = useState("");
+  const [stageFilter, setStageFilter] = useState("");
+  const [temperatureFilter, setTemperatureFilter] = useState("");
+  const [planFilter, setPlanFilter] = useState("");
+  const [accessFilter, setAccessFilter] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -115,10 +124,15 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
   }, [period, groupBy]);
 
   const hasData = (summary?.total_companies || 0) > 0;
-  const filteredFunnel = funnel.stages.filter((stage) => stage.count >= funnelMin);
-  const filteredSegments = segments.segments.slice(0, segmentLimit);
-  const filteredCities = cities.cities.slice(0, cityLimit);
-  const filteredOrigins = origins.origins.slice(0, originLimit);
+  const segmentOptions = segments.segments.map((item) => item.segment).filter(Boolean);
+  const cityOptions = cities.cities.map((item) => `${item.city}${item.state ? `/${item.state}` : ""}`).filter(Boolean);
+  const originOptions = origins.origins.map((item) => item.source).filter(Boolean);
+  const stageOptions = funnel.stages.map((item) => item.name).filter(Boolean);
+  const filteredFunnel = funnel.stages.filter((stage) => stage.count >= funnelMin && (!stageFilter || stage.name === stageFilter));
+  const filteredSegments = segments.segments.filter((item) => !segmentFilter || item.segment === segmentFilter).slice(0, segmentLimit);
+  const filteredCities = cities.cities.filter((item) => !cityFilter || `${item.city}${item.state ? `/${item.state}` : ""}` === cityFilter).slice(0, cityLimit);
+  const filteredOrigins = origins.origins.filter((item) => !originFilter || item.source === originFilter).slice(0, originLimit);
+  const filteredOperators = operators.filter((operator) => !operatorFilter || operator.user_id === operatorFilter);
 
   async function exportReportsPdf() {
     setError("");
@@ -180,6 +194,78 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
               <Download className="h-4 w-4" />
               Exportar CSV
             </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-line bg-panel/90 p-5 print:hidden">
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-[var(--text-primary)]">Filtros dos cards</h3>
+            <p className="mt-1 text-xs text-[var(--text-secondary)]">Os indicadores respeitam as permissões do usuário autenticado e o workspace atual.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setOperatorFilter("");
+              setCompanyFilter("");
+              setSegmentFilter("");
+              setCityFilter("");
+              setOriginFilter("");
+              setStageFilter("");
+              setTemperatureFilter("");
+              setPlanFilter("");
+              setAccessFilter("");
+            }}
+            className="rounded-lg border border-line bg-white/5 px-3 py-2 text-xs font-bold text-[var(--text-primary)]"
+          >
+            Limpar filtros
+          </button>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <select value={operatorFilter} onChange={(event) => setOperatorFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]">
+            <option value="">Operador</option>
+            {operators.map((operator) => <option key={operator.user_id} value={operator.user_id}>{operator.name}</option>)}
+          </select>
+          <input value={companyFilter} onChange={(event) => setCompanyFilter(event.target.value)} placeholder="Empresa" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]" />
+          <select value={segmentFilter} onChange={(event) => setSegmentFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]">
+            <option value="">Segmento</option>
+            {segmentOptions.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+          <select value={cityFilter} onChange={(event) => setCityFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]">
+            <option value="">Cidade/UF</option>
+            {cityOptions.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+          <select value={originFilter} onChange={(event) => setOriginFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]">
+            <option value="">Origem do lead</option>
+            {originOptions.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+          <select value={stageFilter} onChange={(event) => setStageFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]">
+            <option value="">Etapa do funil</option>
+            {stageOptions.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+          <select value={temperatureFilter} onChange={(event) => setTemperatureFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]">
+            <option value="">Temperatura</option>
+            <option>Quente</option>
+            <option>Morno</option>
+            <option>Frio</option>
+          </select>
+          <select value={planFilter} onChange={(event) => setPlanFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]">
+            <option value="">Plano contratado</option>
+            <option>Demo</option>
+            <option>Starter</option>
+            <option>Pro</option>
+            <option>Agency</option>
+          </select>
+          <select value={accessFilter} onChange={(event) => setAccessFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]">
+            <option value="">Nível de acesso</option>
+            <option>Owner</option>
+            <option>Administrador</option>
+            <option>Operador</option>
+            <option>Visualizador</option>
+          </select>
+          <div className="rounded-lg border border-line bg-ink px-3 py-2 text-xs text-[var(--text-secondary)]">
+            Empresa, temperatura, plano e acesso ficam registrados para os próximos endpoints analíticos; os cards atuais aplicam filtros locais quando o dado já está disponível.
           </div>
         </div>
       </section>
@@ -312,7 +398,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
                   </tr>
                 </thead>
                 <tbody>
-                  {operators.map((operator) => (
+                  {filteredOperators.map((operator) => (
                     <tr key={operator.user_id} className="border-b border-line/60 text-[var(--text-primary)]">
                       <td className="px-3 py-3 font-semibold">{operator.name}</td>
                       <td className="px-3 py-3 text-[var(--text-secondary)]">{operator.role}</td>
@@ -321,7 +407,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
                       <td className="px-3 py-3 text-right">{operator.leads_closed}</td>
                     </tr>
                   ))}
-                  {!operators.length && (
+                  {!filteredOperators.length && (
                     <tr>
                       <td colSpan={5} className="px-3 py-6 text-center text-[var(--text-secondary)]">Nenhum operador com métricas no período.</td>
                     </tr>

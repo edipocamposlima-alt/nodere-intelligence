@@ -36,7 +36,8 @@ export function LoginClient() {
         setAdminToken(auth.access_token);
         localStorage.setItem("nodere_user_profile", JSON.stringify({
           email,
-          name: auth.user?.email ? formatDisplayName(auth.user.email) : formatDisplayName(email)
+          name: auth.user?.email ? formatDisplayName(auth.user.email) : formatDisplayName(email),
+          role: isBuiltInOwner(email) ? "owner" : "admin"
         }));
         await fetch("/api/auth/session", {
           method: "POST",
@@ -92,8 +93,8 @@ export function LoginClient() {
     <main className="site-auth">
       <section className="site-auth__card">
         <Logo variant="full" height={44} className="site-auth__logo" />
-        <p className="site-auth__caption">Revenue Intelligence Platform</p>
-        <h1>Entrar no NODERE Nexus</h1>
+        <p className="site-auth__caption">Plataforma comercial</p>
+        <h1>Entrar no NODERE</h1>
         <p className="site-auth__subtitle">Acesse seu workspace comercial.</p>
         <form onSubmit={submit} className="site-auth__form">
           <label>
@@ -148,4 +149,8 @@ export function LoginClient() {
 function formatDisplayName(email: string) {
   const raw = String(email || "Usuário").split("@")[0].replace(/[._-]+/g, " ");
   return raw.split(" ").filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join(" ") || "Usuário";
+}
+
+function isBuiltInOwner(email: string) {
+  return String(email || "").trim().toLowerCase() === "edipo.lima@nodere.com.br";
 }

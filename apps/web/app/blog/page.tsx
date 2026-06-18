@@ -3,14 +3,14 @@ import Link from "next/link";
 import SitePageShell from "@/components/site/SitePageShell";
 
 export const metadata: Metadata = {
-  title: "Blog | NODERE Nexus",
+  title: "Blog | NODERE",
   description: "Artigos práticos sobre prospecção, CRM, IA comercial e revenue intelligence."
 };
 
 const ALL_POSTS = [
-  { tag: "Discovery", color: "#F59E0B", slug: "prospeccao-200-empresas-score-digital", title: "Como prospectar 200 empresas por semana com score digital automatizado", desc: "Aprenda a usar o conjunto Discovery do NODERE Nexus para encontrar empresas com baixa presença digital e alto potencial comercial.", read: "5 min", date: "Jun 2026" },
+  { tag: "Discovery", color: "#F59E0B", slug: "prospeccao-200-empresas-score-digital", title: "Como prospectar 200 empresas por semana com score digital automatizado", desc: "Aprenda a usar o conjunto Discovery do NODERE para encontrar empresas com baixa presença digital e alto potencial comercial.", read: "5 min", date: "Jun 2026" },
   { tag: "CRM", color: "var(--crm-new)", slug: "pipeline-inteligente-leads", title: "Pipeline inteligente: como parar de perder leads no funil de vendas", desc: "Configure estágios personalizados, alertas de estagnação e automações que movem seus leads no funil sem intervenção manual.", read: "4 min", date: "Jun 2026" },
-  { tag: "AI Nexus", color: "var(--ai-primary)", slug: "copiloto-ia-scripts-abordagem", title: "Copiloto comercial: como a IA gera scripts de abordagem em segundos", desc: "O AI Nexus usa o contexto real do lead para criar mensagens de WhatsApp e e-mails personalizados com um clique.", read: "6 min", date: "Mai 2026" },
+  { tag: "IA NODERE", color: "var(--ai-primary)", slug: "copiloto-ia-scripts-abordagem", title: "Copiloto comercial: como a IA gera scripts de abordagem em segundos", desc: "O IA NODERE usa o contexto real do lead para criar mensagens de WhatsApp e e-mails personalizados com um clique.", read: "6 min", date: "Mai 2026" },
   { tag: "Engage", color: "#16A34A", slug: "whatsapp-b2b-sem-spam", title: "WhatsApp B2B: como escalar prospecção sem virar spam", desc: "Estratégias de disparos em massa responsáveis, templates que convertem e como usar o inbox do NODERE para gestão de conversas.", read: "5 min", date: "Mai 2026" },
   { tag: "Analytics", color: "#2563EB", slug: "forecast-receita-85-precisao", title: "Forecast de receita: como prever seu faturamento com precisão", desc: "Configure probabilidades por estágio do funil e veja o NODERE calcular automaticamente sua receita prevista.", read: "4 min", date: "Abr 2026" },
   { tag: "Intelligence", color: "#7C3AED", slug: "enriquecimento-apollo-receita-federal", title: "Enriquecimento de dados: Apollo + Receita Federal na mesma tela", desc: "Como o conjunto Intelligence combina múltiplas fontes para entregar faturamento, sócios, CNPJ e contatos decisores automaticamente.", read: "3 min", date: "Abr 2026" }

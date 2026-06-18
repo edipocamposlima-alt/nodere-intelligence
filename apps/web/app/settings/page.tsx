@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SettingsClient } from "./SettingsClient";
 
-export const metadata: Metadata = { title: "Configurações | NODERE Nexus" };
+export const metadata: Metadata = { title: "Configurações | NODERE" };
 
 export default function SettingsPage() {
   return (

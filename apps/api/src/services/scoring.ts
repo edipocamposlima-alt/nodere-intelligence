@@ -3,24 +3,24 @@ import { Company, OpportunityLevel, WebsiteScan } from "../types.js";
 type ScoreInput = Partial<Company>;
 
 export function calculateOpportunityScore(company: ScoreInput) {
-  const nexus = calculateNexusScore(company, { targetCity: company.city });
-  const normalizedLegacyScore = Math.min(100, Math.round(nexus.total / 10));
-  const level: OpportunityLevel = nexus.total >= 650 ? "Alta" : nexus.total >= 400 ? "Media" : "Baixa";
+  const nodere = calculateNodereScore(company, { targetCity: company.city });
+  const normalizedLegacyScore = Math.min(100, Math.round(nodere.total / 10));
+  const level: OpportunityLevel = nodere.total >= 650 ? "Alta" : nodere.total >= 400 ? "Media" : "Baixa";
 
   return {
     score: normalizedLegacyScore,
     opportunityLevel: level,
-    detectedOpportunities: dedupe(nexus.digitalGaps.map((gap) => `Gap digital: ${gap}`)),
-    suggestions: dedupe([nexus.suggestedApproach, ...nexus.breakdown.slice(0, 3).map((item) => actionForReason(item.reason))]),
-    nexusScore: nexus.total,
-    nexusClassification: nexus.classification.label,
-    nexusScoreBreakdown: nexus.breakdown,
-    digitalGaps: nexus.digitalGaps,
-    suggestedApproach: nexus.suggestedApproach
+    detectedOpportunities: dedupe(nodere.digitalGaps.map((gap) => `Gap digital: ${gap}`)),
+    suggestions: dedupe([nodere.suggestedApproach, ...nodere.breakdown.slice(0, 3).map((item) => actionForReason(item.reason))]),
+    nexusScore: nodere.total,
+    nexusClassification: nodere.classification.label,
+    nexusScoreBreakdown: nodere.breakdown,
+    digitalGaps: nodere.digitalGaps,
+    suggestedApproach: nodere.suggestedApproach
   };
 }
 
-export function calculateNexusScore(company: ScoreInput, context: { targetCity?: string } = {}) {
+export function calculateNodereScore(company: ScoreInput, context: { targetCity?: string } = {}) {
   const opportunities: string[] = [];
   const breakdown: Array<{ reason: string; points: number }> = [];
   let score = 0;
@@ -111,7 +111,7 @@ export function calculateNexusScore(company: ScoreInput, context: { targetCity?:
   return {
     total,
     breakdown: breakdown.sort((a, b) => b.points - a.points),
-    classification: classifyNexusScore(total),
+    classification: classifyNodereScore(total),
     digitalGaps,
     suggestedApproach: getSuggestedApproach(total)
   };
@@ -121,7 +121,7 @@ function dedupe(items: string[]) {
   return Array.from(new Set(items));
 }
 
-function classifyNexusScore(score: number) {
+function classifyNodereScore(score: number) {
   if (score <= 250) return { label: "Baixa oportunidade", color: "var(--score-critical)" };
   if (score <= 500) return { label: "Oportunidade moderada", color: "var(--score-low)" };
   if (score <= 750) return { label: "Alta oportunidade", color: "var(--score-good)" };
@@ -143,7 +143,7 @@ function getSuggestedApproach(score: number) {
   if (score > 750) return "Abordagem imediata recomendada. Empresa com múltiplos gaps digitais críticos.";
   if (score > 500) return "Boa oportunidade. Apresentar diagnóstico de presença digital.";
   if (score > 250) return "Oportunidade moderada. Qualificar antes de investir tempo.";
-  return "Baixa prioridade. Focar em leads com Score Nexus maior.";
+  return "Baixa prioridade. Focar em leads com Score NODERE maior.";
 }
 
 function actionForReason(reason: string) {

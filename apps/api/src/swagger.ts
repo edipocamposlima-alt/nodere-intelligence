@@ -4,9 +4,9 @@ export const swaggerSpec = swaggerJsdoc({
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "NODERE Nexus API",
+      title: "NODERE API",
       version: "1.0.0",
-      description: "API para integração com o NODERE Nexus. Use sua API Key no header X-NODERE-API-Key."
+      description: "API para integração com o NODERE. Use sua API Key no header X-NODERE-API-Key."
     },
     servers: [{ url: "https://nodere-api.onrender.com", description: "Produção" }],
     components: {
