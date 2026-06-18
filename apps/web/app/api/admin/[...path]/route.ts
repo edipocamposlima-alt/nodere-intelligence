@@ -11,7 +11,9 @@ async function proxyAdmin(request: NextRequest, context: RouteContext) {
   const { path = [] } = await context.params;
   const tokenFromHeader = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
   const tokenFromCookie = COOKIE_NAMES.map((name) => request.cookies.get(name)?.value).find(Boolean);
-  const token = tokenFromHeader || tokenFromCookie;
+  // The HttpOnly session cookie is the source of truth for same-origin admin calls.
+  // A stale localStorage token must not override a valid authenticated session.
+  const token = tokenFromCookie || tokenFromHeader;
 
   if (!token) {
     return NextResponse.json({ message: "Sessão ausente. Faça login para continuar." }, { status: 401 });

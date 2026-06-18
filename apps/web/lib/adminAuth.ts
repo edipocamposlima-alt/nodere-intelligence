@@ -34,7 +34,7 @@ export async function adminFetch<T>(path: string, options: RequestInit = {}): Pr
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(!useLocalProxy && token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {})
     },
     cache: "no-store",
