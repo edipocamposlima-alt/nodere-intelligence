@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, LocateFixed, MapPin, Search, Sparkles } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, LocateFixed, MapPin, Search, Sparkles, X } from "lucide-react";
 import { ApiRequestError, geocodeAddress, getSavedCompanyIds, getWorkspaceSegments, saveWorkspaceSegment, searchCompanies, searchCompanyByCnpj } from "@/lib/api";
 import { Company } from "@/lib/types";
 import { CompanyTable } from "./CompanyTable";
@@ -46,6 +46,7 @@ export function SearchPanel() {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const activeSearchId = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
   const { credits, trialExpired } = useCredits();
 
   const allSegments = useMemo(() => Array.from(new Set([...SEGMENTS, ...segments])).sort((a, b) => a.localeCompare(b)), [segments]);
@@ -99,6 +100,10 @@ export function SearchPanel() {
       return;
     }
     const searchId = Date.now();
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const timeoutId = window.setTimeout(() => controller.abort("timeout"), 15000);
     activeSearchId.current = searchId;
     setLoading(true);
     setWarning(null);
@@ -130,7 +135,7 @@ export function SearchPanel() {
       minReviews: Number(form.get("minReviews") || "") || undefined,
       hasWebsite: parseTriState(form.get("hasWebsite")),
       hasWhatsApp: parseTriState(form.get("hasWhatsApp")),
-      sortBy: String(form.get("sortBy") || "nexus_score") as "relevance" | "rating" | "review_count" | "nexus_score",
+      sortBy: String(form.get("sortBy") || "nodere_score") as "relevance" | "rating" | "review_count" | "nodere_score",
       sortDir: String(form.get("sortDir") || "desc") as "asc" | "desc"
     };
 
@@ -165,7 +170,7 @@ export function SearchPanel() {
       }
 
       const savedIds = await getSavedCompanyIds();
-      const response = await searchCompanies(payload);
+      const response = await searchCompanies(payload, controller.signal);
       if (activeSearchId.current !== searchId) return;
       const localSavedIds = JSON.parse(localStorage.getItem("nodere_saved_leads") || "[]") as string[];
       const savedSet = new Set([...savedIds, ...localSavedIds].map(normalizeId).filter(Boolean));
@@ -177,11 +182,24 @@ export function SearchPanel() {
     } catch (error) {
       if (activeSearchId.current !== searchId) return;
       setResults([]);
-      setWarning(formatSearchError(error));
+      setWarning(controller.signal.aborted
+        ? "A busca demorou muito ou foi cancelada. Tente filtros mais específicos."
+        : formatSearchError(error));
       setMessage("Não foi possível concluir a busca.");
     } finally {
+      window.clearTimeout(timeoutId);
+      if (abortRef.current === controller) abortRef.current = null;
       if (activeSearchId.current === searchId) setLoading(false);
     }
+  }
+
+  function cancelSearch() {
+    activeSearchId.current = Date.now();
+    abortRef.current?.abort("cancelled");
+    abortRef.current = null;
+    setLoading(false);
+    setMessage("Busca cancelada.");
+    setWarning("A busca foi cancelada. Ajuste os filtros e tente novamente quando quiser.");
   }
 
   function useMyLocation() {
@@ -246,10 +264,15 @@ export function SearchPanel() {
             {COUNTRIES.map((country) => <option key={country.code} value={country.code}>{country.name}</option>)}
           </select>
           {selectedSegment === ADD_SEGMENT && <input name="keyword" placeholder="Palavra-chave" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />}
-          <button disabled={loading} className="btn-action disabled:opacity-60">
-            <Search className="h-4 w-4" />
-            {loading ? "Buscando" : "Buscar"}
-          </button>
+          {loading ? (
+            <button type="button" onClick={cancelSearch} className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-300">
+              <X className="h-4 w-4" /> Cancelar busca
+            </button>
+          ) : (
+            <button className="btn-action">
+              <Search className="h-4 w-4" /> Buscar
+            </button>
+          )}
         </div>
         <div className="mt-3 grid gap-3 md:grid-cols-[1fr_160px_auto_auto]">
           <input name="referenceAddress" placeholder="Endereço de referência para busca por raio" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
@@ -288,8 +311,8 @@ export function SearchPanel() {
               <option value="false">Sem WhatsApp</option>
             </select>
             <div className="grid grid-cols-2 gap-2">
-              <select name="sortBy" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="nexus_score">
-                <option value="nexus_score">Score NODERE</option>
+              <select name="sortBy" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="nodere_score">
+                <option value="nodere_score">Score NODERE</option>
                 <option value="rating">Avaliação</option>
                 <option value="review_count">Avaliações</option>
                 <option value="relevance">Relevância</option>

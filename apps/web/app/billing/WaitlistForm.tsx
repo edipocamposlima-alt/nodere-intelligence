@@ -28,7 +28,7 @@ export function WaitlistForm() {
 
   return (
     <form onSubmit={onSubmit} className="rounded-xl border border-amber-300/30 bg-amber-300/10 p-5">
-      <p className="text-sm font-semibold text-amber-100">Checkout Stripe ainda não configurado</p>
+      <p className="text-sm font-semibold text-amber-100">Planos em breve disponíveis. Entre em contato para upgrade.</p>
       <p className="mt-1 text-sm text-amber-100/80">
         Quando o checkout estiver ativo, os botões mudam automaticamente para assinatura.
       </p>

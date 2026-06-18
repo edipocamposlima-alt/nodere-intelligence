@@ -1,11 +1,11 @@
 interface ScoreBadgeProps {
   score: number;
-  variant?: "nexus" | "digital";
+  variant?: "nodere" | "digital";
   showLabel?: boolean;
 }
 
-export function ScoreBadge({ score, variant = "nexus", showLabel = true }: ScoreBadgeProps) {
-  const max = variant === "nexus" ? 1000 : 100;
+export function ScoreBadge({ score, variant = "nodere", showLabel = true }: ScoreBadgeProps) {
+  const max = variant === "nodere" ? 1000 : 100;
   const pct = Math.max(0, Math.min(100, (score / max) * 100));
 
   const color = (() => {
@@ -17,7 +17,7 @@ export function ScoreBadge({ score, variant = "nexus", showLabel = true }: Score
   })();
 
   const label = (() => {
-    if (variant === "nexus") {
+    if (variant === "nodere") {
       if (score <= 250) return "Baixa oportunidade";
       if (score <= 500) return "Oportunidade moderada";
       if (score <= 750) return "Alta oportunidade";

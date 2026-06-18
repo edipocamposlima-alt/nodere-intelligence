@@ -1330,7 +1330,7 @@ function documentHtml(type, id) {
   const doc = (type === "proposal" ? proposals : contracts).find((item) => item.id === id);
   const lead = leads.find((item) => item.id === doc?.leadId) || {};
   const content = type === "proposal" ? doc?.body : doc?.clauses;
-  return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(doc?.title || "NODERE")}</title><style>body{font-family:Arial,sans-serif;margin:40px;color:#172033}.brand{display:flex;align-items:center;gap:14px;border-bottom:3px solid #147dff;padding-bottom:18px;margin-bottom:28px}.brand img{height:54px}.doc{max-width:820px;margin:auto}.meta{background:#f2f6fb;padding:16px;border-radius:8px;margin-bottom:24px}.content{white-space:pre-wrap;line-height:1.55}.footer{margin-top:40px;border-top:1px solid #d8e0ea;padding-top:18px;color:#667085}</style></head><body><main class="doc"><div class="brand"><img src="nodere-logo-wordmark.png"><div><h1>${escapeHtml(doc?.title || "Documento NODERE")}</h1><p>${new Date().toLocaleDateString("pt-BR")}</p></div></div><div class="meta"><strong>Cliente:</strong> ${escapeHtml(lead.company || "")}<br><strong>Contato:</strong> ${escapeHtml(lead.contactName || "")}<br><strong>Cidade:</strong> ${escapeHtml([lead.city, lead.state].filter(Boolean).join(" / "))}</div><section class="content">${escapeHtml(content || "")}</section><div class="footer">NODERE Nexus | Prospecção, CRM e performance Google</div></main><script>window.print()</script></body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(doc?.title || "NODERE")}</title><style>body{font-family:Arial,sans-serif;margin:40px;color:#172033}.brand{display:flex;align-items:center;gap:14px;border-bottom:3px solid #147dff;padding-bottom:18px;margin-bottom:28px}.brand img{height:54px}.doc{max-width:820px;margin:auto}.meta{background:#f2f6fb;padding:16px;border-radius:8px;margin-bottom:24px}.content{white-space:pre-wrap;line-height:1.55}.footer{margin-top:40px;border-top:1px solid #d8e0ea;padding-top:18px;color:#667085}</style></head><body><main class="doc"><div class="brand"><img src="nodere-logo-wordmark.png"><div><h1>${escapeHtml(doc?.title || "Documento NODERE")}</h1><p>${new Date().toLocaleDateString("pt-BR")}</p></div></div><div class="meta"><strong>Cliente:</strong> ${escapeHtml(lead.company || "")}<br><strong>Contato:</strong> ${escapeHtml(lead.contactName || "")}<br><strong>Cidade:</strong> ${escapeHtml([lead.city, lead.state].filter(Boolean).join(" / "))}</div><section class="content">${escapeHtml(content || "")}</section><div class="footer">NODERE | Prospecção, CRM e performance Google</div></main><script>window.print()</script></body></html>`;
 }
 
 function printDocument(type, id) {
@@ -1573,7 +1573,7 @@ function saveEditorAsPdf() {
 function createPdfDataUrl(title, text, lead = {}) {
   const clean = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x20-\x7E\n\r]/g, "");
   const lines = [
-    "NODERE Nexus",
+    "NODERE",
     title,
     `Cliente: ${lead.company || ""}`,
     `Cidade: ${[lead.city, lead.state].filter(Boolean).join(" / ")}`,

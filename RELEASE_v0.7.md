@@ -1,4 +1,4 @@
-# NODERE Nexus - Release v0.7
+# NODERE - Release v0.7
 
 Data da release: 12/06/2026
 

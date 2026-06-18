@@ -1,4 +1,4 @@
-# Estado da Plataforma NODERE Nexus - 2026-06-18
+# Estado da Plataforma NODERE - 2026-06-18
 
 ## O que foi alterado nesta reconstrução
 - BLOCO 01: autenticação e compatibilidade Supabase Auth.
@@ -75,7 +75,7 @@
 1. Acessar `https://nodere.com.br`.
 2. Criar conta com e-mail de teste ou entrar com administrador.
 3. Fazer busca por "clínicas" em "Caxias do Sul RS".
-4. Verificar Score Nexus nos resultados.
+4. Verificar Score NODERE nos resultados.
 5. Salvar um lead no CRM.
 6. Abrir ficha do lead e gerar diagnóstico IA.
 7. Criar uma proposta para o lead.

@@ -200,7 +200,7 @@ async function openAi(body) {
     body: JSON.stringify({
       model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
       input: [
-        "Voce e a IA operacional do NODERE Nexus. Responda em JSON com summary, diagnosis, whatsappMessage, emailMessage, googleAdsStrategy, leadPotential, priority, opportunityScore e nextSteps.",
+        "Voce e a IA operacional do NODERE. Responda em JSON com summary, diagnosis, whatsappMessage, emailMessage, googleAdsStrategy, leadPotential, priority, opportunityScore e nextSteps.",
         JSON.stringify({ action: body.action, question: body.question, lead: body.lead, context: body.context, history: body.history, notes: body.notes, tasks: body.tasks }).slice(0, 14000)
       ].join("\n\n")
     })
@@ -285,5 +285,5 @@ createServer((request, response) => {
   });
   createReadStream(filePath).pipe(response);
 }).listen(port, () => {
-  console.log(`NODERE Nexus pronto em http://localhost:${port}`);
+  console.log(`NODERE pronto em http://localhost:${port}`);
 });

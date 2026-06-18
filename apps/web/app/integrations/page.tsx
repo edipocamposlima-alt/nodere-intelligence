@@ -23,7 +23,7 @@ export default async function IntegrationsPage() {
       status: remote?.status ?? ("unknown" as const),
       required: item.requiredPlan === "starter",
       capability: remote?.capability ?? item.description,
-      message: remote?.message ?? ("error" in status ? "Status desconhecido. O card segue disponível para configuração." : "Aguardando configuração."),
+      message: remote?.message ?? ("error" in status ? "Não configurado. O card segue disponível para conexão." : "Aguardando configuração."),
       missingEnv: remote?.configured ? [] : [item.credentialLabel]
     };
   });
@@ -63,7 +63,7 @@ export default async function IntegrationsPage() {
                   {integration.message && <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">{integration.message}</p>}
                   {integration.missingEnv && integration.missingEnv.length > 0 && (
                     <p className="mt-2 text-[11px] font-semibold text-warning">
-                      Credenciais pendentes: {integration.missingEnv.join(", ")}
+                      Conectar
                     </p>
                   )}
                 </div>
@@ -130,7 +130,7 @@ function getStatusMeta(status: string, required: boolean) {
   }
   if (status === "unknown") {
     return {
-      label: "Status desconhecido",
+      label: "Não configurado",
       icon: CircleDashed,
       iconClass: "text-slate-500",
       border: "border-line",

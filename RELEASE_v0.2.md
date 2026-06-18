@@ -1,4 +1,4 @@
-# NODERE Nexus - Release v0.2
+# NODERE - Release v0.2
 
 Data do checkpoint: 2026-06-11
 Tag oficial: `v0.2-stable`
@@ -17,7 +17,7 @@ Branch base: `main`
 ## Objetivos concluidos
 
 - Preservacao da base funcional recuperada como base oficial da `main`.
-- Publicacao e validacao do site publico NODERE Nexus.
+- Publicacao e validacao do site publico NODERE.
 - Integracao definitiva com Supabase Auth.
 - Compatibilizacao do fluxo autenticado da plataforma.
 - Implementacao da interface de Configuracoes do BLOCO 02 em `/app/settings`.
@@ -52,7 +52,7 @@ Branch base: `main`
 - `6bbf133` - `feat: home substituida por HTML estatico com vida visual completa`
 - `ff46eec` - `feat: home completa com animacoes integracoes blog e login corrigido`
 - `9162305` - `feat: fase1 - correcao visual logo animacoes e login`
-- `eb43b0c` - `feat: redesenhar site publico NODERE Nexus`
+- `eb43b0c` - `feat: redesenhar site publico NODERE`
 - `05bee66` - `chore: preservar source funcional restaurado`
 - `cf6a3d5` - `fix: restaurar admin owner e google maps`
 

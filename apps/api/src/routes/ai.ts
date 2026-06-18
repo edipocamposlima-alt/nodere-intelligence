@@ -40,7 +40,7 @@ Cidade: ${company.city}, ${company.state}
 Site: ${company.website || "Nao possui"}
 Avaliacao Google: ${company.rating || "N/A"} (${company.reviewCount || 0} avaliacoes)
 WhatsApp: ${company.whatsapp || company.phone || "Nao identificado"}
-Score NODERE: ${company.nexusScore || Number(company.score || 0) * 10}/1000
+Score NODERE: ${company.nodereScore || Number(company.score || 0) * 10}/1000
 Gaps identificados: ${(company.digitalGaps || company.detectedOpportunities || []).join(", ") || "Nenhum"}
 
 Forneca:

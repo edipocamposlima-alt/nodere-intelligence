@@ -347,11 +347,11 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-2">
                     <div>
-                      <span className="text-lg font-semibold text-white">{company.nexusScore ?? company.score * 10}</span>
+                      <span className="text-lg font-semibold text-white">{company.nodereScore ?? company.score * 10}</span>
                       <span className="text-xs text-slate-500">/1000</span>
                       <p className="text-[11px] text-slate-500">Legado {company.score}/100</p>
                     </div>
-                      <StatusBadge value={company.nexusClassification || company.opportunityLevel} />
+                      <StatusBadge value={company.nodereClassification || company.opportunityLevel} />
                   </div>
                 </td>
                 <td className="px-4 py-4 text-slate-300">

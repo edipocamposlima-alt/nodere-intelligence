@@ -1,4 +1,4 @@
-# Checklist de Variáveis — NODERE Nexus
+# Checklist de Variáveis — NODERE
 
 Data: 2026-06-17
 

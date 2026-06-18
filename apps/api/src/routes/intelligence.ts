@@ -13,11 +13,11 @@ router.get("/summary", async (req, res, next) => {
     const withWebsite = companies.filter((company) => Boolean(company.website)).length;
     const withAds = companies.filter((company) => company.hasGoogleAds === true).length;
     const avgScore = total
-      ? Math.round(companies.reduce((sum, company) => sum + nexusValue(company), 0) / total)
+      ? Math.round(companies.reduce((sum, company) => sum + nodereValue(company), 0) / total)
       : 0;
-    const critical = companies.filter((company) => nexusValue(company) >= 750).length;
+    const critical = companies.filter((company) => nodereValue(company) >= 750).length;
     const high = companies.filter((company) => {
-      const score = nexusValue(company);
+      const score = nodereValue(company);
       return score >= 500 && score < 750;
     }).length;
 
@@ -27,7 +27,7 @@ router.get("/summary", async (req, res, next) => {
       without_site: total - withWebsite,
       with_google_ads: withAds,
       without_google_ads: total - withAds,
-      avg_nexus_score: avgScore,
+      avg_nodere_score: avgScore,
       critical_opportunities: critical,
       high_priority: high,
       top_segments: groupAverage(companies, "category"),
@@ -44,7 +44,7 @@ function groupAverage(items: Company[], key: "category" | "city") {
     const label = String(item[key] || "Não informado");
     const current = groups.get(label) || { count: 0, sum: 0 };
     current.count += 1;
-    current.sum += nexusValue(item);
+    current.sum += nodereValue(item);
     groups.set(label, current);
   }
   return Array.from(groups.entries())
@@ -53,8 +53,8 @@ function groupAverage(items: Company[], key: "category" | "city") {
     .slice(0, 8);
 }
 
-function nexusValue(company: Pick<Company, "nexusScore" | "score">) {
-  return Number(company.nexusScore ?? Number(company.score || 0) * 10);
+function nodereValue(company: Pick<Company, "nodereScore" | "score">) {
+  return Number(company.nodereScore ?? Number(company.score || 0) * 10);
 }
 
 export default router;

@@ -1,10 +1,10 @@
-# NODERE Nexus - Release v0.6
+# NODERE - Release v0.6
 
 Data da release: 2026-06-12
 
 ## Checkpoint oficial
 
-Esta release registra o baseline estável do NODERE Nexus após a homologação dos blocos 01, 02, 03 e 05/06.
+Esta release registra o baseline estável do NODERE após a homologação dos blocos 01, 02, 03 e 05/06.
 
 ## Referências
 

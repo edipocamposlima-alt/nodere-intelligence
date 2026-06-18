@@ -12,9 +12,9 @@ export function calculateOpportunityScore(company: ScoreInput) {
     opportunityLevel: level,
     detectedOpportunities: dedupe(nodere.digitalGaps.map((gap) => `Gap digital: ${gap}`)),
     suggestions: dedupe([nodere.suggestedApproach, ...nodere.breakdown.slice(0, 3).map((item) => actionForReason(item.reason))]),
-    nexusScore: nodere.total,
-    nexusClassification: nodere.classification.label,
-    nexusScoreBreakdown: nodere.breakdown,
+    nodereScore: nodere.total,
+    nodereClassification: nodere.classification.label,
+    nodereScoreBreakdown: nodere.breakdown,
     digitalGaps: nodere.digitalGaps,
     suggestedApproach: nodere.suggestedApproach
   };

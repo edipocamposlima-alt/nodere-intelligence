@@ -1,4 +1,4 @@
-# NODERE Nexus
+# NODERE
 
 Sistema de prospeccao comercial para localizar empresas no Google, salvar leads em CRM, auditar presenca digital e gerar diagnosticos comerciais com OpenAI.
 

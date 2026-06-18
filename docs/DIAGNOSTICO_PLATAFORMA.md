@@ -1,10 +1,10 @@
-# Diagnóstico NODERE Nexus — 2026-06-17
+# Diagnóstico NODERE — 2026-06-17
 
 ## Status por módulo
 
 | Módulo | Status | Bloco de correção |
 |---|---|---|
-| Home pública | OK | Marca revisada para NODERE Nexus. |
+| Home pública | OK | Marca revisada para NODERE. |
 | Login | OK local/build | Supabase Auth preservado. |
 | Cadastro | OK local/build | Mensagem de erro sanitizada. |
 | Dashboard | Parcial operacional | Mensagens técnicas removidas; depende de sessão e backend. |
@@ -64,4 +64,4 @@
 - Algumas integrações externas podem estar ausentes e devem falhar de forma controlada.
 - Dados zerados podem indicar workspace sem registros ou sessão sem contexto.
 - Se Render ainda estiver em deploy antigo, frontend novo pode chamar endpoints que só existirão após novo deploy backend.
-- A marca foi padronizada para NODERE Nexus em textos visíveis, mas nomes técnicos `nodere_*` foram preservados para não quebrar banco, domínio e integrações.
+- A marca foi padronizada para NODERE em textos visíveis, mas nomes técnicos `nodere_*` foram preservados para não quebrar banco, domínio e integrações.

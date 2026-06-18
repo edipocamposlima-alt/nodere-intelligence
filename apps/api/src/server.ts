@@ -461,7 +461,7 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
   if (error instanceof ZodError) {
     return res.status(400).json({ message: "Invalid request", issues: error.issues });
   }
-  const message = error instanceof Error ? error.message : "Unexpected error";
+  const message = error instanceof Error ? error.message : "Erro ao processar a solicitação.";
   const rawStatus = (error as { status?: unknown }).status;
   const status = typeof rawStatus === "number" && rawStatus >= 100 && rawStatus <= 599 ? rawStatus : 500;
   return res.status(status).json({

@@ -16,7 +16,7 @@ export async function generateDiagnosis(lead, scan, operationalContext = {}) {
     conversation: operationalContext.conversation || [],
     context: operationalContext.context || {},
     instruction:
-      "Atue como agente operacional senior do CRM NODERE Nexus. Analise contexto real do lead, historico, observacoes, agenda, pipeline, PageSpeed e carteira. Gere decisao comercial objetiva, proximos passos, abordagem, estrategia Google Ads e alertas. Nao responda genericamente."
+      "Atue como agente operacional senior do CRM NODERE. Analise contexto real do lead, historico, observacoes, agenda, pipeline, PageSpeed e carteira. Gere decisao comercial objetiva, proximos passos, abordagem, estrategia Google Ads e alertas. Nao responda genericamente."
   };
 
   const controller = new AbortController();

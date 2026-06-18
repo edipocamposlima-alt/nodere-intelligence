@@ -139,7 +139,9 @@ export function AdminClient() {
         void fetch("/api/auth/session", { method: "DELETE" });
         setMessage("Sessão expirada. Faça login novamente para acessar o painel.");
       } else {
-        setMessage(error instanceof Error && error.message !== "Unexpected error" ? error.message : "Não foi possível carregar o painel administrativo agora. Faça login novamente ou tente em instantes.");
+        setMessage(error instanceof Error && error.message
+          ? error.message
+          : "Não foi possível carregar o painel administrativo agora. Faça login novamente ou tente em instantes.");
       }
     }
   }

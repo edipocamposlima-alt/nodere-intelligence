@@ -197,7 +197,7 @@ export function addLeadDeal(id: string, payload: Record<string, unknown>) {
   });
 }
 
-export function searchCompanies(payload: { mode?: "places" | "cnpj" | "global"; city?: string; state?: string; country?: string; segment?: string; keyword?: string; companyName?: string; limit?: number; lat?: number; lng?: number; radiusKm?: number; minRating?: number; maxRating?: number; hasWebsite?: boolean | null; hasWhatsApp?: boolean | null; minReviews?: number; sortBy?: "relevance" | "rating" | "review_count" | "nexus_score"; sortDir?: "asc" | "desc" }) {
+export function searchCompanies(payload: { mode?: "places" | "cnpj" | "global"; city?: string; state?: string; country?: string; segment?: string; keyword?: string; companyName?: string; limit?: number; lat?: number; lng?: number; radiusKm?: number; minRating?: number; maxRating?: number; hasWebsite?: boolean | null; hasWhatsApp?: boolean | null; minReviews?: number; sortBy?: "relevance" | "rating" | "review_count" | "nodere_score"; sortDir?: "asc" | "desc" }, signal?: AbortSignal) {
   return api<{
     companies: Company[];
     search: {
@@ -205,7 +205,7 @@ export function searchCompanies(payload: { mode?: "places" | "cnpj" | "global"; 
       warning?: string;
       error?: { message?: string; activationUrl?: string; reason?: string; code?: string; status?: number };
     };
-  }>("/searches", { method: "POST", body: JSON.stringify(payload) });
+  }>("/searches", { method: "POST", body: JSON.stringify(payload), signal });
 }
 
 export function searchCompanyByCnpj(cnpj: string) {

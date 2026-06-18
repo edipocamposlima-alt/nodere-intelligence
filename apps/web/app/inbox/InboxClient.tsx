@@ -134,7 +134,7 @@ export function InboxClient() {
 
       <div className="rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
         <AlertTriangle className="mr-2 inline h-4 w-4" />
-        WhatsApp Cloud API só sincroniza automaticamente quando as variáveis oficiais estiverem configuradas no backend. Enquanto isso, use o registro manual e o link wa.me no cliente.
+        Conecte seu WhatsApp nas Integrações para receber mensagens automaticamente. Enquanto isso, use o registro manual e o link direto no cliente.
       </div>
 
       {message && <p className="rounded-lg border border-cyan/30 bg-cyan/10 px-4 py-3 text-sm text-cyan">{message}</p>}
@@ -258,7 +258,7 @@ function InboxEmptyState({ compact = false, onRegister }: { compact?: boolean; o
         <div className={compact ? "" : "space-y-1"}>
           <p className="font-bold text-white">Nenhuma interação registrada ainda</p>
           <p className="mt-1 text-sm leading-5 text-slate-400">
-            Registre manualmente uma conversa, ligação ou email para criar histórico comercial. A sincronização automática do WhatsApp depende da Cloud API configurada no backend.
+            Registre manualmente uma conversa, ligação ou e-mail para criar histórico comercial. A sincronização automática fica disponível após conectar o WhatsApp nas Integrações.
           </p>
         </div>
       </div>

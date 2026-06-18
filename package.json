@@ -1,6 +1,6 @@
 {
-  "name": "nodere-nexus",
-  "description": "NODERE Nexus — Revenue Intelligence Platform",
+  "name": "nodere",
+  "description": "NODERE — Inteligência comercial, CRM e IA",
   "version": "0.2.0-emergency",
   "private": true,
   "type": "module",

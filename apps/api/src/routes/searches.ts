@@ -44,7 +44,7 @@ const searchSchema = z.object({
   hasWebsite: z.boolean().nullable().optional(),
   hasWhatsApp: z.boolean().nullable().optional(),
   minReviews: z.coerce.number().min(0).optional(),
-  sortBy: z.enum(["relevance", "rating", "review_count", "nexus_score"]).optional(),
+  sortBy: z.enum(["relevance", "rating", "review_count", "nodere_score"]).optional(),
   sortDir: z.enum(["asc", "desc"]).optional()
 }).refine(
   (input) => [input.companyName, input.city, input.state, input.segment, input.keyword].some((value) => value && value.trim().length >= 2),
@@ -362,7 +362,7 @@ function normalizeWhatsapp(phone: string) {
   return local.length === 11 && local[2] === "9" ? (digits.startsWith("55") ? `+${digits}` : `+55${digits}`) : "";
 }
 
-function filterAndSortCompanies<T extends { rating?: number; reviewCount?: number; website?: string; whatsapp?: string; score?: number; nexusScore?: number }>(companies: T[], input: Partial<z.infer<typeof searchSchema>>) {
+function filterAndSortCompanies<T extends { rating?: number; reviewCount?: number; website?: string; whatsapp?: string; score?: number; nodereScore?: number }>(companies: T[], input: Partial<z.infer<typeof searchSchema>>) {
   const filtered = companies.filter((company) => {
     if (input.minRating !== undefined && (company.rating ?? 0) < input.minRating) return false;
     if (input.maxRating !== undefined && (company.rating ?? 0) > input.maxRating) return false;
@@ -372,10 +372,10 @@ function filterAndSortCompanies<T extends { rating?: number; reviewCount?: numbe
     return true;
   });
   const dir = input.sortDir === "asc" ? 1 : -1;
-  const sortBy = input.sortBy || "nexus_score";
+  const sortBy = input.sortBy || "nodere_score";
   return filtered.sort((a, b) => {
-    const av = sortBy === "rating" ? (a.rating ?? 0) : sortBy === "review_count" ? (a.reviewCount ?? 0) : sortBy === "relevance" ? (a.score ?? 0) : (a.nexusScore ?? (a.score ?? 0) * 10);
-    const bv = sortBy === "rating" ? (b.rating ?? 0) : sortBy === "review_count" ? (b.reviewCount ?? 0) : sortBy === "relevance" ? (b.score ?? 0) : (b.nexusScore ?? (b.score ?? 0) * 10);
+    const av = sortBy === "rating" ? (a.rating ?? 0) : sortBy === "review_count" ? (a.reviewCount ?? 0) : sortBy === "relevance" ? (a.score ?? 0) : (a.nodereScore ?? (a.score ?? 0) * 10);
+    const bv = sortBy === "rating" ? (b.rating ?? 0) : sortBy === "review_count" ? (b.reviewCount ?? 0) : sortBy === "relevance" ? (b.score ?? 0) : (b.nodereScore ?? (b.score ?? 0) * 10);
     return (av - bv) * dir;
   });
 }

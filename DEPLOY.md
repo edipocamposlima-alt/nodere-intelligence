@@ -1,4 +1,4 @@
-# Deploy do NODERE Nexus
+# Deploy do NODERE
 
 ## Link HTTPS do frontend
 

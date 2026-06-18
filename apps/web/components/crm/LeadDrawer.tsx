@@ -300,7 +300,7 @@ export function LeadDrawer({ lead, open, onClose, onCreated }: LeadDrawerProps) 
               {["Diagnóstico digital", "Mensagem de WhatsApp", "Roteiro de ligação", "Resumo para proposta"].map((item) => (
                 <div key={item} className="rounded-card border border-[var(--ai-border)] bg-[var(--ai-bg)] p-4">
                   <p className="font-bold text-[var(--ai-text)]">{item}</p>
-                  <p className="mt-2 text-sm text-text-secondary">Pronto para conectar com créditos e chave OpenAI do workspace.</p>
+                  <p className="mt-2 text-sm text-text-secondary">Configure a IA nas Integrações para ativar este recurso.</p>
                   <Button className="mt-4" variant="ai">Gerar</Button>
                 </div>
               ))}

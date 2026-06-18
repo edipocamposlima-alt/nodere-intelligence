@@ -1,4 +1,4 @@
--- NODERE Nexus - schema operacional de producao
+-- NODERE - schema operacional de producao
 -- Execute no Supabase SQL editor. O schema e incremental e nao remove dados.
 
 create extension if not exists pgcrypto;

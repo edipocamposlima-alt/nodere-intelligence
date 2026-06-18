@@ -1,7 +1,7 @@
-# Manual NODERE Nexus
+# Manual NODERE
 
 ## Visão geral
-O NODERE Nexus é uma ferramenta de prospecção e CRM para encontrar empresas no Google, salvar leads, acompanhar o funil comercial, registrar conversas, criar observações, gerar documentos e organizar follow-ups.
+O NODERE é uma ferramenta de prospecção e CRM para encontrar empresas no Google, salvar leads, acompanhar o funil comercial, registrar conversas, criar observações, gerar documentos e organizar follow-ups.
 
 ## Acesso e login
 Use `https://nodere.com.br`. A área administrativa fica em `/admin` e usa as credenciais configuradas no backend Render. Chaves de API nunca devem ser colocadas no frontend.
@@ -111,7 +111,7 @@ Configure `GOOGLE_PAGESPEED_API_KEY` no Render para ativar análise de performan
 ## Propostas, contratos e PDFs
 Na aba **IA / Editor**, escolha o tipo, gere ou escreva o conteúdo e clique em **Salvar proposta PDF** ou **Salvar contrato PDF**. O documento fica disponível na aba **Propostas e contratos** para baixar.
 
-Os PDFs gerados pelo frontend usam cabeçalho visual NODERE com marca, nome NODERE Nexus e conteúdo editado pelo operador. O relatório exportado pela ficha também exibe o logo NODERE no topo.
+Os PDFs gerados pelo frontend usam cabeçalho visual NODERE com marca, nome NODERE e conteúdo editado pelo operador. O relatório exportado pela ficha também exibe o logo NODERE no topo.
 
 ## Anexos e conversas
 Como mínimo operacional, cole conversas na Caixa de Entrada ou salve conteúdos como documentos vinculados ao lead. Para upload real de arquivos, configure storage dedicado.
