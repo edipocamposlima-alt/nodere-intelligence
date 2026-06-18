@@ -737,14 +737,24 @@ export function LeadOperations({ company }: { company: Company }) {
             {contacts.length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhum decisor cadastrado.</p>}
             {contacts.map((contact) => (
               <article key={contact.id} className="rounded-lg border border-line bg-ink p-4">
-                <p className="font-semibold text-white">{contact.name}</p>
-                <p className="mt-1 text-sm text-slate-400">{contact.role || "Cargo não informado"}</p>
-                <div className="mt-3 grid gap-1 text-xs text-slate-300">
-                  {contact.email && <span>{contact.email}</span>}
-                  {contact.phone && <span>{contact.phone}</span>}
-                  {contact.whatsapp && <span>WhatsApp: {contact.whatsapp}</span>}
-                  {contact.linkedin_url && <a href={contact.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-cyan hover:underline">LinkedIn</a>}
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <p className="font-semibold text-white">{contact.name}</p>
+                    <p className="mt-1 text-sm text-slate-400">{contact.role || "Cargo não informado"}</p>
+                  </div>
+                  <div className="grid gap-1 text-xs text-slate-300 md:text-right">
+                    {contact.email && <span>E-mail: {contact.email}</span>}
+                    {contact.phone && <span>Telefone: {contact.phone}</span>}
+                    {contact.whatsapp && <span>WhatsApp: {contact.whatsapp}</span>}
+                    {contact.linkedin_url && <a href={contact.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-cyan hover:underline">LinkedIn</a>}
+                  </div>
                 </div>
+                {contact.notes && (
+                  <div className="mt-3 rounded-lg border border-line bg-panel/70 p-3">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Observações do contato</p>
+                    <RichTextPreview value={contact.notes} />
+                  </div>
+                )}
               </article>
             ))}
           </div>
@@ -792,7 +802,11 @@ export function LeadOperations({ company }: { company: Company }) {
                   <span className="text-xs text-slate-500">{new Date(comm.sent_at).toLocaleString("pt-BR")}</span>
                 </div>
                 {comm.subject && <p className="mt-3 font-semibold text-white">{comm.subject}</p>}
-                {comm.body && <p className="mt-2 whitespace-pre-wrap text-sm text-slate-300">{comm.body}</p>}
+                {comm.body && (
+                  <div className="mt-3 rounded-lg border border-line bg-panel/70 p-3">
+                    <RichTextPreview value={comm.body} />
+                  </div>
+                )}
               </article>
             ))}
           </div>

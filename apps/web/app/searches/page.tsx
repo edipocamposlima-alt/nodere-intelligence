@@ -36,7 +36,7 @@ export default async function SearchesPage() {
 
       <section className="space-y-3">
         <div className="nodere-brand-surface overflow-hidden rounded-lg border border-[rgba(3,98,76,0.32)] p-4 shadow-glow">
-          <Logo variant="full" height={72} />
+          <Logo variant="full" height={72} className="search-brand-logo" />
           <h2 className="mt-4 text-lg font-semibold text-[var(--text-primary)]">Busca inteligente de empresas</h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">Pesquise, selecione empresas em massa, salve leads, exporte CSV ou baixe relatório PDF.</p>
         </div>

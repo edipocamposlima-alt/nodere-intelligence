@@ -33,12 +33,12 @@ export function Sidebar() {
   const progress = total > 0 ? Math.min(100, (remaining / total) * 100) : 0;
 
   return (
-    <aside className="hidden min-h-screen w-72 border-r border-[var(--border-soft)] bg-[var(--bg-sidebar)] p-5 text-[var(--text-secondary)] lg:block">
+    <aside className="hidden h-screen w-72 overflow-hidden border-r border-[var(--border-soft)] bg-[var(--bg-sidebar)] p-5 text-[var(--text-secondary)] lg:flex lg:flex-col">
       <Link href="/dashboard" className="flex items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--bg-card)] px-4 py-5 transition hover:border-[var(--brand-primary)]">
         <Logo variant="full" height={38} />
       </Link>
 
-      <nav className="mt-8 space-y-1">
+      <nav className="nodere-tools-scroll mt-8 min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
         {items.map((item) => (
           <Link
             key={item.href}
@@ -54,7 +54,7 @@ export function Sidebar() {
       </nav>
 
       {credits && (
-        <div className="mt-6 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] p-4">
+        <div className="mt-4 shrink-0 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] p-4">
           <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
             <span>Créditos — {credits.plan}</span>
             <span className="font-medium text-[var(--text-primary)]">{remaining.toLocaleString("pt-BR")} / {total.toLocaleString("pt-BR")}</span>
@@ -71,7 +71,7 @@ export function Sidebar() {
         </div>
       )}
 
-      <div className="mt-4 rounded-lg border border-[var(--border-brand)] bg-[var(--nav-active-bg)] p-4">
+      <div className="mt-4 shrink-0 rounded-lg border border-[var(--border-brand)] bg-[var(--nav-active-bg)] p-4">
         <ShieldCheck className="h-5 w-5 text-[var(--brand-glow)]" />
         <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">Ambiente seguro</p>
         <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">Dados isolados por workspace, APIs via backend e operação comercial protegida.</p>

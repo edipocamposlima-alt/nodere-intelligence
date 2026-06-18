@@ -46,7 +46,7 @@ function Card({ label, value, sub }: { label: string; value: string; sub?: strin
   );
 }
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs = 5000): Promise<T> {
+function withTimeout<T>(promise: Promise<T>, timeoutMs = 20000): Promise<T> {
   return new Promise((resolve, reject) => {
     const timeout = window.setTimeout(() => reject(new Error("Relatórios demoraram mais que o esperado. Tente novamente em instantes.")), timeoutMs);
     promise
@@ -79,7 +79,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
     let alive = true;
     setLoading(true);
     setError("");
-    withTimeout(Promise.all([
+    withTimeout(Promise.allSettled([
       getReportSummary(period),
       getReportFunnel(period),
       getReportTimeline(period, groupBy),
@@ -90,17 +90,20 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
       getReportOperators(),
       getReportProposals(period)
     ]))
-      .then(([nextSummary, nextFunnel, nextTimeline, nextSegments, nextCities, nextOrigins, nextIntelligence, nextOperators, nextProposals]) => {
+      .then((results) => {
         if (!alive) return;
-        setSummary(nextSummary);
-        setFunnel(nextFunnel);
-        setTimeline(nextTimeline);
-        setSegments(nextSegments);
-        setCities(nextCities);
-        setOrigins(nextOrigins);
-        setIntelligence(nextIntelligence);
-        setOperators(nextOperators);
-        setProposals(nextProposals);
+        const [nextSummary, nextFunnel, nextTimeline, nextSegments, nextCities, nextOrigins, nextIntelligence, nextOperators, nextProposals] = results;
+        if (nextSummary.status === "fulfilled") setSummary(nextSummary.value as Summary);
+        if (nextFunnel.status === "fulfilled") setFunnel(nextFunnel.value as Funnel);
+        if (nextTimeline.status === "fulfilled") setTimeline(nextTimeline.value as Timeline);
+        if (nextSegments.status === "fulfilled") setSegments(nextSegments.value as Segments);
+        if (nextCities.status === "fulfilled") setCities(nextCities.value as Cities);
+        if (nextOrigins.status === "fulfilled") setOrigins(nextOrigins.value as Origins);
+        if (nextIntelligence.status === "fulfilled") setIntelligence(nextIntelligence.value as Intelligence);
+        if (nextOperators.status === "fulfilled") setOperators(nextOperators.value as Operators);
+        if (nextProposals.status === "fulfilled") setProposals(nextProposals.value as Proposals);
+        const failed = results.filter((result) => result.status === "rejected");
+        if (failed.length) setError("Alguns indicadores demoraram ou falharam, mas os dados disponíveis foram carregados.");
       })
       .catch((err) => {
         if (alive) setError(getErrorMessage(err));

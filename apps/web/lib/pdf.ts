@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 
-const LOGO_CANDIDATES = ["/android-chrome-192x192.png", "/nodere-icon-official.png", "/favicon-32x32.png"];
+const LOGO_CANDIDATES = ["/android-chrome-192x192.png", "/favicon-32x32.png"];
 
 async function getNodereLogoBase64() {
   if (typeof window === "undefined") return null;
