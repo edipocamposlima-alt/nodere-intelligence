@@ -844,6 +844,7 @@ export function getCalendarEvents(params = "") {
 
 export function createCalendarEvent(payload: {
   companyId?: string;
+  leadId?: string;
   contactId?: string;
   title: string;
   type: string;
@@ -864,6 +865,7 @@ export function createCalendarEvent(payload: {
 
 export function updateCalendarEvent(id: string, payload: Partial<{
   companyId: string | null;
+  leadId: string | null;
   contactId: string | null;
   title: string;
   type: string;

@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Calendar, dateFnsLocalizer, SlotInfo, View } from "react-big-calendar";
-import { format, getDay, parse, startOfWeek } from "date-fns";
+import { endOfDay, endOfMonth, format, getDay, parse, startOfMonth, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale/pt-BR";
 import { BellRing, CalendarDays, Check, Clock, Edit3, ListChecks, Megaphone, Phone, Plus, Presentation, RefreshCw, RotateCcw, Send, Trash2, UserRound, X } from "lucide-react";
 import { CalendarEvent, createCalendarEvent, deleteCalendarEvent, getCalendarEvents, getCompanies, getOperators, updateCalendarEvent } from "@/lib/api";
@@ -145,12 +145,52 @@ export function CalendarClient({
   const [statusFilter, setStatusFilter] = useState("");
   const [operatorFilter, setOperatorFilter] = useState(role === "operator" && user?.id ? user.id : "");
   const [view, setView] = useState<View>(compact ? "agenda" : "month");
+  const [rangeStart, setRangeStart] = useState(() => startOfMonth(new Date()).toISOString());
+  const [rangeEnd, setRangeEnd] = useState(() => endOfMonth(new Date()).toISOString());
+  const [clock, setClock] = useState(() => Date.now());
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (companyId) params.set("company_id", companyId);
+      if (lockedType) params.set("type", lockedType);
+      else if (typeFilter) params.set("type", typeFilter);
+      if (statusFilter) params.set("status", statusFilter);
+      if (operatorFilter) params.set("operator_id", operatorFilter);
+      params.set("start", rangeStart);
+      params.set("end", rangeEnd);
+      const data = await getCalendarEvents(`?${params.toString()}`);
+      setEvents(data.map((event) => ({
+        ...event,
+        type: normalizeType(event.type),
+        priority: normalizePriority(event.priority),
+        status: normalizeStatus(event.status),
+        start: new Date(event.start_at),
+        end: new Date(event.end_at),
+        resource: event
+      })));
+      setMessage("");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao carregar calendário.");
+    } finally {
+      setLoading(false);
+    }
+  }, [companyId, lockedType, typeFilter, statusFilter, operatorFilter, rangeStart, rangeEnd]);
 
   useEffect(() => {
     void refresh();
+  }, [refresh]);
+
+  useEffect(() => {
     getCompanies().then(setCompanies).catch(() => setCompanies([]));
     if (!compact) getOperators().then(setOperators).catch(() => setOperators([]));
-  }, [companyId, lockedType, typeFilter, statusFilter, operatorFilter, compact]);
+  }, [compact]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window) || Notification.permission !== "granted") return;
@@ -166,33 +206,6 @@ export function CalendarClient({
       .filter((timer): timer is number => timer !== null);
     return () => timers.forEach(window.clearTimeout);
   }, [events]);
-
-  async function refresh() {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (companyId) params.set("company_id", companyId);
-      if (lockedType) params.set("type", lockedType);
-      else if (typeFilter) params.set("type", typeFilter);
-      if (statusFilter) params.set("status", statusFilter);
-      if (operatorFilter) params.set("operator_id", operatorFilter);
-      const data = await getCalendarEvents(params.toString() ? `?${params.toString()}` : "");
-      setEvents(data.map((event) => ({
-        ...event,
-        type: normalizeType(event.type),
-        priority: normalizePriority(event.priority),
-        status: normalizeStatus(event.status),
-        start: new Date(event.start_at),
-        end: new Date(event.end_at),
-        resource: event
-      })));
-      setMessage("");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Falha ao carregar calendario.");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   function openNew(slot?: SlotInfo) {
     if (readOnly) return;
@@ -213,8 +226,18 @@ export function CalendarClient({
     event.preventDefault();
     if (readOnly) return;
     const form = new FormData(event.currentTarget);
-    const startAt = new Date(String(form.get("startAt") || "")).toISOString();
-    const endAt = new Date(String(form.get("endAt") || "")).toISOString();
+    const startDate = new Date(String(form.get("startAt") || ""));
+    const endDate = new Date(String(form.get("endAt") || ""));
+    if (!Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime())) {
+      setMessage("Informe datas válidas para início e término.");
+      return;
+    }
+    if (endDate.getTime() <= startDate.getTime()) {
+      setMessage("O término deve ser posterior ao início.");
+      return;
+    }
+    const startAt = startDate.toISOString();
+    const endAt = endDate.toISOString();
     const reminderEnabled = form.get("reminderEnabled") === "on";
     const reminderMinutes = Number(form.get("reminderMinutes") || 30);
     const payload = {
@@ -267,8 +290,48 @@ export function CalendarClient({
     await refresh();
   }
 
+  function handleRangeChange(range: Date[] | { start: Date; end: Date }) {
+    const dates = Array.isArray(range) ? range : [range.start, range.end];
+    if (!dates.length) return;
+    const timestamps = dates.map((date) => date.getTime()).filter(Number.isFinite);
+    if (!timestamps.length) return;
+    setRangeStart(new Date(Math.min(...timestamps)).toISOString());
+    setRangeEnd(endOfDay(new Date(Math.max(...timestamps))).toISOString());
+  }
+
+  async function snoozeReminder(event: CalendarItem, minutes: number) {
+    if (readOnly) return;
+    const reminderAt = new Date(Date.now() + minutes * 60_000).toISOString();
+    try {
+      await updateCalendarEvent(event.id, { reminderAt, reminderEnabled: true, reminderMinutes: minutes });
+      await refresh();
+      setMessage(`Lembrete adiado por ${minutes} minutos.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao adiar lembrete.");
+    }
+  }
+
+  async function completeReminder(event: CalendarItem) {
+    if (readOnly) return;
+    try {
+      await updateCalendarEvent(event.id, { status: "realizado", reminderEnabled: false });
+      await refresh();
+      setMessage("Compromisso marcado como realizado.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao concluir lembrete.");
+    }
+  }
+
   const upcoming = useMemo(() => events.filter((event) => event.end >= new Date()).slice(0, compact ? 4 : 8), [events, compact]);
   const overdue = useMemo(() => events.filter((event) => event.end < new Date() && normalizeStatus(event.status) === "pendente"), [events]);
+  const internalReminders = useMemo(() => events
+    .filter((event) => {
+      if (!event.reminder_enabled || !event.reminder_at) return false;
+      if (["realizado", "cancelado"].includes(normalizeStatus(event.status))) return false;
+      const reminderTime = new Date(event.reminder_at).getTime();
+      return Number.isFinite(reminderTime) && reminderTime <= clock + 24 * 60 * 60 * 1000;
+    })
+    .sort((a, b) => new Date(a.reminder_at || 0).getTime() - new Date(b.reminder_at || 0).getTime()), [events, clock]);
   const height = compact ? 420 : "calc(100vh - 300px)";
 
   return (
@@ -300,6 +363,40 @@ export function CalendarClient({
           <Metric label="Eventos carregados" value={events.length} />
           <Metric label="Próximos compromissos" value={upcoming.length} />
           <Metric label="Pendentes vencidos" value={overdue.length} tone={overdue.length ? "danger" : "default"} />
+        </section>
+      )}
+
+      {!compact && internalReminders.length > 0 && (
+        <section className="rounded-2xl border border-amber-400/35 bg-amber-400/10 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="flex items-center gap-2 font-black text-amber-100"><BellRing className="h-4 w-4" /> Lembretes internos</p>
+              <p className="text-xs text-amber-100/70">Compromissos vencidos ou previstos para as próximas 24 horas.</p>
+            </div>
+            <span className="rounded-full bg-amber-300 px-2 py-1 text-xs font-black text-slate-950">{internalReminders.length}</span>
+          </div>
+          <div className="mt-3 grid gap-2 lg:grid-cols-2">
+            {internalReminders.map((event) => {
+              const reminderTime = new Date(event.reminder_at || "").getTime();
+              const due = reminderTime <= clock;
+              return (
+                <article key={event.id} className="rounded-xl border border-amber-200/20 bg-ink/80 p-3">
+                  <button type="button" onClick={() => openEdit(event)} className="w-full text-left">
+                    <p className="font-bold text-white">{event.title}</p>
+                    <p className={`mt-1 text-xs ${due ? "text-rose-300" : "text-amber-200"}`}>
+                      {due ? "Lembrete vencido" : "Lembrete agendado"} · {new Date(event.reminder_at || "").toLocaleString("pt-BR")}
+                    </p>
+                  </button>
+                  {!readOnly && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button type="button" onClick={() => void snoozeReminder(event, 15)} className="rounded-lg border border-amber-300/30 px-3 py-2 text-xs font-bold text-amber-100">Adiar 15 min</button>
+                      <button type="button" onClick={() => void completeReminder(event)} className="rounded-lg bg-emerald-500 px-3 py-2 text-xs font-bold text-white">Marcar realizado</button>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
         </section>
       )}
 
@@ -341,6 +438,7 @@ export function CalendarClient({
             view={view}
             views={["month", "week", "day", "agenda"]}
             onView={setView}
+            onRangeChange={handleRangeChange}
             selectable={!readOnly}
             onSelectSlot={(slot) => openNew(slot)}
             onSelectEvent={openEdit}
@@ -389,7 +487,7 @@ export function CalendarClient({
               <label className="space-y-2 text-sm text-slate-300">Tipo<select name="type" defaultValue={normalizeType(selectedEvent?.type || lockedType || defaultType)} disabled={Boolean(lockedType) || readOnly} className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white disabled:opacity-70">{eventTypes.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}</select></label>
               <label className="space-y-2 text-sm text-slate-300">Prioridade<select name="priority" defaultValue={normalizePriority(selectedEvent?.priority)} className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white">{priorities.map((priority) => <option key={priority.value} value={priority.value}>{priority.label}</option>)}</select></label>
               <label className="space-y-2 text-sm text-slate-300">Status<select name="status" defaultValue={normalizeStatus(selectedEvent?.status)} className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white">{statuses.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}</select></label>
-              <label className="space-y-2 text-sm text-slate-300">Lead<select name="companyId" defaultValue={selectedEvent?.company_id || companyId || ""} disabled={Boolean(companyId) || readOnly} className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white"><option value="">Sem lead vinculado</option>{companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>
+              <label className="space-y-2 text-sm text-slate-300">Empresa / lead CRM<select name="companyId" defaultValue={selectedEvent?.company_id || companyId || ""} disabled={Boolean(companyId) || readOnly} className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white"><option value="">Sem empresa vinculada</option>{companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>
               <label className="space-y-2 text-sm text-slate-300">Operador<select name="assignedTo" defaultValue={selectedEvent?.assigned_to || user?.id || ""} disabled={role === "operator" || readOnly} className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white disabled:opacity-70"><option value="">Sem operador</option>{operators.map((operator) => <option key={operator.id} value={operator.id}>{operator.name}</option>)}</select></label>
               <label className="space-y-2 text-sm text-slate-300">Inicio<input required type="datetime-local" name="startAt" defaultValue={toInputDate(selectedEvent?.start_at || selectedSlot?.start)} className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white" /></label>
               <label className="space-y-2 text-sm text-slate-300">Fim<input required type="datetime-local" name="endAt" defaultValue={toInputDate(selectedEvent?.end_at || selectedSlot?.end || addMinutes(selectedSlot?.start || new Date(), 30))} className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white" /></label>
