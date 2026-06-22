@@ -21,6 +21,7 @@ import catalogRouter from "./routes/catalog.js";
 import marketingRouter from "./routes/marketing.js";
 import auditRouter from "./routes/audit.js";
 import adminRouter from "./routes/admin.js";
+import contentRouter from "./routes/content.js";
 import workspaceRouter from "./routes/workspace.js";
 import legalRouter from "./routes/legal.js";
 import contactRouter from "./routes/contact.js";
@@ -49,6 +50,7 @@ import { callAI, getAiProviderHealth } from "./services/ai.js";
 import { configureWebPush } from "./services/pushService.js";
 import { createSmtpTransport } from "./services/emailSender.js";
 import { swaggerSpec } from "./swagger.js";
+import { isMissingSupabaseSchema } from "./utils/supabaseErrors.js";
 
 const app = express();
 configureWebPush();
@@ -201,7 +203,7 @@ function publicIntegrationSettings() {
   };
 }
 
-app.get("/api/settings", async (req, res, next) => {
+app.get("/api/settings", requireWorkspaceSession, async (req, res, next) => {
   try {
     const persisted = await getAppSettings(getRequestWorkspaceId(req));
     res.json({
@@ -399,6 +401,7 @@ app.get("/api/places/search", requireWorkspaceSession, async (req, res, next) =>
 });
 
 app.use("/api/admin", adminRouter);
+app.use("/api/content", contentRouter);
 app.use("/api/onboarding", onboardingRouter);
 app.use("/api/workspace", workspaceRouter);
 app.use("/api/legal", legalRouter);
@@ -407,6 +410,9 @@ app.use("/api/geocode", geocodeRouter);
 app.use("/api/searches", searchesRouter);
 app.use("/api/search", searchesRouter);
 app.use("/api/settings", settingsRouter);
+app.get("/api/communications", requireWorkspaceSession, listWorkspaceResource("communications", "sent_at"));
+app.get("/api/contracts", requireWorkspaceSession, listWorkspaceResource("company_contracts", "created_at"));
+app.get("/api/files", requireWorkspaceSession, listWorkspaceResource("company_files", "created_at"));
 app.use("/api/companies", requireWorkspaceSession, companiesRouter);
 app.use("/api/crm", requireWorkspaceSession, crmRouter);
 app.use("/api/leads", requireWorkspaceSession, leadsRouter);
@@ -415,6 +421,7 @@ app.use("/api/ai", requireWorkspaceSession, aiRouter);
 app.use("/api/intelligence", requireWorkspaceSession, intelligenceRouter);
 app.use("/api/dashboard", requireWorkspaceSession, dashboardRouter);
 app.use("/api/reports", requireWorkspaceSession, reportsRouter);
+app.use("/api/audit", requireWorkspaceRole("owner", "admin"), auditRouter);
 app.use("/api/calendar", requireWorkspaceSession, calendarRouter);
 app.use("/api/catalog", requireWorkspaceSession, catalogRouter);
 app.use("/api/marketing", requireWorkspaceSession, marketingRouter);
@@ -452,16 +459,44 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customCss: ".swagger-ui .topbar{background:#0A0F1E}.swagger-ui .topbar-wrapper img{display:none}.swagger-ui .topbar-wrapper:before{content:'NODERE API';color:#fff;font-weight:700;font-size:18px}"
 }));
 
+function listWorkspaceResource(table: string, orderColumn: string) {
+  return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    try {
+      const sb = getSupabase();
+      if (!sb) return res.json([]);
+      const { data, error } = await sb
+        .from(table)
+        .select("*")
+        .eq("workspace_id", getRequestWorkspaceId(req))
+        .order(orderColumn, { ascending: false });
+      if (error) throw error;
+      return res.json(data ?? []);
+    } catch (error) {
+      if (isMissingSupabaseSchema(error)) return res.json([]);
+      return next(error);
+    }
+  };
+}
+
 app.use("/api", requireAuth);
 
 app.use("/api/enrichment", enrichmentRouter);
-app.use("/api/audit", auditRouter);
-
-app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+app.use((error: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
   if (error instanceof ZodError) {
     return res.status(400).json({ message: "Invalid request", issues: error.issues });
   }
   const message = error instanceof Error ? error.message : "Erro ao processar a solicitação.";
+  const source = error as { code?: string; message?: string; details?: string };
+  const missingSchema = source.code === "PGRST205" || source.code === "42P01" || source.code === "42703" || message.includes("Could not find the table");
+  if (missingSchema) {
+    console.error(`[schema] ${req.method} ${req.path}: ${message}`);
+    return res.status(503).json({
+      error: "Schema dependency unavailable",
+      message: "Uma dependência de banco necessária para esta operação ainda não está disponível.",
+      code: "SCHEMA_DEPENDENCY_UNAVAILABLE",
+      details: source.details || message
+    });
+  }
   const rawStatus = (error as { status?: unknown }).status;
   const status = typeof rawStatus === "number" && rawStatus >= 100 && rawStatus <= 599 ? rawStatus : 500;
   return res.status(status).json({

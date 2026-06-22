@@ -44,7 +44,7 @@ export function issueSessionToken(input: Omit<AdminSession, "exp">) {
   const payload = Buffer.from(JSON.stringify({
     ...input,
     workspaceId: input.workspaceId || "default",
-    exp: Date.now() + 1000 * 60 * 60 * 12
+    exp: Date.now() + 1000 * 60 * 60 * 24 * 7
   })).toString("base64url");
   return `${payload}.${sign(payload)}`;
 }

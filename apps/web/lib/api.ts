@@ -168,11 +168,22 @@ export function getLeadActivities(id: string) {
   return api<Array<Record<string, unknown>>>(`/leads/${encodeURIComponent(id)}/activities`, undefined, []);
 }
 
-export function addLeadActivity(id: string, payload: { type: string; title?: string; body?: string; content?: string }) {
+export function addLeadActivity(id: string, payload: { type: string; title?: string; body?: string; content?: string; occurredAt?: string; responsible?: string; nextAction?: string; metadata?: Record<string, unknown> }) {
   return api<Record<string, unknown>>(`/leads/${encodeURIComponent(id)}/activities`, {
     method: "POST",
     body: JSON.stringify(payload)
   });
+}
+
+export function updateLeadActivity(id: string, activityId: string, payload: { type?: string; title?: string; body?: string; occurredAt?: string; responsible?: string; nextAction?: string; metadata?: Record<string, unknown> }) {
+  return api<Record<string, unknown>>(`/leads/${encodeURIComponent(id)}/activities/${encodeURIComponent(activityId)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deleteLeadActivity(id: string, activityId: string) {
+  return api<{ ok: boolean }>(`/leads/${encodeURIComponent(id)}/activities/${encodeURIComponent(activityId)}`, { method: "DELETE" });
 }
 
 export function getLeadContacts(id: string) {
@@ -186,6 +197,17 @@ export function addLeadContact(id: string, payload: Record<string, unknown>) {
   });
 }
 
+export function updateLeadContact(id: string, contactId: string, payload: Record<string, unknown>) {
+  return api<Record<string, unknown>>(`/leads/${encodeURIComponent(id)}/contacts/${encodeURIComponent(contactId)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deleteLeadContact(id: string, contactId: string) {
+  return api<{ ok: boolean }>(`/leads/${encodeURIComponent(id)}/contacts/${encodeURIComponent(contactId)}`, { method: "DELETE" });
+}
+
 export function getLeadDeals(id: string) {
   return api<Array<Record<string, unknown>>>(`/leads/${encodeURIComponent(id)}/deals`, undefined, []);
 }
@@ -195,6 +217,17 @@ export function addLeadDeal(id: string, payload: Record<string, unknown>) {
     method: "POST",
     body: JSON.stringify(payload)
   });
+}
+
+export function updateLeadDeal(id: string, dealId: string, payload: Record<string, unknown>) {
+  return api<Record<string, unknown>>(`/leads/${encodeURIComponent(id)}/deals/${encodeURIComponent(dealId)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deleteLeadDeal(id: string, dealId: string) {
+  return api<{ ok: boolean }>(`/leads/${encodeURIComponent(id)}/deals/${encodeURIComponent(dealId)}`, { method: "DELETE" });
 }
 
 export function searchCompanies(payload: { mode?: "places" | "cnpj" | "global"; city?: string; state?: string; country?: string; segment?: string; keyword?: string; companyName?: string; limit?: number; lat?: number; lng?: number; radiusKm?: number; minRating?: number; maxRating?: number; hasWebsite?: boolean | null; hasWhatsApp?: boolean | null; minReviews?: number; sortBy?: "relevance" | "rating" | "review_count" | "nodere_score"; sortDir?: "asc" | "desc" }, signal?: AbortSignal) {

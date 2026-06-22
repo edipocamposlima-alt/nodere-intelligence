@@ -16,9 +16,13 @@ const PUBLIC_PATHS = [
   "/privacy",
   "/termos",
   "/privacidade",
+  "/pagina",
+  "/manual",
+  "/index.html",
   "/app/login",
   "/app/register",
   "/api/admin",
+  "/api/content",
   "/api/auth",
   "/api/webhooks",
   "/_next",
@@ -41,7 +45,7 @@ const PUBLIC_PATHS = [
   "/icons"
 ];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const session = request.cookies.get("nodere_session")?.value || request.cookies.get("nodere-session")?.value;
 

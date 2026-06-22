@@ -119,7 +119,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     user,
     modules,
     loading,
-    hasModule: (code: string) => modules.includes(code),
+    hasModule: (code: string) => user?.role === "owner" || user?.role === "admin" || modules.includes(code),
     refresh
   }), [workspace, user, modules, loading]);
 

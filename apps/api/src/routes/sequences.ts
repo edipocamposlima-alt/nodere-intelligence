@@ -8,11 +8,12 @@ import {
   sendSequenceEmail
 } from "../services/emailSequences.js";
 import { getCompany } from "../services/companyStore.js";
-import { getRequestWorkspaceId } from "../middleware/session.js";
+import { getRequestWorkspaceId, requireWorkspaceMutation } from "../middleware/session.js";
 import { getSupabase } from "../db/supabase.js";
 import { randomUUID } from "node:crypto";
 
 const router = Router();
+router.use(requireWorkspaceMutation("owner", "admin", "operator"));
 
 router.get("/", (_req, res) => {
   res.json(SEQUENCE_TEMPLATES);

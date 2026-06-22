@@ -28,7 +28,10 @@ export default function PlatformTopbar() {
 
   async function handleLogout() {
     await fetch("/api/auth/session", { method: "DELETE" });
-    if (typeof window !== "undefined") localStorage.removeItem("nodere_admin_token");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("nodere_admin_token");
+      localStorage.removeItem("nodere_user_profile");
+    }
     router.push("/login");
   }
 

@@ -2,11 +2,12 @@ import { Router } from "express";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { getSupabase } from "../db/supabase.js";
-import { getRequestWorkspaceId } from "../middleware/session.js";
+import { getRequestWorkspaceId, requireWorkspaceRole } from "../middleware/session.js";
 import multer from "multer";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 12 * 1024 * 1024 } });
+const canEditCatalog = requireWorkspaceRole("owner", "admin", "operator");
 
 router.get("/", async (req, res, next) => {
   try {
@@ -27,7 +28,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", canEditCatalog, async (req, res, next) => {
   try {
     const body = catalogSchema.parse(req.body);
     const workspaceId = getRequestWorkspaceId(req);
@@ -47,7 +48,7 @@ router.post("/", async (req, res, next) => {
 });
 
 
-router.post("/:id/images", upload.single("image"), async (req, res, next) => {
+router.post("/:id/images", canEditCatalog, upload.single("image"), async (req, res, next) => {
   try {
     const workspaceId = getRequestWorkspaceId(req);
     const file = req.file;
@@ -80,7 +81,7 @@ router.post("/:id/images", upload.single("image"), async (req, res, next) => {
     return res.status(201).json(data);
   } catch (error) { return next(error); }
 });
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", canEditCatalog, async (req, res, next) => {
   try {
     const body = catalogSchema.partial().parse(req.body);
     const { data, error } = await requireSupabase()
@@ -97,7 +98,7 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", canEditCatalog, async (req, res, next) => {
   try {
     const { data, error } = await requireSupabase()
       .from("catalog_items")

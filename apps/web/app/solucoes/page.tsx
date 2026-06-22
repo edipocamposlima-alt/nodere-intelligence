@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import DemoSection from "@/components/site/DemoSection";
 import SitePageShell from "@/components/site/SitePageShell";
 import SolutionsSection from "@/components/site/SolutionsSection";
+import CmsPageOverride from "@/components/site/CmsPageOverride";
 
 export const metadata: Metadata = {
   title: "Soluções | NODERE",
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 export default function SolutionsPage() {
   return (
     <SitePageShell>
+      <CmsPageOverride slug="solucoes" fallback={<>
       <section className="site-simple-hero">
         <div className="site-container">
           <p className="site-eyebrow">Soluções</p>
@@ -20,6 +22,7 @@ export default function SolutionsPage() {
       </section>
       <SolutionsSection />
       <DemoSection />
+      </>} />
     </SitePageShell>
   );
 }

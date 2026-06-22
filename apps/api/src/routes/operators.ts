@@ -1,10 +1,10 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { getOperators, getOperatorRanking, getGoals, setGoals, addOperator } from "../services/operators.js";
-import { getRequestWorkspaceId } from "../middleware/session.js";
-import { requireWorkspaceRole } from "../middleware/session.js";
+import { getRequestWorkspaceId, requireWorkspaceMutation, requireWorkspaceRole } from "../middleware/session.js";
 import { createWorkspaceUser, updateWorkspaceUser } from "../services/userStore.js";
 
 const router = Router();
+router.use(requireWorkspaceMutation("owner", "admin"));
 
 router.get("/", async (_req, res, next) => {
   try {

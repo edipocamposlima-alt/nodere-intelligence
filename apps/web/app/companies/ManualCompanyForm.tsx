@@ -5,17 +5,19 @@ import { useRouter } from "next/navigation";
 import { Building2, Plus } from "lucide-react";
 import { createCompany } from "@/lib/api";
 import { SEGMENTS } from "@/constants/segments";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 export function ManualCompanyForm() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [notes, setNotes] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const payload = Object.fromEntries(Array.from(form.entries()).map(([key, value]) => [key, String(value).trim()])) as any;
+    const payload = { ...Object.fromEntries(Array.from(form.entries()).map(([key, value]) => [key, String(value).trim()])), notes } as any;
     setSaving(true);
     setMessage("");
     try {
@@ -93,10 +95,10 @@ export function ManualCompanyForm() {
                 <option>Cliente</option>
               </select>
             </label>
-            <label className="block md:col-span-2 xl:col-span-4">
+            <div className="md:col-span-2 xl:col-span-4">
               <span className="text-xs font-semibold text-slate-400">Observações</span>
-              <textarea name="notes" className="mt-1 min-h-24 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-            </label>
+              <div className="mt-1"><RichTextEditor value={notes} onChange={setNotes} minHeight={160} placeholder="Contexto, interesse, próxima ação e observações..." /></div>
+            </div>
           </div>
           <button disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-electric px-5 py-3 text-sm font-black text-white disabled:opacity-60">
             <Plus className="h-4 w-4" />

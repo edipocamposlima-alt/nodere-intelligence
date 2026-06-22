@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { getRequestWorkspaceId, isPrivilegedSession } from "../middleware/session.js";
+import { getRequestWorkspaceId, isPrivilegedSession, requireWorkspaceMutation } from "../middleware/session.js";
 import { consumeCredit, getCredits, getCreditStatus } from "../services/credits.js";
 
 const router = Router();
+router.use(requireWorkspaceMutation("owner", "admin", "operator"));
 
 router.get("/", async (req, res, next) => {
   try {

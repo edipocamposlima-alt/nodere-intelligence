@@ -13,9 +13,7 @@ router.get("/me", requireWorkspaceSession, async (req, res, next) => {
     const session = (req as any).session;
     const workspaceId = getRequestWorkspaceId(req);
     const sb = getSupabase();
-    const workspace = sb
-      ? await sb.from("nodere_workspaces").select("id, name, owner_email, plan, credits, expires_at, created_at, updated_at").eq("id", workspaceId).maybeSingle()
-      : { data: null };
+    const workspace = sb ? await loadWorkspace(sb, workspaceId) : null;
     const members = await listWorkspaceUsers(workspaceId);
     const member = members.find((item) => item.email === session.email);
 
@@ -27,7 +25,7 @@ router.get("/me", requireWorkspaceSession, async (req, res, next) => {
         role: session.role,
         workspaceId
       },
-      workspace: workspace.data ?? {
+      workspace: workspace ?? {
         id: workspaceId,
         name: "Workspace NODERE",
         plan: "trial"
@@ -182,6 +180,16 @@ function defaultBranding() {
     primaryColor: "#1E6FDB",
     enabled: false
   };
+}
+
+async function loadWorkspace(sb: NonNullable<ReturnType<typeof getSupabase>>, workspaceId: string) {
+  const workspace = await sb
+    .from("nodere_workspaces")
+    .select("id,name,plan,credits,expires_at,created_at,updated_at")
+    .eq("id", workspaceId)
+    .maybeSingle();
+  if (workspace.error) throw workspace.error;
+  return workspace.data;
 }
 
 export default router;

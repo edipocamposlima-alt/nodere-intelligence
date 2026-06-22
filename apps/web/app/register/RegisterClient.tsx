@@ -46,11 +46,25 @@ export function RegisterClient() {
         return;
       }
 
-      setAdminToken(auth.access_token);
-      await fetch("/api/auth/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: auth.access_token }) });
+      const exchangeResponse = await fetch(`${getApiBaseUrl()}/admin/supabase-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accessToken: auth.access_token })
+      });
+      const exchange = await exchangeResponse.json().catch(() => ({}));
+      if (!exchangeResponse.ok || !exchange.token) {
+        throw new Error(exchange.message || "Não foi possível iniciar a sessão NODERE.");
+      }
+      setAdminToken(exchange.token);
+      const sessionResponse = await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ access_token: exchange.token })
+      });
+      if (!sessionResponse.ok) throw new Error("Não foi possível persistir a sessão no navegador.");
       await fetch(`${getApiBaseUrl()}/workspace`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.access_token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${exchange.token}` },
         body: JSON.stringify({ name: form.company || "Workspace NODERE" })
       });
       router.push("/dashboard");

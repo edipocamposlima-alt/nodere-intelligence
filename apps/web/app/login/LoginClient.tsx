@@ -33,18 +33,29 @@ export function LoginClient() {
       if (hasSupabaseAuthConfig()) {
         const auth = await signInWithPassword(email, password);
         if (!auth.access_token) throw new Error("Supabase não retornou token de sessão.");
-        setAdminToken(auth.access_token);
-        localStorage.setItem("nodere_user_profile", JSON.stringify({
-          email,
-          name: auth.user?.email ? formatDisplayName(auth.user.email) : formatDisplayName(email),
-          role: isBuiltInOwner(email) ? "owner" : "admin"
-        }));
-        await fetch("/api/auth/session", {
+        const exchangeResponse = await fetch(`${getApiBaseUrl()}/admin/supabase-session`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ access_token: auth.access_token })
+          body: JSON.stringify({ accessToken: auth.access_token })
         });
-        router.push(nextPath);
+        const exchange = await exchangeResponse.json().catch(() => ({}));
+        if (!exchangeResponse.ok || !exchange.token) {
+          throw new Error(exchange.message || "Não foi possível iniciar a sessão NODERE.");
+        }
+        setAdminToken(exchange.token);
+        localStorage.setItem("nodere_user_profile", JSON.stringify({
+          email: exchange.user?.email || email,
+          name: exchange.user?.name || (auth.user?.email ? formatDisplayName(auth.user.email) : formatDisplayName(email)),
+          role: exchange.user?.role || (isBuiltInOwner(email) ? "owner" : "operator")
+        }));
+        const sessionResponse = await fetch("/api/auth/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ access_token: exchange.token })
+        });
+        if (!sessionResponse.ok) throw new Error("Não foi possível persistir a sessão no navegador.");
+        router.replace(nextPath);
+        router.refresh();
         return;
       }
 
@@ -61,12 +72,14 @@ export function LoginClient() {
         name: payload.user?.name || formatDisplayName(payload.user?.email || email),
         role: payload.user?.role
       }));
-      await fetch("/api/auth/session", {
+      const sessionResponse = await fetch("/api/auth/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ access_token: payload.token })
       });
-      router.push(nextPath);
+      if (!sessionResponse.ok) throw new Error("Não foi possível persistir a sessão no navegador.");
+      router.replace(nextPath);
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao fazer login.");
     } finally {

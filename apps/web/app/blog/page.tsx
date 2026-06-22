@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SitePageShell from "@/components/site/SitePageShell";
+import CmsPageOverride from "@/components/site/CmsPageOverride";
 
 export const metadata: Metadata = {
   title: "Blog | NODERE",
@@ -19,6 +20,7 @@ const ALL_POSTS = [
 export default function BlogPage() {
   return (
     <SitePageShell>
+      <CmsPageOverride slug="blog" fallback={
       <section className="blog-page">
         <div className="def-container">
           <div className="blog-page__head">
@@ -41,6 +43,7 @@ export default function BlogPage() {
           </div>
         </div>
       </section>
+      } />
     </SitePageShell>
   );
 }

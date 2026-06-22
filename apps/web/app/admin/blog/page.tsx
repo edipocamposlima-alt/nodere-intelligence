@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import { RichTextEditor } from '@/components/RichTextEditor'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -50,7 +51,6 @@ export default function AdminBlogPage() {
     btnRed: { background: 'rgba(239,68,68,.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,.3)', padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontSize: 13 },
     card: { background: '#111827', border: '1px solid #243244', borderRadius: 12, padding: 20, marginBottom: 12 },
     input: { width: '100%', background: '#111827', border: '1px solid #243244', borderRadius: 8, padding: '10px 14px', color: '#EFF6FF', fontSize: 14, fontFamily: 'Inter,sans-serif', marginBottom: 12, boxSizing: 'border-box' as const },
-    textarea: { width: '100%', background: '#111827', border: '1px solid #243244', borderRadius: 8, padding: '10px 14px', color: '#EFF6FF', fontSize: 14, fontFamily: 'Inter,sans-serif', marginBottom: 12, minHeight: 120, boxSizing: 'border-box' as const, resize: 'vertical' as const },
     label: { fontSize: 12, color: '#64748B', fontWeight: 600, display: 'block', marginBottom: 5 },
     tag: (published: boolean) => ({ display: 'inline-block', padding: '3px 10px', borderRadius: 100, fontSize: 11, fontWeight: 700, background: published ? 'rgba(170,221,0,.15)' : 'rgba(100,116,139,.15)', color: published ? '#AADD00' : '#64748B', border: `1px solid ${published ? 'rgba(170,221,0,.25)' : 'rgba(100,116,139,.25)'}` }),
   }
@@ -78,7 +78,7 @@ export default function AdminBlogPage() {
           <label style={style.label}>Descrição (resumo)</label>
           <input style={style.input} value={editing.description} onChange={e => setEditing({...editing, description: e.target.value})} placeholder="Resumo para listagem" />
           <label style={style.label}>Conteúdo completo</label>
-          <textarea style={style.textarea} value={editing.content} onChange={e => setEditing({...editing, content: e.target.value})} placeholder="Conteúdo do artigo..." />
+          <div style={{ marginBottom: 12 }}><RichTextEditor value={editing.content || ''} onChange={content => setEditing({...editing, content})} minHeight={320} placeholder="Conteúdo do artigo..." /></div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label style={style.label}>Tag / Categoria</label>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PricingComparison from "@/components/site/PricingComparison";
 import SitePageShell from "@/components/site/SitePageShell";
+import CmsPageOverride from "@/components/site/CmsPageOverride";
 
 export const metadata: Metadata = {
   title: "Precos | NODERE",
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
 export default function PricingPage() {
   return (
     <SitePageShell>
+      <CmsPageOverride slug="precos" fallback={<>
       <section className="site-simple-hero">
         <div className="site-container">
           <p className="site-eyebrow">Precos</p>
@@ -18,6 +20,7 @@ export default function PricingPage() {
         </div>
       </section>
       <PricingComparison />
+      </>} />
     </SitePageShell>
   );
 }

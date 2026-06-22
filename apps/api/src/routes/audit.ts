@@ -2,6 +2,7 @@ import { Router } from "express";
 import { getAuditLog } from "../services/auditLog.js";
 import { getRequestWorkspaceId } from "../middleware/session.js";
 import { getSupabase, hasSupabase } from "../db/supabase.js";
+import { isMissingSupabaseSchema } from "../utils/supabaseErrors.js";
 
 const router = Router();
 
@@ -30,8 +31,7 @@ router.get("/", async (req, res, next) => {
     }
     return res.json(getAuditLog(limit));
   } catch (error) {
-    const text = error instanceof Error ? error.message : JSON.stringify(error);
-    if (text.includes("activity_logs") || text.includes("Could not find the table") || text.includes("42P01")) {
+    if (isMissingSupabaseSchema(error)) {
       return res.json(getAuditLog(Math.min(500, Number(req.query.limit ?? 100))));
     }
     return next(error);
@@ -60,8 +60,7 @@ router.get("/downloads", async (req, res, next) => {
       createdAt: row.created_at
     })));
   } catch (error) {
-    const text = error instanceof Error ? error.message : JSON.stringify(error);
-    if (text.includes("download_logs") || text.includes("Could not find the table") || text.includes("42P01")) {
+    if (isMissingSupabaseSchema(error)) {
       return res.json([]);
     }
     return next(error);

@@ -2,10 +2,11 @@ import { Router, type Request } from "express";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { getSupabase } from "../db/supabase.js";
-import { getRequestWorkspaceId } from "../middleware/session.js";
+import { getRequestWorkspaceId, requireWorkspaceRole } from "../middleware/session.js";
 import { addNote, getCompanyAsync, listCompaniesAsync, saveCompanies, updateCompany, updateStatus } from "../services/companyStore.js";
 
 const router = Router();
+const canEditCrm = requireWorkspaceRole("owner", "admin", "operator");
 
 router.get("/", async (req, res, next) => {
   try {
@@ -22,7 +23,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", canEditCrm, async (req, res, next) => {
   try {
     const body = leadSchema.parse(req.body ?? {});
     const now = new Date().toISOString();
@@ -61,7 +62,7 @@ router.post("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const lead = await getCompanyAsync(req.params.id, getRequestWorkspaceId(req));
+    const lead = await getCompanyAsync(String(req.params.id), getRequestWorkspaceId(req));
     if (!lead) return res.status(404).json({ message: "Lead não encontrado." });
     res.json(lead);
   } catch (error) {
@@ -69,9 +70,9 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.put("/:id", async (req, res, next) => {
+router.put("/:id", canEditCrm, async (req, res, next) => {
   try {
-    const updated = await updateCompany(req.params.id, req.body ?? {}, getRequestWorkspaceId(req));
+    const updated = await updateCompany(String(req.params.id), req.body ?? {}, getRequestWorkspaceId(req));
     if (!updated) return res.status(404).json({ message: "Lead não encontrado." });
     res.json(updated);
   } catch (error) {
@@ -79,14 +80,14 @@ router.put("/:id", async (req, res, next) => {
   }
 });
 
-router.patch("/:id/stage", async (req, res, next) => {
+router.patch("/:id/stage", canEditCrm, async (req, res, next) => {
   try {
     const body = stageSchema.parse(req.body ?? {});
     const workspaceId = getRequestWorkspaceId(req);
-    const current = await getCompanyAsync(req.params.id, workspaceId);
+    const current = await getCompanyAsync(String(req.params.id), workspaceId);
     if (!current) return res.status(404).json({ message: "Lead não encontrado." });
-    const updated = await updateStatus(req.params.id, body.newStage as any, workspaceId);
-    await recordActivity(req, req.params.id, "stage_change", `Etapa alterada para ${body.newStage}`, body.reason || "", {
+    const updated = await updateStatus(String(req.params.id), body.newStage as any, workspaceId);
+    await recordActivity(req, String(req.params.id), "stage_change", `Etapa alterada para ${body.newStage}`, body.reason || "", {
       from: current.status,
       to: body.newStage,
       reason: body.reason || ""
@@ -97,11 +98,11 @@ router.patch("/:id/stage", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", canEditCrm, async (req, res, next) => {
   try {
-    const updated = await updateCompany(req.params.id, { status: "Perdido", isArchived: true } as any, getRequestWorkspaceId(req));
+    const updated = await updateCompany(String(req.params.id), { status: "Perdido", isArchived: true } as any, getRequestWorkspaceId(req));
     if (!updated) return res.status(404).json({ message: "Lead não encontrado." });
-    await recordActivity(req, req.params.id, "note", "Lead arquivado", "Soft delete/arquivamento executado.");
+    await recordActivity(req, String(req.params.id), "note", "Lead arquivado", "Soft delete/arquivamento executado.");
     res.json(updated);
   } catch (error) {
     next(error);
@@ -118,7 +119,7 @@ router.get("/:id/activities", async (req, res, next) => {
       .eq("workspace_id", getRequestWorkspaceId(req))
       .eq("company_id", req.params.id)
       .order("sent_at", { ascending: false });
-    if (error && isMissingRelation(error)) return res.json([]);
+    if (error && isMissingRelation(error)) throw crmSchemaRequired("communications");
     if (error) throw error;
     res.json(data ?? []);
   } catch (error) {
@@ -126,16 +127,87 @@ router.get("/:id/activities", async (req, res, next) => {
   }
 });
 
-router.post("/:id/activities", async (req, res, next) => {
+router.post("/:id/activities", canEditCrm, async (req, res, next) => {
   try {
     const body = activitySchema.parse(req.body ?? {});
     if (body.type === "note") {
-      const note = await addNote(req.params.id, body.body || body.content || "", getRequestWorkspaceId(req));
-      await recordActivity(req, req.params.id, "note", body.title || "Observação", body.body || body.content || "").catch(() => undefined);
-      return res.status(201).json({ ...note, type: "note" });
+      await addNote(String(req.params.id), body.body || body.content || "", getRequestWorkspaceId(req));
+      const activity = await recordActivity(req, String(req.params.id), "note", body.title || "Observação", body.body || body.content || "", {
+        ...(body.metadata ?? {}),
+        responsible: body.responsible || body.metadata?.responsible || "",
+        nextAction: body.nextAction || body.metadata?.nextAction || ""
+      }, body.occurredAt);
+      return res.status(201).json(activity);
     }
-    const activity = await recordActivity(req, req.params.id, body.type, body.title || body.type, body.body || body.content || "", body.metadata ?? {});
+    const activity = await recordActivity(
+      req,
+      String(req.params.id),
+      body.type,
+      body.title || body.type,
+      body.body || body.content || "",
+      {
+        ...(body.metadata ?? {}),
+        responsible: body.responsible || body.metadata?.responsible || "",
+        nextAction: body.nextAction || body.metadata?.nextAction || ""
+      },
+      body.occurredAt
+    );
     res.status(201).json(activity);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/:id/activities/:activityId", canEditCrm, async (req, res, next) => {
+  try {
+    const body = activitySchema.partial().parse(req.body ?? {});
+    const updates: Record<string, unknown> = {};
+    if (body.type !== undefined) updates.type = body.type;
+    if (body.title !== undefined) updates.subject = body.title;
+    if (body.body !== undefined || body.content !== undefined) updates.body = body.body ?? body.content ?? "";
+    if (body.occurredAt !== undefined) updates.sent_at = body.occurredAt;
+    if (body.responsible !== undefined) updates.sent_by = body.responsible || null;
+    if (body.metadata !== undefined || body.nextAction !== undefined || body.responsible !== undefined) {
+      const { data: current, error: loadError } = await requireSupabase()
+        .from("communications")
+        .select("metadata")
+        .eq("workspace_id", getRequestWorkspaceId(req))
+        .eq("company_id", req.params.id)
+        .eq("id", req.params.activityId)
+        .single();
+      if (loadError) throw loadError;
+      updates.metadata = {
+        ...((current?.metadata as Record<string, unknown> | null) ?? {}),
+        ...(body.metadata ?? {}),
+        ...(body.nextAction !== undefined ? { nextAction: body.nextAction } : {}),
+        ...(body.responsible !== undefined ? { responsible: body.responsible } : {})
+      };
+    }
+    const { data, error } = await requireSupabase()
+      .from("communications")
+      .update(updates)
+      .eq("workspace_id", getRequestWorkspaceId(req))
+      .eq("company_id", req.params.id)
+      .eq("id", req.params.activityId)
+      .select("*")
+      .single();
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/:id/activities/:activityId", canEditCrm, async (req, res, next) => {
+  try {
+    const { error } = await requireSupabase()
+      .from("communications")
+      .delete()
+      .eq("workspace_id", getRequestWorkspaceId(req))
+      .eq("company_id", req.params.id)
+      .eq("id", req.params.activityId);
+    if (error) throw error;
+    res.json({ ok: true });
   } catch (error) {
     next(error);
   }
@@ -156,7 +228,7 @@ router.get("/:id/contacts", async (req, res, next) => {
   }
 });
 
-router.post("/:id/contacts", async (req, res, next) => {
+router.post("/:id/contacts", canEditCrm, async (req, res, next) => {
   try {
     const body = contactSchema.parse(req.body ?? {});
     const row = {
@@ -170,12 +242,21 @@ router.post("/:id/contacts", async (req, res, next) => {
       whatsapp: body.whatsapp || "",
       linkedin_url: body.linkedinUrl || "",
       notes: body.notes || "",
-      is_decision_maker: Boolean(body.isDecisionMaker)
+      is_decision_maker: Boolean(body.isDecisionMaker || body.influenceLevel === "decisor"),
+      custom_fields: {
+        influenceLevel: body.influenceLevel || "operacional",
+        department: body.department || "",
+        contactType: body.contactType || "comercial",
+        isPrimary: Boolean(body.isPrimary),
+        isFinancial: Boolean(body.isFinancial),
+        isTechnical: Boolean(body.isTechnical)
+      }
     };
     let { data, error } = await requireSupabase().from("company_contacts").insert(row).select("*").single();
-    if (error && isMissingColumn(error, "is_decision_maker")) {
+    if (error && (isMissingColumn(error, "is_decision_maker") || isMissingColumn(error, "custom_fields"))) {
       const fallbackRow = { ...row };
       delete (fallbackRow as Partial<typeof row>).is_decision_maker;
+      delete (fallbackRow as Partial<typeof row>).custom_fields;
       const fallback = await requireSupabase().from("company_contacts").insert(fallbackRow).select("*").single();
       data = fallback.data;
       error = fallback.error;
@@ -187,9 +268,17 @@ router.post("/:id/contacts", async (req, res, next) => {
   }
 });
 
-router.put("/:id/contacts/:contactId", async (req, res, next) => {
+router.put("/:id/contacts/:contactId", canEditCrm, async (req, res, next) => {
   try {
     const body = contactSchema.partial().parse(req.body ?? {});
+    const { data: currentContact } = await requireSupabase()
+      .from("company_contacts")
+      .select("custom_fields")
+      .eq("workspace_id", getRequestWorkspaceId(req))
+      .eq("company_id", req.params.id)
+      .eq("id", req.params.contactId)
+      .maybeSingle();
+    const currentFields = (currentContact?.custom_fields as Record<string, unknown> | null) ?? {};
     const updates = {
       name: body.name,
       role: body.role,
@@ -198,7 +287,16 @@ router.put("/:id/contacts/:contactId", async (req, res, next) => {
       whatsapp: body.whatsapp,
       linkedin_url: body.linkedinUrl,
       notes: body.notes,
-      is_decision_maker: body.isDecisionMaker
+      is_decision_maker: body.isDecisionMaker ?? (body.influenceLevel ? body.influenceLevel === "decisor" : undefined),
+      custom_fields: {
+        ...currentFields,
+        ...(body.influenceLevel !== undefined ? { influenceLevel: body.influenceLevel } : {}),
+        ...(body.department !== undefined ? { department: body.department } : {}),
+        ...(body.contactType !== undefined ? { contactType: body.contactType } : {}),
+        ...(body.isPrimary !== undefined ? { isPrimary: body.isPrimary } : {}),
+        ...(body.isFinancial !== undefined ? { isFinancial: body.isFinancial } : {}),
+        ...(body.isTechnical !== undefined ? { isTechnical: body.isTechnical } : {})
+      }
     };
     let { data, error } = await requireSupabase()
       .from("company_contacts")
@@ -208,9 +306,10 @@ router.put("/:id/contacts/:contactId", async (req, res, next) => {
       .eq("id", req.params.contactId)
       .select("*")
       .single();
-    if (error && isMissingColumn(error, "is_decision_maker")) {
+    if (error && (isMissingColumn(error, "is_decision_maker") || isMissingColumn(error, "custom_fields"))) {
       const fallbackUpdates = { ...updates };
       delete (fallbackUpdates as Partial<typeof updates>).is_decision_maker;
+      delete (fallbackUpdates as Partial<typeof updates>).custom_fields;
       const fallback = await requireSupabase()
         .from("company_contacts")
         .update(fallbackUpdates)
@@ -229,7 +328,7 @@ router.put("/:id/contacts/:contactId", async (req, res, next) => {
   }
 });
 
-router.delete("/:id/contacts/:contactId", async (req, res, next) => {
+router.delete("/:id/contacts/:contactId", canEditCrm, async (req, res, next) => {
   try {
     const { error } = await requireSupabase()
       .from("company_contacts")
@@ -252,7 +351,7 @@ router.get("/:id/deals", async (req, res, next) => {
       .eq("workspace_id", getRequestWorkspaceId(req))
       .eq("company_id", req.params.id)
       .order("created_at", { ascending: false });
-    if (error && isMissingRelation(error)) return res.json([]);
+    if (error && isMissingRelation(error)) throw crmSchemaRequired("company_contracts");
     if (error) throw error;
     res.json(data ?? []);
   } catch (error) {
@@ -260,7 +359,7 @@ router.get("/:id/deals", async (req, res, next) => {
   }
 });
 
-router.post("/:id/deals", async (req, res, next) => {
+router.post("/:id/deals", canEditCrm, async (req, res, next) => {
   try {
     const body = dealSchema.parse(req.body ?? {});
     const itemName = body.itemName || "Negociação comercial";
@@ -277,18 +376,22 @@ router.post("/:id/deals", async (req, res, next) => {
       contracted_price: body.totalPrice ?? body.unitPrice ?? 0,
       status: body.status || "negotiating",
       notes: body.notes || "",
-      contracted_at: body.startedAt || new Date().toISOString().slice(0, 10)
+      contracted_at: body.startedAt || new Date().toISOString().slice(0, 10),
+      started_at: body.startedAt || null,
+      ended_at: body.endedAt || null,
+      item_name: itemName,
+      description: body.description || ""
     };
     const { data, error } = await requireSupabase().from("company_contracts").insert(row).select("*, catalog_items(*)").single();
     if (error) throw error;
-    await recordActivity(req, req.params.id, "proposal_sent", `Negociação registrada: ${itemName}`, body.notes || "", { dealId: row.id });
+    await recordActivity(req, String(req.params.id), "proposal_sent", `Negociação registrada: ${itemName}`, body.notes || "", { dealId: row.id });
     res.status(201).json({ ...data, item_name: itemName, total_price: row.contracted_price });
   } catch (error) {
     next(error);
   }
 });
 
-router.put("/:id/deals/:dealId", async (req, res, next) => {
+router.put("/:id/deals/:dealId", canEditCrm, async (req, res, next) => {
   try {
     const body = dealSchema.partial().parse(req.body ?? {});
     const { data, error } = await requireSupabase()
@@ -298,6 +401,9 @@ router.put("/:id/deals/:dealId", async (req, res, next) => {
         contracted_price: body.totalPrice ?? body.unitPrice,
         status: body.status,
         notes: body.notes,
+        ended_at: body.endedAt,
+        item_name: body.itemName,
+        description: body.description,
         updated_at: new Date().toISOString()
       })
       .eq("workspace_id", getRequestWorkspaceId(req))
@@ -307,6 +413,22 @@ router.put("/:id/deals/:dealId", async (req, res, next) => {
       .single();
     if (error) throw error;
     res.json(data);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/:id/deals/:dealId", canEditCrm, async (req, res, next) => {
+  try {
+    const { error } = await requireSupabase()
+      .from("company_contracts")
+      .delete()
+      .eq("workspace_id", getRequestWorkspaceId(req))
+      .eq("company_id", req.params.id)
+      .eq("id", req.params.dealId);
+    if (error) throw error;
+    await recordActivity(req, String(req.params.id), "note", "Negociação removida", "Uma negociação foi removida da ficha comercial.");
+    res.json({ ok: true });
   } catch (error) {
     next(error);
   }
@@ -341,17 +463,26 @@ const activitySchema = z.object({
   title: z.string().optional(),
   body: z.string().optional(),
   content: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  occurredAt: z.string().optional(),
+  responsible: z.string().optional(),
+  nextAction: z.string().optional()
 });
 
 const contactSchema = z.object({
   name: z.string().min(2),
   role: z.string().optional(),
+  department: z.string().optional(),
   email: z.string().optional(),
   phone: z.string().optional(),
   whatsapp: z.string().optional(),
   linkedinUrl: z.string().optional(),
   isDecisionMaker: z.boolean().optional(),
+  influenceLevel: z.enum(["decisor", "influenciador", "operacional"]).optional(),
+  contactType: z.string().optional(),
+  isPrimary: z.boolean().optional(),
+  isFinancial: z.boolean().optional(),
+  isTechnical: z.boolean().optional(),
   notes: z.string().optional()
 });
 
@@ -369,7 +500,7 @@ const dealSchema = z.object({
   notes: z.string().optional()
 });
 
-async function recordActivity(req: Request, companyId: string, type: string, title: string, body = "", metadata: Record<string, unknown> = {}) {
+async function recordActivity(req: Request, companyId: string, type: string, title: string, body = "", metadata: Record<string, unknown> = {}, occurredAt?: string) {
   const row = {
     id: randomUUID(),
     workspace_id: getRequestWorkspaceId(req),
@@ -378,7 +509,8 @@ async function recordActivity(req: Request, companyId: string, type: string, tit
     direction: "manual",
     subject: title,
     body,
-    sent_at: new Date().toISOString(),
+    sent_by: String(metadata.responsible || "") || null,
+    sent_at: occurredAt || new Date().toISOString(),
     status: "sent",
     metadata
   };
@@ -436,6 +568,13 @@ function isMissingColumn(error: unknown, column: string) {
   const code = String((error as { code?: unknown })?.code || "");
   const message = String((error as { message?: unknown })?.message || "");
   return code === "PGRST204" || message.includes(column);
+}
+
+function crmSchemaRequired(table: string) {
+  return Object.assign(
+    new Error(`A tabela ${table} ainda não existe no Supabase. Aplique packages/database/block03_crm_inteligente_existing_schema.sql.`),
+    { status: 503, code: "CRM_SCHEMA_REQUIRED" }
+  );
 }
 
 export default router;

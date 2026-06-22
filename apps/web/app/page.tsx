@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SitePageShell from "@/components/site/SitePageShell";
+import DynamicCmsPage from "@/components/site/DynamicCmsPage";
 import { Logo } from "@/components/brand/Logo";
+import { getPublicPage } from "@/lib/publicContent";
 
 const problems = [
   "Prospecção manual consome horas sem resultado",
@@ -53,7 +55,7 @@ const faqs = [
   ["Posso cancelar quando quiser?", "Sim. O cancelamento pode ser feito ao fim do ciclo contratado."]
 ];
 
-export const metadata: Metadata = {
+const fallbackMetadata: Metadata = {
   title: "NODERE — Inteligência Comercial, CRM e IA",
   description: "Encontre empresas, analise presença digital, priorize oportunidades e venda mais com IA.",
   openGraph: {
@@ -66,7 +68,16 @@ export const metadata: Metadata = {
   }
 };
 
-export default function LandingPage() {
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await getPublicPage("home");
+  return page ? { ...fallbackMetadata, title: page.seo_title || fallbackMetadata.title, description: page.seo_description || fallbackMetadata.description } : fallbackMetadata;
+}
+
+export default async function LandingPage() {
+  const cmsPage = await getPublicPage("home");
+  if (cmsPage?.nodere_cms_sections?.length) {
+    return <SitePageShell><DynamicCmsPage page={cmsPage} /></SitePageShell>;
+  }
   return (
     <SitePageShell>
       <section className="landing-hero">

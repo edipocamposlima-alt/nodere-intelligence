@@ -6,7 +6,7 @@ import PDFDocument from "pdfkit";
 import { parse as parseCsvSync } from "csv-parse/sync";
 import { z } from "zod";
 import { getSupabase } from "../db/supabase.js";
-import { getRequestWorkspaceId } from "../middleware/session.js";
+import { getRequestWorkspaceId, requireWorkspaceMutation } from "../middleware/session.js";
 import {
   addNote,
   createTask,
@@ -20,6 +20,7 @@ import {
 } from "../services/companyStore.js";
 
 const router = Router();
+router.use(requireWorkspaceMutation("owner", "admin", "operator"));
 
 function findNoderePdfIcon() {
   const candidates = [

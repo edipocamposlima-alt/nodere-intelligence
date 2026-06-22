@@ -3,7 +3,7 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { config } from "../config.js";
 import { getSupabase } from "../db/supabase.js";
-import { getRequestWorkspaceId } from "../middleware/session.js";
+import { getRequestWorkspaceId, requireWorkspaceMutation } from "../middleware/session.js";
 import {
   addInboundMessage,
   addOutboundMessage,
@@ -17,8 +17,10 @@ import {
 } from "../services/inbox.js";
 import { sendWhatsappMessage } from "../services/whatsapp.js";
 import { getCompany } from "../services/companyStore.js";
+import { isMissingSupabaseSchema } from "../utils/supabaseErrors.js";
 
 const router = Router();
+router.use(requireWorkspaceMutation("owner", "admin", "operator"));
 
 router.get("/", async (req, res, next) => {
   const sb = getSupabase();
@@ -42,6 +44,9 @@ router.get("/", async (req, res, next) => {
       if (error) throw error;
       return res.json({ messages: data ?? [], total: count ?? 0, page, limit });
     } catch (error) {
+      if (isMissingSupabaseSchema(error)) {
+        return res.json({ messages: [], total: 0, page: 1, limit: 50 });
+      }
       return next(error);
     }
   }
@@ -67,6 +72,7 @@ router.get("/unread-count", async (req, res, next) => {
     if (error) throw error;
     return res.json({ unread: count ?? 0 });
   } catch (error) {
+    if (isMissingSupabaseSchema(error)) return res.json({ unread: 0 });
     return next(error);
   }
 });

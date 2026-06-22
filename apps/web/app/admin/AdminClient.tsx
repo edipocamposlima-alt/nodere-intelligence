@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Activity, CheckCircle2, Copy, KeyRound, LogOut, ShieldCheck, SlidersHorizontal, Trash2, UserCog, UserPlus, UsersRound } from "lucide-react";
 import { AdminFetchError, adminFetch, clearAdminToken } from "@/lib/adminAuth";
@@ -80,8 +82,10 @@ function withAdminTimeout<T>(promise: Promise<T>, ms = 10000): Promise<T> {
 }
 
 export function AdminClient() {
+  const searchParams = useSearchParams();
   const [authorized, setAuthorized] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>("users");
+  const requestedTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<Tab>(isAdminTab(requestedTab) ? requestedTab : "users");
   const [keys, setKeys] = useState<ApiKeyStatus[]>([]);
   const [values, setValues] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("Carregando painel administrativo...");
@@ -282,10 +286,18 @@ export function AdminClient() {
                 <p className="text-sm uppercase tracking-[0.24em] text-cyan">Modo administrador</p>
                 <h1 className="mt-2 text-3xl font-semibold text-white">Acessos, auditoria e integrações</h1>
               </div>
-              <button onClick={logout} className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-slate-200 hover:text-white">
-                <LogOut className="h-4 w-4" />
-                Sair
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <Link href="/admin/content" className="inline-flex items-center rounded-lg bg-electric px-4 py-2 text-sm font-bold text-white">
+                  Conteúdo e interface
+                </Link>
+                <Link href="/admin/blog" className="inline-flex items-center rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-slate-200 hover:text-white">
+                  Blog
+                </Link>
+                <button onClick={logout} className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-slate-200 hover:text-white">
+                  <LogOut className="h-4 w-4" />
+                  Sair
+                </button>
+              </div>
             </div>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
               Cadastre usuários por workspace, controle permissões e valide as integrações. Valores sensíveis continuam mascarados e nunca são retornados completos.
@@ -506,6 +518,10 @@ export function AdminClient() {
       {activeTab !== "apis" && <p className="text-sm text-slate-400">{message}</p>}
     </div>
   );
+}
+
+function isAdminTab(value: string | null): value is Tab {
+  return value === "users" || value === "roles" || value === "access" || value === "audit" || value === "apis";
 }
 
 function AuditPanel({ title, rows, empty }: { title: string; rows: AuditRow[]; empty: string }) {

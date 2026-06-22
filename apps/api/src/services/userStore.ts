@@ -34,6 +34,7 @@ interface PlatformUserRow {
   password_hash: string;
   created_at: string;
   updated_at?: string;
+  auth_user_id?: string | null;
 }
 
 const memoryUsers = new Map<string, PlatformUserRow>();
@@ -66,7 +67,7 @@ function toPublic(row: PlatformUserRow): PlatformUser {
     workspaceId: row.workspace_id,
     name: row.name,
     email: row.email,
-    role: row.role,
+    role: normalizeRole(row.role),
     active: row.active,
     customRoleId: row.custom_role_id ?? null,
     status: row.status || (row.active ? "active" : "inactive"),
@@ -92,7 +93,7 @@ function verifyPassword(password: string, stored: string) {
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 
-async function ensureWorkspace(workspaceId: string, ownerEmail: string, name = "Agência Digital") {
+async function ensureWorkspace(workspaceId: string, _ownerEmail: string, name = "Agência Digital") {
   if (!hasSupabase()) return;
   const sb = getSupabase()!;
   const now = new Date();
@@ -101,41 +102,27 @@ async function ensureWorkspace(workspaceId: string, ownerEmail: string, name = "
 
   const { data } = await sb.from("nodere_workspaces").select("id").eq("id", workspaceId).maybeSingle();
   if (data?.id) {
-    await sb.from("nodere_workspaces").update({
+    const { error } = await sb.from("nodere_workspaces").update({
       name,
-      owner_email: ownerEmail,
       updated_at: now.toISOString()
     }).eq("id", workspaceId);
+    if (error) throw error;
     return;
   }
 
   const baseWorkspace = {
     id: workspaceId,
     name,
-    owner_email: ownerEmail,
+    owner_email: _ownerEmail,
     plan: "trial",
     credits: 20,
-    credits_used: 0,
     expires_at: expiresAt.toISOString(),
-    trial_started_at: now.toISOString(),
-    trial_expires_at: expiresAt.toISOString(),
+    created_at: now.toISOString(),
     updated_at: now.toISOString()
   };
 
   const { error } = await sb.from("nodere_workspaces").insert(baseWorkspace);
-  if (error && (String(error.message || "").includes("credits_used") || String(error.message || "").includes("trial_"))) {
-    await sb.from("nodere_workspaces").insert({
-      id: workspaceId,
-      name,
-      owner_email: ownerEmail,
-      plan: "trial",
-      credits: 20,
-      expires_at: expiresAt.toISOString(),
-      updated_at: now.toISOString()
-    });
-  } else if (error) {
-    throw error;
-  }
+  if (error) throw error;
 }
 
 export async function ensureDefaultAdminUser() {
@@ -229,7 +216,6 @@ export async function authenticateUser(emailInput: string, password: string) {
 }
 
 export async function listWorkspaceUsers(workspaceId: string) {
-  await ensureDefaultAdminUser();
   if (hasSupabase() && userSchemaAvailable) {
     const sb = getSupabase()!;
       const { data, error } = await sb
@@ -339,10 +325,11 @@ export async function updateWorkspaceUser(workspaceId: string, userId: string, i
   return toPublic(row);
 }
 
-function normalizeRole(role?: SessionRole): SessionRole {
-  if (role === "owner") return "owner";
-  if (role === "admin") return "admin";
-  if (role === "viewer") return "viewer";
+function normalizeRole(role?: SessionRole | string): SessionRole {
+  const normalized = String(role || "").trim().toLowerCase();
+  if (["owner", "proprietario", "proprietário"].includes(normalized)) return "owner";
+  if (["admin", "administrador", "administrator", "super_admin"].includes(normalized)) return "admin";
+  if (["viewer", "visualizador", "leitor"].includes(normalized)) return "viewer";
   return "operator";
 }
 
@@ -378,11 +365,42 @@ export async function getPlatformUserByEmail(emailInput: string) {
   return memory?.active ? toPublic(memory) : null;
 }
 
-export async function ensureSupabaseAuthUser(input: { authUserId: string; email: string; name?: string; workspaceName?: string }) {
-  await ensureDefaultAdminUser();
+export async function ensureSupabaseAuthUser(input: { authUserId: string; email: string; name?: string; workspaceName?: string }): Promise<PlatformUser> {
   const email = normalizeEmail(input.email);
-  const existing = await getPlatformUserByEmail(email);
-  if (existing) return existing;
+  if (hasSupabase()) {
+    const sb = getSupabase()!;
+    const { data, error } = await sb
+      .from("nodere_platform_users")
+      .select("id,workspace_id,name,email,role,active,created_at,updated_at,auth_user_id")
+      .ilike("email", email)
+      .eq("active", true)
+      .maybeSingle();
+    if (error) throw error;
+    if (data) {
+      const row = data as unknown as PlatformUserRow;
+      if (row.auth_user_id && row.auth_user_id !== input.authUserId) {
+        const mismatch = new Error("O usuário autenticado não corresponde ao vínculo Supabase Auth cadastrado.") as Error & { status?: number; code?: string };
+        mismatch.status = 403;
+        mismatch.code = "AUTH_USER_MISMATCH";
+        throw mismatch;
+      }
+      if (!row.auth_user_id) {
+        const { error: linkError } = await sb
+          .from("nodere_platform_users")
+          .update({ auth_user_id: input.authUserId, updated_at: new Date().toISOString() })
+          .eq("id", row.id)
+          .eq("workspace_id", row.workspace_id);
+        if (linkError) throw linkError;
+      }
+      const existing = toPublic(row);
+      return isBuiltInOwner(email)
+        ? { ...existing, name: BUILTIN_OWNER_NAME, role: "owner" as SessionRole, active: true }
+        : existing;
+    }
+  } else {
+    const existing = memoryUsers.get(email);
+    if (existing?.active) return toPublic(existing);
+  }
 
   const workspaceId = input.authUserId || randomUUID();
   const now = new Date().toISOString();
@@ -391,7 +409,7 @@ export async function ensureSupabaseAuthUser(input: { authUserId: string; email:
     workspace_id: workspaceId,
     name: isBuiltInOwner(email) ? BUILTIN_OWNER_NAME : input.name?.trim() || email.split("@")[0] || "Usuário NODERE",
     email,
-    role: isBuiltInOwner(email) ? "owner" : "owner",
+    role: "owner",
     active: true,
     status: "active",
     visibility_level: "full",
@@ -403,8 +421,35 @@ export async function ensureSupabaseAuthUser(input: { authUserId: string; email:
 
   if (hasSupabase() && userSchemaAvailable) {
     const sb = getSupabase()!;
-    await ensureWorkspace(workspaceId, email, input.workspaceName || "Workspace NODERE");
-    const { error } = await sb.from("nodere_platform_users").insert(row);
+    const workspace = await sb.from("nodere_workspaces").select("id").eq("id", workspaceId).maybeSingle();
+    if (workspace.error) throw workspace.error;
+    if (!workspace.data) {
+      const nowIso = new Date().toISOString();
+      const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      const created = await sb.from("nodere_workspaces").insert({
+        id: workspaceId,
+        name: input.workspaceName || "Workspace NODERE",
+        owner_email: email,
+        plan: "trial",
+        credits: 20,
+        expires_at: expiresAt,
+        created_at: nowIso,
+        updated_at: nowIso
+      });
+      if (created.error) throw created.error;
+    }
+    const { error } = await sb.from("nodere_platform_users").insert({
+      id: row.id,
+      workspace_id: row.workspace_id,
+      name: row.name,
+      email: row.email,
+      role: row.role,
+      active: row.active,
+      password_hash: row.password_hash,
+      auth_user_id: input.authUserId,
+      created_at: row.created_at,
+      updated_at: row.updated_at
+    });
     if (error) throw error;
   } else {
     memoryUsers.set(email, row);
@@ -423,24 +468,8 @@ async function promoteBuiltInOwner(row: PlatformUserRow): Promise<PlatformUserRo
     visibility_level: "full",
     updated_at: new Date().toISOString()
   };
-  if (hasSupabase() && userSchemaAvailable) {
-    const sb = getSupabase()!;
-    const { data, error } = await sb
-      .from("nodere_platform_users")
-      .update({
-        name: fixed.name,
-        role: fixed.role,
-        active: fixed.active,
-        status: fixed.status,
-        visibility_level: fixed.visibility_level,
-        updated_at: fixed.updated_at
-      })
-      .eq("id", row.id)
-      .select("*")
-      .maybeSingle();
-    if (error) throw error;
-    if (data) return data as unknown as PlatformUserRow;
-  }
+  // The built-in owner is elevated in the signed session. Avoid writing optional
+  // profile columns here because production installations may not have them yet.
   memoryUsers.set(fixed.email, fixed);
   return fixed;
 }

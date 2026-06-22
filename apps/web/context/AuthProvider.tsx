@@ -53,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetch("/api/auth/session", { method: "DELETE" });
     if (typeof window !== "undefined") {
       localStorage.removeItem("nodere_admin_token");
+      localStorage.removeItem("nodere_user_profile");
     }
     setUser(null);
     setWorkspace(null);

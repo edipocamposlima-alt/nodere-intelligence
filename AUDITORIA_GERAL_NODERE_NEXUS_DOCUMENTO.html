@@ -1,0 +1,1493 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoria Geral NODERE</title>
+<meta name="description" content="Relatório executivo, técnico, funcional, visual e operacional do projeto NODERE.">
+<style>
+:root{--ink:#101828;--muted:#475467;--line:#d0d5dd;--soft:#f2f4f7;--brand:#03624c;--brand2:#0a7a5f;--ok:#067647;--warn:#b54708;--bad:#b42318;--pending:#175cd3}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:#eef2f1;color:var(--ink);font:15px/1.62 Inter,Segoe UI,Arial,sans-serif}
+.document{width:min(1180px,calc(100% - 32px));margin:28px auto;background:#fff;border:1px solid #d6dfdc;box-shadow:0 12px 36px rgba(16,24,40,.09)}
+.cover{padding:54px 64px 42px;background:#071b17;color:#fff;border-bottom:5px solid #00a66a}
+.cover__mark{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;margin-bottom:24px;border-radius:8px;background:#08785d;color:#fff;font-weight:900;font-size:27px}
+.cover h1{margin:0;max-width:820px;font-size:40px;line-height:1.12;letter-spacing:0}
+.cover p{margin:14px 0 0;color:#c9ded7;font-size:17px}
+.content{padding:46px 64px 72px}
+h1,h2,h3,h4{color:#102a24;line-height:1.25;letter-spacing:0;scroll-margin-top:20px}
+h1{font-size:34px;margin:0 0 24px}
+h2{font-size:25px;margin:48px 0 18px;padding-bottom:9px;border-bottom:2px solid #b7d5cc}
+h3{font-size:19px;margin:30px 0 12px;color:var(--brand)}
+h4{font-size:16px;margin:22px 0 8px}
+p{margin:10px 0;color:#344054}
+a{color:#056e55;text-decoration-thickness:1px;text-underline-offset:2px}
+ul,ol{padding-left:24px}
+li{margin:5px 0}
+hr{border:0;border-top:1px solid var(--line);margin:34px 0}
+code{padding:2px 5px;border-radius:4px;background:#eef4f2;color:#064e3b;font:13px Consolas,monospace}
+pre{overflow:auto;padding:16px;border-radius:6px;background:#101828;color:#e4e7ec}
+table{display:table;width:100%;margin:18px 0 28px;border-collapse:collapse;font-size:13.5px}
+thead{background:#0d3b31;color:#fff}
+th,td{padding:10px 12px;border:1px solid #d0d9d6;text-align:left;vertical-align:top}
+tbody tr:nth-child(even){background:#f6f8f7}
+tbody tr:hover{background:#edf7f3}
+blockquote{margin:18px 0;padding:10px 16px;border-left:4px solid var(--brand2);background:#f2f8f6;color:#344054}
+.content>h2:first-of-type{margin-top:14px}
+@media(max-width:760px){.document{width:100%;margin:0;border:0}.cover{padding:34px 22px}.cover h1{font-size:30px}.content{padding:28px 18px 52px}h2{font-size:22px}table{display:block;overflow-x:auto;white-space:normal}}
+@media print{body{background:#fff}.document{width:100%;margin:0;border:0;box-shadow:none}.cover{print-color-adjust:exact;-webkit-print-color-adjust:exact}.content{padding:28px 36px}h2,h3{break-after:avoid}table{break-inside:avoid}a{color:inherit;text-decoration:none}}
+</style>
+</head>
+<body>
+<article class="document">
+<header class="cover">
+<div class="cover__mark">N</div>
+<h1>Auditoria Geral NODERE</h1>
+<p>Relatório executivo, técnico, funcional, visual e operacional</p>
+</header>
+<main class="content"><h1 id="auditoria-geral-nodere">AUDITORIA GERAL NODERE</h1>
+<p>Data da auditoria: 22/06/2026<br />
+Escopo: código local, <code>origin/main</code>, Vercel, API Render e testes não destrutivos em produção<br />
+Produção: <a href="https://nodere.com.br">https://nodere.com.br</a><br />
+API: <a href="https://nodere-api.onrender.com/api">https://nodere-api.onrender.com/api</a></p>
+<hr />
+<h2 id="apresentacao-do-documento">Apresentação do Documento</h2>
+<p>Este documento organiza, para leitura executiva e técnica, o conteúdo integral de <code>AUDITORIA_GERAL_NODERE_NEXUS.md</code>. As tabelas desta abertura são índices consolidados das constatações detalhadas no relatório original, preservado integralmente nas seções seguintes.</p>
+<h2 id="sumario">Sumário</h2>
+<ol>
+<li><a href="#painel-executivo-de-status">Painel Executivo de Status</a></li>
+<li><a href="#tabela-executiva-funcionalidades-conclu%C3%ADdas">Funcionalidades Concluídas</a></li>
+<li><a href="#tabela-executiva-funcionalidades-parciais">Funcionalidades Parciais</a></li>
+<li><a href="#tabela-executiva-funcionalidades-n%C3%A3o-executadas">Funcionalidades Não Executadas</a></li>
+<li><a href="#tabela-executiva-problemas-cr%C3%ADticos">Problemas Críticos</a></li>
+<li><a href="#tabela-executiva-pend%C3%AAncias-t%C3%A9cnicas">Pendências Técnicas</a></li>
+<li><a href="#tabela-executiva-pend%C3%AAncias-funcionais">Pendências Funcionais</a></li>
+<li><a href="#tabela-executiva-pend%C3%AAncias-visuais">Pendências Visuais</a></li>
+<li><a href="#tabela-executiva-pend%C3%AAncias-mobile">Pendências Mobile</a></li>
+<li><a href="#tabela-executiva-pend%C3%AAncias-de-infraestrutura">Pendências de Infraestrutura</a></li>
+<li><a href="#pr%C3%B3ximo-bloco-recomendado">Próximo Bloco Recomendado</a></li>
+<li><a href="#1-resumo-executivo">Relatório Técnico Integral</a></li>
+<li><a href="#22-checklist-final">Checklist Final</a></li>
+</ol>
+<h2 id="painel-executivo-de-status">Painel Executivo de Status</h2>
+<table>
+<thead>
+<tr>
+<th>Área</th>
+<th>Status</th>
+<th>Síntese comprovada</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Builds e lint</td>
+<td>✅ Concluído</td>
+<td>API build, Web lint e Web build passaram em 22/06/2026</td>
+</tr>
+<tr>
+<td>Site público</td>
+<td>⚠️ Parcial</td>
+<td>Páginas principais 200; <code>robots.txt</code> e <code>sitemap.xml</code> retornam 404</td>
+</tr>
+<tr>
+<td>Autenticação</td>
+<td>⚠️ Parcial</td>
+<td>Login real owner funciona; persistência prolongada da sessão requer correção</td>
+</tr>
+<tr>
+<td>CRM e ficha comercial</td>
+<td>⚠️ Parcial</td>
+<td>Lista e detalhe base funcionam; submódulos apresentam 404/500</td>
+</tr>
+<tr>
+<td>Discovery</td>
+<td>⚠️ Parcial</td>
+<td>Google Places e website scan funcionam; PageSpeed e GBP estão ausentes</td>
+</tr>
+<tr>
+<td>Relatórios</td>
+<td>⚠️ Parcial</td>
+<td>APIs respondem; UI e filtros completos não estão homologados</td>
+</tr>
+<tr>
+<td>CMS</td>
+<td>❌ Não publicado</td>
+<td>Implementação e SQL existem somente no worktree local</td>
+</tr>
+<tr>
+<td>Billing</td>
+<td>⚠️ Parcial</td>
+<td>Planos disponíveis; Stripe não configurado e autenticação inconsistente</td>
+</tr>
+<tr>
+<td>WhatsApp e Inbox</td>
+<td>❌ Não operacional</td>
+<td>WhatsApp Cloud ausente e Inbox retorna 500</td>
+</tr>
+<tr>
+<td>PWA e Mobile</td>
+<td>🔍 Necessita validação</td>
+<td>Manifest/SW funcionam; instalação e viewports reais não homologados</td>
+</tr>
+<tr>
+<td>Segurança por perfil</td>
+<td>❌ Crítico</td>
+<td>Diversas mutações não possuem restrição adequada para <code>viewer</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="tabela-executiva-funcionalidades-concluidas">Tabela Executiva — Funcionalidades Concluídas</h2>
+<table>
+<thead>
+<tr>
+<th>Funcionalidade</th>
+<th>Status</th>
+<th>Evidência</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Build API</td>
+<td>✅</td>
+<td><code>npm run build</code> passou</td>
+</tr>
+<tr>
+<td>Lint e build Web</td>
+<td>✅</td>
+<td>Lint e build passaram; 58 rotas reconhecidas</td>
+</tr>
+<tr>
+<td>Health API/Supabase</td>
+<td>✅</td>
+<td>Endpoints de health retornaram 200</td>
+</tr>
+<tr>
+<td>Proteção sem sessão</td>
+<td>✅</td>
+<td>Rotas operacionais principais retornaram 401</td>
+</tr>
+<tr>
+<td>Login Supabase Auth</td>
+<td>✅</td>
+<td>Credencial real owner autenticou</td>
+</tr>
+<tr>
+<td>Google Places</td>
+<td>✅</td>
+<td>Busca real retornou 200 com fonte Google</td>
+</tr>
+<tr>
+<td>Website scanner</td>
+<td>✅</td>
+<td>Scan de <code>nodere.com.br</code> retornou 200</td>
+</tr>
+<tr>
+<td>CRM base</td>
+<td>✅</td>
+<td>595 registros acessíveis, lista e detalhe 200</td>
+</tr>
+<tr>
+<td>PDF por lead</td>
+<td>✅</td>
+<td>PDF real gerado com <code>application/pdf</code></td>
+</tr>
+<tr>
+<td>Dashboard e relatórios API</td>
+<td>✅</td>
+<td>Endpoints autenticados responderam 200</td>
+</tr>
+<tr>
+<td>Manifest e service worker</td>
+<td>✅</td>
+<td>Manifest, SW e ícones principais responderam 200</td>
+</tr>
+</tbody>
+</table>
+<h2 id="tabela-executiva-funcionalidades-parciais">Tabela Executiva — Funcionalidades Parciais</h2>
+<table>
+<thead>
+<tr>
+<th>Funcionalidade</th>
+<th>Limitação atual</th>
+<th>Impacto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sessão persistente</td>
+<td>Cookie e JWT possuem ciclos de vida incompatíveis</td>
+<td>Expiração indevida ao retornar à plataforma</td>
+</tr>
+<tr>
+<td>Ficha 360</td>
+<td>Communications, contracts, files, audit e intelligence falham</td>
+<td>Operação comercial incompleta</td>
+</tr>
+<tr>
+<td>Histórico/contatos/negociações</td>
+<td>Melhorias existem apenas localmente</td>
+<td>Produção não contém o CRUD ampliado</td>
+</tr>
+<tr>
+<td>Kanban e drag and drop</td>
+<td>Implementados, sem homologação de mutação</td>
+<td>Risco funcional e de permissão</td>
+</tr>
+<tr>
+<td>Relatórios UI</td>
+<td>Timeout fixo e múltiplas chamadas</td>
+<td>Tela pode falhar mesmo com APIs disponíveis</td>
+</tr>
+<tr>
+<td>OpenAI e Apollo</td>
+<td>Configurados, sem homologação integral</td>
+<td>Quota, custos e persistência ainda incertos</td>
+</tr>
+<tr>
+<td>Propostas</td>
+<td>PDF CRM funciona; módulo <code>/api/proposals</code> retorna 500</td>
+<td>Fluxo de proposta incompleto</td>
+</tr>
+<tr>
+<td>PWA e temas</td>
+<td>Estrutura existe; visual e instalação não homologados</td>
+<td>Experiência mobile inconsistente</td>
+</tr>
+<tr>
+<td>Admin de usuários</td>
+<td>Owner listado; roles retorna 500</td>
+<td>Gestão de papéis indisponível</td>
+</tr>
+<tr>
+<td>SMTP</td>
+<td>Código preparado; envio real não comprovado</td>
+<td>Formulário de contato não homologado</td>
+</tr>
+</tbody>
+</table>
+<h2 id="tabela-executiva-funcionalidades-nao-executadas">Tabela Executiva — Funcionalidades Não Executadas</h2>
+<table>
+<thead>
+<tr>
+<th>Funcionalidade</th>
+<th>Status</th>
+<th>Dependência/causa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CMS em produção</td>
+<td>❌</td>
+<td>Código e SQL somente locais</td>
+</tr>
+<tr>
+<td>Stripe real</td>
+<td>❌</td>
+<td>Webhook informa <code>stripe_not_configured</code></td>
+</tr>
+<tr>
+<td>WhatsApp Cloud</td>
+<td>❌</td>
+<td>Token e phone number ausentes</td>
+</tr>
+<tr>
+<td>PageSpeed</td>
+<td>❌</td>
+<td>API key ausente</td>
+</tr>
+<tr>
+<td>Google Business Profile</td>
+<td>❌</td>
+<td>OAuth ausente</td>
+</tr>
+<tr>
+<td>Redes sociais</td>
+<td>❌</td>
+<td>Credenciais Meta/TikTok/LinkedIn/Pinterest ausentes</td>
+</tr>
+<tr>
+<td>Bling e RD Station</td>
+<td>❌</td>
+<td>Integrações não configuradas</td>
+</tr>
+<tr>
+<td>SEO técnico completo</td>
+<td>❌</td>
+<td><code>robots.txt</code> e <code>sitemap.xml</code> retornam 404</td>
+</tr>
+<tr>
+<td>Teste real SMTP</td>
+<td>🔍</td>
+<td>Não executado para evitar envio sem autorização</td>
+</tr>
+<tr>
+<td>Homologação visual mobile</td>
+<td>🔍</td>
+<td>Viewports autenticados não testados nesta auditoria</td>
+</tr>
+<tr>
+<td>Teste real de viewer</td>
+<td>🔍</td>
+<td>Credencial específica indisponível</td>
+</tr>
+</tbody>
+</table>
+<h2 id="tabela-executiva-problemas-criticos">Tabela Executiva — Problemas Críticos</h2>
+<table>
+<thead>
+<tr>
+<th>Prioridade</th>
+<th>Problema</th>
+<th>Risco</th>
+<th>Ação requerida</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P0</td>
+<td>Mutações sem autorização fina por perfil</td>
+<td>Viewer pode potencialmente alterar dados</td>
+<td>Aplicar matriz de roles e testes 401/403/200</td>
+</tr>
+<tr>
+<td>P0</td>
+<td>Schemas concorrentes criam estruturas paralelas</td>
+<td>Duplicação de users/workspaces/companies</td>
+<td>Reconciliar e tornar schemas legados não executáveis</td>
+</tr>
+<tr>
+<td>P0</td>
+<td><code>onboardingStore.ts</code> escreve em <code>workspaces</code></td>
+<td>Divergência do schema NODERE real</td>
+<td>Usar exclusivamente <code>nodere_workspaces</code></td>
+</tr>
+<tr>
+<td>P0</td>
+<td>Worktree local muito divergente da produção</td>
+<td>Deploy pode misturar escopos e regressões</td>
+<td>Preservar e separar commits por domínio</td>
+</tr>
+<tr>
+<td>P0</td>
+<td>Submódulos essenciais da ficha retornam 404/500</td>
+<td>CRM operacional incompleto</td>
+<td>Alinhar SQL, consultas e respostas controladas</td>
+</tr>
+</tbody>
+</table>
+<h2 id="tabela-executiva-pendencias-tecnicas">Tabela Executiva — Pendências Técnicas</h2>
+<table>
+<thead>
+<tr>
+<th>Pendência</th>
+<th>Criticidade</th>
+<th>Resultado esperado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unificar token, cookie, middleware e refresh</td>
+<td>P0</td>
+<td>Sessão previsível e persistente</td>
+</tr>
+<tr>
+<td>Consolidar schemas incrementais</td>
+<td>P0</td>
+<td>Uma única fonte de verdade do banco</td>
+</tr>
+<tr>
+<td>Adicionar role guards</td>
+<td>P0</td>
+<td>Owner/admin/operator/viewer corretamente isolados</td>
+</tr>
+<tr>
+<td>Padronizar erros e logs estruturados</td>
+<td>P1</td>
+<td>Diagnóstico de 5xx com correlação</td>
+</tr>
+<tr>
+<td>Eliminar estado operacional em memória/localStorage</td>
+<td>P1</td>
+<td>Persistência real e consistente</td>
+</tr>
+<tr>
+<td>Corrigir contratos HTTP de billing</td>
+<td>P1</td>
+<td>401/403/4xx coerentes</td>
+</tr>
+<tr>
+<td>Otimizar Relatórios e navegação</td>
+<td>P1</td>
+<td>Redução de timeout e chamadas duplicadas</td>
+</tr>
+<tr>
+<td>Criar testes E2E autenticados</td>
+<td>P1</td>
+<td>Regressão automatizada por perfil</td>
+</tr>
+</tbody>
+</table>
+<h2 id="tabela-executiva-pendencias-funcionais">Tabela Executiva — Pendências Funcionais</h2>
+<table>
+<thead>
+<tr>
+<th>Módulo</th>
+<th>Pendência</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CRM</td>
+<td>Homologar cadastro, edição, exclusão, Kanban, DnD e pipeline</td>
+<td>🔍</td>
+</tr>
+<tr>
+<td>Ficha comercial</td>
+<td>Recuperar communications, contracts, files, audit e intelligence</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Histórico/contatos/negociações</td>
+<td>Publicar e homologar CRUD ampliado</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>Discovery</td>
+<td>Homologar add-to-CRM e qualificação automática</td>
+<td>🔍</td>
+</tr>
+<tr>
+<td>IA</td>
+<td>Comprovar registro em <code>nodere_ai_usage_log</code></td>
+<td>🔍</td>
+</tr>
+<tr>
+<td>WhatsApp/Marketing</td>
+<td>Configurar Cloud API e recuperar Inbox/Marketing</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Propostas</td>
+<td>Recuperar lista, contratos e versionamento completo</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Relatórios</td>
+<td>Homologar UI, filtros e exportações</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>Calendário</td>
+<td>Homologar CRUD, perfis, recorrência e notificações</td>
+<td>🔍</td>
+</tr>
+</tbody>
+</table>
+<h2 id="tabela-executiva-pendencias-visuais">Tabela Executiva — Pendências Visuais</h2>
+<table>
+<thead>
+<tr>
+<th>Área</th>
+<th>Pendência</th>
+<th>Criticidade</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Marca</td>
+<td>Homologar logos em rotas, PDFs, e-mails, PWA e temas</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>Ícone PWA</td>
+<td>Corrigir asset auxiliar com fundo opaco</td>
+<td>P2</td>
+</tr>
+<tr>
+<td>Tema</td>
+<td>Unificar <code>nodere-theme</code> e <code>nodere_theme</code></td>
+<td>P1</td>
+</tr>
+<tr>
+<td>Contraste</td>
+<td>Revisar CRM, relatórios, usuário, onboarding e editor no modo claro</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>Kanban</td>
+<td>Garantir cores e leitura nos dois temas</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>CSS</td>
+<td>Validar overrides tardios por rota</td>
+<td>P1</td>
+</tr>
+<tr>
+<td>Shells</td>
+<td>Consolidar ou sincronizar as duas implementações de layout</td>
+<td>P2</td>
+</tr>
+</tbody>
+</table>
+<h2 id="tabela-executiva-pendencias-mobile">Tabela Executiva — Pendências Mobile</h2>
+<table>
+<thead>
+<tr>
+<th>Viewport/área</th>
+<th>Validação necessária</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>375 px</td>
+<td>Navegação, cards, CRM, relatórios e ficha</td>
+<td>🔍</td>
+</tr>
+<tr>
+<td>390 px</td>
+<td>Menu, topbar, editor e botão Sair</td>
+<td>🔍</td>
+</tr>
+<tr>
+<td>414 px</td>
+<td>Overflow, botões e rodapé</td>
+<td>🔍</td>
+</tr>
+<tr>
+<td>768 px</td>
+<td>Tablet, tabelas, Kanban e Admin</td>
+<td>🔍</td>
+</tr>
+<tr>
+<td>PWA Android/iOS</td>
+<td>Instalação e execução standalone</td>
+<td>🔍</td>
+</tr>
+<tr>
+<td>Botão Sair</td>
+<td>Confirmar acesso pelo painel de preferências no celular</td>
+<td>🔍</td>
+</tr>
+</tbody>
+</table>
+<h2 id="tabela-executiva-pendencias-de-infraestrutura">Tabela Executiva — Pendências de Infraestrutura</h2>
+<table>
+<thead>
+<tr>
+<th>Pendência</th>
+<th>Estado</th>
+<th>Próxima ação</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Variáveis Vercel Preview</td>
+<td>Ausentes</td>
+<td>Replicar somente as variáveis necessárias para homologação</td>
+</tr>
+<tr>
+<td>Logs Render</td>
+<td>Não acessíveis nesta auditoria</td>
+<td>Habilitar acesso/observabilidade e revisar 5xx</td>
+</tr>
+<tr>
+<td>Backups Supabase</td>
+<td>Não comprovados</td>
+<td>Validar política de backup e restauração</td>
+</tr>
+<tr>
+<td>Buckets Storage</td>
+<td>Estado real não enumerado</td>
+<td>Confirmar <code>site-assets</code> e buckets de documentos</td>
+</tr>
+<tr>
+<td>SMTP</td>
+<td>Configuração não comprovada</td>
+<td>Validar envs Render e envio real autorizado</td>
+</tr>
+<tr>
+<td>Stripe</td>
+<td>Não configurado</td>
+<td>Criar produtos, preços e webhook em etapa isolada</td>
+</tr>
+<tr>
+<td>PageSpeed/GBP/WhatsApp/social</td>
+<td>Credenciais ausentes</td>
+<td>Configurar conforme prioridade comercial</td>
+</tr>
+</tbody>
+</table>
+<h2 id="proximo-bloco-recomendado">Próximo Bloco Recomendado</h2>
+<h3 id="bloco-de-estabilizacao-p0-seguranca-schema-e-recuperacao-operacional">BLOCO DE ESTABILIZAÇÃO P0 — Segurança, Schema e Recuperação Operacional</h3>
+<p>O próximo bloco recomendado não deve adicionar funcionalidades. Ele deve executar, nesta ordem:</p>
+<ol>
+<li>Preservar o worktree atual em branch/checkpoint sem deploy.</li>
+<li>Inventariar o schema real no Supabase SQL Editor.</li>
+<li>Remover a dependência de <code>workspaces</code>, <code>workspace_members</code>, <code>users</code> e <code>companies</code> paralelos.</li>
+<li>Aplicar autorização por perfil em todas as mutações e criar testes owner/admin/operator/viewer.</li>
+<li>Unificar sessão, refresh token, cookie e middleware.</li>
+<li>Recuperar communications, contracts, files, audit, intelligence, proposals, inbox, marketing e roles.</li>
+<li>Configurar Preview com variáveis equivalentes e executar regressão autenticada.</li>
+<li>Somente após todos os itens P0 passarem, separar e homologar o CMS.</li>
+</ol>
+<p><strong>Critério de saída:</strong> builds aprovados, nenhuma rota crítica 5xx, viewer bloqueado por 403, sessão persistente homologada, schema único e CRM/ficha operacional.</p>
+<hr />
+<h2 id="relatorio-tecnico-integral">Relatório Técnico Integral</h2>
+<h2 id="legenda">Legenda</h2>
+<ul>
+<li>✅ Concluído: comprovado por build, resposta de produção ou inspeção direta.</li>
+<li>⚠️ Parcialmente concluído: existe implementação, mas há falha, dependência externa ou homologação incompleta.</li>
+<li>❌ Não executado/não operacional: ausente ou comprovadamente indisponível.</li>
+<li>🔍 Pendente de validação: não foi possível comprovar sem alterar dados, enviar mensagens, cobrar ou acessar o SQL Editor/logs privados.</li>
+</ul>
+<h2 id="evidencias-e-limites">Evidências e limites</h2>
+<ul>
+<li>Builds locais executados em 22/06/2026: API ✅, lint Web ✅ e build Web ✅.</li>
+<li>O build Web reconheceu 58 rotas.</li>
+<li>Login real do administrador foi validado via Supabase Auth, sem registrar a senha no relatório.</li>
+<li>Foram feitos apenas GETs e operações sem efeito persistente. Não foram criados leads, cobranças, mensagens, e-mails ou registros de produção.</li>
+<li>O schema real, RLS, triggers e buckets não puderam ser enumerados diretamente: o OpenAPI anon foi bloqueado e não foi usado <code>service_role</code> fora do backend.</li>
+<li>Logs Vercel das últimas 24h: nenhum evento disponível. Logs privados do Render não estavam acessíveis nesta sessão.</li>
+<li>Mobile e temas foram auditados por código e assets. A homologação visual autenticada nos viewports 375/390/414/768 permanece pendente.</li>
+</ul>
+<h1 id="resumo-executivo">1. Resumo Executivo</h1>
+<p>O NODERE possui uma base funcional relevante: autenticação Supabase, busca Google Places, CRM com 595 empresas/leads acessíveis, dashboard, relatórios de API, calendário, catálogo, operadores, configurações, propostas PDF por lead e PWA básica. O site público, login e cadastro respondem em produção e a marca visível principal está como <code>NODERE</code>.</p>
+<p>O estado não pode ser considerado integralmente homologado. Há quatro riscos críticos:</p>
+<ol>
+<li><strong>Código local divergente da produção:</strong> 37 arquivos modificados e 13 caminhos novos não foram commitados/publicados. O CMS e a correção de sessão segura existem apenas localmente.</li>
+<li><strong>Autorização por perfil incompleta:</strong> várias mutações de CRM, companies, marketing, inbox, sequências, créditos e IA exigem sessão, mas não restringem <code>viewer</code>.</li>
+<li><strong>Schema fragmentado:</strong> há SQLs incrementais NODERE e, em paralelo, schemas legados que criam <code>users</code>, <code>companies</code>, <code>workspaces</code> e <code>workspace_members</code>. Uma rotina ativa ainda escreve em <code>workspaces</code>.</li>
+<li><strong>Módulos com falha real em produção:</strong> communications, contracts, files, audit/intelligence da empresa, proposals, inbox, marketing e roles retornaram 404/500.</li>
+</ol>
+<p>Estado geral estimado:</p>
+<table>
+<thead>
+<tr>
+<th>Área</th>
+<th>Status</th>
+<th>Evidência principal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Site público/SEO básico</td>
+<td>⚠️</td>
+<td>Home/login/register 200 e branding correto; <code>robots.txt</code> e <code>sitemap.xml</code> 404</td>
+</tr>
+<tr>
+<td>Autenticação</td>
+<td>⚠️</td>
+<td>Login real funciona; produção ainda usa token Supabase bruto e pode expirar antes do cookie</td>
+</tr>
+<tr>
+<td>CRM/listagem/ficha base</td>
+<td>⚠️</td>
+<td>595 registros e detalhe 200; submódulos da ficha têm 404/500</td>
+</tr>
+<tr>
+<td>Discovery</td>
+<td>⚠️</td>
+<td>Google Places e website scan 200; PageSpeed/GBP ausentes; add-to-CRM não testado</td>
+</tr>
+<tr>
+<td>Relatórios</td>
+<td>⚠️</td>
+<td>APIs 200; UI já apresentou timeout e filtros completos não foram homologados</td>
+</tr>
+<tr>
+<td>CMS</td>
+<td>❌ produção / ⚠️ local</td>
+<td>Código/SQL local; <code>/api/content</code> em produção retorna 401 pelo fallback</td>
+</tr>
+<tr>
+<td>Billing</td>
+<td>⚠️</td>
+<td>Planos 200; Stripe não configurado; contrato de autenticação inconsistente</td>
+</tr>
+<tr>
+<td>WhatsApp/Inbox</td>
+<td>❌ operacional</td>
+<td>Cloud API ausente, inbox 500 e webhook principal apenas confirma recebimento</td>
+</tr>
+<tr>
+<td>PWA</td>
+<td>⚠️</td>
+<td>Manifest/SW/assets 200; ícone auxiliar tem fundo opaco; instalação mobile não homologada</td>
+</tr>
+<tr>
+<td>Segurança por workspace</td>
+<td>⚠️</td>
+<td>Rotas sem sessão retornam 401; autorização fina por perfil está incompleta</td>
+</tr>
+</tbody>
+</table>
+<h1 id="funcionalidades-concluidas">2. Funcionalidades Concluídas</h1>
+<table>
+<thead>
+<tr>
+<th>Funcionalidade</th>
+<th style="text-align: right;">Data aproximada</th>
+<th>Arquivos/áreas</th>
+<th>Evidência</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Build API</td>
+<td style="text-align: right;">22/06</td>
+<td><code>apps/api</code></td>
+<td><code>npm run build</code> passou</td>
+</tr>
+<tr>
+<td>Lint e build Web</td>
+<td style="text-align: right;">22/06</td>
+<td><code>apps/web</code></td>
+<td>lint e build passaram; 58 rotas</td>
+</tr>
+<tr>
+<td>Health API</td>
+<td style="text-align: right;">12-22/06</td>
+<td><code>apps/api/src/server.ts</code></td>
+<td><code>/api/health</code> e <code>/api/health/supabase</code> 200</td>
+</tr>
+<tr>
+<td>Proteção global sem sessão</td>
+<td style="text-align: right;">12-18/06</td>
+<td><code>server.ts</code>, middleware</td>
+<td>companies, CRM, Discovery e Calendar retornam 401 sem token</td>
+</tr>
+<tr>
+<td>Login Supabase Auth</td>
+<td style="text-align: right;">18/06</td>
+<td><code>LoginClient.tsx</code>, middleware</td>
+<td>credencial real autenticou e token acessou rotas protegidas</td>
+</tr>
+<tr>
+<td>Workspace/administrador</td>
+<td style="text-align: right;">18/06</td>
+<td>admin/session/userStore</td>
+<td>usuário reconhecido como <code>owner</code>, workspace <code>default</code></td>
+</tr>
+<tr>
+<td>Google Places</td>
+<td style="text-align: right;">17-22/06</td>
+<td>Discovery/Google services</td>
+<td>busca real retornou 200, fonte <code>google</code></td>
+</tr>
+<tr>
+<td>Website scanner</td>
+<td style="text-align: right;">17-22/06</td>
+<td>Discovery</td>
+<td>scan de <code>nodere.com.br</code> retornou 200</td>
+</tr>
+<tr>
+<td>CRM listagem e detalhe base</td>
+<td style="text-align: right;">17-22/06</td>
+<td>CRM/companies/leads</td>
+<td>595 registros; lista, detalhe, contatos, atividades e tarefas 200</td>
+</tr>
+<tr>
+<td>PDF de proposta por lead</td>
+<td style="text-align: right;">17-22/06</td>
+<td>CRM/report/PDF</td>
+<td>200, <code>application/pdf</code>, 40.738 bytes</td>
+</tr>
+<tr>
+<td>Dashboard API</td>
+<td style="text-align: right;">17-22/06</td>
+<td>dashboard service/routes</td>
+<td>200 autenticado</td>
+</tr>
+<tr>
+<td>Relatórios de API</td>
+<td style="text-align: right;">18-22/06</td>
+<td>reports route/service</td>
+<td>summary, funnel, forecast e operators 200</td>
+</tr>
+<tr>
+<td>Calendário leitura</td>
+<td style="text-align: right;">11-22/06</td>
+<td>calendar route/UI</td>
+<td>200 autenticado; lista vazia</td>
+</tr>
+<tr>
+<td>Catálogo leitura</td>
+<td style="text-align: right;">11-22/06</td>
+<td>catalog route/UI</td>
+<td>200 autenticado</td>
+</tr>
+<tr>
+<td>Operadores e ranking</td>
+<td style="text-align: right;">11-22/06</td>
+<td>operators</td>
+<td>200 autenticado</td>
+</tr>
+<tr>
+<td>Configurações protegidas</td>
+<td style="text-align: right;">11-22/06</td>
+<td>settings</td>
+<td>integrações retornaram apenas dados mascarados; sem <code>value</code> real</td>
+</tr>
+<tr>
+<td>Branding público principal</td>
+<td style="text-align: right;">17-22/06</td>
+<td>Logo, metadata, páginas</td>
+<td>títulos e HTML público sem <code>Nexus/Intelligence/Noderi</code> visível</td>
+</tr>
+<tr>
+<td>Manifest e service worker</td>
+<td style="text-align: right;">17-22/06</td>
+<td>public/manifest, <code>sw.js</code>, PwaRegister</td>
+<td>manifest, SW e ícones principais 200</td>
+</tr>
+</tbody>
+</table>
+<h1 id="funcionalidades-parciais">3. Funcionalidades Parciais</h1>
+<table>
+<thead>
+<tr>
+<th>Funcionalidade</th>
+<th style="text-align: right;">Data aproximada</th>
+<th>Arquivos envolvidos</th>
+<th>Problema/impacto</th>
+<th>Próximo passo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sessão persistente</td>
+<td style="text-align: right;">18-22/06</td>
+<td><code>LoginClient.tsx</code>, <code>adminSession.ts</code>, middleware</td>
+<td>produção armazena token Supabase bruto em cookie de 7 dias; JWT expira antes</td>
+<td>publicar e homologar o exchange local para token NODERE ou implementar refresh seguro</td>
+</tr>
+<tr>
+<td>Ficha 360</td>
+<td style="text-align: right;">17-22/06</td>
+<td>companies, LeadOperations, LeadDrawer</td>
+<td>base abre, mas communications/contracts/files/audit/intelligence falham</td>
+<td>alinhar SQL real e respostas controladas; testar todos os tabs</td>
+</tr>
+<tr>
+<td>Histórico/contatos/negociações</td>
+<td style="text-align: right;">18-22/06</td>
+<td><code>LeadDrawer.tsx</code>, <code>leads.ts</code>, RichTextEditor</td>
+<td>implementação ampliada existe localmente, não em produção</td>
+<td>aplicar SQL necessário, publicar e homologar CRUD</td>
+</tr>
+<tr>
+<td>Kanban/drag and drop</td>
+<td style="text-align: right;">17-18/06</td>
+<td>CRM components/routes</td>
+<td>código existe; mutação não foi executada para não alterar produção</td>
+<td>homologar com registro descartável e perfis owner/operator/viewer</td>
+</tr>
+<tr>
+<td>Import/export CSV</td>
+<td style="text-align: right;">11-18/06</td>
+<td>companies/CRM</td>
+<td>rotas e UI existem; não testadas nesta auditoria</td>
+<td>teste controlado com arquivo pequeno e confirmação de deduplicação</td>
+</tr>
+<tr>
+<td>PDF de empresa</td>
+<td style="text-align: right;">17-22/06</td>
+<td>companies export</td>
+<td>responde 200, mas <code>Content-Type</code> é <code>text/html</code>, não PDF</td>
+<td>corrigir contrato ou renomear como impressão HTML</td>
+</tr>
+<tr>
+<td>Relatórios UI</td>
+<td style="text-align: right;">18-22/06</td>
+<td><code>ReportsClient.tsx</code>, reports API</td>
+<td>endpoints respondem; UI tem timeout de 20s e relato de falha</td>
+<td>medir waterfall autenticado e remover chamadas duplicadas/lentas</td>
+</tr>
+<tr>
+<td>OpenAI</td>
+<td style="text-align: right;">16-22/06</td>
+<td>AI services/routes/settings</td>
+<td>configurado e health OK; geração não invocada por custo</td>
+<td>homologar com limite de tokens e conferir <code>nodere_ai_usage_log</code></td>
+</tr>
+<tr>
+<td>Apollo</td>
+<td style="text-align: right;">17-22/06</td>
+<td>searches/integration status</td>
+<td>configurado; permissões/quota da conta não testadas</td>
+<td>busca controlada e validação de resposta real</td>
+</tr>
+<tr>
+<td>Calendar</td>
+<td style="text-align: right;">11-22/06</td>
+<td>calendar/UI/SQL bloco 08</td>
+<td>leitura 200; CRUD, recorrência e notificações não homologados</td>
+<td>teste funcional por perfil</td>
+</tr>
+<tr>
+<td>Propostas</td>
+<td style="text-align: right;">17-22/06</td>
+<td>proposals route/UI/SQL</td>
+<td>template e PDF CRM funcionam; <code>/api/proposals</code> retorna 500</td>
+<td>verificar <code>nodere_proposals</code> e <code>proposal_versions</code> no schema real</td>
+</tr>
+<tr>
+<td>PWA</td>
+<td style="text-align: right;">17-22/06</td>
+<td>manifest, SW, Header</td>
+<td>base instalável implementada; instalação real não validada</td>
+<td>Lighthouse/Chrome Android e iOS; corrigir asset opaco</td>
+</tr>
+<tr>
+<td>Tema claro/escuro</td>
+<td style="text-align: right;">17-22/06</td>
+<td>Logo, ThemeProvider, Topbar, globals.css</td>
+<td>CSS amplo; chaves <code>nodere-theme</code> e <code>nodere_theme</code> divergem</td>
+<td>unificar persistência e homologar todas as rotas em ambos os temas</td>
+</tr>
+<tr>
+<td>Admin de usuários</td>
+<td style="text-align: right;">16-22/06</td>
+<td>admin routes/UI</td>
+<td>usuário owner listado; <code>/api/admin/roles</code> retorna 500</td>
+<td>corrigir tabela/consulta <code>custom_roles</code> e validar CRUD sem afetar Auth</td>
+</tr>
+<tr>
+<td>SMTP</td>
+<td style="text-align: right;">11-22/06</td>
+<td>config, contact, settings test</td>
+<td>suporte a <code>SMTP_PASS/SMTP_PASSWORD</code>; configuração real não comprovada</td>
+<td>validar env no Render e enviar e-mail real autorizado</td>
+</tr>
+</tbody>
+</table>
+<h1 id="funcionalidades-nao-executadas">4. Funcionalidades Não Executadas</h1>
+<ul>
+<li>❌ CMS administrativo em produção: código e SQL existem somente no worktree local.</li>
+<li>❌ Stripe real: webhook retorna <code>stripe_not_configured</code>; checkout/portal/renovações não homologados.</li>
+<li>❌ WhatsApp Cloud API: token e phone number ausentes; envio, anexos e histórico real indisponíveis.</li>
+<li>❌ Google PageSpeed: <code>GOOGLE_PAGESPEED_API_KEY</code> ausente.</li>
+<li>❌ Google Business Profile: OAuth ausente.</li>
+<li>❌ Redes sociais: Meta, TikTok, LinkedIn, Pinterest e Google Business não configurados.</li>
+<li>❌ Bling e RD Station não configurados.</li>
+<li>❌ <code>robots.txt</code> e <code>sitemap.xml</code>: 404 em produção.</li>
+<li>❌ Teste real de e-mail SMTP não executado para evitar envio sem autorização explícita.</li>
+<li>❌ Upgrade, downgrade, cancelamento e renovação Stripe não executados.</li>
+<li>❌ Homologação visual autenticada 375/390/414/768 não executada nesta sessão.</li>
+<li>❌ Teste real com usuário <code>viewer</code> não executado por ausência de credencial de viewer.</li>
+</ul>
+<h1 id="falhas-encontradas">5. Falhas Encontradas</h1>
+<table>
+<thead>
+<tr>
+<th>Endpoint/área</th>
+<th style="text-align: right;">Resultado</th>
+<th>Impacto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/api/companies/:id/communications</code></td>
+<td style="text-align: right;">500</td>
+<td>histórico de comunicações indisponível</td>
+</tr>
+<tr>
+<td><code>/api/companies/:id/contracts</code></td>
+<td style="text-align: right;">500</td>
+<td>contratos da ficha indisponíveis</td>
+</tr>
+<tr>
+<td><code>/api/companies/:id/files</code></td>
+<td style="text-align: right;">500</td>
+<td>anexos indisponíveis</td>
+</tr>
+<tr>
+<td><code>/api/companies/:id/audit</code></td>
+<td style="text-align: right;">404</td>
+<td>auditoria da empresa não carrega</td>
+</tr>
+<tr>
+<td><code>/api/companies/:id/intelligence</code></td>
+<td style="text-align: right;">404</td>
+<td>inteligência da empresa não carrega</td>
+</tr>
+<tr>
+<td><code>/api/proposals</code></td>
+<td style="text-align: right;">500</td>
+<td>módulo de propostas instável</td>
+</tr>
+<tr>
+<td><code>/api/inbox</code></td>
+<td style="text-align: right;">500</td>
+<td>caixa de entrada indisponível</td>
+</tr>
+<tr>
+<td><code>/api/marketing</code> e templates</td>
+<td style="text-align: right;">500</td>
+<td>marketing/campanhas indisponíveis</td>
+</tr>
+<tr>
+<td><code>/api/admin/roles</code></td>
+<td style="text-align: right;">500</td>
+<td>papéis customizados indisponíveis</td>
+</tr>
+<tr>
+<td><code>/api/content/pages?slug=home</code></td>
+<td style="text-align: right;">401</td>
+<td>rota CMS não existe no deploy e cai no fallback autenticado</td>
+</tr>
+<tr>
+<td><code>/api/billing/current</code> com JWT Supabase real</td>
+<td style="text-align: right;">401</td>
+<td>tela de billing pode não reconhecer a sessão usada em produção</td>
+</tr>
+<tr>
+<td><code>/api/billing/portal</code> sem sessão</td>
+<td style="text-align: right;">400</td>
+<td>deveria responder 401 antes de validar <code>customerId</code></td>
+</tr>
+<tr>
+<td><code>/robots.txt</code></td>
+<td style="text-align: right;">404</td>
+<td>SEO técnico incompleto</td>
+</tr>
+<tr>
+<td><code>/sitemap.xml</code></td>
+<td style="text-align: right;">404</td>
+<td>descoberta/indexação incompleta</td>
+</tr>
+<tr>
+<td><code>pwa-screenshot.png</code></td>
+<td style="text-align: right;">HTML/rota, não imagem</td>
+<td>asset citado informalmente não existe; manifest usa <code>og-image.png</code></td>
+</tr>
+</tbody>
+</table>
+<h1 id="problemas-criticos">6. Problemas Críticos</h1>
+<ol>
+<li><strong>Autorização fina ausente em mutações.</strong> <code>companies.ts</code>, <code>crm.ts</code>, <code>marketing.ts</code>, <code>inbox.ts</code>, <code>sequences.ts</code>, <code>credits.ts</code> e várias rotas de IA aceitam qualquer sessão de workspace. Um <code>viewer</code> pode potencialmente editar dados. O risco é comprovado por inspeção estática; teste real de viewer permanece pendente.</li>
+<li><strong>Schema concorrente e duplicação proibida.</strong> <code>apps/api/src/db/schema.sql</code> cria <code>workspaces</code> e <code>workspace_members</code>; <code>packages/database/schema.sql</code> cria <code>users</code> e <code>companies</code>. O schema real usa <code>nodere_workspaces</code>, <code>nodere_platform_users</code> e <code>nodere_companies</code>.</li>
+<li><strong>Referência ativa à tabela paralela.</strong> <code>apps/api/src/services/onboardingStore.ts</code> grava em <code>workspaces</code>.</li>
+<li><strong>Produção não contém o CMS/correções locais.</strong> Há grande diferença local não versionada; publicar o diretório inteiro sem separar escopo é arriscado.</li>
+<li><strong>Submódulos essenciais da ficha retornam 404/500.</strong> Contratos, arquivos, comunicações, auditoria e inteligência não estão operacionalmente íntegros.</li>
+</ol>
+<h1 id="problemas-medios">7. Problemas Médios</h1>
+<ul>
+<li>Mensagens 500 são genéricas (<code>Erro ao processar a solicitação</code>), dificultando diagnóstico sem logs Render.</li>
+<li>Cookie de 7 dias e JWT Supabase de duração menor podem provocar “sessão expirada” ao retornar à plataforma.</li>
+<li>Billing usa contrato de sessão diferente em <code>/current</code>; portal valida payload antes de autenticação.</li>
+<li>Reports UI depende de várias chamadas paralelas e timeout fixo de 20 segundos.</li>
+<li><code>settings</code> público expõe preferências operacionais e mapa de integrações habilitadas; não expõe chaves, mas deve ser revisto por princípio de mínimo disclosure.</li>
+<li>CORS aceita qualquer subdomínio <code>*.vercel.app</code>, além dos domínios explícitos.</li>
+<li>WhatsApp possui dois caminhos de webhook; o principal <code>POST /api/whatsapp/webhook</code> apenas retorna <code>{ok:true}</code> e não persiste payload.</li>
+<li>O processo de sequências contém estado de instâncias que deve ser conferido para garantir persistência integral.</li>
+<li>Não há variáveis Vercel de Preview, impedindo homologação fiel antes da produção.</li>
+</ul>
+<h1 id="problemas-baixos">8. Problemas Baixos</h1>
+<ul>
+<li>Documentação antiga ainda usa “Nodere Intelligence”.</li>
+<li><code>backend/src/services/siteScanner.js</code> usa User-Agent legado “Nodere Intelligence MVP Scanner”.</li>
+<li>O ícone <code>logo-nodere-icon.png</code> é RGB opaco; pode formar bloco visual em tema claro/PWA.</li>
+<li>Existem duas implementações de shell/layout (<code>components/Header/Sidebar</code> e <code>components/layout/Topbar/Sidebar</code>), elevando risco de inconsistência.</li>
+<li><code>Topbar.tsx</code> usa <code>nodere_theme</code>; ThemeProvider/layout usam <code>nodere-theme</code>.</li>
+<li>Apenas screenshot <code>wide</code> no manifest; não há screenshot mobile dedicado.</li>
+</ul>
+<h1 id="divergencias-local-x-producao">9. Divergências Local x Produção</h1>
+<h2 id="git-e-deploy">Git e deploy</h2>
+<ul>
+<li>Branch: <code>main</code>.</li>
+<li>HEAD local e <code>origin/main</code>: <code>1e48dfa03f4b637de2c11125d7410c11b4fd7ef7</code>.</li>
+<li>Deploy associado ao domínio: <code>dpl_9krEkwrQbk5cRspUgdo5hn6hwLbD</code>.</li>
+<li>URL do deploy: <a href="https://web-g7h80he23-edipo-lima-s-projects.vercel.app">https://web-g7h80he23-edipo-lima-s-projects.vercel.app</a>.</li>
+<li>Status Vercel: Ready, produção, criado em 18/06/2026 20:03:54 BRT.</li>
+<li>Aliases: <code>nodere.com.br</code>, <code>www.nodere.com.br</code> e aliases Vercel do projeto <code>web</code>.</li>
+</ul>
+<h2 id="alteracoes-apenas-locais">Alterações apenas locais</h2>
+<p>37 arquivos rastreados estão modificados. Principais grupos:</p>
+<ul>
+<li>Sessão/admin: <code>LoginClient.tsx</code>, <code>adminSession.ts</code>, <code>adminAuth.ts</code>, middleware, <code>WorkspaceContext.tsx</code>, admin routes.</li>
+<li>CRM/editor: <code>LeadDrawer.tsx</code>, <code>LeadOperations.tsx</code>, <code>RichTextEditor.tsx</code>, <code>leads.ts</code>, <code>companies.ts</code>, CSS.</li>
+<li>CMS/site: páginas públicas, Header/Footer, <code>publicContent.ts</code>, overrides CMS, admin content.</li>
+<li>Configuração/build: <code>next.config.ts</code>, <code>package.json</code>, lockfile.</li>
+</ul>
+<p>13 caminhos novos não rastreados:</p>
+<ul>
+<li><code>apps/api/src/routes/content.ts</code>.</li>
+<li><code>apps/web/app/admin/content/</code>, <code>integrations/</code>, <code>modules/</code>, <code>plans/</code>, <code>users/</code>.</li>
+<li><code>apps/web/app/api/content/</code> e <code>apps/web/app/pagina/</code>.</li>
+<li><code>CmsPageOverride.tsx</code>, <code>DynamicCmsPage.tsx</code>, <code>publicContent.ts</code>.</li>
+<li><code>packages/database/block_admin_cms.sql</code>.</li>
+</ul>
+<p>Não há arquivos removidos no status atual.</p>
+<h2 id="conclusao-da-divergencia">Conclusão da divergência</h2>
+<p>O CMS, as telas administrativas novas, o CRUD ampliado de histórico/contatos/negociações e o exchange de sessão não estão em produção. O deploy não deve ser feito a partir do worktree inteiro sem separar, revisar e versionar cada bloco.</p>
+<h1 id="pendencias-tecnicas">10. Pendências Técnicas</h1>
+<ul>
+<li>Unificar o contrato de token entre Supabase Auth, cookie, middleware Next e backend Render.</li>
+<li>Remover referência ativa a <code>workspaces</code> e usar somente <code>nodere_workspaces</code>.</li>
+<li>Consolidar os schemas em migrações incrementais; arquivar/invalidar schemas legados perigosos.</li>
+<li>Adicionar role guards a todas as mutações.</li>
+<li>Padronizar erros com <code>code</code>, correlação e logs estruturados no Render.</li>
+<li>Confirmar persistência de sequências, inbox e preferências; eliminar fontes de verdade em memória/localStorage quando o dado é operacional.</li>
+<li>Corrigir contratos HTTP do billing.</li>
+<li>Medir e otimizar a carga de Relatórios e transições de rotas.</li>
+<li>Criar testes E2E autenticados e testes de autorização por matriz de perfis.</li>
+</ul>
+<h1 id="pendencias-funcionais">11. Pendências Funcionais</h1>
+<h2 id="crm">CRM</h2>
+<ul>
+<li>✅ Cadastro/listagem/detalhe base implementados.</li>
+<li>⚠️ Cadastro manual, edição, exclusão, Kanban, DnD e pipeline existem, mas mutações não foram homologadas nesta auditoria.</li>
+<li>⚠️ Contatos/atividades/tarefas leem em produção.</li>
+<li>❌ Communications, contracts, files, audit e intelligence falham.</li>
+<li>⚠️ Histórico/contatos/negociações avançados existem localmente, não publicados.</li>
+<li>⚠️ Campos personalizados aparecem no schema, sem homologação funcional.</li>
+<li>✅ PDF CRM gera arquivo real.</li>
+<li>⚠️ CSV import/export e forecast têm código, sem teste destrutivo/visual nesta auditoria.</li>
+</ul>
+<h2 id="discovery">Discovery</h2>
+<ul>
+<li>✅ Google Places, segmento/cidade/estado e website scanner têm resposta real.</li>
+<li>⚠️ Score e análise social têm implementação; consistência dos dados não foi homologada.</li>
+<li>❌ PageSpeed e Google Business Profile sem credenciais.</li>
+<li>🔍 Add-to-CRM e qualificação automática não testados para não criar dados.</li>
+<li>⚠️ IA diagnóstica configurada, sem chamada cobrável nesta auditoria.</li>
+</ul>
+<h2 id="ia">IA</h2>
+<ul>
+<li>✅ OpenAI configurada no backend.</li>
+<li>⚠️ Prompts, diagnósticos, sugestões, textos e scripts existem.</li>
+<li>🔍 Registro de tokens em <code>nodere_ai_usage_log</code> não comprovado no banco real.</li>
+<li>⚠️ Propostas automáticas têm rota, mas o módulo de propostas retorna 500.</li>
+<li>❌ Contratos automáticos não homologados.</li>
+</ul>
+<h2 id="whatsappmarketing">WhatsApp/Marketing</h2>
+<ul>
+<li>❌ WhatsApp Cloud sem credenciais.</li>
+<li>⚠️ Fallback <code>wa.me</code> disponível.</li>
+<li>❌ Inbox e marketing retornam 500.</li>
+<li>⚠️ Templates/cadências têm código, mas envio/persistência não foram homologados.</li>
+</ul>
+<h2 id="contratospropostas">Contratos/Propostas</h2>
+<ul>
+<li>✅ PDF por lead funciona.</li>
+<li>⚠️ Templates e versionamento têm código/tabelas planejadas.</li>
+<li>❌ Lista de propostas e contratos da empresa falham.</li>
+<li>❌ Upload/compartilhamento/histórico completo não homologados.</li>
+</ul>
+<h1 id="pendencias-visuais">12. Pendências Visuais</h1>
+<ul>
+<li>Homologar logo completo e ícone em todas as rotas, PDFs, e-mails, PWA e temas.</li>
+<li>Corrigir o ícone auxiliar opaco.</li>
+<li>Unificar tema e conferir contraste do modo claro em CRM, relatório, usuário, onboarding e editor.</li>
+<li>Conferir tipografia e ícones dos dois shells existentes.</li>
+<li>Validar Kanban com cores legíveis em ambos os temas.</li>
+<li>A inspeção do código mostra muitos overrides CSS tardios; recomenda-se teste visual por rota para evitar regressões em cascata.</li>
+</ul>
+<h1 id="pendencias-mobile">13. Pendências Mobile</h1>
+<ul>
+<li>🔍 Homologar 375, 390, 414 e 768 px em sessão real.</li>
+<li>O botão Sair principal é oculto abaixo de <code>sm</code>, mas há outro botão Sair dentro do painel de preferências; precisa ser testado quanto à acessibilidade no celular.</li>
+<li>Manifest/SW/ícones respondem 200 e o install prompt está implementado.</li>
+<li>Instalação real Android/iOS não foi comprovada.</li>
+<li>Validar overflow no Kanban, relatórios, ficha, admin e tabelas.</li>
+<li>Validar menu, topbar, campos de texto avançado, botões e rodapé mobile.</li>
+</ul>
+<h1 id="pendencias-de-seguranca">14. Pendências de Segurança</h1>
+<p>Prioridade P0:</p>
+<ul>
+<li>Aplicar <code>requireWorkspaceRole</code> a todas as mutações de companies/CRM/marketing/inbox/sequences/credits/IA/operators.</li>
+<li>Testar owner, admin, operator e viewer com usuários reais distintos.</li>
+<li>Garantir que <code>workspace_id</code> nunca venha confiado do body/header sem confronto com a sessão.</li>
+<li>Revisar CORS <code>*.vercel.app</code>.</li>
+<li>Exigir autenticação antes de validar payload no portal Stripe.</li>
+<li>Validar assinatura e persistência do webhook WhatsApp real.</li>
+<li>Não executar schemas que criem bases paralelas.</li>
+</ul>
+<p>Constatações positivas:</p>
+<ul>
+<li>Rotas operacionais principais retornam 401 sem sessão.</li>
+<li>APIs de configurações não retornaram chaves reais ao frontend.</li>
+<li>Chaves OpenAI, Supabase service role, Stripe e SMTP são lidas apenas no backend.</li>
+<li>CMS local restringe escrita a owner/admin via backend.</li>
+</ul>
+<h1 id="pendencias-de-infraestrutura">15. Pendências de Infraestrutura</h1>
+<ul>
+<li>Vercel Preview não possui as variáveis públicas, portanto não replica produção.</li>
+<li>Render: conferir envs e logs de runtime; não havia acesso a logs nesta auditoria.</li>
+<li>Implementar observabilidade: request ID, logs estruturados, alertas 5xx e duração de queries.</li>
+<li>Confirmar política de backup/restore do Supabase.</li>
+<li>Confirmar existência e política dos buckets <code>site-assets</code> e de documentos/arquivos.</li>
+<li>SMTP, Stripe, PageSpeed, GBP, WhatsApp Cloud e social dependem de configuração externa.</li>
+</ul>
+<h1 id="pendencias-de-integracao">16. Pendências de Integração</h1>
+<table>
+<thead>
+<tr>
+<th>Integração</th>
+<th>Estado real</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Supabase</td>
+<td>✅ conectado</td>
+</tr>
+<tr>
+<td>Google Places</td>
+<td>✅ configurado e busca real 200</td>
+</tr>
+<tr>
+<td>Google Maps</td>
+<td>✅ contexto/link/mapa incorporado</td>
+</tr>
+<tr>
+<td>OpenAI</td>
+<td>✅ configurado; geração cobrável não testada</td>
+</tr>
+<tr>
+<td>Apollo</td>
+<td>⚠️ configurado; quota/permissão não homologada</td>
+</tr>
+<tr>
+<td>PageSpeed</td>
+<td>❌ não configurado</td>
+</tr>
+<tr>
+<td>Google Business Profile</td>
+<td>❌ OAuth ausente</td>
+</tr>
+<tr>
+<td>WhatsApp Cloud</td>
+<td>❌ não configurado</td>
+</tr>
+<tr>
+<td>Instagram/Facebook/TikTok/LinkedIn/Pinterest</td>
+<td>❌ não configurados</td>
+</tr>
+<tr>
+<td>Bling</td>
+<td>❌ não configurado</td>
+</tr>
+<tr>
+<td>RD Station</td>
+<td>❌ não configurado</td>
+</tr>
+<tr>
+<td>Stripe</td>
+<td>❌ não configurado</td>
+</tr>
+<tr>
+<td>SMTP</td>
+<td>🔍 código pronto; env/envio real não comprovados</td>
+</tr>
+</tbody>
+</table>
+<h1 id="pendencias-de-banco">17. Pendências de Banco</h1>
+<h2 id="tabelas-referenciadas-pelo-backend">Tabelas referenciadas pelo backend</h2>
+<p>O código referencia pelo menos: <code>nodere_workspaces</code>, <code>nodere_platform_users</code>, <code>nodere_companies</code>, <code>nodere_company_notes</code>, <code>nodere_searches</code>, <code>nodere_operators</code>, <code>nodere_operator_goals</code>, <code>nodere_workspace_settings</code>, <code>nodere_app_settings</code>, <code>company_contacts</code>, <code>communications</code>, <code>company_contracts</code>, <code>company_files</code>, <code>calendar_events</code>, <code>catalog_items</code>, <code>nodere_discovery_runs</code>, <code>nodere_ai_usage_log</code>, <code>nodere_proposals</code>, <code>proposal_versions</code>, <code>proposal_templates</code>, <code>nodere_billing_subscriptions</code>, <code>nodere_stripe_events</code>, <code>nodere_plan_limits</code>, <code>inbox_messages</code>, <code>message_templates</code>, <code>campaigns</code>, <code>social_connections</code>, <code>cadence_templates</code>, <code>cadence_enrollments</code>, <code>custom_roles</code>, <code>api_keys</code>, <code>activity_logs</code>, <code>download_logs</code>, <code>push_subscriptions</code>, <code>user_metrics</code>, <code>onboarding_steps</code>, <code>vertical_prompts</code> e tabelas CMS locais.</p>
+<h2 id="problemas-de-schema">Problemas de schema</h2>
+<ul>
+<li><code>packages/database/schema.sql</code> cria <code>users</code> e <code>companies</code> genéricos: legado e incompatível com a regra atual.</li>
+<li><code>apps/api/src/db/schema.sql</code> cria <code>workspaces</code> e <code>workspace_members</code> paralelos.</li>
+<li><code>onboardingStore.ts</code> usa <code>workspaces</code> em vez de <code>nodere_workspaces</code>.</li>
+<li>Os 404/500 indicam tabelas/colunas ausentes ou consultas divergentes em módulos específicos.</li>
+<li>Não foi possível confirmar o estado real de todos os índices, RLS, policies, triggers e campos órfãos sem SQL Editor.</li>
+</ul>
+<h2 id="cms-sql-local">CMS SQL local</h2>
+<p><code>block_admin_cms.sql</code> é incremental e usa <code>IF NOT EXISTS</code>; cria páginas, seções, navegação e assets, índices, RLS de leitura pública e bucket <code>site-assets</code>. Não sobrescreve users/workspaces/CRM. Pontos a validar antes de aplicar:</p>
+<ul>
+<li>O bucket é público e não há policy de Storage declarada; uploads dependem do backend <code>service_role</code>.</li>
+<li>O conteúdo público está fixado ao workspace <code>default</code>.</li>
+<li>Escrita direta por anon/authenticated é revogada; administração depende exclusivamente do backend.</li>
+<li>O SQL ainda não foi aplicado/comprovado em produção.</li>
+</ul>
+<h1 id="pendencias-de-deploy">18. Pendências de Deploy</h1>
+<ul>
+<li>Não há deploy pendente único e seguro: o worktree mistura sessão, CRM, CMS, site, admin, CSS e dependências.</li>
+<li>Separar em commits por domínio e publicar primeiro em Preview com envs equivalentes.</li>
+<li>Aplicar SQL somente após revisão e backup.</li>
+<li>Validar Preview com matriz auth/role e, só depois, promover.</li>
+<li>Não executar deploy direto do worktree atual.</li>
+<li>Não criar tag estável enquanto os problemas críticos permanecerem.</li>
+</ul>
+<h1 id="lista-priorizada-por-criticidade">19. Lista Priorizada por Criticidade</h1>
+<h2 id="p0-bloqueadores">P0 - bloqueadores</h2>
+<ol>
+<li>Corrigir autorização por perfil em todas as mutações.</li>
+<li>Reconciliar schema e eliminar <code>workspaces/workspace_members/users/companies</code> paralelos.</li>
+<li>Restaurar communications/contracts/files/audit/intelligence/proposals/inbox/marketing/roles.</li>
+<li>Unificar sessão e refresh; homologar retorno após expiração.</li>
+<li>Separar e preservar as mudanças locais antes de qualquer deploy.</li>
+</ol>
+<h2 id="p1-operacao-comercial">P1 - operação comercial</h2>
+<ol start="6">
+<li>Homologar ficha completa, Kanban, CRUD de contatos/histórico/negociações e CSV.</li>
+<li>Corrigir UI/performance de Relatórios.</li>
+<li>Corrigir billing auth e manter Stripe desativado até configuração real.</li>
+<li>Aplicar/homologar CMS em Preview, incluindo Storage e fallback.</li>
+<li>Homologar mobile/PWA e temas em todos os viewports.</li>
+</ol>
+<h2 id="p2-integracoes-e-acabamento">P2 - integrações e acabamento</h2>
+<ol start="11">
+<li>Configurar SMTP e testar contato real.</li>
+<li>Configurar PageSpeed/GBP/WhatsApp/social conforme prioridade comercial.</li>
+<li>Criar robots/sitemap e revisar SEO.</li>
+<li>Limpar branding legado em documentação e scanner.</li>
+<li>Consolidar shells, tema e assets de marca.</li>
+</ol>
+<h1 id="plano-de-execucao-recomendado">20. Plano de Execução Recomendado</h1>
+<ol>
+<li><strong>Congelamento e preservação:</strong> criar branch/checkpoint do worktree atual sem deploy.</li>
+<li><strong>Banco:</strong> inventariar schema real via SQL Editor; comparar com todas as tabelas referenciadas; gerar migração incremental única.</li>
+<li><strong>Segurança:</strong> adicionar matriz de roles e testes 401/403/200 para cada mutação.</li>
+<li><strong>Sessão:</strong> adotar uma única estratégia de token/refresh e testar expiração, logout e reentrada.</li>
+<li><strong>Recuperação operacional:</strong> corrigir os endpoints 404/500, começando pela ficha, proposals, inbox, marketing e roles.</li>
+<li><strong>Preview:</strong> configurar envs Preview e publicar apenas estabilização.</li>
+<li><strong>Homologação funcional:</strong> CRUD CRM, Discovery, relatórios, PDF, calendário, admin, viewer.</li>
+<li><strong>CMS:</strong> aplicar SQL/bucket em ambiente de homologação, publicar CMS e validar fallback.</li>
+<li><strong>Mobile/visual:</strong> testes nos quatro viewports e dois temas; Lighthouse PWA/SEO.</li>
+<li><strong>Integrações externas:</strong> SMTP, Stripe e WhatsApp em etapas separadas, com rollback e monitoramento.</li>
+</ol>
+<h1 id="estimativa-de-esforco-por-bloco">21. Estimativa de Esforço por Bloco</h1>
+<p>Estimativas para uma pessoa experiente, sem considerar espera por credenciais/aprovação externa:</p>
+<table>
+<thead>
+<tr>
+<th>Bloco</th>
+<th style="text-align: right;">Esforço estimado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Inventário SQL real + migração segura</td>
+<td style="text-align: right;">2-4 dias</td>
+</tr>
+<tr>
+<td>Matriz de autorização + testes</td>
+<td style="text-align: right;">2-4 dias</td>
+</tr>
+<tr>
+<td>Sessão/refresh/middleware</td>
+<td style="text-align: right;">1-2 dias</td>
+</tr>
+<tr>
+<td>Recuperação ficha/proposals/inbox/marketing/roles</td>
+<td style="text-align: right;">3-6 dias</td>
+</tr>
+<tr>
+<td>CRM avançado local + homologação</td>
+<td style="text-align: right;">2-4 dias</td>
+</tr>
+<tr>
+<td>Relatórios/performance</td>
+<td style="text-align: right;">2-4 dias</td>
+</tr>
+<tr>
+<td>CMS + Storage + fallback</td>
+<td style="text-align: right;">2-4 dias</td>
+</tr>
+<tr>
+<td>Mobile/temas/PWA/SEO</td>
+<td style="text-align: right;">2-4 dias</td>
+</tr>
+<tr>
+<td>SMTP real</td>
+<td style="text-align: right;">0,5-1 dia após credenciais</td>
+</tr>
+<tr>
+<td>Stripe completo</td>
+<td style="text-align: right;">3-5 dias após produtos/webhook</td>
+</tr>
+<tr>
+<td>WhatsApp Cloud</td>
+<td style="text-align: right;">3-5 dias após Meta Business</td>
+</tr>
+<tr>
+<td>Regressão E2E e release</td>
+<td style="text-align: right;">2-3 dias</td>
+</tr>
+</tbody>
+</table>
+<p>Total técnico provável: <strong>22 a 42 dias úteis</strong>, reduzível com paralelização e escopo comercial priorizado.</p>
+<h1 id="checklist-final">22. Checklist Final</h1>
+<h2 id="builds-e-infraestrutura">Builds e infraestrutura</h2>
+<ul class="contains-task-list">
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ API build.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ Web lint.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ Web build.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ Vercel deployment Ready e domínio correto.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> 🔍 Logs Render revisados.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> ❌ Preview com envs equivalentes.</li>
+</ul>
+<h2 id="auth-e-seguranca">Auth e segurança</h2>
+<ul class="contains-task-list">
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ Login real owner.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ Workspace <code>default</code> carregado.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ Rotas operacionais 401 sem sessão.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> ⚠️ Refresh/persistência de longo prazo.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> 🔍 Logout e recuperação de senha em navegador real.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> 🔍 Cadastro sem criar dados indevidos.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> ❌ Viewer bloqueado em todas as mutações.</li>
+</ul>
+<h2 id="crm-e-discovery">CRM e Discovery</h2>
+<ul class="contains-task-list">
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ Lista e detalhe base.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ Contatos/atividades/tarefas em leitura.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ Google Places e website scan.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ PDF de proposta por lead.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> ❌ Communications/contracts/files.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> ❌ Audit/intelligence da empresa.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> 🔍 Add-to-CRM, DnD, import/export CSV.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> ❌ PageSpeed/GBP.</li>
+</ul>
+<h2 id="plataforma">Plataforma</h2>
+<ul class="contains-task-list">
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ Dashboard API.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ Relatórios API.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ Calendário leitura.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ Catálogo leitura.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> ⚠️ Relatórios UI e filtros completos.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> ❌ Inbox/marketing/proposals/roles.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> ❌ CMS em produção.</li>
+</ul>
+<h2 id="billing-comunicacao-e-ia">Billing, comunicação e IA</h2>
+<ul class="contains-task-list">
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ Planos públicos.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ OpenAI configurada.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> ❌ Stripe.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> 🔍 SMTP real.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> ❌ WhatsApp Cloud e redes sociais.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> 🔍 Registro de tokens IA.</li>
+</ul>
+<h2 id="visual-seo-e-mobile">Visual, SEO e mobile</h2>
+<ul class="contains-task-list">
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ Marca principal <code>NODERE</code> no HTML público.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> ✅ Manifest, SW e ícones principais acessíveis.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> ⚠️ Branding legado em documentação/scanner.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> ⚠️ Tema com chave de persistência divergente.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> 🔍 375/390/414/768 em sessão real.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> 🔍 Instalação PWA real.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> ❌ <code>robots.txt</code> e <code>sitemap.xml</code>.</li>
+</ul>
+<h2 id="decisao-de-release">Decisão de release</h2>
+<p><strong>NÃO APROVADO para declarar 100% concluído ou criar nova baseline estável.</strong><br />
+O sistema possui partes funcionais valiosas, mas requer primeiro estabilização de segurança, schema e endpoints críticos. Esta auditoria não alterou código de aplicação, banco ou produção.</p>
+</main>
+</article>
+<script>
+(function(){
+  function slug(text){
+    return text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9s-]/g,'').trim().replace(/s+/g,'-');
+  }
+  document.querySelectorAll('h1,h2,h3,h4').forEach(function(h){
+    if(!h.id) h.id=slug(h.textContent);
+  });
+})();
+</script>
+</body>
+</html>

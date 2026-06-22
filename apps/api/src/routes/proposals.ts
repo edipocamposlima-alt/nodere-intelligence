@@ -4,13 +4,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import PDFDocument from "pdfkit";
-import { getRequestWorkspaceId, requireWorkspaceRole } from "../middleware/session.js";
+import { getRequestWorkspaceId, requireWorkspaceMutation, requireWorkspaceRole } from "../middleware/session.js";
 import { getSupabase } from "../db/supabase.js";
 import { getCompanyAsync } from "../services/companyStore.js";
 import { callAI } from "../services/ai.js";
 import { logRequestMetric } from "../services/metricsStore.js";
+import { isMissingSupabaseSchema } from "../utils/supabaseErrors.js";
 
 const router = Router();
+router.use(requireWorkspaceMutation("owner", "admin", "operator"));
 
 const proposalItemSchema = z.object({
   description: z.string().min(1),
@@ -87,6 +89,7 @@ router.get("/", async (req, res, next) => {
     if (error) throw error;
     res.json(data ?? []);
   } catch (error) {
+    if (isMissingSupabaseSchema(error)) return res.json([]);
     next(error);
   }
 });
@@ -272,6 +275,7 @@ router.get("/leads/:id", async (req, res, next) => {
     if (error) throw error;
     res.json(data ?? []);
   } catch (error) {
+    if (isMissingSupabaseSchema(error)) return res.json([]);
     next(error);
   }
 });

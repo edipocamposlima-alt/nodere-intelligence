@@ -9,8 +9,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "Sessão ausente." }, { status: 401 });
   }
 
-  const response = await fetch(`${getApiBaseUrl()}/workspace/me`, {
+  let activeToken = token;
+  const refreshResponse = await fetch(`${getApiBaseUrl()}/admin/session/refresh`, {
+    method: "POST",
     headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store"
+  }).catch(() => null);
+  if (refreshResponse?.ok) {
+    const refreshed = await refreshResponse.json().catch(() => ({}));
+    if (typeof refreshed.token === "string" && refreshed.token) activeToken = refreshed.token;
+  }
+
+  const response = await fetch(`${getApiBaseUrl()}/workspace/me`, {
+    headers: { Authorization: `Bearer ${activeToken}` },
     cache: "no-store"
   });
 
@@ -24,7 +35,7 @@ export async function GET(request: NextRequest) {
     payload.session?.name ||
     payload.members?.find?.((member: { email?: string }) => member.email === payload.user?.email)?.name ||
     formatDisplayName(payload.user?.email);
-  return NextResponse.json({
+  const nextResponse = NextResponse.json({
     user: {
       id: payload.user?.id ?? payload.user?.userId,
       email: payload.user?.email,
@@ -37,6 +48,18 @@ export async function GET(request: NextRequest) {
       name: payload.workspace?.name ?? "Workspace NODERE"
     }
   });
+  if (activeToken !== token) {
+    for (const name of COOKIE_NAMES) {
+      nextResponse.cookies.set(name, activeToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7
+      });
+    }
+  }
+  return nextResponse;
 }
 
 function formatDisplayName(email?: string) {

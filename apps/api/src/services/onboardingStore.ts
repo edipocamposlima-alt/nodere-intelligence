@@ -84,13 +84,6 @@ export async function markOnboardingStep(workspaceId: string, step: OnboardingSt
         onboarding_completed: true,
         updated_at: new Date().toISOString()
       }).eq("id", workspaceId);
-      try {
-        await sb.from("workspaces").update({
-          onboarding_completed: true
-        }).eq("id", workspaceId);
-      } catch {
-        // Compatibilidade: alguns ambientes usam apenas nodere_workspaces.
-      }
     }
   }
   return next;

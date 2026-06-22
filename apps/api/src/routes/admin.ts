@@ -4,7 +4,8 @@ import { randomUUID } from "node:crypto";
 import { config } from "../config.js";
 import { getSupabase } from "../db/supabase.js";
 import { extractBearerToken, isBuiltInOwnerEmail, issueSessionToken, normalizeAdminSession, verifySessionToken } from "../services/adminSession.js";
-import { authenticateUser, createWorkspaceUser, listWorkspaceUsers, updateWorkspaceUser } from "../services/userStore.js";
+import { authenticateUser, createWorkspaceUser, ensureSupabaseAuthUser, listWorkspaceUsers, updateWorkspaceUser } from "../services/userStore.js";
+import { isMissingSupabaseSchema } from "../utils/supabaseErrors.js";
 
 const router = Router();
 
@@ -31,16 +32,22 @@ const memoryRoles = new Map<string, Array<{ id: string; workspace_id: string; na
 function requireAdmin(request: any, response: any, next: any) {
   const rawSession = request.session || verifySessionToken(extractBearerToken(request.headers.authorization));
   const session = rawSession ? normalizeAdminSession(rawSession) : null;
-  if (!session || !["owner", "admin"].includes(session.role)) {
+  if (!session) {
+    return response.status(401).json({
+      message: "Sessão administrativa expirada. Entre novamente.",
+      code: "ADMIN_SESSION_REQUIRED"
+    });
+  }
+  if (!["owner", "admin"].includes(session.role)) {
     console.warn("[admin] blocked admin route", {
       email: session?.email || rawSession?.email || null,
       foundRole: rawSession?.role || null,
       effectiveRole: session?.role || null,
       builtInOwner: isBuiltInOwnerEmail(session?.email || rawSession?.email)
     });
-    return response.status(401).json({
-      message: "Sessão administrativa expirada. Entre novamente com uma conta Owner ou Administrador.",
-      code: "ADMIN_SESSION_REQUIRED"
+    return response.status(403).json({
+      message: "Acesso restrito a Owner ou Administrador.",
+      code: "ADMIN_ROLE_REQUIRED"
     });
   }
   request.admin = session;
@@ -146,7 +153,10 @@ async function listCustomRoles(workspaceId: string) {
     .select("*")
     .eq("workspace_id", workspaceId)
     .order("created_at", { ascending: true });
-  if (error) throw error;
+  if (error) {
+    if (isMissingSupabaseSchema(error)) return memoryRoles.get(workspaceId) || [];
+    throw error;
+  }
   return data || [];
 }
 
@@ -216,6 +226,16 @@ async function listAuditRows(workspaceId: string) {
   return { activityLogs: activity.data || [], downloadLogs: downloads.data || [], auditLogs: audit.error ? [] : audit.data || [] };
 }
 
+function requireSession(request: any, response: any, next: any) {
+  const rawSession = request.session || verifySessionToken(extractBearerToken(request.headers.authorization));
+  const session = rawSession ? normalizeAdminSession(rawSession) : null;
+  if (!session) {
+    return response.status(401).json({ message: "Sessão expirada. Entre novamente.", code: "SESSION_REQUIRED" });
+  }
+  request.admin = session;
+  return next();
+}
+
 router.post("/login", async (request, response, next) => {
   const body = z.object({
     email: z.string().email(),
@@ -259,8 +279,53 @@ router.post("/login", async (request, response, next) => {
   }
 });
 
+router.post("/supabase-session", async (request, response, next) => {
+  try {
+    const { accessToken } = z.object({ accessToken: z.string().min(20) }).parse(request.body);
+    const sb = getSupabase();
+    if (!sb) return response.status(503).json({ message: "Supabase não configurado no backend." });
+
+    const { data, error } = await sb.auth.getUser(accessToken);
+    if (error || !data.user?.email) {
+      return response.status(401).json({ message: "Sessão Supabase inválida ou expirada." });
+    }
+
+    const user = await ensureSupabaseAuthUser({
+      authUserId: data.user.id,
+      email: data.user.email,
+      name: String(data.user.user_metadata?.name || data.user.user_metadata?.full_name || "")
+    });
+    const token = issueSessionToken({
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      workspaceId: user.workspaceId,
+      userId: user.id
+    });
+
+    return response.json({
+      token,
+      user: { email: user.email, name: user.name, role: user.role, workspaceId: user.workspaceId }
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.get("/session", requireAdmin, (request: any, response) => {
   response.json({ user: { email: request.admin.email, name: request.admin.name || config.admin.name, role: request.admin.role, workspaceId: request.admin.workspaceId, userId: request.admin.userId } });
+});
+
+router.post("/session/refresh", requireSession, (request: any, response) => {
+  const session = normalizeAdminSession(request.admin);
+  const token = issueSessionToken({
+    email: session.email,
+    name: session.name,
+    role: session.role,
+    workspaceId: session.workspaceId,
+    userId: session.userId
+  });
+  response.json({ token, expiresIn: 60 * 60 * 24 * 7 });
 });
 
 router.get("/status", (request: any, response) => {

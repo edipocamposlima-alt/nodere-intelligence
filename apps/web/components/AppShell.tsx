@@ -25,7 +25,9 @@ const PUBLIC_PREFIXES = [
   "/terms",
   "/privacy",
   "/termos",
-  "/privacidade"
+  "/privacidade",
+  "/pagina",
+  "/manual"
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

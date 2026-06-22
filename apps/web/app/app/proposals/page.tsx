@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Download, FileText, Plus, RefreshCw, Save } from "lucide-react";
 import { createProposal, downloadProposalPdf, getCompanies, getProposals, NodereProposal, ProposalItemPayload } from "@/lib/api";
 import type { Company } from "@/lib/types";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 const defaultItem: ProposalItemPayload = { description: "Gestão comercial e tráfego local", quantity: 1, unit_price: 970 };
 
@@ -126,10 +127,10 @@ export default function AppProposalsPage() {
             Tipo de serviço
             <input value={serviceType} onChange={(event) => setServiceType(event.target.value)} />
           </label>
-          <label>
-            Conteúdo
-            <textarea value={content} onChange={(event) => setContent(event.target.value)} rows={6} />
-          </label>
+          <div>
+            <span className="mb-1.5 block text-sm font-semibold">Conteúdo</span>
+            <RichTextEditor value={content} onChange={setContent} minHeight={240} placeholder="Diagnóstico, escopo, condições e próximos passos..." />
+          </div>
 
           <div className="proposal-items">
             <div className="proposal-items-title">

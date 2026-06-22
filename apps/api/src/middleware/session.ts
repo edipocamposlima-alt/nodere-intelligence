@@ -66,3 +66,11 @@ export function requireWorkspaceRole(...roles: Array<"owner" | "admin" | "operat
     return next();
   };
 }
+
+export function requireWorkspaceMutation(...roles: Array<"owner" | "admin" | "operator" | "viewer">) {
+  const authorize = requireWorkspaceRole(...roles);
+  return (request: Request, response: Response, next: NextFunction) => {
+    if (["GET", "HEAD", "OPTIONS"].includes(request.method.toUpperCase())) return next();
+    return authorize(request, response, next);
+  };
+}

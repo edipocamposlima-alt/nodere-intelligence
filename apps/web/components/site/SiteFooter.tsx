@@ -1,4 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { getApiBaseUrl } from "@/lib/apiBase";
+import type { CmsNavigation } from "@/lib/publicContent";
 
 const columns = [
   { title: "Produto", links: [{ label: "Soluções", href: "/solucoes" }, { label: "Preços", href: "/precos" }, { label: "Blog", href: "/blog" }] },
@@ -7,6 +12,20 @@ const columns = [
 ];
 
 export default function SiteFooter() {
+  const [navigation, setNavigation] = useState<CmsNavigation[]>([]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`${getApiBaseUrl()}/content/navigation?location=footer`, { signal: controller.signal })
+      .then((response) => response.ok ? response.json() : { items: [] })
+      .then((payload: { items?: CmsNavigation[] }) => setNavigation(payload.items || []))
+      .catch(() => setNavigation([]));
+    return () => controller.abort();
+  }, []);
+
+  const activeColumns = navigation.length > 0
+    ? [{ title: "Navegação", links: navigation.map(({ label, href }) => ({ label, href })) }]
+    : columns;
   return (
     <footer className="site-footer">
       <div className="site-container">
@@ -19,7 +38,7 @@ export default function SiteFooter() {
               <a href="https://instagram.com/nodere" target="_blank" rel="noopener noreferrer">Instagram</a>
             </div>
           </div>
-          {columns.map((column) => (
+          {activeColumns.map((column) => (
             <div key={column.title}>
               <h3>{column.title}</h3>
               {column.links.map((link) => (

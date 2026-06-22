@@ -1,4 +1,5 @@
 import { ManualClient } from "./ManualClient";
+import { getPublicPage } from "@/lib/publicContent";
 
 const sections = [
   ["1. Visão geral", "O NODERE centraliza busca de empresas reais, CRM, funil comercial, agenda, WhatsApp via web, IA, relatórios, propostas, contratos e status de integrações. O fluxo principal é: buscar empresa, salvar lead, abrir ficha, registrar histórico, agendar follow-up, mover no funil e gerar material comercial."],
@@ -39,6 +40,8 @@ const sections = [
   ["36. Erros comuns", "Limite de IA indica falta de crédito no provedor configurado. Integração pendente indica credencial ausente ou incompleta. Login obrigatório indica rota protegida ou sessão expirada. Busca vazia pode indicar limite da API, restrição de chave ou termo muito específico."]
 ];
 
-export default function ManualPage() {
-  return <ManualClient sections={sections} />;
+export default async function ManualPage() {
+  const page = await getPublicPage("manual");
+  const publishedSections = page?.nodere_cms_sections?.map((section) => [section.title || "Orientação", section.body || section.subtitle || ""]);
+  return <ManualClient sections={publishedSections?.length ? publishedSections : sections} />;
 }

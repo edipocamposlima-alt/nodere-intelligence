@@ -16,7 +16,7 @@ type Task = { id: string; companyId: string; title: string; description?: string
 type DocumentItem = { id: string; companyId: string; type: string; title: string; content: string; fileName?: string; createdAt: string };
 type CompanyFile = { id: string; companyId: string; filename: string; fileUrl: string; fileType?: string; fileSize?: number; createdAt: string; storagePath?: string };
 type Contact = { id: string; name: string; role?: string; email?: string; phone?: string; whatsapp?: string; linkedin_url?: string; notes?: string; created_at?: string };
-type Communication = { id: string; type: string; direction: string; subject?: string; body?: string; sent_at: string; status?: string };
+type Communication = { id: string; type: string; direction: string; subject?: string; body?: string; sent_by?: string; sent_at: string; status?: string; metadata?: { nextAction?: string; responsible?: string } };
 type ContractItem = { id: string; catalog_items?: { name?: string; code?: string; type?: string }; quantity?: number; contracted_price?: number; status?: string; notes?: string; created_at?: string };
 type ProposalVersion = { id: string; lead_id: string; version_number: number; content?: string; service_type?: string; generated_by?: "user" | "ai"; created_at: string };
 type Tab = "dados" | "observacoes" | "agenda" | "decisores" | "historico" | "contratos" | "ia" | "documentos" | "whatsapp" | "enriquecimento";
@@ -415,7 +415,9 @@ export function LeadOperations({ company }: { company: Company }) {
           direction: form.get("direction"),
           subject: form.get("subject"),
           body: form.get("body"),
-          sentAt: form.get("sentAt") || new Date().toISOString()
+          sentAt: form.get("sentAt") || new Date().toISOString(),
+          responsible: form.get("responsible"),
+          nextAction: form.get("nextAction")
         })
       });
       setCommunications((items) => [comm, ...items]);
@@ -830,7 +832,11 @@ export function LeadOperations({ company }: { company: Company }) {
                 </select>
               </div>
               <input name="subject" placeholder="Assunto" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <input name="sentAt" type="datetime-local" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <input name="sentAt" type="datetime-local" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+                <input name="responsible" placeholder="Responsável pelo registro" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              </div>
+              <input name="nextAction" placeholder="Próxima ação" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
               <input type="hidden" name="body" value={communicationBody} />
               <RichTextEditor value={communicationBody} onChange={setCommunicationBody} minHeight={170} placeholder="Conteúdo da interação" />
               <button className="btn-action px-4 py-2 text-sm"><Save className="h-4 w-4" />Registrar interação</button>
@@ -852,7 +858,7 @@ export function LeadOperations({ company }: { company: Company }) {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-cyan/15 px-2 py-1 text-xs font-bold text-cyan">{comm.type}</span>
                   <span className="rounded-full bg-white/5 px-2 py-1 text-xs text-slate-300">{comm.direction}</span>
-                  <span className="text-xs text-slate-500">{new Date(comm.sent_at).toLocaleString("pt-BR")}</span>
+                  <span className="text-xs text-slate-500">{new Date(comm.sent_at).toLocaleString("pt-BR")}{comm.sent_by ? ` · ${comm.sent_by}` : ""}</span>
                 </div>
                 {comm.subject && <p className="mt-3 font-semibold text-white">{comm.subject}</p>}
                 {comm.body && (
@@ -860,6 +866,7 @@ export function LeadOperations({ company }: { company: Company }) {
                     <RichTextPreview value={comm.body} />
                   </div>
                 )}
+                {comm.metadata?.nextAction && <p className="mt-3 rounded-lg border border-cyan/20 bg-cyan/5 px-3 py-2 text-sm text-slate-300"><strong className="text-white">Próxima ação:</strong> {comm.metadata.nextAction}</p>}
               </article>
             ))}
           </div>

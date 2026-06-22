@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { existsSync, readFileSync } from "node:fs";
 import * as path from "node:path";
-import { getRequestWorkspaceId, isPrivilegedSession } from "../middleware/session.js";
+import { getRequestWorkspaceId, isPrivilegedSession, requireWorkspaceMutation } from "../middleware/session.js";
 import {
   addNote,
   createDocument,
@@ -33,6 +33,7 @@ import { getAdsConnectionStatus, assessAdsReadiness, buildOfflineConversion, off
 import { generateKeywords } from "../services/keywords.js";
 import { getGbpInsightsForCompany } from "../services/gbp.js";
 import { generateCommercialDiagnosis } from "../services/openai.js";
+import { isMissingSupabaseSchema } from "../utils/supabaseErrors.js";
 import { cacheDiagnosis, getCachedDiagnosis } from "../services/diagnosisStore.js";
 import { defaultProspectingMessage, sendWhatsappMessage } from "../services/whatsapp.js";
 import { activateSequence, getInstancesByCompany } from "../services/emailSequences.js";
@@ -47,6 +48,7 @@ import nodemailer from "nodemailer";
 import multer from "multer";
 
 const router = Router();
+router.use(requireWorkspaceMutation("owner", "admin", "operator"));
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 12 * 1024 * 1024 } });
 const embeddedLogoDataUri = loadNodereLogoDataUri();
 
@@ -323,7 +325,10 @@ router.get("/:id/files", async (req, res, next) => {
       .order("created_at", { ascending: false });
     if (error) throw error;
     return res.json((data ?? []).map(mapCompanyFileRow));
-  } catch (error) { return next(error); }
+  } catch (error) {
+    if (isMissingSupabaseSchema(error)) return res.json([]);
+    return next(error);
+  }
 });
 
 router.post("/:id/files", upload.single("file"), async (req, res, next) => {
@@ -574,7 +579,10 @@ router.get("/:id/contacts", async (req, res, next) => {
       .order("created_at", { ascending: false });
     if (error) throw error;
     return res.json(data ?? []);
-  } catch (error) { return next(error); }
+  } catch (error) {
+    if (isMissingSupabaseSchema(error)) return res.json([]);
+    return next(error);
+  }
 });
 
 router.post("/:id/contacts", async (req, res, next) => {
@@ -698,7 +706,10 @@ router.get("/:id/communications", async (req, res, next) => {
       .order("sent_at", { ascending: false });
     if (error) throw error;
     return res.json(data ?? []);
-  } catch (error) { return next(error); }
+  } catch (error) {
+    if (isMissingSupabaseSchema(error)) return res.json([]);
+    return next(error);
+  }
 });
 
 router.post("/:id/communications", async (req, res, next) => {
@@ -710,7 +721,9 @@ router.post("/:id/communications", async (req, res, next) => {
       subject: z.string().optional().nullable(),
       body: z.string().optional().nullable(),
       sentAt: z.string().optional().nullable(),
-      status: z.string().optional().nullable()
+      status: z.string().optional().nullable(),
+      responsible: z.string().optional().nullable(),
+      nextAction: z.string().optional().nullable()
     }).parse(req.body);
     const workspaceId = getRequestWorkspaceId(req);
     const row = {
@@ -722,8 +735,10 @@ router.post("/:id/communications", async (req, res, next) => {
       direction: body.direction,
       subject: body.subject,
       body: body.body,
+      sent_by: body.responsible || getSessionUserId(req) || null,
       sent_at: body.sentAt || new Date().toISOString(),
-      status: body.status || "sent"
+      status: body.status || "sent",
+      metadata: { nextAction: body.nextAction || "", responsible: body.responsible || "" }
     };
     const { data, error } = await requireSupabase().from("communications").insert(row).select("*").single();
     if (error) throw error;
@@ -808,7 +823,10 @@ router.get("/:id/contracts", async (req, res, next) => {
       .order("created_at", { ascending: false });
     if (error) throw error;
     return res.json(data ?? []);
-  } catch (error) { return next(error); }
+  } catch (error) {
+    if (isMissingSupabaseSchema(error)) return res.json([]);
+    return next(error);
+  }
 });
 
 router.post("/:id/contracts", async (req, res, next) => {

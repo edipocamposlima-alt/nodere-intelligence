@@ -2,14 +2,17 @@ import { Router } from "express";
 import { z } from "zod";
 import { createCipheriv, createHash, randomBytes, randomUUID } from "node:crypto";
 import { getSupabase } from "../db/supabase.js";
-import { getRequestWorkspaceId } from "../middleware/session.js";
+import { getRequestWorkspaceId, requireWorkspaceMutation } from "../middleware/session.js";
+import { isMissingSupabaseSchema } from "../utils/supabaseErrors.js";
 
 const router = Router();
+router.use(requireWorkspaceMutation("owner", "admin", "operator"));
 
 router.get("/", async (req, res, next) => {
   try {
     return res.json(await listCampaigns(getRequestWorkspaceId(req)));
   } catch (error) {
+    if (isMissingSupabaseSchema(error)) return res.json([]);
     return next(error);
   }
 });
@@ -32,6 +35,7 @@ router.get("/templates", async (req, res, next) => {
     if (error) throw error;
     return res.json(data ?? []);
   } catch (error) {
+    if (isMissingSupabaseSchema(error)) return res.json([]);
     return next(error);
   }
 });
@@ -181,7 +185,10 @@ async function listCampaigns(workspaceId: string) {
     .select("*")
     .eq("workspace_id", workspaceId)
     .order("created_at", { ascending: false });
-  if (error) throw error;
+  if (error) {
+    if (isMissingSupabaseSchema(error)) return [];
+    throw error;
+  }
   return data ?? [];
 }
 

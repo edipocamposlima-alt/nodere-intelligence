@@ -52,12 +52,8 @@ router.patch("/workspace", requireWorkspaceRole("admin", "owner"), async (req, r
     if (name) {
       let { error } = await sb
         .from("nodere_workspaces")
-        .update({ nome: name, atualizado_em: new Date().toISOString() })
+        .update({ name, updated_at: new Date().toISOString() })
         .eq("id", workspaceId);
-      if (error && String(error.message || "").includes("atualizado_em")) {
-        const retry = await sb.from("nodere_workspaces").update({ nome: name }).eq("id", workspaceId);
-        error = retry.error;
-      }
       if (error) throw error;
     }
     const preferences = await savePreferences({

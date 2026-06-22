@@ -1,18 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [{ protocol: "https", hostname: "qhopjggnbzewuuktqntp.supabase.co" }]
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "2mb"
     }
-  },
-  async rewrites() {
-    return [
-      {
-        source: "/",
-        destination: "/index.html"
-      }
-    ];
   },
   async redirects() {
     return [

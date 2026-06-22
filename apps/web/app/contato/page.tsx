@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import ContactForm from "@/components/site/ContactForm";
 import SitePageShell from "@/components/site/SitePageShell";
+import CmsPageOverride from "@/components/site/CmsPageOverride";
 
 export const metadata: Metadata = {
   title: "Contato | NODERE",
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <SitePageShell>
+      <CmsPageOverride slug="contato" fallback={<>
       <section className="site-simple-hero">
         <div className="site-container">
           <p className="site-eyebrow">Contato</p>
@@ -39,6 +41,7 @@ export default function ContactPage() {
           </article>
         </div>
       </section>
+      </>} />
     </SitePageShell>
   );
 }

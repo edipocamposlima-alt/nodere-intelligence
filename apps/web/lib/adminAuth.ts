@@ -29,7 +29,7 @@ export class AdminFetchError extends Error {
 
 export async function adminFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getAdminToken();
-  const useLocalProxy = path.startsWith("/admin/");
+  const useLocalProxy = path.startsWith("/admin/") || path.startsWith("/content/admin");
   const response = await fetch(useLocalProxy ? `/api${path}` : `${getApiBaseUrl()}${path}`, {
     ...options,
     headers: {
