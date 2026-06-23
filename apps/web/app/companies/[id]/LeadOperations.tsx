@@ -21,6 +21,11 @@ type ContractItem = { id: string; catalog_items?: { name?: string; code?: string
 type ProposalVersion = { id: string; lead_id: string; version_number: number; content?: string; service_type?: string; generated_by?: "user" | "ai"; created_at: string };
 type Tab = "dados" | "observacoes" | "agenda" | "decisores" | "historico" | "contratos" | "ia" | "documentos" | "whatsapp" | "enriquecimento";
 
+const inputClass = "mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-white outline-none focus:border-electric disabled:cursor-not-allowed disabled:opacity-60";
+const selectClass = inputClass;
+const cardClass = "rounded-lg border border-line bg-ink p-4";
+const labelClass = "text-xs font-semibold text-slate-400";
+
 function isValidBrazilMobileWhatsapp(value?: string) {
   const digits = String(value || "").replace(/\D/g, "");
   if (!digits) return false;
@@ -94,6 +99,10 @@ export function LeadOperations({ company }: { company: Company }) {
   const [contactNotes, setContactNotes] = useState("");
   const [communicationBody, setCommunicationBody] = useState("");
   const [dealNotes, setDealNotes] = useState("");
+  const [editingContactId, setEditingContactId] = useState<string | null>(null);
+  const [editingNegotiationId, setEditingNegotiationId] = useState<string | null>(null);
+  const [contactDraft, setContactDraft] = useState({ name: "", role: "", department: "", phone: "", whatsapp: "", email: "", linkedinUrl: "", influenceLevel: "operacional", primaryDecisionMaker: "nao" });
+  const [negotiationDraft, setNegotiationDraft] = useState({ title: "", service: "", value: "", stage: "Primeiro contato", temperature: "Morno", probability: "50", origin: "CRM", expectedClose: "", lossReason: "", nextAction: "" });
   const [emailBody, setEmailBody] = useState("");
   const [instruction, setInstruction] = useState("");
   const [generationType, setGenerationType] = useState("Proposta comercial");
@@ -103,6 +112,8 @@ export function LeadOperations({ company }: { company: Company }) {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [enrichmentMessages, setEnrichmentMessages] = useState<string[]>([]);
+  const [currentRole, setCurrentRole] = useState("viewer");
+  const canEdit = ["owner", "admin", "operator"].includes(currentRole);
 
   const whatsappText = useMemo(() => {
     return editor || `Olá, tudo bem? Analisei a presença digital da ${lead.name} e identifiquei oportunidades para gerar mais contatos pelo Google. Posso te mostrar um diagnóstico rápido?`;
@@ -118,6 +129,15 @@ export function LeadOperations({ company }: { company: Company }) {
     api<ContractItem[]>(`${companyPath}/contracts`).then((items) => setContracts(Array.isArray(items) ? items : [])).catch(() => {});
     api<ProposalVersion[]>(`/proposals/leads/${encodeURIComponent(company.id)}`).then((items) => setProposalVersions(Array.isArray(items) ? items : [])).catch(() => {});
   }, [company.id, companyPath]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/auth/me", { credentials: "include", cache: "no-store", signal: controller.signal })
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload) => setCurrentRole(String(payload?.user?.role || "viewer").toLowerCase()))
+      .catch(() => setCurrentRole("viewer"));
+    return () => controller.abort();
+  }, []);
 
   function showSuccess(text: string) {
     setMessage(text);
@@ -348,27 +368,69 @@ export function LeadOperations({ company }: { company: Company }) {
 
   async function addContact(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!canEdit) return showError(new Error("Seu perfil possui acesso somente leitura nesta ficha."));
     const target = event.currentTarget;
-    const form = new FormData(target);
-    const influenceLevel = String(form.get("influenceLevel") || "").trim();
-    const notes = String(form.get("notes") || "").trim();
+    const notes = contactNotes.trim();
+    if (!contactDraft.name.trim()) return showError(new Error("Informe o nome do contato."));
+    const details = [
+      contactDraft.department ? `**Departamento:** ${contactDraft.department}` : "",
+      contactDraft.influenceLevel ? `**Nível de influência:** ${contactDraft.influenceLevel}` : "",
+      `**Principal decisor:** ${contactDraft.primaryDecisionMaker === "sim" ? "Sim" : "Não"}`,
+      notes
+    ].filter(Boolean).join("\n\n");
+    const payload = {
+      name: contactDraft.name.trim(),
+      role: contactDraft.role.trim(),
+      email: contactDraft.email.trim(),
+      phone: contactDraft.phone.trim(),
+      whatsapp: contactDraft.whatsapp.trim(),
+      linkedinUrl: contactDraft.linkedinUrl.trim(),
+      notes: details
+    };
     try {
-      const contact = await api<Contact>(`${companyPath}/contacts`, {
-        method: "POST",
-        body: JSON.stringify({
-          name: form.get("name"),
-          role: form.get("role"),
-          email: form.get("email"),
-          phone: form.get("phone"),
-          whatsapp: form.get("whatsapp"),
-          linkedinUrl: form.get("linkedinUrl"),
-          notes: [influenceLevel ? `**Nível de influência:** ${influenceLevel}` : "", notes].filter(Boolean).join("\n\n")
-        })
+      const contact = await api<Contact>(`${companyPath}/contacts${editingContactId ? `/${encodeURIComponent(editingContactId)}` : ""}`, {
+        method: editingContactId ? "PATCH" : "POST",
+        body: JSON.stringify(payload)
       });
-      setContacts((items) => [contact, ...items]);
+      setContacts((items) => editingContactId ? items.map((item) => item.id === editingContactId ? contact : item) : [contact, ...items]);
       target.reset();
+      setContactDraft({ name: "", role: "", department: "", phone: "", whatsapp: "", email: "", linkedinUrl: "", influenceLevel: "operacional", primaryDecisionMaker: "nao" });
       setContactNotes("");
-      showSuccess("Decisor salvo.");
+      setEditingContactId(null);
+      showSuccess(editingContactId ? "Contato atualizado." : "Contato salvo.");
+    } catch (err) {
+      showError(err);
+    }
+  }
+
+  function startEditContact(contact: Contact) {
+    setEditingContactId(contact.id);
+    setContactDraft({
+      name: contact.name || "",
+      role: contact.role || "",
+      department: "",
+      phone: contact.phone || "",
+      whatsapp: contact.whatsapp || "",
+      email: contact.email || "",
+      linkedinUrl: contact.linkedin_url || "",
+      influenceLevel: contact.notes?.match(/\*\*Nível de influência:\*\*\s*([^\n]+)/)?.[1]?.trim().toLowerCase() || "operacional",
+      primaryDecisionMaker: contact.notes?.includes("**Principal decisor:** Sim") ? "sim" : "nao"
+    });
+    setContactNotes(contact.notes || "");
+  }
+
+  function cancelEditContact() {
+    setEditingContactId(null);
+    setContactDraft({ name: "", role: "", department: "", phone: "", whatsapp: "", email: "", linkedinUrl: "", influenceLevel: "operacional", primaryDecisionMaker: "nao" });
+    setContactNotes("");
+  }
+
+  async function deleteContact(contactId: string) {
+    if (!canEdit) return showError(new Error("Seu perfil possui acesso somente leitura nesta ficha."));
+    try {
+      await api<{ ok: boolean }>(`${companyPath}/contacts/${encodeURIComponent(contactId)}`, { method: "DELETE" });
+      setContacts((items) => items.filter((item) => item.id !== contactId));
+      showSuccess("Contato removido.");
     } catch (err) {
       showError(err);
     }
@@ -376,29 +438,58 @@ export function LeadOperations({ company }: { company: Company }) {
 
   async function addNegotiation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!canEdit) return showError(new Error("Seu perfil possui acesso somente leitura nesta ficha."));
     const target = event.currentTarget;
-    const form = new FormData(target);
-    const title = `Negociação - ${String(form.get("service") || "Produto/serviço")}`;
+    if (!negotiationDraft.title.trim() && !negotiationDraft.service.trim()) return showError(new Error("Informe o título ou o produto/serviço da negociação."));
     const content = [
-      `**Valor da negociação:** ${String(form.get("value") || "Não informado")}`,
-      `**Produto/serviço de interesse:** ${String(form.get("service") || "Não informado")}`,
-      `**Etapa da negociação:** ${String(form.get("stage") || "Não informada")}`,
-      `**Probabilidade de fechamento:** ${String(form.get("probability") || "0")}%`,
-      `**Data prevista de fechamento:** ${String(form.get("expectedClose") || "Não informada")}`,
-      `**Motivo de perda:** ${String(form.get("lossReason") || "Não aplicável")}`,
-      `**Próxima ação comercial:** ${String(form.get("nextAction") || "Não informada")}`,
+      `**Título da negociação:** ${negotiationDraft.title || "Não informado"}`,
+      `**Produto/serviço de interesse:** ${negotiationDraft.service || "Não informado"}`,
+      `**Valor estimado:** ${negotiationDraft.value || "Não informado"}`,
+      `**Etapa da negociação:** ${negotiationDraft.stage || "Não informada"}`,
+      `**Temperatura:** ${negotiationDraft.temperature || "Não informada"}`,
+      `**Probabilidade de fechamento:** ${negotiationDraft.probability || "0"}%`,
+      `**Origem da oportunidade:** ${negotiationDraft.origin || "Não informada"}`,
+      `**Data prevista de fechamento:** ${negotiationDraft.expectedClose || "Não informada"}`,
+      `**Motivo de perda:** ${negotiationDraft.lossReason || "Não aplicável"}`,
+      `**Próxima ação comercial:** ${negotiationDraft.nextAction || "Não informada"}`,
       "",
       dealNotes || "Sem observações."
     ].join("\n");
+    const title = negotiationDraft.title.trim() || `Negociação - ${negotiationDraft.service.trim() || "Produto/serviço"}`;
     try {
-      const document = await api<DocumentItem>(`${companyPath}/documents`, {
-        method: "POST",
+      const document = await api<DocumentItem>(`${companyPath}/documents${editingNegotiationId ? `/${encodeURIComponent(editingNegotiationId)}` : ""}`, {
+        method: editingNegotiationId ? "PATCH" : "POST",
         body: JSON.stringify({ type: "negociacao", title, content })
       });
-      setDocuments((items) => [document, ...items]);
+      setDocuments((items) => editingNegotiationId ? items.map((item) => item.id === editingNegotiationId ? document : item) : [document, ...items]);
       setDealNotes("");
+      setNegotiationDraft({ title: "", service: "", value: "", stage: "Primeiro contato", temperature: "Morno", probability: "50", origin: "CRM", expectedClose: "", lossReason: "", nextAction: "" });
+      setEditingNegotiationId(null);
       target.reset();
-      showSuccess("Negociação registrada.");
+      showSuccess(editingNegotiationId ? "Negociação atualizada." : "Negociação registrada.");
+    } catch (err) {
+      showError(err);
+    }
+  }
+
+  function startEditNegotiation(document: DocumentItem) {
+    setEditingNegotiationId(document.id);
+    setNegotiationDraft((current) => ({ ...current, title: document.title.replace(/^Negociação - /, "") }));
+    setDealNotes(document.content || "");
+  }
+
+  function cancelEditNegotiation() {
+    setEditingNegotiationId(null);
+    setNegotiationDraft({ title: "", service: "", value: "", stage: "Primeiro contato", temperature: "Morno", probability: "50", origin: "CRM", expectedClose: "", lossReason: "", nextAction: "" });
+    setDealNotes("");
+  }
+
+  async function deleteNegotiation(documentId: string) {
+    if (!canEdit) return showError(new Error("Seu perfil possui acesso somente leitura nesta ficha."));
+    try {
+      await api<{ ok: boolean }>(`${companyPath}/documents/${encodeURIComponent(documentId)}`, { method: "DELETE" });
+      setDocuments((items) => items.filter((item) => item.id !== documentId));
+      showSuccess("Negociação removida.");
     } catch (err) {
       showError(err);
     }
@@ -406,25 +497,40 @@ export function LeadOperations({ company }: { company: Company }) {
 
   async function addCommunication(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!canEdit) return showError(new Error("Seu perfil possui acesso somente leitura nesta ficha."));
     const target = event.currentTarget;
     const form = new FormData(target);
+    const subject = String(form.get("subject") || "").trim();
+    const body = String(form.get("body") || "").trim();
+    if (!subject && !body) return showError(new Error("Informe um resumo ou observação detalhada da interação."));
     try {
       const comm = await api<Communication>(`${companyPath}/communications`, {
         method: "POST",
         body: JSON.stringify({
           type: form.get("type"),
           direction: form.get("direction"),
-          subject: form.get("subject"),
-          body: form.get("body"),
+          subject,
+          body,
           sentAt: form.get("sentAt") || new Date().toISOString(),
           responsible: form.get("responsible"),
-          nextAction: form.get("nextAction")
+          nextAction: [form.get("nextAction"), form.get("nextActionAt") ? `em ${form.get("nextActionAt")}` : ""].filter(Boolean).join(" ")
         })
       });
       setCommunications((items) => [comm, ...items]);
       target.reset();
       setCommunicationBody("");
       showSuccess("Interação registrada.");
+    } catch (err) {
+      showError(err);
+    }
+  }
+
+  async function deleteCommunication(commId: string) {
+    if (!canEdit) return showError(new Error("Seu perfil possui acesso somente leitura nesta ficha."));
+    try {
+      await api<{ ok: boolean }>(`${companyPath}/communications/${encodeURIComponent(commId)}`, { method: "DELETE" });
+      setCommunications((items) => items.filter((item) => item.id !== commId));
+      showSuccess("Interação removida.");
     } catch (err) {
       showError(err);
     }
@@ -658,6 +764,11 @@ export function LeadOperations({ company }: { company: Company }) {
 
       {message && <p className="mt-4 rounded-md border border-success/30 bg-success/10 px-3 py-2 text-sm text-emerald-200">{message}</p>}
       {error && <p className="mt-4 rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-red-200">{error}</p>}
+      {!canEdit && (
+        <p className="mt-4 rounded-md border border-line bg-panel px-3 py-2 text-sm text-slate-300">
+          Perfil viewer: esta ficha está em modo somente leitura. Criação, edição e exclusão permanecem bloqueadas.
+        </p>
+      )}
 
       {tab === "dados" && (
         <form onSubmit={saveLeadData} className="mt-5 space-y-5">
@@ -795,30 +906,50 @@ export function LeadOperations({ company }: { company: Company }) {
 
       {tab === "decisores" && (
         <div className="mt-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
-          <form onSubmit={addContact} className="space-y-3">
-            <input name="name" required placeholder="Nome do contato" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-            <input name="role" placeholder="Cargo/função" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <input name="email" placeholder="Email" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <input name="phone" placeholder="Telefone" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <input name="whatsapp" placeholder="WhatsApp celular" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <input name="linkedinUrl" placeholder="LinkedIn URL" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <select name="influenceLevel" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm">
-                <option value="">Nível de influência</option>
-                <option value="Decisor">Decisor</option>
-                <option value="Influenciador">Influenciador</option>
-                <option value="Operacional">Operacional</option>
-              </select>
+          <form onSubmit={addContact} className={`${cardClass} space-y-4`}>
+            <div>
+              <h4 className="font-semibold text-white">{editingContactId ? "Editar contato" : "Adicionar novo contato"}</h4>
+              <p className="mt-1 text-xs text-slate-400">Cadastre decisores, influenciadores e contatos operacionais vinculados à empresa.</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <TextInput label="Nome do contato" required disabled={!canEdit} value={contactDraft.name} onChange={(value) => setContactDraft((current) => ({ ...current, name: value }))} />
+              <TextInput label="Cargo/função" disabled={!canEdit} value={contactDraft.role} onChange={(value) => setContactDraft((current) => ({ ...current, role: value }))} />
+              <TextInput label="Departamento" disabled={!canEdit} value={contactDraft.department} onChange={(value) => setContactDraft((current) => ({ ...current, department: value }))} />
+              <TextInput label="Telefone" disabled={!canEdit} value={contactDraft.phone} onChange={(value) => setContactDraft((current) => ({ ...current, phone: value }))} />
+              <TextInput label="WhatsApp" disabled={!canEdit} value={contactDraft.whatsapp} onChange={(value) => setContactDraft((current) => ({ ...current, whatsapp: value }))} />
+              <TextInput label="E-mail" type="email" disabled={!canEdit} value={contactDraft.email} onChange={(value) => setContactDraft((current) => ({ ...current, email: value }))} />
+              <TextInput label="LinkedIn" disabled={!canEdit} value={contactDraft.linkedinUrl} onChange={(value) => setContactDraft((current) => ({ ...current, linkedinUrl: value }))} />
+              <label className="block">
+                <span className={labelClass}>Nível de influência</span>
+                <select disabled={!canEdit} value={contactDraft.influenceLevel} onChange={(event) => setContactDraft((current) => ({ ...current, influenceLevel: event.target.value }))} className={selectClass}>
+                  <option value="decisor">Decisor</option>
+                  <option value="influenciador">Influenciador</option>
+                  <option value="operacional">Operacional</option>
+                </select>
+              </label>
+              <label className="block md:col-span-2">
+                <span className={labelClass}>Principal decisor</span>
+                <select disabled={!canEdit} value={contactDraft.primaryDecisionMaker} onChange={(event) => setContactDraft((current) => ({ ...current, primaryDecisionMaker: event.target.value }))} className={selectClass}>
+                  <option value="nao">Não</option>
+                  <option value="sim">Sim</option>
+                </select>
+              </label>
             </div>
             <input type="hidden" name="notes" value={contactNotes} />
-            <RichTextEditor value={contactNotes} onChange={setContactNotes} minHeight={150} placeholder="Observações do contato, influência, abordagem e relacionamento..." />
-            <button className="btn-action px-4 py-2 text-sm"><Plus className="h-4 w-4" />Adicionar contato</button>
+            <div>
+              <span className={labelClass}>Observações</span>
+              <RichTextEditor value={contactNotes} onChange={setContactNotes} minHeight={170} placeholder="Observações do contato, influência, abordagem e relacionamento..." />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button disabled={!canEdit} className="btn-action px-4 py-2 text-sm disabled:opacity-60"><Plus className="h-4 w-4" />{editingContactId ? "Salvar contato" : "Adicionar contato"}</button>
+              {editingContactId && <button type="button" onClick={cancelEditContact} className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2 text-sm font-semibold text-[var(--text-primary)]"><RotateCcw className="h-4 w-4" />Cancelar</button>}
+            </div>
           </form>
           <div className="space-y-3">
             {contacts.length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhum contato cadastrado.</p>}
             {contacts.map((contact) => (
               <article key={contact.id} className="rounded-lg border border-line bg-ink p-4">
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-3 md:grid-cols-[1fr_auto]">
                   <div>
                     <p className="font-semibold text-white">{contact.name}</p>
                     <p className="mt-1 text-sm text-slate-400">{contact.role || "Cargo não informado"}</p>
@@ -829,6 +960,10 @@ export function LeadOperations({ company }: { company: Company }) {
                     {contact.whatsapp && <span>WhatsApp: {contact.whatsapp}</span>}
                     {contact.linkedin_url && <a href={contact.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-cyan hover:underline">LinkedIn</a>}
                   </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button disabled={!canEdit} onClick={() => startEditContact(contact)} className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-3 py-2 text-xs font-semibold text-[var(--text-primary)] disabled:opacity-50"><Pencil className="h-3.5 w-3.5" />Editar</button>
+                  <button disabled={!canEdit} onClick={() => void deleteContact(contact.id)} className="inline-flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs font-semibold text-red-200 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" />Excluir</button>
                 </div>
                 {contact.notes && (
                   <div className="mt-3 rounded-lg border border-line bg-panel/70 p-3">
@@ -845,35 +980,58 @@ export function LeadOperations({ company }: { company: Company }) {
       {tab === "historico" && (
         <div className="mt-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
           <div className="space-y-4">
-            <form onSubmit={addCommunication} className="space-y-3 rounded-lg border border-line bg-panel/70 p-4">
-              <p className="text-sm font-semibold text-white">Registrar interação manual</p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <select name="type" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm">
-                  {["whatsapp", "email", "call", "meeting", "note", "internal", "linkedin", "instagram"].map((item) => <option key={item} value={item}>{item}</option>)}
-                </select>
-                <select name="direction" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm">
-                  <option value="outbound">Saída</option>
-                  <option value="inbound">Entrada</option>
-                  <option value="manual">Manual</option>
-                </select>
+            <form onSubmit={addCommunication} className={`${cardClass} space-y-4`}>
+              <div>
+                <h4 className="font-semibold text-white">Registrar interação comercial</h4>
+                <p className="mt-1 text-xs text-slate-400">Inclua ligação, WhatsApp, e-mail, reunião, proposta ou observação com próxima ação.</p>
               </div>
-              <input name="subject" placeholder="Assunto" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input name="sentAt" type="datetime-local" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-                <input name="responsible" placeholder="Responsável pelo registro" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="block">
+                  <span className={labelClass}>Tipo de interação</span>
+                  <select name="type" disabled={!canEdit} className={selectClass}>
+                    <option value="call">Ligação</option>
+                    <option value="whatsapp">WhatsApp</option>
+                    <option value="email">E-mail</option>
+                    <option value="meeting">Reunião</option>
+                    <option value="proposal">Proposta</option>
+                    <option value="note">Observação</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="internal">Interno</option>
+                  </select>
+                </label>
+                <label className="block">
+                  <span className={labelClass}>Canal utilizado</span>
+                  <select name="direction" disabled={!canEdit} className={selectClass}>
+                    <option value="outbound">Saída</option>
+                    <option value="inbound">Entrada</option>
+                    <option value="manual">Manual</option>
+                  </select>
+                </label>
+                <TextInput label="Resumo do contato" disabled={!canEdit} name="subject" />
+                <TextInput label="Data da interação" disabled={!canEdit} name="sentAt" type="datetime-local" />
+                <TextInput label="Responsável" disabled={!canEdit} name="responsible" />
+                <TextInput label="Próxima ação" disabled={!canEdit} name="nextAction" />
               </div>
-              <input name="nextAction" placeholder="Próxima ação" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <label className="block">
+                <span className={labelClass}>Data da próxima ação</span>
+                <input name="nextActionAt" disabled={!canEdit} type="datetime-local" className={inputClass} />
+              </label>
               <input type="hidden" name="body" value={communicationBody} />
-              <RichTextEditor value={communicationBody} onChange={setCommunicationBody} minHeight={170} placeholder="Conteúdo da interação" />
-              <button className="btn-action px-4 py-2 text-sm"><Save className="h-4 w-4" />Registrar interação</button>
+              <div>
+                <span className={labelClass}>Observações detalhadas</span>
+                <RichTextEditor value={communicationBody} onChange={setCommunicationBody} minHeight={190} placeholder="Descreva o contato, objeções, combinado e contexto comercial..." />
+              </div>
+              {companyFiles.length > 0 && <p className="text-xs text-slate-400">Anexos disponíveis na aba Propostas e contratos: {companyFiles.length} arquivo(s).</p>}
+              <button disabled={!canEdit} className="btn-action px-4 py-2 text-sm disabled:opacity-60"><Save className="h-4 w-4" />Registrar interação</button>
             </form>
             <form onSubmit={sendEmail} className="space-y-3 rounded-lg border border-cyan/30 bg-cyan/5 p-4">
               <p className="text-sm font-semibold text-white">Enviar e-mail real via SMTP</p>
-              <input name="to" type="email" required defaultValue={(lead as any).emailPrincipal || ""} placeholder="cliente@empresa.com.br" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <input name="subject" required placeholder="Assunto do e-mail" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <input name="to" type="email" required disabled={!canEdit} defaultValue={(lead as any).emailPrincipal || ""} placeholder="cliente@empresa.com.br" className={inputClass} />
+              <input name="subject" required disabled={!canEdit} placeholder="Assunto do e-mail" className={inputClass} />
               <input type="hidden" name="body" value={emailBody || editor} />
               <RichTextEditor value={emailBody || editor} onChange={setEmailBody} minHeight={170} placeholder="Mensagem" />
-              <button className="inline-flex items-center gap-2 rounded-lg bg-cyan px-4 py-2 text-sm font-semibold text-ink"><MessageCircle className="h-4 w-4" />Enviar e registrar</button>
+              <button disabled={!canEdit} className="inline-flex items-center gap-2 rounded-lg bg-cyan px-4 py-2 text-sm font-semibold text-ink disabled:opacity-60"><MessageCircle className="h-4 w-4" />Enviar e registrar</button>
               <p className="text-xs text-slate-400">Se o envio real ainda não estiver ativo, o sistema retorna um aviso claro e nada é enviado.</p>
             </form>
           </div>
@@ -893,6 +1051,9 @@ export function LeadOperations({ company }: { company: Company }) {
                   </div>
                 )}
                 {comm.metadata?.nextAction && <p className="mt-3 rounded-lg border border-cyan/20 bg-cyan/5 px-3 py-2 text-sm text-slate-300"><strong className="text-white">Próxima ação:</strong> {comm.metadata.nextAction}</p>}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button disabled={!canEdit} onClick={() => void deleteCommunication(comm.id)} className="inline-flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs font-semibold text-red-200 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" />Excluir</button>
+                </div>
               </article>
             ))}
           </div>
@@ -901,19 +1062,49 @@ export function LeadOperations({ company }: { company: Company }) {
 
       {tab === "contratos" && (
         <div className="mt-5 grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
-          <form onSubmit={addNegotiation} className="space-y-3 rounded-lg border border-line bg-panel/70 p-4">
-            <p className="text-sm font-semibold text-white">Criar nova negociação</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <input name="value" placeholder="Valor da negociação" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <input name="service" placeholder="Produto/serviço de interesse" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <input name="stage" placeholder="Etapa da negociação" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <input name="probability" type="number" min={0} max={100} placeholder="Probabilidade (%)" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <input name="expectedClose" type="date" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <input name="lossReason" placeholder="Motivo de perda, se houver" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <input name="nextAction" placeholder="Próxima ação comercial" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm sm:col-span-2" />
+          <form onSubmit={addNegotiation} className={`${cardClass} space-y-4`}>
+            <div>
+              <h4 className="font-semibold text-white">{editingNegotiationId ? "Editar negociação" : "Criar nova negociação"}</h4>
+              <p className="mt-1 text-xs text-slate-400">Registre oportunidade, etapa, valor, probabilidade e próximos passos comerciais.</p>
             </div>
-            <RichTextEditor value={dealNotes} onChange={setDealNotes} minHeight={170} placeholder="Observações da negociação, próximos passos, objeções e contexto..." />
-            <button className="btn-action px-4 py-2 text-sm"><Plus className="h-4 w-4" />Criar nova negociação</button>
+            <div className="grid gap-3 md:grid-cols-2">
+              <TextInput label="Título da negociação" disabled={!canEdit} value={negotiationDraft.title} onChange={(value) => setNegotiationDraft((current) => ({ ...current, title: value }))} />
+              <TextInput label="Produto/serviço de interesse" disabled={!canEdit} value={negotiationDraft.service} onChange={(value) => setNegotiationDraft((current) => ({ ...current, service: value }))} />
+              <TextInput label="Valor estimado" disabled={!canEdit} value={negotiationDraft.value} onChange={(value) => setNegotiationDraft((current) => ({ ...current, value }))} />
+              <label className="block">
+                <span className={labelClass}>Etapa da negociação</span>
+                <select disabled={!canEdit} value={negotiationDraft.stage} onChange={(event) => setNegotiationDraft((current) => ({ ...current, stage: event.target.value }))} className={selectClass}>
+                  <option>Primeiro contato</option>
+                  <option>Qualificação</option>
+                  <option>Diagnóstico</option>
+                  <option>Proposta enviada</option>
+                  <option>Negociação</option>
+                  <option>Ganha</option>
+                  <option>Perdida</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className={labelClass}>Temperatura</span>
+                <select disabled={!canEdit} value={negotiationDraft.temperature} onChange={(event) => setNegotiationDraft((current) => ({ ...current, temperature: event.target.value }))} className={selectClass}>
+                  <option>Frio</option>
+                  <option>Morno</option>
+                  <option>Quente</option>
+                </select>
+              </label>
+              <TextInput label="Probabilidade de fechamento (%)" type="number" disabled={!canEdit} value={negotiationDraft.probability} onChange={(value) => setNegotiationDraft((current) => ({ ...current, probability: value }))} />
+              <TextInput label="Origem da oportunidade" disabled={!canEdit} value={negotiationDraft.origin} onChange={(value) => setNegotiationDraft((current) => ({ ...current, origin: value }))} />
+              <TextInput label="Data prevista de fechamento" type="date" disabled={!canEdit} value={negotiationDraft.expectedClose} onChange={(value) => setNegotiationDraft((current) => ({ ...current, expectedClose: value }))} />
+              <TextInput label="Motivo de perda" disabled={!canEdit} value={negotiationDraft.lossReason} onChange={(value) => setNegotiationDraft((current) => ({ ...current, lossReason: value }))} />
+              <TextInput label="Próxima ação" disabled={!canEdit} value={negotiationDraft.nextAction} onChange={(value) => setNegotiationDraft((current) => ({ ...current, nextAction: value }))} />
+            </div>
+            <div>
+              <span className={labelClass}>Observações da negociação</span>
+              <RichTextEditor value={dealNotes} onChange={setDealNotes} minHeight={190} placeholder="Observações da negociação, próximos passos, objeções e contexto..." />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button disabled={!canEdit} className="btn-action px-4 py-2 text-sm disabled:opacity-60"><Plus className="h-4 w-4" />{editingNegotiationId ? "Salvar negociação" : "Criar nova negociação"}</button>
+              {editingNegotiationId && <button type="button" onClick={cancelEditNegotiation} className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2 text-sm font-semibold text-[var(--text-primary)]"><RotateCcw className="h-4 w-4" />Cancelar</button>}
+            </div>
           </form>
           <div className="space-y-3">
             {documents.filter((item) => item.type === "negociacao").map((document) => (
@@ -924,6 +1115,10 @@ export function LeadOperations({ company }: { company: Company }) {
                 </div>
                 <div className="mt-3 text-sm text-slate-300">
                   <RichTextPreview value={document.content} />
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button disabled={!canEdit} onClick={() => startEditNegotiation(document)} className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-3 py-2 text-xs font-semibold text-[var(--text-primary)] disabled:opacity-50"><Pencil className="h-3.5 w-3.5" />Editar</button>
+                  <button disabled={!canEdit} onClick={() => void deleteNegotiation(document.id)} className="inline-flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs font-semibold text-red-200 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" />Excluir</button>
                 </div>
               </article>
             ))}
@@ -1103,13 +1298,47 @@ function Info({ label, value, isLink, hint }: { label: string; value?: string; i
 function Field({ name, label, defaultValue, placeholder, required }: { name: string; label: string; defaultValue?: string | number; placeholder?: string; required?: boolean }) {
   return (
     <label className="block">
-      <span className="text-xs font-semibold text-slate-400">{label}</span>
+      <span className={labelClass}>{label}</span>
       <input
         name={name}
         required={required}
         defaultValue={defaultValue ?? ""}
         placeholder={placeholder}
-        className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-white outline-none focus:border-electric"
+        className={inputClass}
+      />
+    </label>
+  );
+}
+
+function TextInput({
+  label,
+  name,
+  value,
+  onChange,
+  type = "text",
+  required,
+  disabled
+}: {
+  label: string;
+  name?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  type?: string;
+  required?: boolean;
+  disabled?: boolean;
+}) {
+  const controlled = value !== undefined;
+  return (
+    <label className="block">
+      <span className={labelClass}>{label}{required ? " *" : ""}</span>
+      <input
+        name={name}
+        type={type}
+        required={required}
+        disabled={disabled}
+        value={controlled ? value : undefined}
+        onChange={onChange ? (event) => onChange(event.target.value) : undefined}
+        className={inputClass}
       />
     </label>
   );

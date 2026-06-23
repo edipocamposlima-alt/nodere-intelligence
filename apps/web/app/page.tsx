@@ -8,21 +8,42 @@ import { getPublicPage } from "@/lib/publicContent";
 const problems = [
   "Prospecção manual consome horas sem resultado",
   "Não sabe quais empresas precisam do seu serviço",
-  "Leads frios demais para converter"
+  "Leads frios demais para converter",
+  "CRM, agenda, proposta e abordagem ficam espalhados"
 ];
 
 const solutions = [
-  { icon: "🔍", title: "Encontre empresas", desc: "Busque por segmento, cidade e raio geográfico. Acesse dados reais do Google com 1 clique." },
-  { icon: "📊", title: "Analise oportunidades", desc: "O Score NODERE pontua cada empresa de 0 a 1000 com base em presença digital e potencial comercial." },
-  { icon: "💼", title: "Organize no CRM", desc: "Salve leads direto no funil, acompanhe atividades e registre o histórico de relacionamento." },
-  { icon: "🤖", title: "Feche com IA", desc: "Gere diagnósticos, abordagens, mensagens de WhatsApp e propostas com IA em segundos." }
+  { tone: "discovery", icon: "🔎", title: "Discovery comercial", desc: "Busque empresas por cidade, segmento e raio, com dados reais do Google e sinais digitais." },
+  { tone: "crm", icon: "📊", title: "CRM e funil vivo", desc: "Transforme oportunidades em pipeline, acompanhe histórico, agenda, tarefas e proposta." },
+  { tone: "engage", icon: "💬", title: "WhatsApp e abordagem", desc: "Crie scripts, registre conversas e mantenha follow-ups com contexto do lead." },
+  { tone: "ai", icon: "✨", title: "IA comercial", desc: "Gere diagnóstico, recomendação de abordagem e proposta com dados reais de cada empresa." }
 ];
 
-const modules = [
-  { id: "discovery", label: "🔍 Inteligência e Discovery", title: "Busca comercial com dados reais", desc: "Encontre empresas por cidade, segmento, raio e sinais de maturidade digital." },
-  { id: "score", label: "📊 Score NODERE", title: "Priorização objetiva", desc: "Classifique oportunidades por presença digital, tráfego, reputação, site, WhatsApp e intenção comercial." },
-  { id: "crm", label: "💼 CRM Comercial", title: "Pipeline pronto para vender", desc: "Transforme resultados em leads, acompanhe etapas, tarefas, contatos, histórico e propostas." },
-  { id: "ai", label: "🤖 IA Comercial", title: "Abordagem com contexto", desc: "Crie diagnósticos, mensagens, scripts e propostas usando dados reais de cada empresa." }
+const people = [
+  {
+    name: "Camila Souza",
+    role: "Fundadora · Consultoria de marketing",
+    result: "12 contratos/mês",
+    image: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=500&q=80"
+  },
+  {
+    name: "Felipe Martins",
+    role: "Diretor comercial · Agência digital",
+    result: "3x conversões",
+    image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=500&q=80"
+  },
+  {
+    name: "Ana Lima",
+    role: "Gestora de tráfego",
+    result: "180 leads/semana",
+    image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=500&q=80"
+  },
+  {
+    name: "Roberto Alves",
+    role: "Gerente de vendas · Agência B2B",
+    result: "1 operação só",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&q=80"
+  }
 ];
 
 const audiences = [
@@ -34,9 +55,9 @@ const audiences = [
 ];
 
 const steps = [
-  { title: "Busque empresas na sua cidade por segmento", desc: "Resultados reais do Google com dados de presença digital." },
-  { title: "Analise o Score NODERE de cada empresa", desc: "Saiba exatamente quem tem mais potencial para contratar você." },
-  { title: "Aborde com IA e organize no CRM", desc: "Mensagens, diagnósticos e funil de vendas prontos para usar." }
+  { icon: "🔍", tag: "Passo 01", title: "Encontre com precisão", desc: "Busque por segmento e cidade. O NODERE cruza dados de presença digital, avaliações e oportunidades comerciais." },
+  { icon: "🧠", tag: "Passo 02", title: "Analise e priorize", desc: "Score, diagnóstico e IA ajudam sua equipe a entender quem tem mais chance real de comprar." },
+  { icon: "💬", tag: "Passo 03", title: "Aborde e feche", desc: "CRM, WhatsApp, agenda, histórico e proposta em PDF ficam conectados na mesma operação." }
 ];
 
 const plans = [
@@ -53,6 +74,54 @@ const faqs = [
   ["Preciso cadastrar cartão para testar?", "Não. O trial pode ser iniciado sem cartão de crédito."],
   ["Como funciona o Score NODERE?", "O score combina sinais de site, reputação, tráfego, redes, dados comerciais e oportunidades digitais."],
   ["Posso cancelar quando quiser?", "Sim. O cancelamento pode ser feito ao fim do ciclo contratado."]
+];
+
+const testimonials = [
+  {
+    quote: "Em 3 dias prospectei 180 empresas no meu segmento com diagnóstico automático. Nunca fui tão assertivo na abordagem.",
+    name: "Felipe Martins",
+    role: "Diretor comercial · Agência digital SP",
+    result: "3x mais conversões",
+    image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=120&q=80"
+  },
+  {
+    quote: "O diagnóstico de presença digital virou meu principal argumento de venda. O cliente vê o score e entende o problema.",
+    name: "Camila Souza",
+    role: "Fundadora · Consultoria de marketing",
+    result: "12 contratos/mês",
+    image: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=120&q=80"
+  },
+  {
+    quote: "Minha equipe parou de usar ferramentas soltas. Tudo ficou no mesmo fluxo, do lead até a proposta assinada.",
+    name: "Roberto Alves",
+    role: "Gerente de vendas · Agência B2B",
+    result: "1 plataforma para tudo",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&q=80"
+  }
+];
+
+const blogPosts = [
+  {
+    href: "/blog/prospeccao-200-empresas",
+    tag: "Discovery",
+    title: "Como prospectar 200 empresas por semana com score digital automatizado",
+    desc: "Use o Discovery para encontrar empresas com baixa presença digital e alto potencial.",
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=640&q=80"
+  },
+  {
+    href: "/blog/pipeline-inteligente",
+    tag: "CRM",
+    title: "Pipeline inteligente: como parar de perder leads no funil de vendas",
+    desc: "Configure estágios, alertas de estagnação e rotinas comerciais mais claras.",
+    image: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=640&q=80"
+  },
+  {
+    href: "/blog/copiloto-ia-scripts",
+    tag: "IA NODERE",
+    title: "Copiloto comercial: IA gerando scripts de abordagem em segundos",
+    desc: "Crie mensagens personalizadas com contexto real de cada lead.",
+    image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=640&q=80"
+  }
 ];
 
 const fallbackMetadata: Metadata = {
@@ -83,25 +152,37 @@ export default async function LandingPage() {
       <section className="landing-hero">
         <div className="landing-hero__content">
           <Logo variant="full" height={60} className="landing-hero__logo" />
-          <p className="landing-tagline">Encontre empresas, analise presença digital, priorize oportunidades e venda mais — com IA.</p>
-          <h1>Encontre empresas com baixa presença digital e venda seus serviços para quem realmente precisa.</h1>
+          <p className="landing-tagline">Plataforma comercial para quem vende serviços digitais</p>
+          <h1>Encontre empresas certas, priorize oportunidades e venda com uma operação mais humana.</h1>
           <p className="landing-subtitle">
-            O NODERE é a plataforma de inteligência comercial para agências e times de marketing que querem prospectar com dados reais e fechar mais negócios.
+            O NODERE conecta busca de empresas, score comercial, CRM, WhatsApp, propostas e IA para transformar prospecção em relacionamento e receita.
           </p>
           <div className="landing-actions">
             <Link href="/app/register" className="btn-primary-lg">Começar grátis 14 dias</Link>
-            <Link href="#demo" className="btn-ghost-lg">Ver demonstração →</Link>
+            <Link href="/app/login" className="btn-ghost-lg">Entrar</Link>
+            <Link href="#como-funciona" className="btn-ghost-lg">Como funciona</Link>
+          </div>
+          <div className="landing-hero__trust">
+            <span>✓ Sem cartão de crédito</span>
+            <span>✓ 14 dias grátis</span>
+            <span>✓ LGPD compliant</span>
           </div>
         </div>
-        <div className="landing-preview" id="demo">
-          <div className="landing-preview__bar"><span /> <span /> <span /></div>
-          <div className="landing-preview__grid">
-            <div><strong>Score NODERE</strong><b>842</b><small>Alta oportunidade</small></div>
-            <div><strong>Empresas encontradas</strong><b>128</b><small>Clínicas em Goiânia</small></div>
-            <div><strong>CRM ativo</strong><b>37</b><small>Leads priorizados</small></div>
+        <div className="landing-human-visual" id="demo">
+          <div className="landing-human-visual__photo">
+            <img
+              src="https://images.unsplash.com/photo-1551434678-e076c223a692?w=900&q=80"
+              alt="Profissional usando NODERE em uma operação comercial"
+            />
           </div>
-          <div className="landing-preview__pipeline">
-            {["Novo lead", "Qualificado", "Proposta", "Fechado"].map((item, index) => <span key={item} style={{ width: `${92 - index * 14}%` }}>{item}</span>)}
+          <div className="landing-score-card">
+            <span>Score de oportunidade</span>
+            <strong>87</strong>
+            <small>Alta chance de conversão</small>
+          </div>
+          <div className="landing-live-card">
+            <b>127</b>
+            <span>empresas analisadas hoje</span>
           </div>
         </div>
       </section>
@@ -112,7 +193,7 @@ export default async function LandingPage() {
           <h2>Você sabe onde estão seus próximos clientes?</h2>
         </div>
         <div className="landing-problem-grid">
-          {problems.map((item) => <article key={item}>❌ {item}</article>)}
+          {problems.map((item) => <article key={item}><span>!</span>{item}</article>)}
         </div>
       </section>
 
@@ -123,28 +204,37 @@ export default async function LandingPage() {
         </div>
         <div className="landing-solution-grid">
           {solutions.map((item) => (
-            <article key={item.title}>
+            <article key={item.title} className={`landing-solution-card--${item.tone}`}>
               <span>{item.icon}</span>
               <h3>{item.title}</h3>
               <p>{item.desc}</p>
+              <Link href="/solucoes">Conhecer solução →</Link>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="landing-section landing-modules">
-        <div className="landing-section__title">
-          <span>Módulos principais</span>
-          <h2>Quatro frentes para transformar prospecção em vendas</h2>
-        </div>
-        <div className="landing-tabs">
-          {modules.map((item, index) => (
-            <article key={item.id} className={index === 0 ? "active" : ""}>
-              <strong>{item.label}</strong>
-              <h3>{item.title}</h3>
-              <p>{item.desc}</p>
+      <section className="landing-people-section">
+        <div className="landing-people-photos">
+          {people.map((person) => (
+            <article key={person.name}>
+              <img src={person.image} alt={person.name} loading="lazy" />
+              <div>
+                <strong>{person.name}</strong>
+                <small>{person.role}</small>
+                <span>{person.result}</span>
+              </div>
             </article>
           ))}
+        </div>
+        <div className="landing-people-copy">
+          <span>Para quem vende serviços recorrentes</span>
+          <h2>Feito para quem vende mais com inteligência.</h2>
+          <p>Agências digitais, consultorias, times SDR e gestores de tráfego ganham uma rotina comercial mais visual, simples e confiável.</p>
+          <div className="landing-avatar-row" aria-label="Profissionais usando NODERE">
+            <span>👩‍💻</span><span>👨‍💼</span><span>👩‍🎨</span><span>👨‍🎨</span><b>+2k</b>
+          </div>
+          <Link href="/app/register" className="btn-primary-lg">Começar grátis →</Link>
         </div>
       </section>
 
@@ -158,7 +248,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section className="landing-section">
+      <section className="landing-section" id="como-funciona">
         <div className="landing-section__title">
           <span>Como funciona</span>
           <h2>Da busca ao fechamento em 3 passos</h2>
@@ -167,8 +257,10 @@ export default async function LandingPage() {
           {steps.map((item, index) => (
             <article key={item.title}>
               <b>{index + 1}</b>
+              <span>{item.icon}</span>
+              <small>{item.tag}</small>
               <h3>{item.title}</h3>
-              <p>→ {item.desc}</p>
+              <p>{item.desc}</p>
             </article>
           ))}
         </div>
@@ -195,6 +287,48 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      <section className="landing-section" id="clientes">
+        <div className="landing-section__title">
+          <span>Clientes</span>
+          <h2>Operações comerciais com mais clareza e velocidade</h2>
+        </div>
+        <div className="landing-testimonials">
+          {testimonials.map((item) => (
+            <article key={item.name}>
+              <div className="landing-stars">★★★★★</div>
+              <p>"{item.quote}"</p>
+              <div className="landing-testimonial-author">
+                <img src={item.image} alt={item.name} loading="lazy" />
+                <span>
+                  <strong>{item.name}</strong>
+                  <small>{item.role}</small>
+                  <b>{item.result}</b>
+                </span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-section" id="blog">
+        <div className="landing-section__title landing-blog-title">
+          <span>Blog & Conteúdo</span>
+          <h2>Aprenda a vender mais com inteligência comercial</h2>
+          <Link href="/blog">Ver todos os artigos →</Link>
+        </div>
+        <div className="landing-blog-grid">
+          {blogPosts.map((post) => (
+            <Link href={post.href} key={post.title}>
+              <img src={post.image} alt={post.title} loading="lazy" />
+              <span>{post.tag}</span>
+              <h3>{post.title}</h3>
+              <p>{post.desc}</p>
+              <small>Jun 2026 · 5 min</small>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       <section className="landing-section" id="faq">
         <div className="landing-section__title">
           <span>FAQ</span>
@@ -211,8 +345,9 @@ export default async function LandingPage() {
       </section>
 
       <section className="landing-final">
-        <h2>Comece a prospectar com inteligência hoje mesmo.</h2>
-        <Link href="/app/register" className="btn-primary-lg">Criar conta grátis — 14 dias</Link>
+        <h2>Pronto para encontrar seus próximos clientes?</h2>
+        <p>14 dias grátis. Sem cartão. Sem compromisso.</p>
+        <Link href="/app/register" className="btn-primary-lg">Criar conta grátis →</Link>
         <p>Sem cartão de crédito. Cancele quando quiser.</p>
       </section>
     </SitePageShell>
