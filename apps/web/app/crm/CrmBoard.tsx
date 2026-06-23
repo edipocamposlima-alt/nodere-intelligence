@@ -75,6 +75,36 @@ function isValidBrazilianMobile(phone?: string) {
   return local.length === 11 && local[2] === "9";
 }
 
+function inferProbability(stage: string) {
+  const normalized = stage.toLowerCase();
+  if (normalized.includes("perdid")) return 0;
+  if (normalized.includes("fechad") || normalized.includes("ganh")) return 100;
+  if (normalized.includes("negocia")) return 72;
+  if (normalized.includes("proposta")) return 60;
+  if (normalized.includes("reuni")) return 45;
+  if (normalized.includes("diagn")) return 30;
+  if (normalized.includes("contat")) return 20;
+  if (normalized.includes("qualific")) return 12;
+  return 5;
+}
+
+function inferTemperature(stage: string) {
+  const probability = inferProbability(stage);
+  if (probability >= 60) return "Quente";
+  if (probability >= 20) return "Morno";
+  return "Frio";
+}
+
+function defaultNextAction(stage: string) {
+  const normalized = stage.toLowerCase();
+  if (normalized.includes("perdid") || normalized.includes("fechad") || normalized.includes("ganh")) return "";
+  if (normalized.includes("proposta")) return "Acompanhar resposta da proposta";
+  if (normalized.includes("reuni")) return "Preparar reunião comercial";
+  if (normalized.includes("contat")) return "Agendar diagnóstico";
+  if (normalized.includes("diagn")) return "Enviar diagnóstico e próximos passos";
+  return "Realizar próximo contato comercial";
+}
+
 export function CrmBoard({ companies, onLeadClick }: { companies: Company[]; onLeadClick?: (lead: Company) => void }) {
   const [items, setItems] = useState(companies);
   const [query, setQuery] = useState("");
@@ -165,10 +195,36 @@ export function CrmBoard({ companies, onLeadClick }: { companies: Company[]; onL
 
   async function moveLead(companyId: string, status: string) {
     const previous = items;
-    setItems((current) => current.map((company) => company.id === companyId ? { ...company, status: status as CrmStatus } : company));
+    const lostReason = status.toLowerCase().includes("perdid")
+      ? window.prompt("Informe o motivo de perda deste lead:", "") || ""
+      : "";
+    const probability = inferProbability(status);
+    const temperature = inferTemperature(status);
+    const nextAction = defaultNextAction(status);
+    const lastContactAt = ["Contatado", "Reunião marcada", "Proposta enviada", "Negociação", "Fechado"].includes(status)
+      ? new Date().toISOString()
+      : undefined;
+    setItems((current) => current.map((company) => company.id === companyId ? {
+      ...company,
+      status: status as CrmStatus,
+      probability,
+      temperature,
+      nextAction,
+      lostReason,
+      lastContactAt: lastContactAt || company.lastContactAt,
+      updatedAt: new Date().toISOString()
+    } : company));
     setMessage("Salvando etapa do funil...");
     try {
-      await updateCompanyStatus(companyId, status);
+      const updated = await updateCompanyStatus(companyId, status, {
+        reason: "Movimentação no Kanban",
+        probability,
+        temperature,
+        nextAction,
+        lostReason,
+        lastContactAt
+      });
+      setItems((current) => current.map((company) => company.id === companyId ? { ...company, ...updated } : company));
       setMessage("Etapa atualizada no CRM.");
       setTimeout(() => setMessage(null), 2500);
     } catch (error) {
@@ -236,8 +292,18 @@ export function CrmBoard({ companies, onLeadClick }: { companies: Company[]; onL
   function stageValue(leads: Company[]) {
     return leads.reduce((sum, company) => {
       if (company.status === "Fechado" || company.status === "Perdido") return sum;
-      return sum + Math.max(0, Number(company.score || 0) * 100);
+      return sum + estimatedDealValue(company);
     }, 0);
+  }
+
+  function stageForecast(leads: Company[]) {
+    return leads.reduce((sum, company) => sum + estimatedDealValue(company) * ((company.probability ?? inferProbability(company.status)) / 100), 0);
+  }
+
+  function estimatedDealValue(company: Company) {
+    const explicit = Number(company.dealValue || 0);
+    if (Number.isFinite(explicit) && explicit > 0) return explicit;
+    return Math.max(0, Number(company.score || 0) * 100);
   }
 
   function formatBRL(value: number) {
@@ -404,6 +470,10 @@ export function CrmBoard({ companies, onLeadClick }: { companies: Company[]; onL
                 <div className="mt-2 flex items-center justify-between text-xs" style={{ color: stageTextColor }}>
                   <span>{leads.length} oportunidade(s)</span>
                   <span className="font-black">{formatBRL(stageValue(leads))}</span>
+                </div>
+                <div className="mt-1 flex items-center justify-between text-[11px]" style={{ color: stageTextColor }}>
+                  <span>Forecast ponderado</span>
+                  <span className="font-black">{formatBRL(stageForecast(leads))}</span>
                 </div>
               </div>
               <div className="crm-stage-scroll min-h-0 flex-1 space-y-3 overflow-y-scroll p-3 pr-2">

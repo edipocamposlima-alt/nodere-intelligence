@@ -13,9 +13,23 @@ interface LeadCardProps {
 }
 
 function temperatureFor(lead: Company) {
+  if (lead.temperature === "Quente") return "hot";
+  if (lead.temperature === "Morno") return "warm";
+  if (lead.temperature === "Frio") return "cold";
   if (lead.opportunityLevel === "Alta" || Number(lead.score || 0) >= 75) return "hot";
   if (lead.opportunityLevel === "Media" || Number(lead.score || 0) >= 45) return "warm";
   return "cold";
+}
+
+function daysStopped(lead: Company) {
+  const date = lead.updatedAt || lead.createdAt;
+  const days = Math.floor((Date.now() - new Date(date).getTime()) / 86400000);
+  return Number.isFinite(days) && days > 0 ? days : 0;
+}
+
+function formatDate(value?: string) {
+  if (!value) return "Sem contato";
+  return new Date(value).toLocaleDateString("pt-BR");
 }
 
 export function LeadCard({ lead, onEdit, onArchive }: LeadCardProps) {
@@ -42,7 +56,15 @@ export function LeadCard({ lead, onEdit, onArchive }: LeadCardProps) {
 
       <div className="mb-2 flex flex-wrap gap-1">
         <Badge variant={temperatureVariant}>{temperatureLabel}</Badge>
+        {lead.probability !== undefined && <Badge variant="default">{lead.probability}%</Badge>}
         {lead.category && <Badge className="max-w-[128px] truncate">{lead.category}</Badge>}
+      </div>
+
+      <div className="mb-2 space-y-1 rounded-lg border border-border-soft bg-bg-input px-2 py-2 text-[11px] text-text-secondary">
+        <p><strong className="text-text-primary">Último contato:</strong> {formatDate(lead.lastContactAt)}</p>
+        <p><strong className="text-text-primary">Tempo na etapa:</strong> {daysStopped(lead)} dia(s)</p>
+        {lead.nextAction && <p className="line-clamp-2"><strong className="text-text-primary">Próxima ação:</strong> {lead.nextAction}</p>}
+        {lead.status === "Perdido" && lead.lostReason && <p className="line-clamp-2 text-[var(--danger)]"><strong>Motivo:</strong> {lead.lostReason}</p>}
       </div>
 
       <div className="flex items-center justify-between gap-2 text-xs">

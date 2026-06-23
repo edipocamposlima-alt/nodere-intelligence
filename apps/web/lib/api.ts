@@ -157,10 +157,22 @@ export function createLead(payload: {
   return api<Company>("/leads", { method: "POST", body: JSON.stringify(payload) });
 }
 
-export function updateLeadStage(id: string, newStage: string, reason?: string) {
+export type CrmStageUpdatePayload = {
+  reason?: string;
+  probability?: number;
+  temperature?: string;
+  nextAction?: string;
+  lostReason?: string;
+  dealValue?: number;
+  expectedCloseDate?: string;
+  lastContactAt?: string;
+  ownerId?: string;
+};
+
+export function updateLeadStage(id: string, newStage: string, reason?: string, details?: CrmStageUpdatePayload) {
   return api<Company>(`/leads/${encodeURIComponent(id)}/stage`, {
     method: "PATCH",
-    body: JSON.stringify({ newStage, reason })
+    body: JSON.stringify({ newStage, reason, ...(details ?? {}) })
   });
 }
 
@@ -438,8 +450,8 @@ export async function importCompaniesFile(file: File, column_map?: Record<string
   return payload as { imported: number; duplicates: number; errors: Array<{ row: number; reason: string }> };
 }
 
-export function updateCompanyStatus(id: string, status: string) {
-  return api<Company>(companyPath(id, "/status"), { method: "PATCH", body: JSON.stringify({ status }) });
+export function updateCompanyStatus(id: string, status: string, details?: CrmStageUpdatePayload) {
+  return api<Company>(companyPath(id, "/status"), { method: "PATCH", body: JSON.stringify({ status, ...(details ?? {}) }) });
 }
 
 export function updateCompany(id: string, updates: Partial<Company>) {

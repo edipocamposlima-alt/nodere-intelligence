@@ -121,6 +121,19 @@ export interface OperationDocument {
   updatedAt?: string;
 }
 
+export interface CrmStageUpdateInput {
+  status: CrmStatus;
+  reason?: string;
+  probability?: number;
+  temperature?: string;
+  nextAction?: string;
+  lostReason?: string;
+  dealValue?: number;
+  expectedCloseDate?: string;
+  lastContactAt?: string;
+  ownerId?: string;
+}
+
 // ─── Supabase helpers ────────────────────────────────────────────────────────
 
 function toRow(c: Company, workspaceId = "default", includeWorkspace = workspaceColumnAvailable): Record<string, unknown> {
@@ -128,6 +141,7 @@ function toRow(c: Company, workspaceId = "default", includeWorkspace = workspace
     instagram, facebook, linkedin, youtube, rating, reviewCount, mapsUrl, cnpj, legalName,
     latitude, longitude, status, score, opportunityLevel, enrichmentStatus,
     lastContactAt, source, detectedOpportunities, suggestions, createdAt, updatedAt,
+    temperature, probability, dealValue, expectedCloseDate, lostReason, nextAction, ownerId,
     notes, ...rest } = c;
   const row: Record<string, unknown> = {
     id, name, category, city, state, address, phone, whatsapp, website,
@@ -141,6 +155,13 @@ function toRow(c: Company, workspaceId = "default", includeWorkspace = workspace
     opportunity_level: opportunityLevel,
     enrichment_status: enrichmentStatus ?? "none",
     last_contact_at: lastContactAt ?? null,
+    temperature: temperature ?? null,
+    probability: probability ?? null,
+    deal_value: dealValue ?? null,
+    expected_close_date: expectedCloseDate ?? null,
+    lost_reason: lostReason ?? null,
+    next_action: nextAction ?? null,
+    owner_id: ownerId ?? null,
     source,
     detected_opportunities: detectedOpportunities,
     suggestions,
@@ -178,6 +199,13 @@ function toUpdateRow(updates: Partial<Company>): Record<string, unknown> {
     ["latitude", "latitude"],
     ["longitude", "longitude"],
     ["status", "status"],
+    ["temperature", "temperature"],
+    ["probability", "probability"],
+    ["dealValue", "deal_value"],
+    ["expectedCloseDate", "expected_close_date"],
+    ["lostReason", "lost_reason"],
+    ["nextAction", "next_action"],
+    ["ownerId", "owner_id"],
     ["score", "score"],
     ["opportunityLevel", "opportunity_level"],
     ["enrichmentStatus", "enrichment_status"],
@@ -235,6 +263,13 @@ function fromRow(row: Record<string, unknown>): Company {
     opportunityLevel: (row.opportunity_level as Company["opportunityLevel"]) ?? "Baixa",
     enrichmentStatus: (row.enrichment_status as Company["enrichmentStatus"]) ?? "none",
     lastContactAt: row.last_contact_at as string | undefined,
+    temperature: row.temperature as string | undefined,
+    probability: row.probability as number | undefined,
+    dealValue: row.deal_value as number | undefined,
+    expectedCloseDate: row.expected_close_date as string | undefined,
+    lostReason: row.lost_reason as string | undefined,
+    nextAction: row.next_action as string | undefined,
+    ownerId: row.owner_id as string | undefined,
     source: row.source as Company["source"] | undefined,
     detectedOpportunities: (row.detected_opportunities as string[]) ?? [],
     suggestions: (row.suggestions as string[]) ?? [],
@@ -552,23 +587,70 @@ export async function saveCompanies(items: Company[], workspaceId = "default") {
   return scoped;
 }
 
-export async function updateStatus(id: string, status: CrmStatus, workspaceId = "default"): Promise<Company | undefined> {
+export async function updateCrmStage(id: string, input: CrmStageUpdateInput, workspaceId = "default"): Promise<Company | undefined> {
   const now = new Date().toISOString();
-  const fields: Record<string, unknown> = { status, updated_at: now };
-  if (status === "Contatado") fields.last_contact_at = now;
+  const fields: Record<string, unknown> = {
+    status: input.status,
+    updated_at: now,
+    temperature: input.temperature ?? inferTemperature(input.status),
+    probability: clampProbability(input.probability ?? inferProbability(input.status))
+  };
+  if (input.nextAction !== undefined) fields.next_action = input.nextAction;
+  if (input.lostReason !== undefined || input.status === "Perdido") fields.lost_reason = input.lostReason || "";
+  if (input.dealValue !== undefined) fields.deal_value = Math.max(0, Number(input.dealValue) || 0);
+  if (input.expectedCloseDate !== undefined) fields.expected_close_date = input.expectedCloseDate || null;
+  if (input.ownerId !== undefined) fields.owner_id = input.ownerId || null;
+  if (input.lastContactAt !== undefined) fields.last_contact_at = input.lastContactAt || null;
+  if (["Contatado", "Reunião marcada", "Proposta enviada", "Negociação", "Fechado"].includes(input.status) && !fields.last_contact_at) fields.last_contact_at = now;
 
   if (hasSupabase()) {
     await withPersistentWrite("atualizar etapa do lead", () => dbUpdateFields(id, fields, workspaceId), () => undefined);
   }
   const local = memStore.find((c) => c.id === id && (((c as any).workspaceId ?? "default") === workspaceId));
   if (local) {
-    local.status = status;
+    local.status = input.status;
     local.updatedAt = now;
-    if (status === "Contatado") local.lastContactAt = now;
+    local.temperature = String(fields.temperature || "");
+    local.probability = Number(fields.probability || 0);
+    if (fields.last_contact_at) local.lastContactAt = String(fields.last_contact_at);
+    if (fields.next_action !== undefined) local.nextAction = String(fields.next_action || "");
+    if (fields.lost_reason !== undefined) local.lostReason = String(fields.lost_reason || "");
+    if (fields.deal_value !== undefined) local.dealValue = Number(fields.deal_value || 0);
+    if (fields.expected_close_date !== undefined) local.expectedCloseDate = String(fields.expected_close_date || "");
+    if (fields.owner_id !== undefined) local.ownerId = String(fields.owner_id || "");
     return local;
   }
   if (hasSupabase()) return dbGet(id, workspaceId);
   return undefined;
+}
+
+export async function updateStatus(id: string, status: CrmStatus, workspaceId = "default"): Promise<Company | undefined> {
+  return updateCrmStage(id, { status }, workspaceId);
+}
+
+export function inferProbability(status: string) {
+  const normalized = status.toLowerCase();
+  if (normalized.includes("perdid")) return 0;
+  if (normalized.includes("fechad") || normalized.includes("ganh")) return 100;
+  if (normalized.includes("negocia")) return 72;
+  if (normalized.includes("proposta")) return 60;
+  if (normalized.includes("reuni")) return 45;
+  if (normalized.includes("diagn")) return 30;
+  if (normalized.includes("contat")) return 20;
+  if (normalized.includes("qualific")) return 12;
+  return 5;
+}
+
+export function inferTemperature(status: string) {
+  const probability = inferProbability(status);
+  if (probability >= 60) return "Quente";
+  if (probability >= 20) return "Morno";
+  return "Frio";
+}
+
+function clampProbability(value: number) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, Math.round(value)));
 }
 
 export async function addNote(id: string, body: string, workspaceId = "default") {

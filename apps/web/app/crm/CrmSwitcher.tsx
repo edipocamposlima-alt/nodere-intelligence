@@ -42,6 +42,18 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
     return Number.isFinite(days) && days >= 7 && !["Fechado", "Perdido", "Ganho", "Ganho(a)"].includes(String(company.status));
   }).length;
   const avgScore = items.length ? Math.round(items.reduce((sum, company) => sum + Number(company.score || 0), 0) / items.length) : 0;
+  const pipelineTotal = items.reduce((sum, company) => sum + leadValue(company), 0);
+  const forecastTotal = items.reduce((sum, company) => sum + leadValue(company) * (leadProbability(company) / 100), 0);
+  const stageMetrics = useMemo(() => stages.map((item, index) => {
+    const stageLeads = items.filter((company) => company.status === item);
+    const previous = index > 0 ? items.filter((company) => company.status === stages[index - 1]).length : stageLeads.length;
+    return {
+      stage: item,
+      count: stageLeads.length,
+      value: stageLeads.reduce((sum, company) => sum + leadValue(company), 0),
+      conversion: previous ? Math.round((stageLeads.length / previous) * 100) : 0
+    };
+  }), [items, stages]);
 
   function openNewLead() {
     setSelectedLead(null);
@@ -88,6 +100,27 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
               <p className={`mt-2 text-2xl font-black ${index === 4 && stale > 0 ? "text-amber-200" : "text-white"}`}>{value}</p>
             </div>
           ))}
+        </div>
+        <div className="mt-3 grid gap-3 lg:grid-cols-[0.8fr_0.8fr_1.4fr]">
+          <div className="rounded-xl border border-line bg-ink/70 p-4">
+            <p className="text-xs text-slate-500">Valor total do pipeline</p>
+            <p className="mt-2 text-2xl font-black text-white">{formatBRL(pipelineTotal)}</p>
+          </div>
+          <div className="rounded-xl border border-line bg-ink/70 p-4">
+            <p className="text-xs text-slate-500">Previsão de fechamento</p>
+            <p className="mt-2 text-2xl font-black text-cyan">{formatBRL(forecastTotal)}</p>
+          </div>
+          <div className="rounded-xl border border-line bg-ink/70 p-4">
+            <p className="text-xs text-slate-500">Negócios por etapa e conversão</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {stageMetrics.slice(0, 6).map((metric) => (
+                <div key={metric.stage} className="rounded-lg border border-line bg-bg-card px-3 py-2">
+                  <p className="truncate text-xs font-bold text-white">{metric.stage}</p>
+                  <p className="mt-1 text-[11px] text-slate-400">{metric.count} lead(s) · {metric.conversion}% conversão</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -159,4 +192,28 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
       />
     </section>
   );
+}
+
+function leadValue(company: Company) {
+  const explicit = Number(company.dealValue || 0);
+  if (Number.isFinite(explicit) && explicit > 0) return explicit;
+  return Math.max(0, Number(company.score || 0) * 100);
+}
+
+function leadProbability(company: Company) {
+  if (Number.isFinite(Number(company.probability))) return Math.max(0, Math.min(100, Number(company.probability)));
+  const status = String(company.status || "").toLowerCase();
+  if (status.includes("perdid")) return 0;
+  if (status.includes("fechad") || status.includes("ganh")) return 100;
+  if (status.includes("negocia")) return 72;
+  if (status.includes("proposta")) return 60;
+  if (status.includes("reuni")) return 45;
+  if (status.includes("diagn")) return 30;
+  if (status.includes("contat")) return 20;
+  if (status.includes("qualific")) return 12;
+  return 5;
+}
+
+function formatBRL(value: number) {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 }

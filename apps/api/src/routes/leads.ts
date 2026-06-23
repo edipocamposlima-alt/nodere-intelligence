@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { getSupabase } from "../db/supabase.js";
 import { getRequestWorkspaceId, requireWorkspaceRole } from "../middleware/session.js";
-import { addNote, getCompanyAsync, listCompaniesAsync, saveCompanies, updateCompany, updateStatus } from "../services/companyStore.js";
+import { addNote, getCompanyAsync, listCompaniesAsync, saveCompanies, updateCompany, updateCrmStage } from "../services/companyStore.js";
 
 const router = Router();
 const canEditCrm = requireWorkspaceRole("owner", "admin", "operator");
@@ -86,11 +86,30 @@ router.patch("/:id/stage", canEditCrm, async (req, res, next) => {
     const workspaceId = getRequestWorkspaceId(req);
     const current = await getCompanyAsync(String(req.params.id), workspaceId);
     if (!current) return res.status(404).json({ message: "Lead não encontrado." });
-    const updated = await updateStatus(String(req.params.id), body.newStage as any, workspaceId);
+    const updated = await updateCrmStage(String(req.params.id), {
+      status: body.newStage as any,
+      reason: body.reason,
+      probability: body.probability,
+      temperature: body.temperature,
+      nextAction: body.nextAction,
+      lostReason: body.lostReason,
+      dealValue: body.dealValue,
+      expectedCloseDate: body.expectedCloseDate,
+      lastContactAt: body.lastContactAt,
+      ownerId: body.ownerId
+    }, workspaceId);
     await recordActivity(req, String(req.params.id), "stage_change", `Etapa alterada para ${body.newStage}`, body.reason || "", {
       from: current.status,
       to: body.newStage,
-      reason: body.reason || ""
+      reason: body.reason || "",
+      probability: body.probability ?? updated?.probability ?? null,
+      temperature: body.temperature ?? updated?.temperature ?? null,
+      nextAction: body.nextAction ?? updated?.nextAction ?? "",
+      lostReason: body.lostReason ?? updated?.lostReason ?? "",
+      dealValue: body.dealValue ?? updated?.dealValue ?? null,
+      expectedCloseDate: body.expectedCloseDate ?? updated?.expectedCloseDate ?? "",
+      lastContactAt: body.lastContactAt ?? updated?.lastContactAt ?? "",
+      ownerId: body.ownerId ?? updated?.ownerId ?? ""
     });
     res.json(updated);
   } catch (error) {
@@ -455,7 +474,15 @@ const leadSchema = z.object({
 
 const stageSchema = z.object({
   newStage: z.string().min(2),
-  reason: z.string().optional()
+  reason: z.string().optional(),
+  probability: z.coerce.number().min(0).max(100).optional(),
+  temperature: z.string().optional(),
+  nextAction: z.string().optional(),
+  lostReason: z.string().optional(),
+  dealValue: z.coerce.number().min(0).optional(),
+  expectedCloseDate: z.string().optional(),
+  lastContactAt: z.string().optional(),
+  ownerId: z.string().optional()
 });
 
 const activitySchema = z.object({

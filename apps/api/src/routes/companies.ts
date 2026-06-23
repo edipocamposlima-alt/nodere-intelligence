@@ -20,6 +20,7 @@ import {
   updateCompany,
   updateDocument,
   saveCompanies,
+  updateCrmStage,
   updateStatus,
   updateTask
 } from "../services/companyStore.js";
@@ -495,13 +496,44 @@ router.get("/:id/enrichment", (req, res) => {
 
 router.patch("/:id/status", async (req, res, next) => {
   try {
-    const body = z.object({ status: z.string() }).parse(req.body);
+    const body = z.object({
+      status: z.string(),
+      reason: z.string().optional(),
+      probability: z.coerce.number().min(0).max(100).optional(),
+      temperature: z.string().optional(),
+      nextAction: z.string().optional(),
+      lostReason: z.string().optional(),
+      dealValue: z.coerce.number().min(0).optional(),
+      expectedCloseDate: z.string().optional(),
+      lastContactAt: z.string().optional(),
+      ownerId: z.string().optional()
+    }).parse(req.body);
     const workspaceId = getRequestWorkspaceId(req);
     const before = await getCompanyAsync(req.params.id, workspaceId).catch(() => null);
-    const company = await updateStatus(req.params.id, body.status as never, workspaceId);
+    const company = await updateCrmStage(req.params.id, {
+      status: body.status as never,
+      reason: body.reason,
+      probability: body.probability,
+      temperature: body.temperature,
+      nextAction: body.nextAction,
+      lostReason: body.lostReason,
+      dealValue: body.dealValue,
+      expectedCloseDate: body.expectedCloseDate,
+      lastContactAt: body.lastContactAt,
+      ownerId: body.ownerId
+    }, workspaceId);
     if (!company) return res.status(404).json({ message: "Company not found" });
     if (before?.status !== company.status) {
-      logRequestMetric(req, "crm_stage_changed", req.params.id, { from: before?.status || null, to: company.status });
+      logRequestMetric(req, "crm_stage_changed", req.params.id, {
+        from: before?.status || null,
+        to: company.status,
+        reason: body.reason || "",
+        probability: company.probability ?? null,
+        temperature: company.temperature || "",
+        nextAction: company.nextAction || "",
+        lostReason: company.lostReason || ""
+      });
+      await createCrmStageActivity(req, req.params.id, before?.status || "", company.status, body.reason || "", company as unknown as Record<string, unknown>).catch(() => undefined);
     }
     return res.json(company);
   } catch (err) { return next(err); }
@@ -1425,6 +1457,37 @@ function normalizeCompanyPatch(input: Record<string, unknown>) {
   return Object.fromEntries(
     Object.entries(input).map(([key, value]) => [key, value === null ? undefined : value])
   );
+}
+
+async function createCrmStageActivity(req: Parameters<typeof getRequestWorkspaceId>[0], companyId: string, from: string, to: string, reason: string, company: Record<string, unknown>) {
+  const sb = getSupabase();
+  if (!sb) return;
+  const row = {
+    id: randomUUID(),
+    workspace_id: getRequestWorkspaceId(req),
+    company_id: companyId,
+    type: "stage_change",
+    direction: "manual",
+    subject: `Etapa alterada para ${to}`,
+    body: reason || "",
+    sent_by: getSessionUserId(req) || null,
+    sent_at: new Date().toISOString(),
+    status: "sent",
+    metadata: {
+      from,
+      to,
+      reason,
+      probability: company.probability ?? null,
+      temperature: company.temperature ?? "",
+      nextAction: company.nextAction ?? "",
+      lostReason: company.lostReason ?? "",
+      dealValue: company.dealValue ?? null,
+      expectedCloseDate: company.expectedCloseDate ?? "",
+      source: "kanban"
+    }
+  };
+  const { error } = await sb.from("communications").insert(row);
+  if (error && !isMissingSupabaseSchema(error)) throw error;
 }
 
 async function logDownload(workspaceId: string, userId: string, fileType: string, fileName: string, metadata: Record<string, unknown>) {

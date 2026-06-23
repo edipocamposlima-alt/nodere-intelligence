@@ -10,6 +10,7 @@
     "test:phase1": "tsx --test src/tests/phase1-security.test.ts",
     "test:calendar": "tsx --test src/tests/calendar.test.ts",
     "test:reports": "tsx --test src/tests/reports.test.ts",
+    "test:crm": "tsx --test src/tests/crm-advanced.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "npm run typecheck"
   },

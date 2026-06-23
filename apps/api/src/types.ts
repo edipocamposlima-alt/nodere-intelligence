@@ -80,6 +80,13 @@ export interface Company {
   suggestedApproach?: string;
   enrichmentStatus?: EnrichmentStatus;
   status: CrmStatus;
+  temperature?: "Frio" | "Morno" | "Quente" | string;
+  probability?: number;
+  dealValue?: number;
+  expectedCloseDate?: string;
+  lostReason?: string;
+  nextAction?: string;
+  ownerId?: string;
   score: number;
   opportunityLevel: OpportunityLevel;
   detectedOpportunities: string[];

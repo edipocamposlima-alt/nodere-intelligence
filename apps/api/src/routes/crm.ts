@@ -16,6 +16,7 @@ import {
   listTasks,
   saveCompanies,
   updateCompany,
+  updateCrmStage,
   updateStatus
 } from "../services/companyStore.js";
 
@@ -68,7 +69,7 @@ router.patch("/cards/bulk-stage", async (req, res, next) => {
     const stage = String(req.body?.stage || "Novo Lead");
     const updated = [];
     for (const id of ids) {
-      const item = await updateStatus(id, stage as any, getRequestWorkspaceId(req));
+      const item = await updateCrmStage(id, { status: stage as any }, getRequestWorkspaceId(req));
       if (item) updated.push(item);
     }
     res.json({ updated });
