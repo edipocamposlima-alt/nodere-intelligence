@@ -291,6 +291,251 @@ export async function getOperatorsReport(workspaceId = "default") {
   });
 }
 
+export type ReportRole = "owner" | "admin" | "operator" | "viewer" | string;
+
+export interface ReportFilters {
+  period?: string;
+  groupBy?: string;
+  operatorId?: string;
+  companyId?: string;
+  status?: string;
+  source?: string;
+  role?: ReportRole;
+  userId?: string;
+}
+
+export interface ConsolidatedReport {
+  filters: Required<Pick<ReportFilters, "period" | "groupBy">> & Omit<ReportFilters, "period" | "groupBy">;
+  generated_at: string;
+  metrics: {
+    leads_created: number;
+    leads_converted: number;
+    conversion_rate: number;
+    open_opportunities: number;
+    deals_won: number;
+    deals_lost: number;
+    activities_done: number;
+    total_companies: number;
+    avg_score: number;
+    pipeline_value: number;
+  };
+  funnel: Array<{ name: string; count: number; pct_of_total: number; conversion_from_previous: number }>;
+  timeline: Array<{ date: string; count: number }>;
+  origins: Array<{ source: string; count: number }>;
+  statuses: Array<{ status: string; count: number }>;
+  segments: Array<{ segment: string; count: number; avg_score: number }>;
+  cities: Array<{ city: string; state?: string; count: number }>;
+  operators: Array<{ user_id: string; name: string; email?: string; role?: string; leads_created: number; followups_done: number; leads_closed: number; conversion_rate?: number }>;
+  options: {
+    companies: Array<{ id: string; name: string }>;
+    operators: Array<{ id: string; name: string; role?: string }>;
+    statuses: string[];
+    origins: string[];
+  };
+  warnings: string[];
+}
+
+export function normalizeReportFilters(input: ReportFilters = {}): Required<Pick<ReportFilters, "period" | "groupBy">> & Omit<ReportFilters, "period" | "groupBy"> {
+  const period = ["7d", "30d", "90d", "12m"].includes(String(input.period)) ? String(input.period) : "30d";
+  const groupBy = ["day", "week", "month"].includes(String(input.groupBy)) ? String(input.groupBy) : "day";
+  const role = input.role || "viewer";
+  const userId = input.userId || "";
+  return {
+    ...input,
+    period,
+    groupBy,
+    role,
+    userId,
+    operatorId: role === "operator" ? userId : input.operatorId || "",
+    companyId: input.companyId || "",
+    status: input.status || "",
+    source: input.source || ""
+  };
+}
+
+export async function getConsolidatedReport(workspaceId = "default", input: ReportFilters = {}): Promise<ConsolidatedReport> {
+  const filters = normalizeReportFilters(input);
+  const allCompanies = await listCompaniesAsync(workspaceId);
+  const scopedCompanies = filterCompaniesForReport(allCompanies, filters, { includePeriod: false, includeFieldFilters: false });
+  const companies = filterCompaniesForReport(allCompanies, filters);
+  const won = companies.filter(isWonStatus);
+  const lost = companies.filter(isLostStatus);
+  const open = companies.filter((company) => !isWonStatus(company) && !isLostStatus(company));
+  const decided = won.length + lost.length;
+  const metrics = await getReportActivityMetrics(workspaceId, filters, companies);
+  const operators = await getOperatorsReport(workspaceId).catch(() => []);
+  const filteredOperators = filters.operatorId
+    ? operators.filter((operator) => operator.user_id === filters.operatorId)
+    : filters.role === "operator" && filters.userId
+      ? operators.filter((operator) => operator.user_id === filters.userId)
+      : operators;
+  const stageEntries = [...groupBy(companies, (company) => company.status || "Novo Lead").entries()]
+    .sort(([a], [b]) => stageIndex(a) - stageIndex(b));
+  let previousCount = companies.length;
+
+  return {
+    filters,
+    generated_at: new Date().toISOString(),
+    metrics: {
+      leads_created: companies.length,
+      leads_converted: won.length,
+      conversion_rate: decided ? Math.round((won.length / decided) * 10000) / 100 : 0,
+      open_opportunities: open.length,
+      deals_won: won.length,
+      deals_lost: lost.length,
+      activities_done: metrics.activitiesDone,
+      total_companies: companies.length,
+      avg_score: companies.length ? Math.round(companies.reduce((sum, company) => sum + (company.score || 0), 0) / companies.length) : 0,
+      pipeline_value: open.reduce((sum, company) => sum + getEstimatedValue(company), 0)
+    },
+    funnel: stageEntries.map(([name, items]) => {
+      const pct = companies.length ? Math.round((items.length / companies.length) * 10000) / 100 : 0;
+      const conversion = previousCount ? Math.round((items.length / previousCount) * 10000) / 100 : 0;
+      previousCount = items.length;
+      return { name, count: items.length, pct_of_total: pct, conversion_from_previous: conversion };
+    }),
+    timeline: buildTimeline(companies, filters.groupBy),
+    origins: [...groupBy(companies, (company) => String((company as any).source || "manual")).entries()]
+      .map(([source, items]) => ({ source, count: items.length }))
+      .sort((a, b) => b.count - a.count),
+    statuses: [...groupBy(companies, (company) => company.status || "Novo Lead").entries()]
+      .map(([status, items]) => ({ status, count: items.length }))
+      .sort((a, b) => b.count - a.count),
+    segments: [...groupBy(companies, (company) => company.category || "Sem segmento").entries()]
+      .map(([segment, items]) => ({
+        segment,
+        count: items.length,
+        avg_score: items.length ? Math.round(items.reduce((sum, company) => sum + (company.score || 0), 0) / items.length) : 0
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 20),
+    cities: [...groupBy(companies, (company) => `${company.city || "Sem cidade"}|${company.state || ""}`).entries()]
+      .map(([key, items]) => {
+        const [city, state] = key.split("|");
+        return { city, state, count: items.length };
+      })
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 20),
+    operators: filteredOperators,
+    options: {
+      companies: scopedCompanies.map((company) => ({ id: company.id, name: company.name })).sort((a, b) => a.name.localeCompare(b.name)).slice(0, 250),
+      operators: operators.map((operator) => ({ id: operator.user_id, name: operator.name, role: operator.role })),
+      statuses: [...new Set(scopedCompanies.map((company) => company.status || "Novo Lead"))].sort(),
+      origins: [...new Set(scopedCompanies.map((company) => String((company as any).source || "manual")))].sort()
+    },
+    warnings: metrics.warning ? [metrics.warning] : []
+  };
+}
+
+export function buildReportCsv(report: ConsolidatedReport) {
+  const rows: Array<Array<string | number>> = [
+    ["seção", "nome", "quantidade", "valor"],
+    ["indicador", "leads_criados", report.metrics.leads_created, ""],
+    ["indicador", "leads_convertidos", report.metrics.leads_converted, ""],
+    ["indicador", "taxa_conversao", report.metrics.conversion_rate, "%"],
+    ["indicador", "oportunidades_abertas", report.metrics.open_opportunities, ""],
+    ["indicador", "negocios_ganhos", report.metrics.deals_won, ""],
+    ["indicador", "negocios_perdidos", report.metrics.deals_lost, ""],
+    ["indicador", "atividades_realizadas", report.metrics.activities_done, ""],
+    ...report.funnel.map((item) => ["funil", item.name, item.count, `${item.pct_of_total}%`]),
+    ...report.timeline.map((item) => ["timeline", item.date, item.count, ""]),
+    ...report.origins.map((item) => ["origem", item.source, item.count, ""]),
+    ...report.statuses.map((item) => ["status", item.status, item.count, ""]),
+    ...report.segments.map((item) => ["segmento", item.segment, item.count, item.avg_score]),
+    ...report.cities.map((item) => ["cidade", `${item.city}${item.state ? `/${item.state}` : ""}`, item.count, ""]),
+    ...report.operators.map((item) => ["operador", item.name, item.leads_created, item.followups_done])
+  ];
+  return rows.map((row) => row.map(escapeCsvCell).join(",")).join("\n");
+}
+
+export function escapeCsvCell(value: string | number) {
+  const text = String(value ?? "");
+  const safe = /^[=+\-@]/.test(text) ? `'${text}` : text;
+  return `"${safe.replace(/"/g, '""')}"`;
+}
+
+export function filterCompaniesForReport(companies: Company[], input: ReportFilters, options: { includePeriod?: boolean; includeFieldFilters?: boolean } = {}) {
+  const filters = normalizeReportFilters(input);
+  const includePeriod = options.includePeriod !== false;
+  const includeFieldFilters = options.includeFieldFilters !== false;
+  const since = getPeriodStart(filters.period).getTime();
+  return companies.filter((company) => {
+    if (filters.role === "operator" && filters.userId && !companyBelongsToOperator(company, filters.userId)) return false;
+    if (includePeriod && new Date(company.createdAt || 0).getTime() < since) return false;
+    if (includeFieldFilters && filters.operatorId && !companyBelongsToOperator(company, filters.operatorId)) return false;
+    if (includeFieldFilters && filters.companyId && company.id !== filters.companyId) return false;
+    if (includeFieldFilters && filters.status && company.status !== filters.status) return false;
+    if (includeFieldFilters && filters.source && String((company as any).source || "manual") !== filters.source) return false;
+    return true;
+  });
+}
+
+async function getReportActivityMetrics(workspaceId: string, filters: ReturnType<typeof normalizeReportFilters>, companies: Company[]) {
+  const companyIds = new Set(companies.map((company) => company.id));
+  try {
+    const rows = await getUserMetrics(workspaceId, getPeriodStart(filters.period).toISOString());
+    const scoped = rows.filter((row) => {
+      if (filters.role === "operator" && filters.userId && row.user_id !== filters.userId) return false;
+      if (filters.operatorId && row.user_id !== filters.operatorId) return false;
+      if (row.entity_id && companyIds.size && !companyIds.has(row.entity_id)) return false;
+      return row.action !== "search_performed";
+    });
+    return { activitiesDone: scoped.length };
+  } catch {
+    return { activitiesDone: 0, warning: "Métricas de atividade indisponíveis; atividades exibidas como zero." };
+  }
+}
+
+function buildTimeline(companies: Company[], groupByMode = "day") {
+  const formatKey = (company: Company) => {
+    const date = new Date(company.createdAt || new Date().toISOString());
+    if (groupByMode === "month") return date.toISOString().slice(0, 7);
+    if (groupByMode === "week") {
+      const start = new Date(date);
+      start.setDate(date.getDate() - date.getDay());
+      return start.toISOString().slice(0, 10);
+    }
+    return date.toISOString().slice(0, 10);
+  };
+  return [...groupBy(companies, formatKey).entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, items]) => ({ date, count: items.length }));
+}
+
+function companyBelongsToOperator(company: Company, operatorId: string) {
+  const source = company as Company & Record<string, unknown>;
+  return [source.ownerId, source.operatorId, source.assignedTo, source.assigned_to, source.createdBy, source.created_by, source.userId]
+    .filter(Boolean)
+    .map(String)
+    .includes(operatorId);
+}
+
+function isWonStatus(company: Company) {
+  const status = normalizeStatusKey(company.status || "");
+  return ["fechado", "cliente", "ganho", "won", "closedwon", "closed_won"].includes(status);
+}
+
+function isLostStatus(company: Company) {
+  const status = normalizeStatusKey(company.status || "");
+  return ["perdido", "lost", "closedlost", "closed_lost"].includes(status);
+}
+
+function normalizeStatusKey(status: string) {
+  return status.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, "").replace(/-/g, "_");
+}
+
+function getEstimatedValue(company: Company) {
+  const explicit = Number((company as any).crmValue ?? (company as any).crm_value ?? (company as any).dealValue ?? 0);
+  if (Number.isFinite(explicit) && explicit > 0) return explicit;
+  const meta = STAGE_META[company.status] ?? { probability: 0.15, avgValue: 3000 };
+  return Math.round(meta.avgValue * meta.probability);
+}
+
+function getPeriodStart(period: string) {
+  const days = period === "7d" ? 7 : period === "90d" ? 90 : period === "12m" ? 365 : 30;
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+}
+
 function groupBy<T>(items: T[], getKey: (item: T) => string) {
   const grouped = new Map<string, T[]>();
   for (const item of items) {

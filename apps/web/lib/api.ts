@@ -724,7 +724,63 @@ export function getReportOperators() {
   }>>("/reports/operators", undefined, []);
 }
 
-export async function downloadReportPdf(period = "30d", groupBy = "day") {
+export interface ReportFilters {
+  period?: string;
+  groupBy?: string;
+  operatorId?: string;
+  companyId?: string;
+  status?: string;
+  source?: string;
+}
+
+export interface ReportDashboard {
+  filters: ReportFilters & { period: string; groupBy: string };
+  generated_at: string;
+  metrics: {
+    leads_created: number;
+    leads_converted: number;
+    conversion_rate: number;
+    open_opportunities: number;
+    deals_won: number;
+    deals_lost: number;
+    activities_done: number;
+    total_companies: number;
+    avg_score: number;
+    pipeline_value: number;
+  };
+  funnel: Array<{ name: string; count: number; pct_of_total: number; conversion_from_previous: number }>;
+  timeline: Array<{ date: string; count: number }>;
+  origins: Array<{ source: string; count: number }>;
+  statuses: Array<{ status: string; count: number }>;
+  segments: Array<{ segment: string; count: number; avg_score: number }>;
+  cities: Array<{ city: string; state?: string; count: number }>;
+  operators: Array<{ user_id: string; name: string; email?: string; role?: string; leads_created: number; followups_done: number; leads_closed: number; conversion_rate?: number }>;
+  options: {
+    companies: Array<{ id: string; name: string }>;
+    operators: Array<{ id: string; name: string; role?: string }>;
+    statuses: string[];
+    origins: string[];
+  };
+  warnings: string[];
+}
+
+function reportQuery(filters: ReportFilters) {
+  const params = new URLSearchParams();
+  if (filters.period) params.set("period", filters.period);
+  if (filters.groupBy) params.set("group_by", filters.groupBy);
+  if (filters.operatorId) params.set("operator_id", filters.operatorId);
+  if (filters.companyId) params.set("company_id", filters.companyId);
+  if (filters.status) params.set("status", filters.status);
+  if (filters.source) params.set("source", filters.source);
+  return params.toString();
+}
+
+export function getReportDashboard(filters: ReportFilters) {
+  const query = reportQuery(filters);
+  return api<ReportDashboard>(`/reports/dashboard${query ? `?${query}` : ""}`);
+}
+
+export async function downloadReportPdf(filters: ReportFilters = { period: "30d", groupBy: "day" }) {
   const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
   const response = await fetch(`${API_URL}/reports/pdf`, {
     method: "POST",
@@ -732,7 +788,7 @@ export async function downloadReportPdf(period = "30d", groupBy = "day") {
       "Content-Type": "application/json",
       ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {})
     },
-    body: JSON.stringify({ period, groupBy }),
+    body: JSON.stringify(filters),
     cache: "no-store"
   });
   if (!response.ok) {
@@ -743,6 +799,34 @@ export async function downloadReportPdf(period = "30d", groupBy = "day") {
   const disposition = response.headers.get("content-disposition") || "";
   const match = disposition.match(/filename="?([^"]+)"?/i);
   const fileName = match?.[1] || `relatorio-nodere-${Date.now()}.pdf`;
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+export async function downloadReportCsv(filters: ReportFilters = { period: "30d", groupBy: "day" }) {
+  const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
+  const query = reportQuery(filters);
+  const response = await fetch(`${API_URL}/reports/export.csv${query ? `?${query}` : ""}`, {
+    method: "GET",
+    headers: {
+      ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {})
+    },
+    cache: "no-store"
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new ApiRequestError(payload.message || payload.error || `API retornou HTTP ${response.status}`, response.status);
+  }
+  const blob = await response.blob();
+  const disposition = response.headers.get("content-disposition") || "";
+  const match = disposition.match(/filename="?([^"]+)"?/i);
+  const fileName = match?.[1] || `relatorio-nodere-${Date.now()}.csv`;
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;

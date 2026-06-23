@@ -1,39 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { BarChart, Bar, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { BarChart3, Download, Gauge, MapPin, PieChart as PieIcon, TrendingUp } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { BarChart3, Download, Filter, Gauge, MapPin, PieChart as PieIcon, RefreshCw, TrendingUp } from "lucide-react";
 import {
-  getReportCities,
-  getReportFunnel,
-  getReportIntelligence,
-  getReportOrigin,
-  getReportOperators,
-  getReportProposals,
-  getReportSegments,
-  getReportSummary,
-  getReportTimeline,
-  downloadReportPdf
+  downloadReportCsv,
+  downloadReportPdf,
+  getReportDashboard,
+  type ReportDashboard,
+  type ReportFilters
 } from "@/lib/api";
 import { getErrorMessage } from "@/lib/errors";
 import { ErrorState } from "@/components/ui/ErrorState";
-import type { ForecastReport, MonthlyTrend, PipelineReport } from "@/lib/types";
 import { Logo } from "@/components/brand/Logo";
+import type { ForecastReport, MonthlyTrend, PipelineReport } from "@/lib/types";
 
-type Summary = Awaited<ReturnType<typeof getReportSummary>>;
-type Funnel = Awaited<ReturnType<typeof getReportFunnel>>;
-type Timeline = Awaited<ReturnType<typeof getReportTimeline>>;
-type Segments = Awaited<ReturnType<typeof getReportSegments>>;
-type Cities = Awaited<ReturnType<typeof getReportCities>>;
-type Origins = Awaited<ReturnType<typeof getReportOrigin>>;
-type Intelligence = Awaited<ReturnType<typeof getReportIntelligence>>;
-type Operators = Awaited<ReturnType<typeof getReportOperators>>;
-type Proposals = Awaited<ReturnType<typeof getReportProposals>>;
-
-const COLORS = ["#03624C", "#00DF82", "#F59E0B", "#7C3AED", "#F97316", "#DC2626", "#2563EB", "#64748B"];
+const COLORS = ["#03624C", "#00DF82", "#F59E0B", "#2563EB", "#7C3AED", "#F97316", "#DC2626", "#64748B"];
+const PERIODS = [
+  { value: "7d", label: "7d" },
+  { value: "30d", label: "30d" },
+  { value: "90d", label: "90d" },
+  { value: "12m", label: "12m" }
+];
 
 function metric(value: number, suffix = "") {
   return `${Number(value || 0).toLocaleString("pt-BR")}${suffix}`;
+}
+
+function brl(value: number) {
+  return Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs = 20000): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => reject(new Error("Relatorios demoraram mais que o esperado. Tente novamente em instantes.")), timeoutMs);
+    promise
+      .then(resolve)
+      .catch(reject)
+      .finally(() => window.clearTimeout(timeout));
+  });
 }
 
 function Card({ label, value, sub }: { label: string; value: string; sub?: string }) {
@@ -46,415 +51,328 @@ function Card({ label, value, sub }: { label: string; value: string; sub?: strin
   );
 }
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs = 20000): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timeout = window.setTimeout(() => reject(new Error("Relatórios demoraram mais que o esperado. Tente novamente em instantes.")), timeoutMs);
-    promise
-      .then(resolve)
-      .catch(reject)
-      .finally(() => window.clearTimeout(timeout));
-  });
-}
-
-export function ReportsClient(_legacy: { pipeline: PipelineReport | null; forecast: ForecastReport | null; trends: MonthlyTrend[] }) {
-  const [period, setPeriod] = useState("30d");
-  const [groupBy, setGroupBy] = useState("day");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [funnel, setFunnel] = useState<Funnel>({ stages: [] });
-  const [timeline, setTimeline] = useState<Timeline>({ data: [] });
-  const [segments, setSegments] = useState<Segments>({ segments: [] });
-  const [cities, setCities] = useState<Cities>({ cities: [] });
-  const [origins, setOrigins] = useState<Origins>({ origins: [] });
-  const [intelligence, setIntelligence] = useState<Intelligence | null>(null);
-  const [operators, setOperators] = useState<Operators>([]);
-  const [proposals, setProposals] = useState<Proposals>({ by_status: [], pipeline_value: 0, accepted_value: 0 });
-  const [funnelMin, setFunnelMin] = useState(0);
-  const [segmentLimit, setSegmentLimit] = useState(8);
-  const [cityLimit, setCityLimit] = useState(10);
-  const [originLimit, setOriginLimit] = useState(8);
-  const [operatorFilter, setOperatorFilter] = useState("");
-  const [companyFilter, setCompanyFilter] = useState("");
-  const [segmentFilter, setSegmentFilter] = useState("");
-  const [cityFilter, setCityFilter] = useState("");
-  const [originFilter, setOriginFilter] = useState("");
-  const [stageFilter, setStageFilter] = useState("");
-  const [temperatureFilter, setTemperatureFilter] = useState("");
-  const [planFilter, setPlanFilter] = useState("");
-  const [accessFilter, setAccessFilter] = useState("");
-
-  useEffect(() => {
-    let alive = true;
-    setLoading(true);
-    setError("");
-    withTimeout(Promise.allSettled([
-      getReportSummary(period),
-      getReportFunnel(period),
-      getReportTimeline(period, groupBy),
-      getReportSegments(period),
-      getReportCities(period),
-      getReportOrigin(period),
-      getReportIntelligence(period),
-      getReportOperators(),
-      getReportProposals(period)
-    ]))
-      .then((results) => {
-        if (!alive) return;
-        const [nextSummary, nextFunnel, nextTimeline, nextSegments, nextCities, nextOrigins, nextIntelligence, nextOperators, nextProposals] = results;
-        if (nextSummary.status === "fulfilled") setSummary(nextSummary.value as Summary);
-        if (nextFunnel.status === "fulfilled") setFunnel(nextFunnel.value as Funnel);
-        if (nextTimeline.status === "fulfilled") setTimeline(nextTimeline.value as Timeline);
-        if (nextSegments.status === "fulfilled") setSegments(nextSegments.value as Segments);
-        if (nextCities.status === "fulfilled") setCities(nextCities.value as Cities);
-        if (nextOrigins.status === "fulfilled") setOrigins(nextOrigins.value as Origins);
-        if (nextIntelligence.status === "fulfilled") setIntelligence(nextIntelligence.value as Intelligence);
-        if (nextOperators.status === "fulfilled") setOperators(nextOperators.value as Operators);
-        if (nextProposals.status === "fulfilled") setProposals(nextProposals.value as Proposals);
-        const failed = results.filter((result) => result.status === "rejected");
-        if (failed.length) setError("Alguns indicadores demoraram ou falharam, mas os dados disponíveis foram carregados.");
-      })
-      .catch((err) => {
-        if (alive) setError(getErrorMessage(err));
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
-      });
-    return () => { alive = false; };
-  }, [period, groupBy]);
-
-  const hasData = (summary?.total_companies || 0) > 0;
-  const segmentOptions = segments.segments.map((item) => item.segment).filter(Boolean);
-  const cityOptions = cities.cities.map((item) => `${item.city}${item.state ? `/${item.state}` : ""}`).filter(Boolean);
-  const originOptions = origins.origins.map((item) => item.source).filter(Boolean);
-  const stageOptions = funnel.stages.map((item) => item.name).filter(Boolean);
-  const filteredFunnel = funnel.stages.filter((stage) => stage.count >= funnelMin && (!stageFilter || stage.name === stageFilter));
-  const filteredSegments = segments.segments.filter((item) => !segmentFilter || item.segment === segmentFilter).slice(0, segmentLimit);
-  const filteredCities = cities.cities.filter((item) => !cityFilter || `${item.city}${item.state ? `/${item.state}` : ""}` === cityFilter).slice(0, cityLimit);
-  const filteredOrigins = origins.origins.filter((item) => !originFilter || item.source === originFilter).slice(0, originLimit);
-  const filteredOperators = operators.filter((operator) => !operatorFilter || operator.user_id === operatorFilter);
-
-  async function exportReportsPdf() {
-    setError("");
-    try {
-      await downloadReportPdf(period, groupBy);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    }
-  }
-
-  function exportCsv() {
-    const rows = [
-      ["tipo", "nome", "quantidade", "valor"],
-      ...filteredFunnel.map((item) => ["funil", item.name, item.count, ""]),
-      ...filteredSegments.map((item) => ["segmento", item.segment, item.count, item.avg_score]),
-      ...filteredOrigins.map((item) => ["origem", item.source, item.count, ""]),
-      ...proposals.by_status.map((item) => ["proposta", item.status, item.count, item.value])
-    ];
-    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `relatorio-nodere-${period}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  }
-
-
+function SelectFilter({
+  label,
+  value,
+  onChange,
+  children
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="space-y-6 p-4 md:p-8">
-      <section className="rounded-xl border border-line bg-panel/90 p-5 print:border-0 print:bg-white">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-4">
-            <Logo variant="full" height={42} className="hidden print:flex" />
-            <div>
-              <h2 className="text-2xl font-semibold text-[var(--text-primary)] print:text-slate-950">Relatórios executivos</h2>
-              <p className="mt-1 text-sm text-[var(--text-secondary)] print:text-slate-600">Métricas reais do CRM, origem, funil e inteligência digital.</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 print:hidden">
-            {["7d", "30d", "90d", "12m"].map((item) => (
-              <button key={item} onClick={() => setPeriod(item)} className={`rounded-lg px-3 py-2 text-xs font-bold ${period === item ? "bg-electric text-white" : "border border-line bg-white/5 text-[var(--text-primary)]"}`}>
-                {item}
-              </button>
-            ))}
-            <select value={groupBy} onChange={(event) => setGroupBy(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-xs font-bold text-[var(--text-primary)]">
-              <option value="day">Diário</option>
-              <option value="week">Semanal</option>
-              <option value="month">Mensal</option>
-            </select>
-            <button onClick={() => void exportReportsPdf()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-electric px-4 py-2 text-xs font-bold text-white">
-              <Download className="h-4 w-4" />
-              Exportar PDF
-            </button>
-            <button onClick={exportCsv} className="inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-xs font-bold text-[var(--text-primary)]">
-              <Download className="h-4 w-4" />
-              Exportar CSV
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-xl border border-line bg-panel/90 p-5 print:hidden">
-        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">Filtros dos cards</h3>
-            <p className="mt-1 text-xs text-[var(--text-secondary)]">Os indicadores respeitam as permissões do usuário autenticado e o workspace atual.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              setOperatorFilter("");
-              setCompanyFilter("");
-              setSegmentFilter("");
-              setCityFilter("");
-              setOriginFilter("");
-              setStageFilter("");
-              setTemperatureFilter("");
-              setPlanFilter("");
-              setAccessFilter("");
-            }}
-            className="rounded-lg border border-line bg-white/5 px-3 py-2 text-xs font-bold text-[var(--text-primary)]"
-          >
-            Limpar filtros
-          </button>
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <select value={operatorFilter} onChange={(event) => setOperatorFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]">
-            <option value="">Operador</option>
-            {operators.map((operator) => <option key={operator.user_id} value={operator.user_id}>{operator.name}</option>)}
-          </select>
-          <input value={companyFilter} onChange={(event) => setCompanyFilter(event.target.value)} placeholder="Empresa" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]" />
-          <select value={segmentFilter} onChange={(event) => setSegmentFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]">
-            <option value="">Segmento</option>
-            {segmentOptions.map((item) => <option key={item} value={item}>{item}</option>)}
-          </select>
-          <select value={cityFilter} onChange={(event) => setCityFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]">
-            <option value="">Cidade/UF</option>
-            {cityOptions.map((item) => <option key={item} value={item}>{item}</option>)}
-          </select>
-          <select value={originFilter} onChange={(event) => setOriginFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]">
-            <option value="">Origem do lead</option>
-            {originOptions.map((item) => <option key={item} value={item}>{item}</option>)}
-          </select>
-          <select value={stageFilter} onChange={(event) => setStageFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]">
-            <option value="">Etapa do funil</option>
-            {stageOptions.map((item) => <option key={item} value={item}>{item}</option>)}
-          </select>
-          <select value={temperatureFilter} onChange={(event) => setTemperatureFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]">
-            <option value="">Temperatura</option>
-            <option>Quente</option>
-            <option>Morno</option>
-            <option>Frio</option>
-          </select>
-          <select value={planFilter} onChange={(event) => setPlanFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]">
-            <option value="">Plano contratado</option>
-            <option>Demo</option>
-            <option>Starter</option>
-            <option>Pro</option>
-            <option>Agency</option>
-          </select>
-          <select value={accessFilter} onChange={(event) => setAccessFilter(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm text-[var(--text-primary)]">
-            <option value="">Nível de acesso</option>
-            <option>Owner</option>
-            <option>Administrador</option>
-            <option>Operador</option>
-            <option>Visualizador</option>
-          </select>
-          <div className="rounded-lg border border-line bg-ink px-3 py-2 text-xs text-[var(--text-secondary)]">
-            Empresa, temperatura, plano e acesso ficam registrados para os próximos endpoints analíticos; os cards atuais aplicam filtros locais quando o dado já está disponível.
-          </div>
-        </div>
-      </section>
-
-      {loading && <p className="rounded-xl border border-line bg-panel p-4 text-sm text-[var(--text-secondary)]">Carregando relatórios...</p>}
-      {error && <ErrorState message={error} onRetry={() => window.location.reload()} />}
-      {!loading && !error && !hasData && (
-        <section className="rounded-xl border border-line bg-panel/90 p-8 text-center">
-          <BarChart3 className="mx-auto h-10 w-10 text-cyan" />
-          <h3 className="mt-4 text-lg font-bold text-[var(--text-primary)]">Nenhum dado para relatório ainda</h3>
-          <p className="mt-2 text-sm text-[var(--text-secondary)]">Faça uma busca e salve leads no CRM para gerar métricas reais.</p>
-        </section>
-      )}
-
-      {summary && hasData && (
-        <>
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            <Card label="Empresas" value={metric(summary.total_companies)} sub="base total" />
-            <Card label="Leads no CRM" value={metric(summary.total_leads_in_crm)} sub={`${summary.new_this_period} no período`} />
-            <Card label="Score médio" value={metric(summary.avg_score)} sub="/100" />
-            <Card label="Conversão" value={metric(summary.conversion_rate, "%")} sub="fechado vs perdido" />
-            <Card label="Créditos usados" value={metric(summary.credits_used)} sub="período selecionado" />
-            <Card label="Propostas" value={metric(proposals.by_status.reduce((sum, item) => sum + item.count, 0))} sub={`Pipeline ${Number(proposals.pipeline_value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`} />
-          </section>
-
-          <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-            <div className="rounded-xl border border-line bg-panel/90 p-5">
-              <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><TrendingUp className="h-4 w-4 text-cyan" /> Evolução comercial</h3>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={timeline.data}>
-                    <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
-                    <XAxis dataKey="date" stroke="#94A3B8" fontSize={12} />
-                    <YAxis stroke="#94A3B8" fontSize={12} allowDecimals={false} />
-                    <Tooltip contentStyle={{ background: "#0B1220", border: "1px solid #1E293B", color: "#fff" }} />
-                    <Line type="monotone" dataKey="count" stroke="#03624C" strokeWidth={3} dot={{ r: 3 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-            <div className="rounded-xl border border-line bg-panel/90 p-5">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Gauge className="h-4 w-4 text-cyan" /> Funil</h3>
-                <select value={funnelMin} onChange={(event) => setFunnelMin(Number(event.target.value))} className="rounded-lg border border-line bg-ink px-3 py-2 text-xs font-bold text-[var(--text-primary)]">
-                  <option value={0}>Todas as etapas</option>
-                  <option value={1}>Com leads</option>
-                  <option value={5}>5+ leads</option>
-                </select>
-              </div>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={filteredFunnel} layout="vertical" margin={{ left: 12, right: 16 }}>
-                    <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
-                    <XAxis type="number" stroke="#94A3B8" allowDecimals={false} />
-                    <YAxis type="category" dataKey="name" stroke="#94A3B8" width={110} fontSize={11} />
-                    <Tooltip contentStyle={{ background: "#0B1220", border: "1px solid #1E293B", color: "#fff" }} />
-                    <Bar dataKey="count" radius={[0, 6, 6, 0]} fill="var(--chart-leads)" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </section>
-
-          <section className="grid gap-5 xl:grid-cols-2">
-            <div className="rounded-xl border border-line bg-panel/90 p-5">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h3 className="flex items-center gap-2 text-sm font-bold text-white"><PieIcon className="h-4 w-4 text-cyan" /> Segmentos</h3>
-                <select value={segmentLimit} onChange={(event) => setSegmentLimit(Number(event.target.value))} className="rounded-lg border border-line bg-ink px-3 py-2 text-xs font-bold text-white">
-                  <option value={5}>Top 5</option>
-                  <option value={8}>Top 8</option>
-                  <option value={15}>Top 15</option>
-                </select>
-              </div>
-              <div className="grid gap-4 md:grid-cols-[260px_1fr]">
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={filteredSegments} dataKey="count" nameKey="segment" outerRadius={90}>
-                        {filteredSegments.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
-                      </Pie>
-                      <Tooltip contentStyle={{ background: "#0B1220", border: "1px solid #1E293B", color: "#fff" }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="space-y-2">
-                  {filteredSegments.map((item, index) => (
-                    <div key={item.segment} className="flex items-center justify-between rounded-lg border border-line bg-ink px-3 py-2 text-sm">
-                      <span className="truncate text-slate-300"><span className="mr-2 inline-block h-2 w-2 rounded-full" style={{ background: COLORS[index % COLORS.length] }} />{item.segment}</span>
-                      <span className="font-bold text-white">{item.count}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="rounded-xl border border-line bg-panel/90 p-5">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h3 className="flex items-center gap-2 text-sm font-bold text-white"><PieIcon className="h-4 w-4 text-cyan" /> Origem dos leads</h3>
-                <select value={originLimit} onChange={(event) => setOriginLimit(Number(event.target.value))} className="rounded-lg border border-line bg-ink px-3 py-2 text-xs font-bold text-white">
-                  <option value={5}>Top 5</option>
-                  <option value={8}>Top 8</option>
-                  <option value={20}>Todas</option>
-                </select>
-              </div>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={filteredOrigins} dataKey="count" nameKey="source" outerRadius={90} label>
-                      {filteredOrigins.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip contentStyle={{ background: "#0B1220", border: "1px solid #1E293B", color: "#fff" }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-xl border border-line bg-panel/90 p-5">
-            <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-              <BarChart3 className="h-4 w-4 text-cyan" /> Desempenho por operador
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-sm">
-                <thead>
-                  <tr className="border-b border-line text-left text-[var(--text-secondary)]">
-                    <th className="px-3 py-3">Operador</th>
-                    <th className="px-3 py-3">Perfil</th>
-                    <th className="px-3 py-3 text-right">Leads</th>
-                    <th className="px-3 py-3 text-right">Atividades</th>
-                    <th className="px-3 py-3 text-right">Fechados</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredOperators.map((operator) => (
-                    <tr key={operator.user_id} className="border-b border-line/60 text-[var(--text-primary)]">
-                      <td className="px-3 py-3 font-semibold">{operator.name}</td>
-                      <td className="px-3 py-3 text-[var(--text-secondary)]">{operator.role}</td>
-                      <td className="px-3 py-3 text-right">{operator.leads_created}</td>
-                      <td className="px-3 py-3 text-right">{operator.followups_done}</td>
-                      <td className="px-3 py-3 text-right">{operator.leads_closed}</td>
-                    </tr>
-                  ))}
-                  {!filteredOperators.length && (
-                    <tr>
-                      <td colSpan={5} className="px-3 py-6 text-center text-[var(--text-secondary)]">Nenhum operador com métricas no período.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-            <div className="rounded-xl border border-line bg-panel/90 p-5">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h3 className="flex items-center gap-2 text-sm font-bold text-white"><MapPin className="h-4 w-4 text-cyan" /> Top cidades</h3>
-                <select value={cityLimit} onChange={(event) => setCityLimit(Number(event.target.value))} className="rounded-lg border border-line bg-ink px-3 py-2 text-xs font-bold text-white">
-                  <option value={5}>Top 5</option>
-                  <option value={10}>Top 10</option>
-                  <option value={15}>Top 15</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                {filteredCities.map((item) => (
-                  <div key={`${item.city}-${item.state}`} className="flex justify-between rounded-lg border border-line bg-ink px-3 py-2 text-sm">
-                    <span className="text-slate-300">{item.city}{item.state ? `/${item.state}` : ""}</span>
-                    <span className="font-bold text-white">{item.count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            {intelligence && (
-              <div className="rounded-xl border border-line bg-panel/90 p-5">
-                <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-white"><BarChart3 className="h-4 w-4 text-cyan" /> Inteligência digital</h3>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  <Card label="Com site" value={metric(intelligence.pct_with_site, "%")} />
-                  <Card label="Google Ads" value={metric(intelligence.pct_with_google_ads, "%")} />
-                  <Card label="Meta Pixel" value={metric(intelligence.pct_with_meta_pixel, "%")} />
-                  <Card label="GA4" value={metric(intelligence.pct_with_ga4, "%")} />
-                  <Card label="GTM" value={metric(intelligence.pct_with_gtm, "%")} />
-                  <Card label="WhatsApp" value={metric(intelligence.pct_with_whatsapp, "%")} />
-                  <Card label="PageSpeed médio" value={metric(intelligence.avg_pagespeed_mobile)} />
-                </div>
-              </div>
-            )}
-          </section>
-        </>
-      )}
-    </div>
+    <label className="flex min-w-[160px] flex-1 flex-col gap-1 text-xs font-semibold text-[var(--text-secondary)]">
+      {label}
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 rounded-xl border border-line bg-input px-3 text-sm font-semibold text-[var(--text-primary)] outline-none transition focus:border-primary"
+      >
+        {children}
+      </select>
+    </label>
   );
 }
 
+function EmptyChart({ label }: { label: string }) {
+  return <div className="flex h-64 items-center justify-center text-sm font-semibold text-[var(--text-secondary)]">{label}</div>;
+}
 
+export function ReportsClient(_legacy: { pipeline: PipelineReport | null; forecast: ForecastReport | null; trends: MonthlyTrend[] }) {
+  const [filters, setFilters] = useState<ReportFilters>({ period: "30d", groupBy: "day" });
+  const [report, setReport] = useState<ReportDashboard | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState<"csv" | "pdf" | "">("");
+  const [error, setError] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      setReport(await withTimeout(getReportDashboard(filters)));
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.period, filters.groupBy, filters.operatorId, filters.companyId, filters.status, filters.source]);
+
+  const metrics = report?.metrics;
+  const selectedFilters = useMemo(() => Object.values(filters).filter(Boolean).length, [filters]);
+
+  const updateFilter = (key: keyof ReportFilters, value: string) => {
+    setFilters((current) => ({ ...current, [key]: value || undefined }));
+  };
+
+  const exportFile = async (format: "csv" | "pdf") => {
+    setExporting(format);
+    setError("");
+    try {
+      if (format === "csv") {
+        await downloadReportCsv(filters);
+      } else {
+        await downloadReportPdf(filters);
+      }
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setExporting("");
+    }
+  };
+
+  if (error && !report && !loading) {
+    return <ErrorState message={error} onRetry={() => void load()} />;
+  }
+
+  return (
+    <div className="space-y-5">
+      <section className="rounded-2xl border border-line bg-panel/95 p-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <Logo variant="full" height={42} />
+            <div>
+              <h1 className="text-2xl font-black text-[var(--text-primary)]">Relatorios executivos</h1>
+              <p className="text-sm text-[var(--text-secondary)]">Metricas reais do CRM, origem, funil e inteligencia comercial.</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {PERIODS.map((period) => (
+              <button
+                key={period.value}
+                type="button"
+                onClick={() => updateFilter("period", period.value)}
+                className={`h-9 rounded-full px-4 text-sm font-black transition ${
+                  filters.period === period.value ? "bg-primary text-white shadow-sm" : "border border-line bg-input text-[var(--text-primary)]"
+                }`}
+              >
+                {period.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => exportFile("pdf")}
+              disabled={Boolean(exporting)}
+              className="inline-flex h-9 items-center gap-2 rounded-full bg-primary px-4 text-sm font-black text-white disabled:opacity-60"
+            >
+              <Download size={15} /> {exporting === "pdf" ? "Gerando..." : "Exportar PDF"}
+            </button>
+            <button
+              type="button"
+              onClick={() => exportFile("csv")}
+              disabled={Boolean(exporting)}
+              className="inline-flex h-9 items-center gap-2 rounded-full border border-line bg-input px-4 text-sm font-black text-[var(--text-primary)] disabled:opacity-60"
+            >
+              <Download size={15} /> {exporting === "csv" ? "Gerando..." : "Exportar CSV"}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-line bg-panel/90 p-4 shadow-sm">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm font-black text-[var(--text-primary)]">
+            <Filter size={17} className="text-primary" />
+            Filtros do relatorio
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{selectedFilters} ativo(s)</span>
+          </div>
+          <button
+            type="button"
+            onClick={load}
+            className="inline-flex items-center gap-2 rounded-full border border-line bg-input px-3 py-2 text-xs font-black text-[var(--text-primary)]"
+          >
+            <RefreshCw size={14} /> Atualizar
+          </button>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+          <SelectFilter label="Agrupamento" value={filters.groupBy || "day"} onChange={(value) => updateFilter("groupBy", value)}>
+            <option value="day">Diario</option>
+            <option value="week">Semanal</option>
+            <option value="month">Mensal</option>
+          </SelectFilter>
+          <SelectFilter label="Operador" value={filters.operatorId || ""} onChange={(value) => updateFilter("operatorId", value)}>
+            <option value="">Todos</option>
+            {(report?.options.operators || []).map((operator) => (
+              <option key={operator.id} value={operator.id}>{operator.name}</option>
+            ))}
+          </SelectFilter>
+          <SelectFilter label="Empresa" value={filters.companyId || ""} onChange={(value) => updateFilter("companyId", value)}>
+            <option value="">Todas</option>
+            {(report?.options.companies || []).map((company) => (
+              <option key={company.id} value={company.id}>{company.name}</option>
+            ))}
+          </SelectFilter>
+          <SelectFilter label="Status" value={filters.status || ""} onChange={(value) => updateFilter("status", value)}>
+            <option value="">Todos</option>
+            {(report?.options.statuses || []).map((status) => (
+              <option key={status} value={status}>{status}</option>
+            ))}
+          </SelectFilter>
+          <SelectFilter label="Origem" value={filters.source || ""} onChange={(value) => updateFilter("source", value)}>
+            <option value="">Todas</option>
+            {(report?.options.origins || []).map((source) => (
+              <option key={source} value={source}>{source}</option>
+            ))}
+          </SelectFilter>
+          <label className="flex min-w-[160px] flex-1 flex-col gap-1 text-xs font-semibold text-[var(--text-secondary)]">
+            Periodo
+            <select
+              value={filters.period || "30d"}
+              onChange={(event) => updateFilter("period", event.target.value)}
+              className="h-10 rounded-xl border border-line bg-input px-3 text-sm font-semibold text-[var(--text-primary)] outline-none transition focus:border-primary"
+            >
+              {PERIODS.map((period) => <option key={period.value} value={period.value}>{period.label}</option>)}
+            </select>
+          </label>
+        </div>
+      </section>
+
+      {error && <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">{error}</div>}
+
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <Card label="Leads criados" value={loading ? "..." : metric(metrics?.leads_created || 0)} sub="Empresas criadas no periodo" />
+        <Card label="Leads convertidos" value={loading ? "..." : metric(metrics?.leads_converted || 0)} sub="Negocios ganhos ou fechados" />
+        <Card label="Taxa de conversao" value={loading ? "..." : metric(metrics?.conversion_rate || 0, "%")} sub="Convertidos sobre leads criados" />
+        <Card label="Oportunidades abertas" value={loading ? "..." : metric(metrics?.open_opportunities || 0)} sub={brl(metrics?.pipeline_value || 0)} />
+        <Card label="Negocios ganhos" value={loading ? "..." : metric(metrics?.deals_won || 0)} sub="Status ganho/fechado" />
+        <Card label="Negocios perdidos" value={loading ? "..." : metric(metrics?.deals_lost || 0)} sub="Status perdido/cancelado" />
+        <Card label="Atividades realizadas" value={loading ? "..." : metric(metrics?.activities_done || 0)} sub="Follow-ups, propostas e comunicacoes" />
+        <Card label="Score medio" value={loading ? "..." : metric(metrics?.avg_score || 0)} sub={`${metric(metrics?.total_companies || 0)} empresas no recorte`} />
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
+        <div className="rounded-2xl border border-line bg-panel/90 p-5 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <TrendingUp size={18} className="text-primary" />
+            <h2 className="font-black text-[var(--text-primary)]">Leads criados por periodo</h2>
+          </div>
+          {report?.timeline?.length ? (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={report.timeline}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
+                  <XAxis dataKey="date" stroke="var(--text-secondary)" fontSize={11} />
+                  <YAxis allowDecimals={false} stroke="var(--text-secondary)" fontSize={11} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="count" stroke="#03624C" strokeWidth={3} dot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : <EmptyChart label={loading ? "Carregando..." : "Sem dados para os filtros atuais"} />}
+        </div>
+
+        <div className="rounded-2xl border border-line bg-panel/90 p-5 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <PieIcon size={18} className="text-primary" />
+            <h2 className="font-black text-[var(--text-primary)]">Origem dos leads</h2>
+          </div>
+          {report?.origins?.length ? (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={report.origins} dataKey="count" nameKey="source" innerRadius={55} outerRadius={95} paddingAngle={2}>
+                    {report.origins.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : <EmptyChart label={loading ? "Carregando..." : "Sem origem no recorte"} />}
+        </div>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        <div className="rounded-2xl border border-line bg-panel/90 p-5 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <Gauge size={18} className="text-primary" />
+            <h2 className="font-black text-[var(--text-primary)]">Funil e status</h2>
+          </div>
+          {report?.funnel?.length ? (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={report.funnel}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
+                  <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={10} interval={0} angle={-15} textAnchor="end" height={70} />
+                  <YAxis allowDecimals={false} stroke="var(--text-secondary)" fontSize={11} />
+                  <Tooltip />
+                  <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                    {report.funnel.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : <EmptyChart label={loading ? "Carregando..." : "Sem funil no recorte"} />}
+        </div>
+
+        <div className="rounded-2xl border border-line bg-panel/90 p-5 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <BarChart3 size={18} className="text-primary" />
+            <h2 className="font-black text-[var(--text-primary)]">Performance por operador</h2>
+          </div>
+          <div className="space-y-3">
+            {(report?.operators || []).slice(0, 8).map((operator) => (
+              <div key={operator.user_id} className="rounded-xl border border-line bg-input/70 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-black text-[var(--text-primary)]">{operator.name}</p>
+                    <p className="text-xs text-[var(--text-secondary)]">{operator.role || "operador"}</p>
+                  </div>
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{metric(operator.conversion_rate || 0, "%")}</span>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-[var(--text-secondary)]">
+                  <span>Leads: <b className="text-[var(--text-primary)]">{operator.leads_created}</b></span>
+                  <span>Atividades: <b className="text-[var(--text-primary)]">{operator.followups_done}</b></span>
+                  <span>Ganhos: <b className="text-[var(--text-primary)]">{operator.leads_closed}</b></span>
+                </div>
+              </div>
+            ))}
+            {!loading && !report?.operators?.length && <EmptyChart label="Sem operadores no recorte" />}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        <div className="rounded-2xl border border-line bg-panel/90 p-5 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <MapPin size={18} className="text-primary" />
+            <h2 className="font-black text-[var(--text-primary)]">Cidades e segmentos</h2>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-2">
+              {(report?.cities || []).slice(0, 8).map((city) => (
+                <div key={`${city.city}-${city.state || ""}`} className="flex items-center justify-between rounded-xl border border-line bg-input/70 px-3 py-2 text-sm">
+                  <span className="font-semibold text-[var(--text-primary)]">{city.city}{city.state ? ` / ${city.state}` : ""}</span>
+                  <b>{city.count}</b>
+                </div>
+              ))}
+            </div>
+            <div className="space-y-2">
+              {(report?.segments || []).slice(0, 8).map((segment) => (
+                <div key={segment.segment} className="flex items-center justify-between rounded-xl border border-line bg-input/70 px-3 py-2 text-sm">
+                  <span className="font-semibold text-[var(--text-primary)]">{segment.segment}</span>
+                  <b>{segment.count}</b>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-line bg-panel/90 p-5 shadow-sm">
+          <h2 className="mb-4 font-black text-[var(--text-primary)]">Avisos do relatorio</h2>
+          <div className="space-y-2">
+            {(report?.warnings || []).map((warning) => (
+              <div key={warning} className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">{warning}</div>
+            ))}
+            {!report?.warnings?.length && <div className="rounded-xl border border-line bg-input/70 px-3 py-2 text-sm font-semibold text-[var(--text-secondary)]">Nenhum aviso tecnico para os filtros atuais.</div>}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

@@ -17,7 +17,10 @@ import {
   getSegmentsReport,
   getCitiesReport,
   getOriginReport,
-  getIntelligenceReport
+  getIntelligenceReport,
+  getConsolidatedReport,
+  buildReportCsv,
+  type ReportFilters
 } from "../services/reports.js";
 
 const router = Router();
@@ -48,6 +51,44 @@ async function logReportDownload(workspaceId: string, userId: string | undefined
     metadata
   });
 }
+
+function reportFiltersFromRequest(req: any, source: Record<string, unknown> = req.query): ReportFilters {
+  const session = req.session || {};
+  return {
+    period: typeof source.period === "string" ? source.period : typeof req.query.period === "string" ? req.query.period : "30d",
+    groupBy: typeof source.groupBy === "string" ? source.groupBy : typeof source.group_by === "string" ? source.group_by : typeof req.query.group_by === "string" ? req.query.group_by : "day",
+    operatorId: typeof source.operator_id === "string" ? source.operator_id : typeof source.operatorId === "string" ? source.operatorId : "",
+    companyId: typeof source.company_id === "string" ? source.company_id : typeof source.companyId === "string" ? source.companyId : "",
+    status: typeof source.status === "string" ? source.status : "",
+    source: typeof source.source === "string" ? source.source : "",
+    role: session.role || "viewer",
+    userId: session.userId || ""
+  };
+}
+
+router.get("/dashboard", async (req, res, next) => {
+  try {
+    res.json(await getConsolidatedReport(getRequestWorkspaceId(req), reportFiltersFromRequest(req)));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/export.csv", async (req: any, res, next) => {
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    const filters = reportFiltersFromRequest(req);
+    const report = await getConsolidatedReport(workspaceId, filters);
+    const csv = buildReportCsv(report);
+    const fileName = `relatorio-nodere-${report.filters.period}-${Date.now()}.csv`;
+    await logReportDownload(workspaceId, req.session?.userId || req.admin?.userId, fileName, { ...report.filters, format: "csv" }).catch(() => undefined);
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename=\"${fileName}\"`);
+    res.send(`\uFEFF${csv}`);
+  } catch (error) {
+    next(error);
+  }
+});
 
 
 router.get("/pipeline", async (req, res, next) => {
@@ -208,16 +249,8 @@ router.get("/proposals", async (req, res, next) => {
 router.post("/pdf", async (req: any, res, next) => {
   try {
     const workspaceId = getRequestWorkspaceId(req);
-    const period = typeof req.body?.period === "string" ? req.body.period : String(req.query.period || "30d");
-    const groupBy = typeof req.body?.groupBy === "string" ? req.body.groupBy : String(req.query.group_by || "day");
-    const [summary, funnel, segments, timeline, operators, intelligence] = await Promise.all([
-      getSummaryReport(workspaceId, period),
-      getFunnelReport(workspaceId),
-      getSegmentsReport(workspaceId, period),
-      getTimelineReport(workspaceId, period, groupBy),
-      getOperatorsReport(workspaceId),
-      getIntelligenceReport(workspaceId, period)
-    ]);
+    const filters = reportFiltersFromRequest(req, req.body || {});
+    const report = await getConsolidatedReport(workspaceId, filters);
 
     const fileName = `relatorio-nodere-${Date.now()}.pdf`;
     const doc = new PDFDocument({ size: "A4", margin: 42, bufferPages: true, info: { Title: "Relatorio NODERE", Author: "NODERE" } });
@@ -225,9 +258,8 @@ router.post("/pdf", async (req: any, res, next) => {
     doc.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
     doc.on("end", async () => {
       await logReportDownload(workspaceId, req.session?.userId || req.admin?.userId, fileName, {
-        period,
-        groupBy,
-        totalCompanies: summary.total_companies,
+        ...report.filters,
+        totalCompanies: report.metrics.total_companies,
         generatedAt: new Date().toISOString()
       }).catch(() => undefined);
       res.setHeader("Content-Type", "application/pdf");
@@ -251,33 +283,39 @@ router.post("/pdf", async (req: any, res, next) => {
       doc.fillColor("#03624C").fontSize(22).text("NODERE", 56, 42);
     }
     doc.fillColor("#334155").fontSize(9).text("Relatorio comercial gerado pelo NODERE", 56, 78);
-    doc.fillColor("#03624C").fontSize(11).text(`Periodo: ${period}`, 420, 42, { align: "right" });
+    doc.fillColor("#03624C").fontSize(11).text(`Periodo: ${report.filters.period}`, 420, 42, { align: "right" });
     doc.fillColor("#64748B").fontSize(8).text(new Date().toLocaleString("pt-BR"), 420, 62, { align: "right" });
 
     doc.y = 140;
     doc.fillColor("#0A0F1E").fontSize(18).text("Resumo executivo");
     doc.moveDown(0.8);
-    writeMetric(doc, "Empresas no CRM", summary.total_companies);
-    writeMetric(doc, "Score medio", summary.avg_score);
-    writeMetric(doc, "Conversao", `${summary.conversion_rate}%`);
+    writeMetric(doc, "Leads criados", report.metrics.leads_created);
+    writeMetric(doc, "Convertidos", report.metrics.leads_converted);
+    writeMetric(doc, "Conversao", `${report.metrics.conversion_rate}%`);
     doc.x = 42;
     doc.y += 78;
-    writeMetric(doc, "Novos no periodo", summary.new_this_period);
-    writeMetric(doc, "Com site", `${intelligence.pct_with_site}%`);
-    writeMetric(doc, "Com WhatsApp", `${intelligence.pct_with_whatsapp}%`);
+    writeMetric(doc, "Em aberto", report.metrics.open_opportunities);
+    writeMetric(doc, "Ganhos", report.metrics.deals_won);
+    writeMetric(doc, "Perdidos", report.metrics.deals_lost);
+
+    doc.x = 42;
+    doc.y += 78;
+    writeMetric(doc, "Atividades", report.metrics.activities_done);
+    writeMetric(doc, "Score medio", report.metrics.avg_score);
+    writeMetric(doc, "Pipeline", formatBRL(report.metrics.pipeline_value));
 
     doc.x = 42;
     doc.y += 88;
     doc.fillColor("#0A0F1E").fontSize(15).text("Funil comercial");
     doc.moveDown(0.5);
-    funnel.stages.forEach((stage) => {
+    report.funnel.forEach((stage) => {
       doc.fillColor("#1E293B").fontSize(10).text(`${stage.name}: ${stage.count} lead(s) - ${stage.pct_of_total}% do total`);
     });
 
     doc.moveDown(1);
     doc.fillColor("#0A0F1E").fontSize(15).text("Segmentos principais");
     doc.moveDown(0.5);
-    segments.segments.slice(0, 8).forEach((segment) => {
+    report.segments.slice(0, 8).forEach((segment) => {
       doc.fillColor("#1E293B").fontSize(10).text(`${segment.segment}: ${segment.count} empresa(s), score medio ${segment.avg_score}`);
     });
 
@@ -285,14 +323,14 @@ router.post("/pdf", async (req: any, res, next) => {
     doc.moveDown(1);
     doc.fillColor("#0A0F1E").fontSize(15).text("Linha do tempo");
     doc.moveDown(0.5);
-    timeline.data.slice(-12).forEach((point) => {
+    report.timeline.slice(-12).forEach((point) => {
       doc.fillColor("#1E293B").fontSize(10).text(`${point.date}: ${point.count} novo(s) lead(s)`);
     });
 
     doc.moveDown(1);
     doc.fillColor("#0A0F1E").fontSize(15).text("Operadores");
     doc.moveDown(0.5);
-    operators.slice(0, 12).forEach((operator) => {
+    report.operators.slice(0, 12).forEach((operator) => {
       doc.fillColor("#1E293B").fontSize(10).text(`${operator.name} (${operator.role}): ${operator.leads_created} lead(s), ${operator.followups_done} atividade(s), ${operator.leads_closed} fechado(s)`);
     });
 
