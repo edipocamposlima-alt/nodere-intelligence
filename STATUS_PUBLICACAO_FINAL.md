@@ -8,8 +8,8 @@ Publicacao da aplicacao web concluida em producao na Vercel.
 
 O dominio `https://nodere.com.br` foi atualizado para o deployment novo:
 
-- Deployment Vercel: `dpl_2WaeMaZrBsysq52QyUC7mnhXsTzZ`
-- URL do deployment: `https://web-ce4p8vc7e-edipo-lima-s-projects.vercel.app`
+- Deployment Vercel: `dpl_Df529NYgVLZN2tkDFg26g4pwtUMN`
+- URL do deployment: `https://web-dq7f5yua6-edipo-lima-s-projects.vercel.app`
 - Alias de producao: `https://nodere.com.br`
 - Status: `READY`
 
@@ -36,8 +36,8 @@ O dominio `https://nodere.com.br` foi atualizado para o deployment novo:
 ## Git
 
 - Branch publicada no remoto: `main`
-- Commit funcional publicado no deploy Vercel: estado local com base em `e07b07f` mais os ajustes de deploy descritos neste arquivo.
-- Observacao: os ajustes finais de deploy foram aplicados localmente depois do push inicial para permitir a publicacao pela Vercel CLI.
+- Commit funcional publicado no deploy Vercel: `850e64e`.
+- Observacao: o deploy final foi executado pela Vercel CLI a partir de `apps/web`, pois a integracao automatica ainda nao disparou novo deploy a partir do GitHub.
 
 ## Validacoes executadas
 
@@ -91,4 +91,3 @@ Nao foi executado deploy manual no Render nesta etapa. O backend respondeu corre
 - Executar homologacao autenticada real no navegador para CRM, Discovery, Dashboard, CMS, Relatorios, Configuracoes e mobile.
 - Resolver vulnerabilidades moderadas restantes do `npm audit` do web quando houver caminho sem breaking change.
 - Confirmar se GitHub/Vercel deve ser reconfigurado para deploy automatico a partir de `apps/web`, evitando deploy manual via CLI.
-

@@ -176,8 +176,8 @@ Proximo passo executado nesta mesma rotina:
 Publicacao web concluida em 2026-06-23.
 
 - Branch integrada ao remoto: `main`
-- Deployment Vercel publicado: `dpl_2WaeMaZrBsysq52QyUC7mnhXsTzZ`
-- URL do deployment: `https://web-ce4p8vc7e-edipo-lima-s-projects.vercel.app`
+- Deployment Vercel publicado: `dpl_Df529NYgVLZN2tkDFg26g4pwtUMN`
+- URL do deployment: `https://web-dq7f5yua6-edipo-lima-s-projects.vercel.app`
 - Dominio validado: `https://nodere.com.br`
 - Status Vercel: `READY`
 - Alias aplicado: `https://nodere.com.br`
