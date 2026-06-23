@@ -12,6 +12,7 @@
     "test:reports": "tsx --test src/tests/reports.test.ts",
     "test:crm": "tsx --test src/tests/crm-advanced.test.ts",
     "test:whatsapp": "tsx --test src/tests/whatsapp-history.test.ts",
+    "test:ai-discovery": "tsx --test src/tests/ai-discovery.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "npm run typecheck"
   },

@@ -6,17 +6,39 @@ export function calculateOpportunityScore(company: ScoreInput) {
   const nodere = calculateNodereScore(company, { targetCity: company.city });
   const normalizedLegacyScore = Math.min(100, Math.round(nodere.total / 10));
   const level: OpportunityLevel = nodere.total >= 650 ? "Alta" : nodere.total >= 400 ? "Media" : "Baixa";
+  const temperature = normalizedLegacyScore >= 70 || level === "Alta" ? "Quente" : normalizedLegacyScore <= 35 ? "Frio" : "Morno";
+  const topActions = dedupe([nodere.suggestedApproach, ...nodere.breakdown.slice(0, 3).map((item) => actionForReason(item.reason))]);
+  const opportunitySignals = dedupe([
+    company.category ? `Segmento: ${company.category}` : "Segmento nao informado",
+    company.city ? `Cidade alvo: ${company.city}` : "Cidade nao informada",
+    company.website ? "Site identificado" : "Sem site identificado",
+    company.whatsapp ? "WhatsApp identificado" : "WhatsApp nao identificado",
+    (company.reviewCount ?? 0) > 0 ? `${company.reviewCount} avaliacao(oes) no Google` : "Sem avaliacoes publicas",
+    ...nodere.digitalGaps
+  ]);
+  const nextSteps = dedupe([
+    "Confirmar decisor e canal principal de contato.",
+    topActions[0],
+    "Enviar diagnostico comercial curto com 2 oportunidades objetivas.",
+    "Agendar follow-up em ate 48 horas."
+  ]);
 
   return {
     score: normalizedLegacyScore,
     opportunityLevel: level,
     detectedOpportunities: dedupe(nodere.digitalGaps.map((gap) => `Gap digital: ${gap}`)),
-    suggestions: dedupe([nodere.suggestedApproach, ...nodere.breakdown.slice(0, 3).map((item) => actionForReason(item.reason))]),
+    suggestions: topActions,
     nodereScore: nodere.total,
     nodereClassification: nodere.classification.label,
     nodereScoreBreakdown: nodere.breakdown,
     digitalGaps: nodere.digitalGaps,
-    suggestedApproach: nodere.suggestedApproach
+    suggestedApproach: nodere.suggestedApproach,
+    digitalPresenceAnalysis: buildDigitalPresenceAnalysis(company, nodere.digitalGaps),
+    opportunitySignals,
+    recommendedApproach: nodere.suggestedApproach,
+    nextSteps,
+    temperature,
+    priorityReason: nodere.breakdown[0]?.reason || "Negocio ativo para prospeccao"
   };
 }
 
@@ -153,6 +175,16 @@ function actionForReason(reason: string) {
   if (reason.includes("WhatsApp")) return "Configurar WhatsApp Business e rastreamento de conversões.";
   if (reason.includes("PageSpeed")) return "Otimizar performance mobile antes de escalar mídia.";
   return `Explorar oportunidade: ${reason}.`;
+}
+
+function buildDigitalPresenceAnalysis(company: ScoreInput, gaps: string[]) {
+  const reviewInfo = (company.reviewCount ?? 0) > 0
+    ? `nota ${company.rating || "N/A"} com ${company.reviewCount} avaliacao(oes)`
+    : "sem prova social publica relevante";
+  const siteInfo = company.website ? "site identificado" : "sem site identificado";
+  const contactInfo = company.whatsapp || company.phone ? "contato encontrado" : "contato principal ausente";
+  const gapsInfo = gaps.length ? `gaps: ${gaps.join(", ")}` : "sem gaps digitais criticos aparentes";
+  return `${siteInfo}; ${reviewInfo}; ${contactInfo}; ${gapsInfo}.`;
 }
 
 function isHighPotentialSegment(category?: string) {

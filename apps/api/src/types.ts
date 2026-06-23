@@ -78,6 +78,11 @@ export interface Company {
   nodereScoreBreakdown?: Array<{ reason: string; points: number }>;
   digitalGaps?: string[];
   suggestedApproach?: string;
+  digitalPresenceAnalysis?: string;
+  opportunitySignals?: string[];
+  recommendedApproach?: string;
+  nextSteps?: string[];
+  priorityReason?: string;
   enrichmentStatus?: EnrichmentStatus;
   status: CrmStatus;
   temperature?: "Frio" | "Morno" | "Quente" | string;

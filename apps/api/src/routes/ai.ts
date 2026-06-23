@@ -1,10 +1,11 @@
-import { Router } from "express";
+import { Request, Router } from "express";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { getSupabase } from "../db/supabase.js";
 import { getRequestWorkspaceId, requireWorkspaceMutation } from "../middleware/session.js";
 import { getCompanyAsync } from "../services/companyStore.js";
 import { callAI } from "../services/ai.js";
+import { buildCommercialInsight, buildCommercialInsightPrompt, parseCommercialInsightJson } from "../services/commercialInsights.js";
 import type { Company } from "../types.js";
 
 const router = Router();
@@ -121,6 +122,43 @@ Sugira em ate 5 linhas: acao especifica, prazo e texto curto para falar/escrever
   }
 });
 
+router.post("/commercial-insights", async (req, res, next) => {
+  try {
+    const body = companyPayloadSchema.extend({
+      persist: z.boolean().optional().default(false)
+    }).parse(req.body ?? {});
+    const workspaceId = getRequestWorkspaceId(req);
+    const company = await resolveCompany(body.lead_id, body.company_data, workspaceId);
+    let aiPayload: ReturnType<typeof parseCommercialInsightJson> | undefined;
+    let provider = "fallback";
+    let status = "fallback";
+    let errorMessage = "";
+
+    try {
+      const response = await callAI(SYSTEM_PROMPT, `${buildCommercialInsightPrompt(company)}\n\nRetorne somente JSON valido.`);
+      provider = response.provider;
+      aiPayload = parseCommercialInsightJson(response.content, response.provider);
+      status = "success";
+    } catch (error) {
+      errorMessage = error instanceof Error ? error.message : "IA indisponivel no momento.";
+    }
+
+    const insight = buildCommercialInsight(company, aiPayload);
+    if (body.lead_id && body.persist) {
+      await persistInsight(req, body.lead_id, insight);
+    }
+    await logAiUsage(workspaceId, body.lead_id || null, "commercial_insights", provider, status, {
+      fallback: insight.aiFallback,
+      error: errorMessage,
+      score: insight.score,
+      opportunityLevel: insight.opportunityLevel
+    });
+    return res.json({ insight, warning: errorMessage || undefined });
+  } catch (error) {
+    next(error);
+  }
+});
+
 async function resolveCompany(leadId: string | undefined, companyData: Record<string, unknown> | undefined, workspaceId: string): Promise<Partial<Company> & { name: string }> {
   if (leadId) {
     const company = await getCompanyAsync(leadId, workspaceId);
@@ -147,7 +185,7 @@ async function generateText(prompt: string) {
   }
 }
 
-async function saveAIActivity(req: Parameters<Parameters<typeof router.post>[1]>[0], companyId: string, type: string, title: string, body: string) {
+async function saveAIActivity(req: Request, companyId: string, type: string, title: string, body: string) {
   const sb = getSupabase();
   if (!sb) return;
   await sb.from("communications").insert({
@@ -162,6 +200,78 @@ async function saveAIActivity(req: Parameters<Parameters<typeof router.post>[1]>
     status: "sent",
     metadata: { source: "ai" }
   });
+}
+
+async function persistInsight(req: Request, companyId: string, insight: ReturnType<typeof buildCommercialInsight>) {
+  const sb = getSupabase();
+  if (!sb) return;
+  const workspaceId = getRequestWorkspaceId(req);
+  try {
+    await sb.from("nodere_companies")
+      .update({
+        score: insight.score,
+        opportunity_level: insight.opportunityLevel,
+        temperature: insight.temperature,
+        next_action: insight.nextSteps[0] || null,
+        detected_opportunities: insight.detectedOpportunities,
+        suggestions: insight.suggestions,
+        updated_at: new Date().toISOString()
+      })
+      .eq("workspace_id", workspaceId)
+      .eq("id", companyId);
+  } catch {
+    // Insight persistence should not block the user when optional columns are unavailable.
+  }
+  try {
+    await sb.from("communications").insert({
+      id: randomUUID(),
+      workspace_id: workspaceId,
+      company_id: companyId,
+      type: "internal",
+      direction: "system",
+      subject: "Insight comercial IA",
+      body: [
+        insight.summary,
+        "",
+        `Classificação: ${insight.opportunityClassification}`,
+        `Abordagem: ${insight.recommendedApproach}`,
+        "",
+        "Próximos passos:",
+        ...insight.nextSteps.map((step) => `- ${step}`)
+      ].join("\n"),
+      sent_at: new Date().toISOString(),
+      status: "sent",
+      metadata: {
+        source: "ai_commercial_insight",
+        score: insight.score,
+        opportunityLevel: insight.opportunityLevel,
+        temperature: insight.temperature,
+        nextAction: insight.nextSteps[0] || ""
+      }
+    });
+  } catch {
+    // Historical logging is best-effort for compatibility with existing schemas.
+  }
+}
+
+async function logAiUsage(workspaceId: string, companyId: string | null, action: string, provider: string, status: string, metadata: Record<string, unknown>) {
+  const sb = getSupabase();
+  if (!sb) return;
+  try {
+    await sb.from("nodere_ai_usage_log").insert({
+      workspace_id: workspaceId,
+      company_id: companyId,
+      action,
+      provider,
+      model: provider,
+      tokens_input: 0,
+      tokens_output: 0,
+      status,
+      metadata
+    });
+  } catch {
+    // Usage log is optional in older environments and must never break IA/Discovery.
+  }
 }
 
 export default router;

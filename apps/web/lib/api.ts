@@ -339,6 +339,30 @@ export function generateAiCallScript(payload: { lead_id?: string; company_data?:
 export function generateAiNextStep(payload: { lead_data: Record<string, unknown>; activities_summary?: string }) {
   return api<{ suggestion: string }>("/ai/next-step", { method: "POST", body: JSON.stringify(payload) });
 }
+
+export type CommercialInsight = {
+  score: number;
+  opportunityLevel: Company["opportunityLevel"];
+  temperature: string;
+  digitalPresenceAnalysis: string;
+  opportunityClassification: string;
+  summary: string;
+  recommendedApproach: string;
+  firstApproach: string;
+  followUp: string;
+  proposalSuggestion: string;
+  historySummary: string;
+  nextSteps: string[];
+  opportunitySignals: string[];
+  detectedOpportunities: string[];
+  suggestions: string[];
+  aiProvider?: string;
+  aiFallback: boolean;
+};
+
+export function generateCommercialInsights(payload: { lead_id?: string; company_data?: Partial<Company>; persist?: boolean }) {
+  return api<{ insight: CommercialInsight; warning?: string }>("/ai/commercial-insights", { method: "POST", body: JSON.stringify(payload) });
+}
 export function geocodeAddress(address: string) {
   return api<{ status: string; results: Array<{ address?: string; lat?: number; lng?: number }> }>(`/geocode?address=${encodeURIComponent(address)}`);
 }

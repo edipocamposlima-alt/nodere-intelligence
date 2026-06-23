@@ -4,7 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { CalendarClock, Copy, Download, Eye, FileText, ImageIcon, MessageCircle, Pencil, Plus, RotateCcw, Save, Sparkles, Trash2, Upload } from "lucide-react";
 import { Company } from "@/lib/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
-import { createCalendarEvent, updateCompany as saveCompanyData } from "@/lib/api";
+import { CommercialInsight, createCalendarEvent, generateCommercialInsights, updateCompany as saveCompanyData } from "@/lib/api";
 import { downloadNoderePdf } from "@/lib/pdf";
 import { RichTextEditor, RichTextPreview } from "@/components/RichTextEditor";
 import { CompanyMiniCalendar } from "@/app/calendar/CalendarClient";
@@ -97,6 +97,7 @@ export function LeadOperations({ company }: { company: Company }) {
   const [emailBody, setEmailBody] = useState("");
   const [instruction, setInstruction] = useState("");
   const [generationType, setGenerationType] = useState("Proposta comercial");
+  const [commercialInsight, setCommercialInsight] = useState<CommercialInsight | null>(null);
   const [loading, setLoading] = useState(false);
   const [enriching, setEnriching] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -482,6 +483,31 @@ export function LeadOperations({ company }: { company: Company }) {
       const steps = response.nextSteps || response.diagnosis?.nextSteps || [];
       setEditor([summary, whats, steps.length ? `Próximos passos:\n- ${steps.join("\n- ")}` : ""].filter(Boolean).join("\n\n"));
       showSuccess("Texto gerado pela IA.");
+    } catch (err) {
+      showError(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function generateCommercialInsight() {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await generateCommercialInsights({ lead_id: lead.id, persist: true });
+      setCommercialInsight(response.insight);
+      setEditor([
+        `Resumo automático\n${response.insight.summary}`,
+        `Análise de presença digital\n${response.insight.digitalPresenceAnalysis}`,
+        `Classificação\n${response.insight.opportunityClassification} · ${response.insight.temperature} · Score ${response.insight.score}/100`,
+        `Abordagem recomendada\n${response.insight.recommendedApproach}`,
+        `Primeira abordagem\n${response.insight.firstApproach}`,
+        `Follow-up\n${response.insight.followUp}`,
+        `Sugestão de proposta\n${response.insight.proposalSuggestion}`,
+        response.insight.nextSteps.length ? `Próximos passos\n- ${response.insight.nextSteps.join("\n- ")}` : ""
+      ].filter(Boolean).join("\n\n"));
+      api<Communication[]>(`${companyPath}/communications`).then((items) => setCommunications(Array.isArray(items) ? items : [])).catch(() => {});
+      showSuccess(response.warning ? "Insight gerado com fallback controlado e registrado no histórico." : "Insight comercial gerado e registrado no histórico.");
     } catch (err) {
       showError(err);
     } finally {
@@ -929,8 +955,27 @@ export function LeadOperations({ company }: { company: Company }) {
               {["Resumo comercial", "Mensagem WhatsApp", "E-mail comercial", "Proposta comercial", "Contrato simples", "Objeções e respostas", "Diagnóstico"].map((item) => <option key={item}>{item}</option>)}
             </select>
             <input value={instruction} placeholder="Instrução adicional para a IA" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" onChange={(event) => setInstruction(event.target.value)} />
-            <button onClick={generateWithAi} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"><Sparkles className="h-4 w-4" />{loading ? "Gerando" : "Gerar com IA"}</button>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={generateWithAi} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"><Sparkles className="h-4 w-4" />{loading ? "Gerando" : "Gerar com IA"}</button>
+              <button onClick={generateCommercialInsight} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-lg border border-violet-400/40 bg-violet-500/15 px-4 py-2 text-sm font-semibold text-violet-100 disabled:opacity-60"><Sparkles className="h-4 w-4" />Insight comercial</button>
+            </div>
           </div>
+          {commercialInsight && (
+            <section className="grid gap-3 rounded-lg border border-violet-400/25 bg-violet-500/10 p-4 md:grid-cols-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Temperatura</p>
+                <p className="mt-1 text-lg font-semibold text-white">{commercialInsight.temperature}</p>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Classificação</p>
+                <p className="mt-1 text-sm font-semibold text-white">{commercialInsight.opportunityClassification}</p>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Próximo passo</p>
+                <p className="mt-1 text-sm text-slate-200">{commercialInsight.nextSteps[0]}</p>
+              </div>
+            </section>
+          )}
           <RichTextEditor value={editor} onChange={setEditor} minHeight={360} placeholder="O texto gerado ou editado aparece aqui. Você pode alterar antes de salvar, copiar, virar PDF ou usar no WhatsApp." />
           <div className="flex flex-wrap gap-2">
             <button onClick={() => copy(editor)} className="inline-flex items-center gap-2 rounded-lg border border-line bg-ink px-4 py-2 text-sm text-white"><Copy className="h-4 w-4" />Copiar</button>
