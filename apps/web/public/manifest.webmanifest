@@ -3,7 +3,7 @@
   "short_name": "NODERE",
   "description": "Plataforma de inteligência comercial, CRM, análise digital e prospecção com IA.",
   "id": "/?app=nodere",
-  "start_url": "/login?source=pwa",
+  "start_url": "/dashboard?source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
@@ -57,6 +57,18 @@
       "name": "CRM",
       "short_name": "CRM",
       "url": "/crm",
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Relatórios",
+      "short_name": "Relatórios",
+      "url": "/reports",
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Configurações",
+      "short_name": "Config",
+      "url": "/settings",
       "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
     }
   ]

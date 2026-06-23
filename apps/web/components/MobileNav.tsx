@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { BarChart3, Building2, CalendarDays, CircleHelp, CreditCard, Inbox, KanbanSquare, LineChart, Megaphone, Menu, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, X, Zap } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BarChart3, Building2, CalendarDays, CircleHelp, CreditCard, Download, Inbox, KanbanSquare, LineChart, LogOut, Megaphone, Menu, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, X, Zap } from "lucide-react";
+import { useAuth } from "@/context/AuthProvider";
 
 const primaryItems = [
   { href: "/dashboard", label: "Início", icon: BarChart3 },
@@ -31,6 +32,30 @@ const drawerItems = [
 export function MobileNav() {
   const pathname = usePathname() || "/";
   const [open, setOpen] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
+  const { logout } = useAuth();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    function onBeforeInstallPrompt(event: Event) {
+      event.preventDefault();
+      setInstallPrompt(event);
+    }
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+  }, []);
+
+  async function installApp() {
+    const promptEvent = installPrompt as Event & { prompt?: () => Promise<void>; userChoice?: Promise<{ outcome: string }> };
+    if (promptEvent?.prompt) {
+      await promptEvent.prompt();
+      await promptEvent.userChoice?.catch(() => undefined);
+      setInstallPrompt(null);
+      setOpen(false);
+      return;
+    }
+    window.alert("Para instalar o app NODERE, abra o menu do navegador e selecione 'Instalar app' ou 'Adicionar à tela inicial'.");
+  }
 
   return (
     <>
@@ -54,7 +79,7 @@ export function MobileNav() {
       {open && (
         <div className="fixed inset-0 z-50 bg-black/55 lg:hidden" onClick={() => setOpen(false)}>
           <section
-            className="absolute bottom-0 left-0 right-0 max-h-[78vh] overflow-y-auto rounded-t-2xl border border-line bg-ink p-4 shadow-glow"
+            className="absolute bottom-0 left-0 right-0 max-h-[82dvh] overflow-y-auto rounded-t-2xl border border-line bg-ink p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-glow"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
@@ -67,6 +92,16 @@ export function MobileNav() {
               </button>
             </div>
             <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => void installApp()}
+                className="flex min-h-14 items-center gap-3 rounded-xl border border-electric/35 bg-electric/10 px-3 py-2 text-sm font-semibold text-slate-100"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-electric/15 text-cyan shadow-[0_0_18px_rgba(0,223,130,0.18)] ring-1 ring-electric/30">
+                  <Download className="h-4 w-4" style={{ strokeWidth: 2.9 }} />
+                </span>
+                Instalar app
+              </button>
               {drawerItems.map((item) => (
                 <Link
                   key={item.href}
@@ -80,6 +115,19 @@ export function MobileNav() {
                   {item.label}
                 </Link>
               ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  void logout();
+                }}
+                className="flex min-h-14 items-center gap-3 rounded-xl border border-danger/35 bg-danger/10 px-3 py-2 text-sm font-semibold text-rose-100"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-danger/15 text-rose-200 ring-1 ring-danger/30">
+                  <LogOut className="h-4 w-4" style={{ strokeWidth: 2.9 }} />
+                </span>
+                Sair
+              </button>
             </div>
           </section>
         </div>
