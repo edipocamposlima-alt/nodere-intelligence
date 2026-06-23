@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Check, Flag, MessageCircle, Plus, RefreshCw, Search } from "lucide-react";
-import { InboxMessage, createInboxMessage, getCompanies, getInboxMessages, updateInboxMessage } from "@/lib/api";
+import { InboxAttachment, InboxMessage, WhatsappTemplate, createInboxMessage, getCompanies, getInboxMessages, getWhatsappTemplates, updateInboxMessage } from "@/lib/api";
 import { Company } from "@/lib/types";
 import { RichTextEditor, RichTextPreview } from "@/components/RichTextEditor";
 
@@ -30,6 +30,9 @@ export function InboxClient() {
   const [status, setStatus] = useState("");
   const [query, setQuery] = useState("");
   const [body, setBody] = useState("");
+  const [templateKey, setTemplateKey] = useState("");
+  const [attachmentsText, setAttachmentsText] = useState("");
+  const [templates, setTemplates] = useState<WhatsappTemplate[]>([]);
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -38,6 +41,7 @@ export function InboxClient() {
   useEffect(() => {
     void refresh();
     getCompanies().then(setCompanies).catch(() => setCompanies([]));
+    getWhatsappTemplates().then((payload) => setTemplates(payload.templates)).catch(() => setTemplates([]));
   }, [status]);
 
   async function refresh() {
@@ -77,6 +81,7 @@ export function InboxClient() {
 
   const selected = enriched.find((item) => item.id === selectedId) || filtered[0];
   const selectedCompany = selected?.company || companies.find((company) => company.id === selected?.company_id);
+  const selectedAttachments = getMessageAttachments(selected);
 
   async function saveInteraction(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -92,12 +97,16 @@ export function InboxClient() {
         body,
         flagColor: String(form.get("flagColor") || ""),
         sentBy: String(form.get("sentBy") || "Operador"),
-        sentAt: String(form.get("sentAt") || new Date().toISOString())
+        sentAt: String(form.get("sentAt") || new Date().toISOString()),
+        templateKey: String(form.get("templateKey") || ""),
+        attachments: parseAttachments(attachmentsText, String(form.get("companyId") || "") || undefined)
       });
       setMessages((items) => [saved, ...items]);
       setSelectedId(saved.id);
       setOpenModal(false);
       setBody("");
+      setTemplateKey("");
+      setAttachmentsText("");
       setMessage("Interação registrada no Inbox.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Falha ao registrar interação.");
@@ -180,7 +189,8 @@ export function InboxClient() {
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line pb-4">
                   <div>
                     <h2 className="text-xl font-black text-white">{selectedCompany?.name || selected.subject || "Interação"}</h2>
-                    <p className="text-sm text-slate-400">{selected.type} · {selected.direction} · {selected.sent_at ? new Date(selected.sent_at).toLocaleString("pt-BR") : "sem data"}</p>
+                  <p className="text-sm text-slate-400">{selected.type} · {selected.direction} · {selected.sent_at ? new Date(selected.sent_at).toLocaleString("pt-BR") : "sem data"}</p>
+                  {String(selected.metadata?.templateKey || "") && <p className="mt-1 text-xs font-semibold text-emerald-300">Template: {templates.find((item) => item.key === selected.metadata?.templateKey)?.name || String(selected.metadata?.templateKey)}</p>}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={() => void changeStatus(selected, "read")} className="btn-secondary-action px-3 py-2 text-xs"><Check className="h-3.5 w-3.5" />Lida</button>
@@ -191,6 +201,18 @@ export function InboxClient() {
                 <article className="mt-5 rounded-2xl border border-line bg-ink p-5">
                   {selected.subject && <p className="mb-3 font-bold text-cyan">{selected.subject}</p>}
                   <RichTextPreview value={selected.body || "Sem conteúdo registrado."} />
+                  {selectedAttachments.length > 0 && (
+                    <div className="mt-5 rounded-xl border border-line bg-panel/60 p-4">
+                      <p className="text-xs font-black uppercase tracking-[0.14em] text-emerald-300">Anexos vinculados</p>
+                      <div className="mt-3 space-y-2">
+                        {selectedAttachments.map((attachment) => (
+                          <a key={`${attachment.name}-${attachment.url}`} href={attachment.url} target="_blank" rel="noreferrer" className="block rounded-lg border border-line px-3 py-2 text-sm font-semibold text-cyan hover:border-cyan/70">
+                            {attachment.name}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </article>
               </>
             ) : (
@@ -227,12 +249,19 @@ export function InboxClient() {
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <label className="space-y-2 text-sm text-slate-300">Empresa<select name="companyId" className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white"><option value="">Sem empresa</option>{companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>
               <label className="space-y-2 text-sm text-slate-300">Tipo<select name="type" className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white">{interactionTypes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+              <label className="space-y-2 text-sm text-slate-300">Template WhatsApp<select name="templateKey" value={templateKey} onChange={(event) => {
+                const next = event.target.value;
+                setTemplateKey(next);
+                const template = templates.find((item) => item.key === next);
+                if (template) setBody(template.body);
+              }} className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white"><option value="">Sem template</option>{templates.map((item) => <option key={item.key} value={item.key}>{item.name}</option>)}</select></label>
               <label className="space-y-2 text-sm text-slate-300">Direção<select name="direction" className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white"><option value="manual">Manual</option><option value="inbound">Entrada</option><option value="outbound">Saída</option></select></label>
               <label className="space-y-2 text-sm text-slate-300">Status<select name="status" className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white"><option value="read">Lida</option><option value="unread">Não lida</option><option value="flagged">Marcada</option><option value="resolved">Resolvida</option></select></label>
               <label className="space-y-2 text-sm text-slate-300">Assunto<input name="subject" className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white" /></label>
               <label className="space-y-2 text-sm text-slate-300">Data/hora<input name="sentAt" type="datetime-local" className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white" /></label>
               <label className="space-y-2 text-sm text-slate-300">Responsável<input name="sentBy" defaultValue="Operador" className="w-full rounded-lg border border-line bg-ink px-3 py-3 text-white" /></label>
               <label className="space-y-2 text-sm text-slate-300">Cor da marcação<input name="flagColor" type="color" defaultValue="#F59E0B" className="h-12 w-full rounded-lg border border-line bg-ink px-2" /></label>
+              <label className="space-y-2 text-sm text-slate-300 md:col-span-2">Anexos por URL<textarea value={attachmentsText} onChange={(event) => setAttachmentsText(event.target.value)} placeholder="Um anexo por linha: Nome do arquivo | https://..." className="min-h-[92px] w-full rounded-lg border border-line bg-ink px-3 py-3 text-white outline-none focus:border-cyan" /></label>
               <div className="md:col-span-2">
                 <RichTextEditor value={body} onChange={setBody} minHeight={220} placeholder="Conteúdo da interação..." />
               </div>
@@ -246,6 +275,37 @@ export function InboxClient() {
       )}
     </main>
   );
+}
+
+function parseAttachments(value: string, companyId?: string): InboxAttachment[] {
+  const attachments: InboxAttachment[] = [];
+  for (const line of value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)) {
+    const [rawName, rawUrl] = line.includes("|") ? line.split("|") : ["Anexo", line];
+    const name = rawName.trim() || "Anexo";
+    const url = rawUrl.trim();
+    if (!url) continue;
+    const attachment: InboxAttachment = { name, url };
+    if (companyId) {
+      attachment.companyId = companyId;
+      attachment.leadId = companyId;
+    }
+    attachments.push(attachment);
+  }
+  return attachments;
+}
+
+function getMessageAttachments(message?: InboxMessage): InboxAttachment[] {
+  if (!message) return [];
+  if (Array.isArray(message.attachments)) return message.attachments;
+  const metadata = message.metadata || {};
+  return Array.isArray(metadata.attachments) ? metadata.attachments.filter(isAttachment) : [];
+}
+
+function isAttachment(value: unknown): value is InboxAttachment {
+  return Boolean(value && typeof value === "object" && "name" in value && "url" in value);
 }
 
 function InboxEmptyState({ compact = false, onRegister }: { compact?: boolean; onRegister: () => void }) {

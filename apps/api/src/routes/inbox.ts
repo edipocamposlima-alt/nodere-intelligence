@@ -1,18 +1,23 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { config } from "../config.js";
 import { getSupabase } from "../db/supabase.js";
-import { getRequestWorkspaceId, requireWorkspaceMutation } from "../middleware/session.js";
+import { getRequestWorkspaceId, requireWorkspaceMutation, requireWorkspaceRole } from "../middleware/session.js";
 import {
   addInboundMessage,
   addOutboundMessage,
+  buildInboxRow,
   getConversation,
   getSlaStatus,
+  getWhatsappTemplate,
   listConversations,
+  listWhatsappTemplates,
+  normalizeAttachments,
   parseStatusUpdate,
   parseWebhookPayload,
   resolveConversation,
+  sortInboxChronologically,
   updateMessageStatus
 } from "../services/inbox.js";
 import { sendWhatsappMessage } from "../services/whatsapp.js";
@@ -21,8 +26,10 @@ import { isMissingSupabaseSchema } from "../utils/supabaseErrors.js";
 
 const router = Router();
 router.use(requireWorkspaceMutation("owner", "admin", "operator"));
+const canReadInbox = requireWorkspaceRole("owner", "admin", "operator", "viewer");
+const canMutateInbox = requireWorkspaceRole("owner", "admin", "operator");
 
-router.get("/", async (req, res, next) => {
+router.get("/", canReadInbox, async (req, res, next) => {
   const sb = getSupabase();
   if (sb) {
     try {
@@ -60,7 +67,7 @@ router.get("/", async (req, res, next) => {
   res.json({ messages: convs, total: convs.length, page: 1, limit: convs.length });
 });
 
-router.get("/unread-count", async (req, res, next) => {
+router.get("/unread-count", canReadInbox, async (req, res, next) => {
   const sb = getSupabase();
   if (!sb) return res.json({ unread: listConversations().filter((conv) => conv.status !== "resolved").length });
   try {
@@ -77,17 +84,68 @@ router.get("/unread-count", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.get("/templates", canReadInbox, (_req, res) => {
+  res.json({ templates: listWhatsappTemplates() });
+});
+
+router.get("/company/:companyId", canReadInbox, async (req, res, next) => {
+  const sb = getSupabase();
+  if (!sb) return res.json({ messages: [], total: 0 });
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    const { data, error } = await sb
+      .from("inbox_messages")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .eq("company_id", req.params.companyId)
+      .order("sent_at", { ascending: true });
+    if (error) throw error;
+    return res.json({ messages: sortInboxChronologically(data ?? []), total: data?.length ?? 0 });
+  } catch (error) {
+    if (isMissingSupabaseSchema(error)) return res.json({ messages: [], total: 0 });
+    return next(error);
+  }
+});
+
+router.post("/", canMutateInbox, async (req, res, next) => {
   try {
     const legacy = z.object({
       phone: z.string().min(6),
       message: z.string().min(1),
       companyId: z.string().optional(),
-      companyName: z.string().optional()
+      companyName: z.string().optional(),
+      direction: z.enum(["inbound", "outbound", "manual"]).optional(),
+      templateKey: z.string().optional(),
+      attachments: z.array(z.record(z.unknown())).optional()
     }).safeParse(req.body);
 
     if (legacy.success) {
       const body = legacy.data;
+      const sb = getSupabase();
+      if (sb) {
+        const row = {
+          id: randomUUID(),
+          ...buildInboxRow({
+            workspaceId: getRequestWorkspaceId(req),
+            companyId: body.companyId || null,
+            type: "whatsapp",
+            direction: body.direction || "manual",
+            status: body.direction === "inbound" ? "unread" : "read",
+            subject: body.templateKey ? getWhatsappTemplate(body.templateKey)?.name || "WhatsApp" : "WhatsApp",
+            body: body.message,
+            phoneFrom: body.direction === "inbound" ? body.phone : null,
+            phoneTo: body.direction === "outbound" ? body.phone : null,
+            sentBy: "Operador",
+            templateKey: body.templateKey || null,
+            companyName: body.companyName || null,
+            attachments: normalizeAttachments(body.attachments)
+          })
+        };
+        const { data, error } = await sb.from("inbox_messages").insert(row).select("*").single();
+        if (error) throw error;
+        await mirrorInboxToCommunication(req, data).catch(() => undefined);
+        return res.status(201).json(data);
+      }
       const conv = getConversation(body.phone);
       if (!conv && (body.companyId || body.companyName)) {
         addInboundMessage(body.phone, body.message);
@@ -106,33 +164,36 @@ router.post("/", async (req, res, next) => {
     const body = inboxMessageSchema.parse(req.body);
     const row = {
       id: randomUUID(),
-      workspace_id: getRequestWorkspaceId(req),
-      company_id: body.companyId,
-      contact_id: body.contactId,
-      type: body.type,
-      direction: body.direction,
-      status: body.status,
-      subject: body.subject,
-      body: body.body,
-      content: body.body,
-      channel: body.type,
-      lead_id: body.companyId,
-      phone_from: body.phoneFrom,
-      phone_to: body.phoneTo,
-      flag_color: body.flagColor,
-      sent_by: body.sentBy,
-      sent_at: body.sentAt || new Date().toISOString(),
-      metadata: body.metadata ?? {}
+      ...buildInboxRow({
+        workspaceId: getRequestWorkspaceId(req),
+        companyId: body.companyId,
+        contactId: body.contactId,
+        type: body.type,
+        direction: body.direction,
+        status: body.status,
+        subject: body.subject,
+        body: body.body,
+        phoneFrom: body.phoneFrom,
+        phoneTo: body.phoneTo,
+        flagColor: body.flagColor,
+        sentBy: body.sentBy,
+        sentAt: body.sentAt,
+        providerMessageId: body.providerMessageId,
+        templateKey: body.templateKey,
+        attachments: normalizeAttachments(body.attachments),
+        metadata: body.metadata
+      })
     };
     const { data, error } = await requireSupabase().from("inbox_messages").insert(row).select("*").single();
     if (error) throw error;
+    await mirrorInboxToCommunication(req, data).catch(() => undefined);
     return res.status(201).json(data);
   } catch (error) {
     return next(error);
   }
 });
 
-router.post("/manual", (req, res, next) => {
+router.post("/manual", canMutateInbox, (req, res, next) => {
   try {
     const body = z.object({
       phone: z.string().min(6),
@@ -152,7 +213,7 @@ router.post("/manual", (req, res, next) => {
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", canMutateInbox, async (req, res, next) => {
   try {
     const body = z.object({
       status: z.enum(["unread", "read", "flagged", "resolved"]).optional(),
@@ -179,8 +240,9 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
-router.get("/:phone", (req, res) => {
-  const conv = getConversation(req.params.phone);
+router.get("/:phone", canReadInbox, (req, res) => {
+  const phone = String(req.params.phone);
+  const conv = getConversation(phone);
   if (!conv) return res.status(404).json({ message: "Conversation not found" });
   return res.json({ ...conv, slaStatus: getSlaStatus(conv) });
 });
@@ -198,6 +260,9 @@ const inboxMessageSchema = z.object({
   flagColor: z.string().optional().nullable(),
   sentBy: z.string().optional().nullable(),
   sentAt: z.string().optional().nullable(),
+  providerMessageId: z.string().optional().nullable(),
+  templateKey: z.string().optional().nullable(),
+  attachments: z.array(z.record(z.unknown())).optional(),
   metadata: z.record(z.unknown()).optional()
 });
 
@@ -212,14 +277,16 @@ function requireSupabase() {
   return sb;
 }
 
-router.post("/:phone/reply", async (req, res, next) => {
+router.post("/:phone/reply", canMutateInbox, async (req, res, next) => {
   try {
     const body = z.object({
       message: z.string().min(1),
-      companyId: z.string().optional()
+      companyId: z.string().optional(),
+      templateKey: z.string().optional(),
+      attachments: z.array(z.record(z.unknown())).optional()
     }).parse(req.body);
 
-    const phone = req.params.phone;
+    const phone = String(req.params.phone);
     const company = body.companyId ? getCompany(body.companyId) : undefined;
 
     const fakeCompany = company ?? {
@@ -230,14 +297,39 @@ router.post("/:phone/reply", async (req, res, next) => {
 
     const result = await sendWhatsappMessage(fakeCompany, body.message);
     const msg = addOutboundMessage(phone, body.message, (result as any).response?.messages?.[0]?.id);
+    const sb = getSupabase();
+    if (sb) {
+      const row = {
+        id: randomUUID(),
+        ...buildInboxRow({
+          workspaceId: getRequestWorkspaceId(req),
+          companyId: body.companyId || null,
+          type: "whatsapp",
+          direction: "outbound",
+          status: "read",
+          subject: body.templateKey ? getWhatsappTemplate(body.templateKey)?.name || "WhatsApp enviado" : "WhatsApp enviado",
+          body: body.message,
+          phoneTo: phone,
+          sentBy: "Operador",
+          providerMessageId: (result as any).response?.messages?.[0]?.id,
+          templateKey: body.templateKey,
+          attachments: normalizeAttachments(body.attachments),
+          metadata: { whatsapp: result }
+        })
+      };
+      const { data, error } = await sb.from("inbox_messages").insert(row).select("*").single();
+      if (error) throw error;
+      await mirrorInboxToCommunication(req, data).catch(() => undefined);
+      return res.json({ message: data, whatsapp: result });
+    }
     return res.json({ message: msg, whatsapp: result });
   } catch (error) {
     return next(error);
   }
 });
 
-router.patch("/:phone/resolve", (req, res) => {
-  const ok = resolveConversation(req.params.phone);
+router.patch("/:phone/resolve", canMutateInbox, (req, res) => {
+  const ok = resolveConversation(String(req.params.phone));
   if (!ok) return res.status(404).json({ message: "Conversation not found" });
   return res.json({ resolved: true });
 });
@@ -269,3 +361,29 @@ router.post("/webhook", (req, res) => {
 });
 
 export default router;
+
+async function mirrorInboxToCommunication(req: Request, inboxRow: Record<string, any>) {
+  if (!inboxRow.company_id) return;
+  const metadata = inboxRow.metadata && typeof inboxRow.metadata === "object" ? inboxRow.metadata : {};
+  const { error } = await requireSupabase()
+    .from("communications")
+    .insert({
+      id: randomUUID(),
+      workspace_id: getRequestWorkspaceId(req),
+      company_id: inboxRow.company_id,
+      contact_id: inboxRow.contact_id || null,
+      type: "whatsapp",
+      direction: inboxRow.direction || "manual",
+      subject: inboxRow.subject || "WhatsApp",
+      body: inboxRow.body || inboxRow.content || "",
+      sent_by: inboxRow.sent_by || null,
+      sent_at: inboxRow.sent_at || new Date().toISOString(),
+      status: inboxRow.direction === "inbound" ? "delivered" : "sent",
+      metadata: {
+        ...metadata,
+        inboxMessageId: inboxRow.id,
+        attachments: normalizeAttachments(metadata.attachments)
+      }
+    });
+  if (error) throw error;
+}

@@ -1000,11 +1000,36 @@ export interface InboxMessage {
   sent_at?: string;
   created_at?: string;
   metadata?: Record<string, unknown>;
+  attachments?: InboxAttachment[];
   company?: Company;
+}
+
+export interface InboxAttachment {
+  name: string;
+  url: string;
+  mimeType?: string;
+  size?: number;
+  companyId?: string;
+  leadId?: string;
+}
+
+export interface WhatsappTemplate {
+  key: string;
+  name: string;
+  category: string;
+  body: string;
 }
 
 export function getInboxMessages(params = "") {
   return api<{ messages: InboxMessage[]; total: number; page: number; limit: number }>(`/inbox${params}`, undefined, { messages: [], total: 0, page: 1, limit: 50 });
+}
+
+export function getInboxMessagesByCompany(companyId: string) {
+  return api<{ messages: InboxMessage[]; total: number }>(`/inbox/company/${companyId}`, undefined, { messages: [], total: 0 });
+}
+
+export function getWhatsappTemplates() {
+  return api<{ templates: WhatsappTemplate[] }>("/inbox/templates", undefined, { templates: [] });
 }
 
 export function createInboxMessage(payload: Partial<InboxMessage> & {
@@ -1016,6 +1041,8 @@ export function createInboxMessage(payload: Partial<InboxMessage> & {
   flagColor?: string;
   sentBy?: string;
   sentAt?: string;
+  templateKey?: string;
+  attachments?: InboxAttachment[];
 }) {
   return api<InboxMessage>("/inbox", { method: "POST", body: JSON.stringify(payload) });
 }

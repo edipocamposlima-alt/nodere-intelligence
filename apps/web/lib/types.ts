@@ -283,6 +283,24 @@ export interface InboxMessage {
   status: MessageStatus;
   providerMessageId?: string;
   createdAt: string;
+  attachments?: InboxAttachment[];
+  templateKey?: string;
+}
+
+export interface InboxAttachment {
+  name: string;
+  url: string;
+  mimeType?: string;
+  size?: number;
+  companyId?: string;
+  leadId?: string;
+}
+
+export interface WhatsappTemplate {
+  key: string;
+  name: string;
+  category: string;
+  body: string;
 }
 
 export interface InboxConversation {

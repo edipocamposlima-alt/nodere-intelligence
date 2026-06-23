@@ -11,6 +11,7 @@
     "test:calendar": "tsx --test src/tests/calendar.test.ts",
     "test:reports": "tsx --test src/tests/reports.test.ts",
     "test:crm": "tsx --test src/tests/crm-advanced.test.ts",
+    "test:whatsapp": "tsx --test src/tests/whatsapp-history.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "npm run typecheck"
   },

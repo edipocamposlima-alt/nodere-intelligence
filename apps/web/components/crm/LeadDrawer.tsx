@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Brain, Building2, CalendarDays, Mail, MessageCircle, Pencil, Phone, Plus, Save, Trash2, Users, X } from "lucide-react";
 import type { Company } from "@/lib/types";
 import { CRM_STAGES } from "@/lib/crm-stages";
-import { addLeadActivity, addLeadContact, addLeadDeal, createLead, deleteLeadActivity, deleteLeadContact, deleteLeadDeal, getLeadActivities, getLeadContacts, getLeadDeals, updateLeadActivity, updateLeadContact, updateLeadDeal } from "@/lib/api";
+import { InboxMessage, addLeadActivity, addLeadContact, addLeadDeal, createLead, deleteLeadActivity, deleteLeadContact, deleteLeadDeal, getInboxMessagesByCompany, getLeadActivities, getLeadContacts, getLeadDeals, updateLeadActivity, updateLeadContact, updateLeadDeal } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
@@ -159,6 +159,7 @@ export function LeadDrawer({ lead, open, onClose, onCreated }: LeadDrawerProps) 
   const [activities, setActivities] = useState<Array<Record<string, unknown>>>([]);
   const [contacts, setContacts] = useState<Array<Record<string, unknown>>>([]);
   const [deals, setDeals] = useState<Array<Record<string, unknown>>>([]);
+  const [whatsappTimeline, setWhatsappTimeline] = useState<InboxMessage[]>([]);
   const [relationErrors, setRelationErrors] = useState({ history: "", contacts: "", deals: "" });
   const [activityDraft, setActivityDraft] = useState<ActivityDraft>(emptyActivity);
   const [contactDraft, setContactDraft] = useState<ContactDraft>(emptyContact);
@@ -215,6 +216,9 @@ export function LeadDrawer({ lead, open, onClose, onCreated }: LeadDrawerProps) 
         setDeals([]);
         setRelationErrors((current) => ({ ...current, deals: error instanceof Error ? error.message : "Não foi possível carregar as negociações." }));
       });
+    getInboxMessagesByCompany(lead.id)
+      .then((payload) => setWhatsappTimeline(payload.messages.filter((item) => item.type === "whatsapp")))
+      .catch(() => setWhatsappTimeline([]));
   }, [lead?.id, open]);
 
   useEffect(() => {
@@ -617,6 +621,25 @@ export function LeadDrawer({ lead, open, onClose, onCreated }: LeadDrawerProps) 
                   <input aria-label="Filtrar histórico por data" type="date" value={activityFilter.date} onChange={(event) => setActivityFilter((current) => ({ ...current, date: event.target.value }))} className="h-10 rounded-input border border-border-default bg-bg-input px-3 text-sm text-text-primary" />
                 </div>
                 {filteredActivities.length === 0 && <p className="rounded-card border border-border-soft bg-bg-card p-4 text-sm text-text-muted">Nenhuma atividade encontrada.</p>}
+                {whatsappTimeline.length > 0 && (
+                  <div className="rounded-card border border-brand-primary/25 bg-brand-primary/5 p-4">
+                    <p className="font-bold text-text-primary">Timeline WhatsApp</p>
+                    <p className="mt-1 text-sm text-text-muted">Mensagens enviadas e recebidas vinculadas a este lead.</p>
+                    <div className="mt-3 space-y-2">
+                      {whatsappTimeline.map((item) => (
+                        <article key={item.id} className="rounded-lg border border-border-soft bg-bg-card px-3 py-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <Badge variant={item.direction === "inbound" ? "warning" : "success"}>{item.direction === "inbound" ? "Recebida" : item.direction === "outbound" ? "Enviada" : "Manual"}</Badge>
+                            <span className="text-xs text-text-muted">{item.sent_at ? new Date(item.sent_at).toLocaleString("pt-BR") : "sem data"}</span>
+                          </div>
+                          <div className="mt-2 text-sm text-text-secondary">
+                            <RichTextPreview value={item.body || "Sem conteúdo."} />
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {filteredActivities.map((activity, index) => {
                   const metadata = asRecord(activity.metadata);
                   return (
