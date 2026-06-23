@@ -1,5 +1,7 @@
-import { redirect } from "next/navigation";
+import { RedirectPage } from "../RedirectPage";
+
+export const dynamic = "force-dynamic";
 
 export default function AdminIntegrationsPage() {
-  redirect("/admin?tab=apis");
+  return <RedirectPage href="/admin?tab=apis" label="Abrir integrações" />;
 }

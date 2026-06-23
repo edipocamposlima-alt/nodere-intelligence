@@ -1,5 +1,7 @@
-import { redirect } from "next/navigation";
+import { RedirectPage } from "../RedirectPage";
+
+export const dynamic = "force-dynamic";
 
 export default function AdminModulesPage() {
-  redirect("/admin/content?area=plans");
+  return <RedirectPage href="/admin/content?area=plans" label="Abrir módulos" />;
 }

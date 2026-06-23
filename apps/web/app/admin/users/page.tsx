@@ -1,5 +1,7 @@
-import { redirect } from "next/navigation";
+import { RedirectPage } from "../RedirectPage";
+
+export const dynamic = "force-dynamic";
 
 export default function AdminUsersPage() {
-  redirect("/admin?tab=users");
+  return <RedirectPage href="/admin?tab=users" label="Abrir usuários" />;
 }

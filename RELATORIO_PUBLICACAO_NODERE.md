@@ -170,3 +170,35 @@ Proximo passo executado nesta mesma rotina:
 3. Push para GitHub.
 4. Deploy de producao na Vercel.
 5. Validar `https://nodere.com.br`.
+
+## 8. Atualizacao final da publicacao
+
+Publicacao web concluida em 2026-06-23.
+
+- Branch integrada ao remoto: `main`
+- Deployment Vercel publicado: `dpl_2WaeMaZrBsysq52QyUC7mnhXsTzZ`
+- URL do deployment: `https://web-ce4p8vc7e-edipo-lima-s-projects.vercel.app`
+- Dominio validado: `https://nodere.com.br`
+- Status Vercel: `READY`
+- Alias aplicado: `https://nodere.com.br`
+
+Correcoes necessarias durante a publicacao:
+
+- O deploy precisou ser executado diretamente dentro de `apps/web`, pois a raiz do repositorio possui `vercel.json` legado para build estatico em `dist`.
+- Foi criado `apps/web/vercel.json` para documentar que o app web e Next.js.
+- As rotas administrativas legadas `/admin/integrations`, `/admin/modules`, `/admin/plans` e `/admin/users` foram convertidas para paginas dinamicas com redirecionamento client-side, evitando falha de empacotamento `NEXT_MISSING_LAMBDA`.
+- O Next.js foi atualizado para `15.5.19`, pois a Vercel bloqueou deploys com `15.1.3` por vulnerabilidade critica.
+
+Validacoes finais:
+
+- `apps/web`: lint OK
+- `apps/web`: build OK
+- `apps/api`: lint OK
+- `apps/api`: build OK
+- `https://nodere.com.br`: 200
+- `/login`, `/register`, `/precos`, `/contato`, `/solucoes`: 200
+- `/admin`, `/admin/content`, `/app/dashboard`: 307 esperado para area protegida
+- `https://nodere-api.onrender.com/health`: 200
+- `https://nodere-api.onrender.com/api/health`: 200
+- Rotas protegidas de API sem sessao retornaram 401: CRM, Companies, Discovery e Calendar
+- `/api/billing/plans` sem sessao retornou 200
