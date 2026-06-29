@@ -10,7 +10,7 @@ import { ThemeRuntime } from "@/components/ThemeRuntime";
 import { AuthProvider } from "@/context/AuthProvider";
 import { CreditsProvider } from "@/context/CreditsProvider";
 
-const PUBLIC_PREFIXES = ["/", "/login", "/register", "/reset-password", "/terms", "/privacy"];
+const PUBLIC_PREFIXES = ["/", "/login", "/register", "/reset-password", "/terms", "/privacy", "/app/login", "/app/register", "/app/reset-password"];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() || "/";
