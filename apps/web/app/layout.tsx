@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
-import { Header } from "@/components/Header";
-import { MobileNav } from "@/components/MobileNav";
-import { Sidebar } from "@/components/Sidebar";
 
 export const metadata: Metadata = {
   title: "NODERE Intelligence",
@@ -13,16 +10,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="pt-BR">
-      <body>
-        <div className="flex min-h-screen nodere-grid">
-          <Sidebar />
-          <main className="min-w-0 flex-1 pb-20 lg:pb-0">
-            <Header />
-            {children}
-          </main>
-          <MobileNav />
-        </div>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
