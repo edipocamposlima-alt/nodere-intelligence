@@ -1,5 +1,6 @@
 import { CalendarDays, CheckCircle, Mail, MessageCircle, Workflow, XCircle } from "lucide-react";
 import { getSequenceTemplates, getSequenceInstances } from "@/lib/api";
+import type { EmailSequenceTemplate, SequenceInstance, SequenceStep } from "@/lib/types";
 import { ActivateSequenceButton } from "./ActivateSequenceButton";
 import { CancelSequenceButton } from "./CancelSequenceButton";
 
@@ -14,9 +15,9 @@ export default async function AutomationsPage() {
     getSequenceInstances().catch(() => [])
   ]);
 
-  const active = instances.filter((i: any) => i.status === "active");
-  const completed = instances.filter((i: any) => i.status === "completed");
-  const cancelled = instances.filter((i: any) => i.status === "cancelled");
+  const active = instances.filter((i) => i.status === "active");
+  const completed = instances.filter((i) => i.status === "completed");
+  const cancelled = instances.filter((i) => i.status === "cancelled");
 
   return (
     <div className="space-y-8 p-4 md:p-8">
@@ -32,7 +33,7 @@ export default async function AutomationsPage() {
           Templates disponíveis
         </h3>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {templates.map((tpl: any) => (
+          {templates.map((tpl: EmailSequenceTemplate) => (
             <div key={tpl.id} className="rounded-lg border border-line bg-panel/90 p-5">
               <div className="flex items-start justify-between gap-2">
                 <div>
@@ -45,7 +46,7 @@ export default async function AutomationsPage() {
               </div>
 
               <div className="mt-4 space-y-2">
-                {tpl.steps.map((step: any) => {
+                {tpl.steps.map((step: SequenceStep) => {
                   const Icon = CHANNEL_ICON[step.channel] ?? Mail;
                   return (
                     <div key={step.stepIndex} className="flex items-center gap-2 text-xs text-slate-400">
@@ -74,7 +75,7 @@ export default async function AutomationsPage() {
           <p className="text-sm text-slate-500">Nenhuma sequência ativa. Ative um template acima para começar.</p>
         ) : (
           <div className="space-y-3">
-            {active.map((inst: any) => (
+            {active.map((inst) => (
               <InstanceRow key={inst.id} inst={inst} showCancel />
             ))}
           </div>
@@ -86,7 +87,7 @@ export default async function AutomationsPage() {
         <section className="space-y-4">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Histórico</h3>
           <div className="space-y-3">
-            {[...completed, ...cancelled].map((inst: any) => (
+            {[...completed, ...cancelled].map((inst) => (
               <InstanceRow key={inst.id} inst={inst} showCancel={false} />
             ))}
           </div>
@@ -96,7 +97,7 @@ export default async function AutomationsPage() {
   );
 }
 
-function InstanceRow({ inst, showCancel }: { inst: any; showCancel: boolean }) {
+function InstanceRow({ inst, showCancel }: { inst: SequenceInstance; showCancel: boolean }) {
   const statusIcon = {
     active: <CalendarDays className="h-4 w-4 text-blue-400" />,
     completed: <CheckCircle className="h-4 w-4 text-emerald-400" />,

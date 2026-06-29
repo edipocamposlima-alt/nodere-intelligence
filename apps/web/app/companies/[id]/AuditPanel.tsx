@@ -111,7 +111,7 @@ export function AuditPanel({ audit }: { audit: DigitalAudit }) {
       ) : (
         <div className="rounded-lg border border-line bg-panel/90 p-5 text-center">
           <p className="text-sm text-slate-400">Análise detalhada do site ainda não executada.</p>
-          <p className="mt-1 text-xs text-slate-500">Clique em "Analisar site" para obter SEO, Core Web Vitals e rastreamento.</p>
+          <p className="mt-1 text-xs text-slate-500">Clique em &quot;Analisar site&quot; para obter SEO, Core Web Vitals e rastreamento.</p>
         </div>
       )}
 

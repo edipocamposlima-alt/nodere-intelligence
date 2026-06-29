@@ -27,6 +27,32 @@ router.get("/", (_req, res) => {
   res.json(convs);
 });
 
+// Meta webhook verification
+router.get("/webhook", (req, res) => {
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
+  if (mode === "subscribe" && token === config.webhookSecret) {
+    return res.status(200).send(challenge);
+  }
+  return res.sendStatus(403);
+});
+
+// Meta webhook incoming events
+router.post("/webhook", (req, res) => {
+  const messages = parseWebhookPayload(req.body);
+  for (const { phone, messageId, text } of messages) {
+    addInboundMessage(phone, text, messageId);
+  }
+
+  const statuses = parseStatusUpdate(req.body);
+  for (const { messageId, status } of statuses) {
+    updateMessageStatus(messageId, status);
+  }
+
+  res.sendStatus(200);
+});
+
 router.get("/:phone", (req, res) => {
   const conv = getConversation(req.params.phone);
   if (!conv) return res.status(404).json({ message: "Conversation not found" });
@@ -61,32 +87,6 @@ router.patch("/:phone/resolve", (req, res) => {
   const ok = resolveConversation(req.params.phone);
   if (!ok) return res.status(404).json({ message: "Conversation not found" });
   return res.json({ resolved: true });
-});
-
-// Meta webhook verification
-router.get("/webhook", (req, res) => {
-  const mode = req.query["hub.mode"];
-  const token = req.query["hub.verify_token"];
-  const challenge = req.query["hub.challenge"];
-  if (mode === "subscribe" && token === config.webhookSecret) {
-    return res.status(200).send(challenge);
-  }
-  return res.sendStatus(403);
-});
-
-// Meta webhook incoming events
-router.post("/webhook", (req, res) => {
-  const messages = parseWebhookPayload(req.body);
-  for (const { phone, messageId, text } of messages) {
-    addInboundMessage(phone, text, messageId);
-  }
-
-  const statuses = parseStatusUpdate(req.body);
-  for (const { messageId, status } of statuses) {
-    updateMessageStatus(messageId, status);
-  }
-
-  res.sendStatus(200);
 });
 
 export default router;

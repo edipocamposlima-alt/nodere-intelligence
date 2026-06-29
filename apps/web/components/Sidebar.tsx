@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BarChart3, Building2, CreditCard, History, Inbox, KanbanSquare, LineChart, Plug, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
+import { BarChart3, Building2, CreditCard, FileText, History, Inbox, KanbanSquare, LineChart, Package, Plug, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
 import { getBillingStatus } from "@/lib/api";
 
 const items = [
@@ -9,6 +9,8 @@ const items = [
   { href: "/searches", label: "Buscas", icon: History },
   { href: "/intelligence", label: "Inteligência", icon: Zap },
   { href: "/crm", label: "CRM", icon: KanbanSquare },
+  { href: "/catalog", label: "Catálogo", icon: Package },
+  { href: "/proposals", label: "Propostas", icon: FileText },
   { href: "/inbox", label: "Caixa de entrada", icon: Inbox },
   { href: "/automations", label: "Automações", icon: Workflow },
   { href: "/operators", label: "Operadores", icon: Users },

@@ -28,8 +28,8 @@ export function ActivateSequenceButton({ templateId, templateName }: { templateI
       setDone(true);
       setCompanyId("");
       setTimeout(() => setDone(false), 3000);
-    } catch (err: any) {
-      setError(err.message ?? "Erro desconhecido");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
       setLoading(false);
     }

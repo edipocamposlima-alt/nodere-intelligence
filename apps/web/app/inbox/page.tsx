@@ -1,6 +1,6 @@
 import { Clock, MessageCircle, UserCircle } from "lucide-react";
 import { getInbox } from "@/lib/api";
-import Link from "next/link";
+import type { InboxConversation } from "@/lib/types";
 
 function SlaChip({ status }: { status: "ok" | "urgent" | "overdue" }) {
   const map = {
@@ -32,8 +32,8 @@ function ConversationStatusBadge({ status }: { status: string }) {
 export default async function InboxPage() {
   const conversations = await getInbox().catch(() => []);
 
-  const open = conversations.filter((c: any) => c.status !== "resolved");
-  const resolved = conversations.filter((c: any) => c.status === "resolved");
+  const open = conversations.filter((c) => c.status !== "resolved");
+  const resolved = conversations.filter((c) => c.status === "resolved");
 
   return (
     <div className="space-y-6 p-4 md:p-8">
@@ -64,7 +64,7 @@ export default async function InboxPage() {
       {open.length > 0 && (
         <section className="space-y-3">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Abertas</h3>
-          {open.map((conv: any) => (
+          {open.map((conv) => (
             <ConversationCard key={conv.phone} conv={conv} />
           ))}
         </section>
@@ -73,7 +73,7 @@ export default async function InboxPage() {
       {resolved.length > 0 && (
         <section className="space-y-3">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Resolvidas</h3>
-          {resolved.map((conv: any) => (
+          {resolved.map((conv) => (
             <ConversationCard key={conv.phone} conv={conv} />
           ))}
         </section>
@@ -82,7 +82,7 @@ export default async function InboxPage() {
   );
 }
 
-function ConversationCard({ conv }: { conv: any }) {
+function ConversationCard({ conv }: { conv: InboxConversation & { slaStatus?: "ok" | "urgent" | "overdue"; messageCount?: number; lastMessage?: InboxConversation["messages"][number] | null } }) {
   const lastMessage = conv.lastMessage;
   const relativeTime = lastMessage
     ? new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" }).format(

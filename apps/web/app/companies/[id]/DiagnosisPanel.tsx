@@ -138,7 +138,7 @@ export function DiagnosisPanel({ companyId }: { companyId: string }) {
 
       {!diagnosis && !loading && (
         <p className="mt-3 text-sm text-slate-500">
-          Clique em "Gerar diagnóstico" para criar cópias comerciais prontas: WhatsApp, email, pitch e script de ligação.
+          Clique em &quot;Gerar diagnóstico&quot; para criar cópias comerciais prontas: WhatsApp, email, pitch e script de ligação.
         </p>
       )}
     </div>

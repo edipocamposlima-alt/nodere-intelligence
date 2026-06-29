@@ -421,3 +421,77 @@ export interface DigitalAudit {
   opportunityScore: number;
   gbp: GbpProfile;
 }
+
+export type PlatformRole = "viewer" | "operator" | "manager" | "admin" | "owner";
+
+export type CatalogItemType = "product" | "service";
+
+export interface CommercialCatalogItem {
+  id: string;
+  workspaceId: string;
+  type: CatalogItemType;
+  name: string;
+  description?: string;
+  unit: string;
+  unitPriceCents: number;
+  currency: string;
+  active: boolean;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProposalItemSnapshot {
+  catalogItemId: string;
+  type: CatalogItemType;
+  name: string;
+  description?: string;
+  unit: string;
+  unitPriceCents: number;
+  currency: string;
+  activeAtSnapshot: boolean;
+  snapshottedAt: string;
+}
+
+export interface CommercialProposalItem {
+  id: string;
+  proposalId: string;
+  catalogItemId: string;
+  itemSnapshot: ProposalItemSnapshot;
+  quantity: number;
+  unitPriceCents: number;
+  subtotalCents: number;
+  createdAt: string;
+}
+
+export type CommercialProposalStatus = "draft" | "sent" | "accepted" | "rejected" | "cancelled";
+
+export interface CommercialProposal {
+  id: string;
+  workspaceId: string;
+  companyId?: string;
+  title: string;
+  status: CommercialProposalStatus;
+  subtotalCents: number;
+  discountPercent?: number;
+  discountValueCents?: number;
+  discountReason?: string;
+  totalCents: number;
+  commercialSnapshot: Record<string, unknown>;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+  items: CommercialProposalItem[];
+}
+
+export interface CommercialProposalAuditLog {
+  id: string;
+  proposalId: string;
+  workspaceId: string;
+  actorId?: string;
+  action: string;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+}

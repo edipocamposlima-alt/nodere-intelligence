@@ -15,6 +15,9 @@ import billingRouter, { stripeWebhookHandler } from "./routes/billing.js";
 import operatorsRouter from "./routes/operators.js";
 import reportsRouter from "./routes/reports.js";
 import auditRouter from "./routes/audit.js";
+import authRouter from "./routes/auth.js";
+import teamRouter from "./routes/team.js";
+import commercialRouter from "./routes/commercial.js";
 import { processDueSteps } from "./services/emailSequences.js";
 import { requireAuth } from "./middleware/auth.js";
 
@@ -51,6 +54,9 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true, name: "NODERE Intelligence API" });
 });
 
+app.use("/api/auth", authRouter);
+app.use("/api/team", teamRouter);
+app.use("/api/commercial", commercialRouter);
 app.use("/api", requireAuth);
 
 app.use("/api/dashboard", dashboardRouter);
@@ -68,10 +74,23 @@ app.use("/api/audit", auditRouter);
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   if (error instanceof ZodError) {
-    return res.status(400).json({ message: "Invalid request", issues: error.issues });
+    console.error("[validation]", error.issues);
+    return res.status(400).json({ error: "Revise os dados enviados e tente novamente." });
   }
-  const message = error instanceof Error ? error.message : "Unexpected error";
-  return res.status(500).json({ message });
+  if (error instanceof Error && error.message === "SUPABASE_NOT_CONFIGURED") {
+    return res.status(503).json({ error: "Configure Supabase para usar este modulo." });
+  }
+  if (error instanceof Error && error.message === "CATALOG_ITEM_UNAVAILABLE") {
+    return res.status(422).json({ error: "Use apenas itens ativos do catalogo." });
+  }
+  const status = typeof (error as { status?: unknown })?.status === "number"
+    ? (error as { status: number }).status
+    : null;
+  if (status && status >= 400 && status < 500 && error instanceof Error) {
+    return res.status(status).json({ error: error.message });
+  }
+  console.error("[server]", error);
+  return res.status(500).json({ error: "Erro interno. Tente novamente." });
 });
 
 setInterval(() => { processDueSteps().catch(console.error); }, 5 * 60 * 1000);
