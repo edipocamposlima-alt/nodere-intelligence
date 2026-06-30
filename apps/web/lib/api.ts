@@ -380,10 +380,28 @@ export function saveProposalVersion(payload: { lead_id: string; content: string;
 }
 
 export type ProposalItemPayload = {
-  description: string;
+  catalog_item_id: string;
   quantity: number;
-  unit_price: number;
-  total?: number;
+  discount_type?: "none" | "percent" | "amount";
+  discount_percent?: number | null;
+  discount_amount?: number | null;
+  discount_reason?: string | null;
+  customer_item_note?: string | null;
+  internal_item_note?: string | null;
+};
+
+export type ProposalSnapshotItem = ProposalItemPayload & {
+  product_service_id?: string;
+  snapshot_name: string;
+  snapshot_description?: string;
+  snapshot_commercial_guidance?: string;
+  snapshot_billing_unit?: string;
+  snapshot_unit_price: number;
+  snapshot_payment_terms?: string;
+  snapshot_payment_method?: string;
+  snapshot_execution_deadline?: string;
+  gross_total: number;
+  final_total: number;
 };
 
 export type NodereProposal = {
@@ -394,7 +412,7 @@ export type NodereProposal = {
   status: "draft" | "sent" | "accepted" | "rejected" | "expired";
   service_type?: string | null;
   content?: string | null;
-  items: ProposalItemPayload[];
+  items: ProposalSnapshotItem[];
   subtotal: number;
   discount: number;
   total: number;
@@ -415,7 +433,6 @@ export function createProposal(payload: {
   service_type?: string;
   content?: string;
   items: ProposalItemPayload[];
-  discount?: number;
   status?: NodereProposal["status"];
   valid_until?: string | null;
 }) {
@@ -425,6 +442,29 @@ export function createProposal(payload: {
 export async function downloadProposalPdf(id: string, fileName = "proposta-nodere.pdf") {
   const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
   const response = await fetch(`${API_URL}/proposals/${encodeURIComponent(id)}/pdf`, {
+    method: "POST",
+    headers: {
+      ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {})
+    }
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new ApiRequestError(payload.message || `API retornou HTTP ${response.status}`, response.status, payload);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+export async function downloadContractPdf(id: string, fileName = "contrato-nodere.pdf") {
+  const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
+  const response = await fetch(`${API_URL}/proposals/${encodeURIComponent(id)}/contract-pdf`, {
     method: "POST",
     headers: {
       ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {})
@@ -1110,8 +1150,16 @@ export interface CatalogItem {
   exchange_policy?: string;
   cancellation_policy?: string;
   payment_conditions?: string;
+  payment_method?: string;
   installments_available?: number;
   unit_measure?: string;
+  billing_unit?: "unit" | "hour" | "monthly" | "package" | "project" | "daily" | "other";
+  commercial_guidance?: string;
+  internal_notes?: string;
+  created_by?: string;
+  updated_by?: string;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
   weight_kg?: number;
   height_cm?: number;
   width_cm?: number;
@@ -1168,8 +1216,12 @@ export function createCatalogItem(payload: {
   exchangePolicy?: string;
   cancellationPolicy?: string;
   paymentConditions?: string;
+  paymentMethod?: string;
   installmentsAvailable?: number;
   unitMeasure?: string;
+  billingUnit?: "unit" | "hour" | "monthly" | "package" | "project" | "daily" | "other";
+  commercialGuidance?: string;
+  internalNotes?: string;
   weightKg?: number;
   heightCm?: number;
   widthCm?: number;
@@ -1193,6 +1245,14 @@ export function createCatalogItem(payload: {
   campaignUrl?: string;
 }) {
   return api<CatalogItem>("/catalog", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function updateCatalogItem(id: string, payload: Partial<Parameters<typeof createCatalogItem>[0]>) {
+  return api<CatalogItem>(`/catalog/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) });
+}
+
+export function inactiveCatalogItem(id: string) {
+  return api<CatalogItem>(`/catalog/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 export interface MessageTemplate {

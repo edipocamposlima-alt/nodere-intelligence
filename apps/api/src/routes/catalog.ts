@@ -7,7 +7,7 @@ import multer from "multer";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 12 * 1024 * 1024 } });
-const canEditCatalog = requireWorkspaceRole("owner", "admin", "operator");
+const canEditCatalog = requireWorkspaceRole("owner", "admin");
 
 router.get("/", async (req, res, next) => {
   try {
@@ -37,7 +37,9 @@ router.post("/", canEditCatalog, async (req, res, next) => {
       id: randomUUID(),
       workspace_id: workspaceId,
       ...mapCatalogInput(body),
-      code
+      code,
+      created_by: getSessionUserId(req),
+      updated_by: getSessionUserId(req)
     };
     const { data, error } = await requireSupabase().from("catalog_items").insert(row).select("*").single();
     if (error) throw error;
@@ -86,7 +88,7 @@ router.patch("/:id", canEditCatalog, async (req, res, next) => {
     const body = catalogSchema.partial().parse(req.body);
     const { data, error } = await requireSupabase()
       .from("catalog_items")
-      .update({ ...mapCatalogInput(body), updated_at: new Date().toISOString() })
+      .update({ ...mapCatalogInput(body), updated_by: getSessionUserId(req), updated_at: new Date().toISOString() })
       .eq("workspace_id", getRequestWorkspaceId(req))
       .eq("id", req.params.id)
       .select("*")
@@ -102,7 +104,7 @@ router.delete("/:id", canEditCatalog, async (req, res, next) => {
   try {
     const { data, error } = await requireSupabase()
       .from("catalog_items")
-      .update({ status: "inactive", updated_at: new Date().toISOString() })
+      .update({ status: "inactive", deleted_at: new Date().toISOString(), deleted_by: getSessionUserId(req), updated_by: getSessionUserId(req), updated_at: new Date().toISOString() })
       .eq("workspace_id", getRequestWorkspaceId(req))
       .eq("id", req.params.id)
       .select("*")
@@ -125,6 +127,7 @@ const catalogSchema = z.object({
   status: z.enum(["active", "inactive"]).default("active"),
   descriptionShort: z.string().min(2),
   descriptionFull: z.string().optional().nullable(),
+  commercialGuidance: z.string().optional().nullable(),
   features: z.string().optional().nullable(),
   benefits: z.string().optional().nullable(),
   differentials: z.string().optional().nullable(),
@@ -142,8 +145,11 @@ const catalogSchema = z.object({
   exchangePolicy: z.string().optional().nullable(),
   cancellationPolicy: z.string().optional().nullable(),
   paymentConditions: z.string().optional().nullable(),
+  paymentMethod: z.string().optional().nullable(),
   installmentsAvailable: z.coerce.number().optional().nullable(),
   unitMeasure: z.string().optional().nullable(),
+  billingUnit: z.enum(["unit", "hour", "monthly", "package", "project", "daily", "other"]).optional().nullable(),
+  internalNotes: z.string().optional().nullable(),
   weightKg: z.coerce.number().optional().nullable(),
   heightCm: z.coerce.number().optional().nullable(),
   widthCm: z.coerce.number().optional().nullable(),
@@ -174,6 +180,7 @@ function mapCatalogInput(input: Partial<z.infer<typeof catalogSchema>>) {
     commercialName: "commercial_name",
     descriptionShort: "description_short",
     descriptionFull: "description_full",
+    commercialGuidance: "commercial_guidance",
     targetAudience: "target_audience",
     useCases: "use_cases",
     commissionPct: "commission_pct",
@@ -184,8 +191,11 @@ function mapCatalogInput(input: Partial<z.infer<typeof catalogSchema>>) {
     exchangePolicy: "exchange_policy",
     cancellationPolicy: "cancellation_policy",
     paymentConditions: "payment_conditions",
+    paymentMethod: "payment_method",
     installmentsAvailable: "installments_available",
     unitMeasure: "unit_measure",
+    billingUnit: "billing_unit",
+    internalNotes: "internal_notes",
     weightKg: "weight_kg",
     heightCm: "height_cm",
     widthCm: "width_cm",
@@ -267,6 +277,10 @@ function requireSupabase() {
     throw error;
   }
   return sb;
+}
+
+function getSessionUserId(req: any) {
+  return String(req.session?.userId || req.admin?.userId || req.session?.email || "");
 }
 
 export default router;
