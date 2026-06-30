@@ -212,3 +212,71 @@ Artefatos ignorados confirmados fora do commit:
 **NAO LIBERADO PARA DEPLOY FINAL ATE A API RENDER RODAR O CODIGO NOVO E A HOMOLOGACAO REAL PASSAR.**
 
 Proximo passo tecnico: versionar as correcoes comerciais, publicar a API Render com o commit novo, reexecutar `scripts/homologate-commercial-flow.mjs` contra `https://nodere-api.onrender.com` e somente entao publicar o frontend na Vercel.
+
+## Resultado final apos publicacao controlada - 2026-06-30
+
+Commit publicado na API Render:
+
+- `a6382e2` - `feat: connect commercial catalog proposals flow`
+
+Deploy Render:
+
+- Servico: `nodere-api`
+- URL: `https://nodere-api.onrender.com`
+- Branch: `main`
+- Status: live
+- Commit live confirmado no painel Render: `a6382e2`
+
+Homologacao funcional real executada novamente apos o Render ficar live:
+
+| Teste | Resultado |
+| --- | --- |
+| login real por perfil owner/admin/operator/viewer | Aprovado |
+| owner cria produto/servico | Aprovado |
+| admin edita produto/servico | Aprovado |
+| admin inativa produto/servico | Aprovado |
+| operator nao cria catalogo | Aprovado - HTTP 403 |
+| viewer nao edita catalogo | Aprovado - HTTP 403 |
+| viewer visualiza catalogo | Aprovado - HTTP 200 |
+| proposta nao aceita item manual/livre | Aprovado - HTTP 400 |
+| proposta so permite item ativo do catalogo | Aprovado - HTTP 422 |
+| motivo obrigatorio quando houver desconto | Aprovado - HTTP 422 |
+| percentual e valor juntos sao bloqueados | Aprovado - HTTP 422 |
+| desconto percentual funciona | Aprovado |
+| desconto em valor funciona | Aprovado |
+| snapshot comercial salvo corretamente | Aprovado |
+| alteracao posterior no catalogo nao altera proposta | Aprovado |
+| PDF gerado com snapshot | Aprovado - HTTP 200 |
+| PDF nao expoe observacoes internas | Aprovado |
+| PDF nao expoe motivo interno do desconto | Aprovado |
+| auditoria registra criacao/PDF | Aprovado - `proposal_created`, `proposal_pdf_generated` |
+
+Deploy Vercel:
+
+- Deployment ID: `dpl_F45m3Ft5RckPaUXtmEeUSZYJposX`
+- URL tecnica: `https://web-onys7uvqe-edipo-lima-s-projects.vercel.app`
+- Alias de producao: `https://nodere.com.br`
+- Alias `www`: `https://www.nodere.com.br`
+- Status: Ready
+
+Smoke de producao:
+
+| Rota | Resultado |
+| --- | --- |
+| `https://nodere.com.br` | HTTP 200; sessao real redirecionou para dashboard verde |
+| `https://nodere.com.br/login` | HTTP 200; layout publico sem sidebar |
+| `https://nodere.com.br/catalog` | HTTP 200; catalogo comercial novo carregado |
+| `https://nodere.com.br/app/proposals` | HTTP 200; propostas com selecao de catalogo carregadas |
+| `https://nodere.com.br/app/dashboard` | HTTP 200 |
+
+Credenciais:
+
+- Service role do Render foi usada apenas em memoria/arquivo temporario fora do repositorio.
+- Arquivo temporario removido ao final da homologacao.
+- Nenhuma credencial foi persistida no repositorio.
+
+Status final:
+
+**LIBERADO PARA DEPLOY E PUBLICADO.**
+
+Pendencia operacional recomendada: revisar em Sprint futura a configuracao publica `NEXT_PUBLIC_SUPABASE_ANON_KEY` no Vercel/Render, pois o fluxo atual validado usa fallback/backend para login, mas a chave anon publica deve permanecer coerente com o projeto Supabase oficial.
