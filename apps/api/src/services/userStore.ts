@@ -132,12 +132,22 @@ function getDatabaseUrlCandidates(databaseUrl: string) {
   return [...new Set(candidates)];
 }
 
+function normalizePgConnectionString(databaseUrl: string) {
+  try {
+    const parsed = new URL(databaseUrl);
+    parsed.searchParams.delete("sslmode");
+    return parsed.toString();
+  } catch {
+    return databaseUrl;
+  }
+}
+
 async function findActiveUserByEmailWithDatabaseUrl(email: string) {
   if (!config.databaseUrl) return null;
   let lastError: unknown;
   for (const databaseUrl of getDatabaseUrlCandidates(config.databaseUrl)) {
     const client = new Client({
-      connectionString: databaseUrl,
+      connectionString: normalizePgConnectionString(databaseUrl),
       ssl: shouldUseSslForDatabaseUrl(databaseUrl) ? { rejectUnauthorized: false } : false
     });
     try {

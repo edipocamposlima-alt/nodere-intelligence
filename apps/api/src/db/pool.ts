@@ -1,9 +1,19 @@
 import pg, { QueryResultRow } from "pg";
 import { config } from "../config.js";
 
+function normalizePgConnectionString(connectionString: string) {
+  try {
+    const url = new URL(connectionString);
+    url.searchParams.delete("sslmode");
+    return url.toString();
+  } catch {
+    return connectionString;
+  }
+}
+
 export const pool = config.databaseUrl
   ? new pg.Pool({
-      connectionString: config.databaseUrl,
+      connectionString: normalizePgConnectionString(config.databaseUrl),
       ssl: { rejectUnauthorized: false },
       max: 5,
       idleTimeoutMillis: 30_000,
