@@ -164,9 +164,15 @@ app.get("/api/health/supabase", async (_req, res) => {
       .select("id", { count: "exact", head: true })
       .limit(1);
     if (error) throw error;
+    const { error: usersError } = await sb!
+      .from("nodere_platform_users")
+      .select("id", { count: "exact", head: true })
+      .limit(1);
     return res.json({
       status: "ok",
       message: "Supabase conectado e tabela nodere_companies acessivel.",
+      platformUsersAccessible: !usersError,
+      platformUsersError: usersError ? { code: usersError.code || null, message: usersError.message || "Erro ao consultar nodere_platform_users." } : null,
       backendTime: new Date().toISOString()
     });
   } catch (error) {
