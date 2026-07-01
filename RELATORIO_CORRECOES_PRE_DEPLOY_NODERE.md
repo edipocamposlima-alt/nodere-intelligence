@@ -289,3 +289,24 @@ git diff --check
 ### Status
 
 Bloqueio externo confirmado: `DATABASE_URL` ainda nao configurado no Render por indisponibilidade do canal de acesso ao painel e ausencia de token/CLI/API Render local.
+
+## Atualizacao final 2026-07-01 - bloqueios corrigidos
+
+O bloqueio externo foi removido apos acesso ao Render, correcao da `DATABASE_URL` para o Supabase Transaction Pooler IPv4 oficial e redeploy do backend. Os diagnosticos publicos temporarios foram removidos antes da publicacao final.
+
+Correcoes finais:
+
+- Render `DATABASE_URL` validada em runtime sem exposicao de segredo.
+- Backend publicado com commit `cfd65fb`.
+- Health checks finais aprovados.
+- Scripts comerciais aprovados.
+- Regressao completa aprovada.
+- Frontend publicado na Vercel a partir de `apps/web`.
+- Smoke autenticado em producao aprovado.
+
+Status final:
+
+- PLATAFORMA PUBLICADA: SIM
+- FUNCIONALIDADES PRESERVADAS: SIM
+- INTEGRACOES PRESERVADAS: SIM
+- LIBERADA PARA USO REAL: SIM

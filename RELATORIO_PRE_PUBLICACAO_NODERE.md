@@ -223,3 +223,28 @@ Sem acesso ao painel Render ou token/API/CLI Render local, nao foi possivel conc
 ### Status
 
 NAO LIBERADO PARA COMMIT/DEPLOY FINAL ate a variavel `DATABASE_URL` estar configurada e `scripts/homologate-commercial-flow.mjs` passar em producao.
+
+## Atualizacao final 2026-07-01 - publicacao concluida
+
+O bloqueio de `DATABASE_URL` foi resolvido no Render usando o Supabase Transaction Pooler IPv4 oficial. O servico `nodere-api` foi redeployado, os health checks voltaram aprovados e a homologacao comercial executou com sucesso.
+
+Evidencias finais:
+
+- Backend Render publicado com commit `cfd65fb`.
+- Frontend Vercel publicado no projeto `web`, diretorio `apps/web`.
+- Deployment Vercel: `dpl_5qdYcUG9fMypPt79vTWBE3gsCtGR`.
+- URL final: `https://nodere.com.br`.
+- `GET /health`: aprovado.
+- `GET /api/health`: aprovado.
+- `GET /api/health/supabase`: aprovado.
+- `node scripts/validate-commercial-schema.mjs`: aprovado.
+- `node scripts/homologate-commercial-flow.mjs`: aprovado.
+- Regressao completa de API e Web: aprovada.
+- Smoke autenticado em producao: aprovado com usuario temporario de teste, posteriormente inativado.
+
+Status final:
+
+- PLATAFORMA PUBLICADA: SIM
+- FUNCIONALIDADES PRESERVADAS: SIM
+- INTEGRACOES PRESERVADAS: SIM
+- LIBERADA PARA USO REAL: SIM

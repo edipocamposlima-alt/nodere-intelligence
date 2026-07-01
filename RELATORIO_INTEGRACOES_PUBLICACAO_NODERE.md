@@ -202,3 +202,24 @@ Render > My project > nodere-api > Environment
 ### Status
 
 Render API: NAO HOMOLOGADO para login real ate publicar o codigo novo e configurar `DATABASE_URL`.
+
+## Atualizacao final 2026-07-01 - integracoes homologadas
+
+A variavel `DATABASE_URL` foi configurada no Render com o Supabase Transaction Pooler IPv4 oficial, o backend foi redeployado e as integracoes principais foram revalidadas.
+
+Evidencias:
+
+- Render API `nodere-api`: publicado e saudavel.
+- Supabase: conexao REST e Postgres aprovadas via health checks e scripts.
+- Vercel: frontend publicado no projeto `web`, a partir de `apps/web`.
+- Dominio final: `https://nodere.com.br`.
+- Login real em producao: aprovado com usuario temporario owner, posteriormente inativado.
+- Modulos navegados em producao: dashboard, busca, empresas, CRM, inbox, calendario, automacoes, operadores, relatorios, marketing, catalogo, propostas, integracoes, configuracoes, manual e admin.
+- PDF comercial: aprovado no script de homologacao com proposta e contrato.
+
+Status final:
+
+- PLATAFORMA PUBLICADA: SIM
+- FUNCIONALIDADES PRESERVADAS: SIM
+- INTEGRACOES PRESERVADAS: SIM
+- LIBERADA PARA USO REAL: SIM

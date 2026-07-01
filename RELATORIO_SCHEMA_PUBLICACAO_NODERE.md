@@ -134,3 +134,25 @@ Objetos confirmados:
 Schema APROVADO tecnicamente para os modulos comerciais e de publicacao.
 
 Bloqueio remanescente fora do schema: autenticacao de producao entre Render API e Supabase Auth.
+
+## Atualizacao final 2026-07-01 - schema e runtime aprovados
+
+O bloqueio fora do schema foi resolvido apos configuracao da `DATABASE_URL` oficial do Supabase Transaction Pooler IPv4 no Render e redeploy completo do servico `nodere-api`.
+
+Resultado final:
+
+- Supabase autorizado: `qhopjggnbzewuuktqntp.supabase.co`.
+- Pooler IPv4 usado em runtime pelo Render.
+- `GET /health`: aprovado.
+- `GET /api/health`: aprovado.
+- `GET /api/health/supabase`: aprovado.
+- `node scripts/validate-commercial-schema.mjs`: aprovado.
+- `node scripts/homologate-commercial-flow.mjs`: aprovado.
+- Erros eliminados: `password authentication failed`, `ENETUNREACH IPv6`, `Database error querying schema` e `HTTP 401` indevido no fluxo owner/admin validado.
+
+Status final:
+
+- PLATAFORMA PUBLICADA: SIM
+- FUNCIONALIDADES PRESERVADAS: SIM
+- INTEGRACOES PRESERVADAS: SIM
+- LIBERADA PARA USO REAL: SIM

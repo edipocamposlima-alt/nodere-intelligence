@@ -405,6 +405,49 @@ node scripts/validate-commercial-schema.mjs
 node scripts/homologate-commercial-flow.mjs
 ```
 
+## Atualizacao final 2026-07-01 - homologacao e publicacao aprovadas
+
+O bloqueio de autenticacao foi resolvido apos correcao da `DATABASE_URL` no Render com a URI oficial do Supabase Transaction Pooler IPv4, senha conferida e caracteres especiais URL-encoded. O backend `nodere-api` foi redeployado e a producao foi homologada.
+
+### Backend publicado
+
+- Servico Render: `nodere-api`.
+- Commit final de backend/correcoes: `cfd65fb`.
+- `GET https://nodere-api.onrender.com/health`: aprovado.
+- `GET https://nodere-api.onrender.com/api/health`: aprovado.
+- `GET https://nodere-api.onrender.com/api/health/supabase`: aprovado.
+- Erros nao reproduzidos apos correcao: `password authentication failed for user "postgres"`, `ENETUNREACH IPv6`, `Supabase Auth HTTP 500 Database error querying schema` e `HTTP 401` indevido no login owner/admin.
+
+### Frontend publicado
+
+- Projeto Vercel: `web`.
+- Diretorio publicado: `apps/web`.
+- Deployment: `dpl_5qdYcUG9fMypPt79vTWBE3gsCtGR`.
+- URL publicada: `https://nodere.com.br`.
+- `https://www.nodere.com.br`: redireciona para o dominio principal.
+
+### Validacoes executadas
+
+- `node scripts/validate-commercial-schema.mjs`: aprovado.
+- `node scripts/homologate-commercial-flow.mjs`: aprovado.
+- API: `typecheck`, `build`, `test:phase1`, `test:calendar`, `test:reports`, `test:crm`, `test:whatsapp`, `test:ai-discovery`: aprovados.
+- Web: `lint`, `build`, `typecheck`: aprovados.
+- Raiz: `npm run build`: aprovado.
+- `git diff --check`: aprovado com avisos CRLF nao bloqueantes.
+
+### Smoke autenticado em producao
+
+Validacao executada com usuario temporario owner `SMOKE_TEST_DELETE`, criado somente para o teste e inativado ao final. Foram acessados com sessao real: dashboard, busca de empresas, empresas/leads, CRM, inbox, calendario, automacoes, operadores, relatorios, marketing, catalogo, propostas, integracoes, configuracoes, manual e admin.
+
+Os fluxos comerciais de catalogo, propostas, desconto, snapshot, auditoria e PDF foram aprovados pelo script de homologacao contra o ambiente publicado.
+
+### Status final
+
+- PLATAFORMA PUBLICADA: SIM
+- FUNCIONALIDADES PRESERVADAS: SIM
+- INTEGRACOES PRESERVADAS: SIM
+- LIBERADA PARA USO REAL: SIM
+
 ---
 
 ## Atualizacao 2026-07-01 - pooler IPv4 ativo, login ainda bloqueado por autenticacao
