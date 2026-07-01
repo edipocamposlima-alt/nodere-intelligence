@@ -56,7 +56,8 @@ export default async function IntegrationsPage() {
                 <div>
                   <p className="font-medium text-[var(--text-primary)]">{integration.name}</p>
                   <p className="mt-1 text-sm text-[var(--text-secondary)]">{integration.category} · plano {integration.requiredPlan}</p>
-                  <span className={`mt-3 inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${statusMeta.badge}`}>
+                  <span className="nodere-status-badge mt-3 text-[11px]" data-tone={statusMeta.tone} title={statusMeta.label}>
+                    <span className="nodere-status-dot" aria-hidden="true" />
                     {statusMeta.label}
                   </span>
                   {integration.capability && <p className="mt-3 text-sm leading-5 text-[var(--text-secondary)]">{integration.capability}</p>}
@@ -116,7 +117,7 @@ function getStatusMeta(status: string, required: boolean) {
       icon: CheckCircle2,
       iconClass: "text-success",
       border: "border-emerald-500/25",
-      badge: "bg-emerald-500/15 text-emerald-300"
+      tone: "done"
     };
   }
   if (status === "error" || status === "timeout") {
@@ -125,7 +126,7 @@ function getStatusMeta(status: string, required: boolean) {
       icon: XCircle,
       iconClass: "text-red-300",
       border: "border-red-500/25",
-      badge: "bg-red-500/15 text-red-300"
+      tone: "critical"
     };
   }
   if (status === "unknown") {
@@ -134,7 +135,7 @@ function getStatusMeta(status: string, required: boolean) {
       icon: CircleDashed,
       iconClass: "text-slate-500",
       border: "border-line",
-      badge: "bg-slate-500/15 text-[var(--text-secondary)]"
+      tone: "neutral"
     };
   }
   return {
@@ -142,6 +143,6 @@ function getStatusMeta(status: string, required: boolean) {
     icon: required ? AlertTriangle : CircleDashed,
     iconClass: required ? "text-amber-300" : "text-slate-500",
     border: required ? "border-amber-500/25" : "border-line",
-    badge: required ? "bg-amber-500/15 text-amber-200" : "bg-slate-500/15 text-slate-400"
+    tone: required ? "waiting" : "neutral"
   };
 }

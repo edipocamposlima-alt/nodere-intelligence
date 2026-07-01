@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { BarChart3, Download, Filter, Gauge, MapPin, PieChart as PieIcon, RefreshCw, TrendingUp } from "lucide-react";
+import { BarChart3, ClipboardCheck, Download, Filter, Gauge, MapPin, PieChart as PieIcon, RefreshCw, TrendingUp } from "lucide-react";
 import {
   downloadReportCsv,
   downloadReportPdf,
@@ -172,6 +172,28 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
               <Download size={15} /> {exporting === "csv" ? "Gerando..." : "Exportar CSV"}
             </button>
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-primary/25 bg-primary/10 p-4 shadow-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex gap-3">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/25 bg-primary/15 text-primary">
+              <ClipboardCheck className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 className="text-sm font-black text-[var(--text-primary)]">Governança obrigatória dos relatórios</h2>
+              <p className="mt-1 max-w-4xl text-sm leading-6 text-[var(--text-secondary)]">
+                Qualquer alteração em CRM, Discovery, catálogo, propostas, contratos, WhatsApp, IA, permissões, integrações, PDFs, exportações, tema claro/escuro, mobile, rolagem ou navegação deve revisar estes indicadores e o Manual NODERE antes de ser concluída.
+              </p>
+            </div>
+          </div>
+          <a
+            href="/manual"
+            className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-primary/35 bg-panel px-4 text-sm font-black text-primary hover:bg-primary/10"
+          >
+            Abrir Manual
+          </a>
         </div>
       </section>
 

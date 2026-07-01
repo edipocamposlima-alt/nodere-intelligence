@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, LocateFixed, MapPin, Search, Sparkles, X } from "lucide-react";
+import { AlertTriangle, Building2, CheckCircle2, ChevronDown, ChevronUp, Filter, Globe2, LocateFixed, MapPin, Navigation, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { ApiRequestError, geocodeAddress, getSavedCompanyIds, getWorkspaceSegments, saveWorkspaceSegment, searchCompanies, searchCompanyByCnpj } from "@/lib/api";
 import { Company } from "@/lib/types";
 import { CompanyTable } from "./CompanyTable";
@@ -11,6 +11,9 @@ import { useCredits } from "@/context/CreditsProvider";
 
 type SearchMode = "places" | "cnpj" | "global";
 const ADD_SEGMENT = "__add_segment__";
+const fieldClass = "h-11 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 text-sm text-[var(--text-primary)] outline-none transition focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[rgba(0,223,130,0.12)]";
+const labelClass = "grid gap-1.5 text-sm";
+const labelTextClass = "text-xs font-bold uppercase tracking-wide text-[var(--text-muted)]";
 
 function normalizeId(value: unknown) {
   return String(value ?? "").trim();
@@ -157,6 +160,13 @@ export function SearchPanel() {
         }
         const response = await searchCompanyByCnpj(cleanCnpj);
         if (activeSearchId.current !== searchId) return;
+        if (response.existing) {
+          setResults([]);
+          setFocusedMapCompany(null);
+          setWarning(response.message || "Lead já consta no banco de dados NODERE.");
+          setMessage("Busca por CNPJ concluída sem novo resultado salvável.");
+          return;
+        }
         setResults([response.company]);
         setFocusedMapCompany(response.company);
         setMessage("CNPJ localizado em fonte pública. Revise os dados e salve no CRM.");
@@ -177,8 +187,9 @@ export function SearchPanel() {
       const filtered = response.companies.filter((company) => !companySavedKeys(company).some((key) => savedSet.has(key)));
       setResults(filtered);
       setFocusedMapCompany(filtered[0] ?? null);
-      setWarning(response.search.warning ?? response.search.error?.message ?? null);
-      setMessage(`${filtered.length} resultado(s) visíveis. ${response.companies.length - filtered.length} já salvo(s) foram ocultado(s). A busca foi deduplicada por Place ID.`);
+      const existingCount = Number(response.search.existingCount || response.duplicates?.length || 0);
+      setWarning(response.search.warning ?? response.search.existingMessage ?? response.search.error?.message ?? null);
+      setMessage(`${filtered.length} resultado(s) temporário(s) visíveis. ${existingCount + response.companies.length - filtered.length} já constam no banco NODERE e foram ocultado(s).`);
     } catch (error) {
       if (activeSearchId.current !== searchId) return;
       setResults([]);
@@ -234,97 +245,200 @@ export function SearchPanel() {
   }
 
   return (
-    <section className="space-y-5">
-      <form onSubmit={onSubmit} className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] p-4 shadow-glow">
-        <div className="flex items-center gap-2 text-sm font-medium text-[var(--text-primary)]">
-          <Sparkles className="h-4 w-4 text-cyan" />
-          Busca NODERE
-        </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-6">
-          <select name="mode" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="places">
-            <option value="places">Google Places</option>
-            <option value="cnpj">CNPJ direto</option>
-            <option value="global">Busca internacional</option>
-          </select>
-          <input name="cnpj" value={cnpj} onChange={(event) => setCnpj(formatCnpj(event.target.value))} placeholder="CNPJ (modo CNPJ)" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
-          <input name="companyName" placeholder="Nome da empresa" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
-          <select value={selectedSegment} onChange={(event) => setSelectedSegment(event.target.value)} name="segment" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]">
-            <option value="">Segmento</option>
-            {allSegments.map((segment) => <option key={segment} value={segment}>{segment}</option>)}
-            <option value={ADD_SEGMENT}>Adicionar segmento...</option>
-          </select>
-          {selectedSegment === ADD_SEGMENT ? (
-            <input value={customSegment} onChange={(event) => setCustomSegment(event.target.value)} placeholder="Novo segmento" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
-          ) : (
-            <input name="keyword" placeholder="Palavra-chave" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
-          )}
-          <input name="city" placeholder="Cidade" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
-          <input name="state" placeholder="Estado" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
-          <select name="country" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="BR">
-            {COUNTRIES.map((country) => <option key={country.code} value={country.code}>{country.name}</option>)}
-          </select>
-          {selectedSegment === ADD_SEGMENT && <input name="keyword" placeholder="Palavra-chave" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />}
-          {loading ? (
-            <button type="button" onClick={cancelSearch} className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-300">
-              <X className="h-4 w-4" /> Cancelar busca
-            </button>
-          ) : (
-            <button className="btn-action">
-              <Search className="h-4 w-4" /> Buscar
-            </button>
-          )}
-        </div>
-        <div className="mt-3 grid gap-3 md:grid-cols-[1fr_160px_auto_auto]">
-          <input name="referenceAddress" placeholder="Endereço de referência para busca por raio" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
-          <select name="radiusKm" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="">
-            <option value="">Cidade inteira</option>
-            {[1, 5, 10, 25, 50].map((km) => <option key={km} value={km}>{km} km</option>)}
-          </select>
-          <button type="button" onClick={(event) => geocodeReference(event.currentTarget.form!)} className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-            Usar endereço
-          </button>
-          <button type="button" onClick={useMyLocation} className="inline-flex items-center justify-center gap-2 rounded-lg border border-cyan/40 bg-cyan/10 px-3 py-2 text-sm font-semibold text-cyan hover:bg-cyan/20">
-            <LocateFixed className="h-4 w-4" />
-            Minha localização
-          </button>
-        </div>
-        {geo.label && <p className="mt-2 text-xs text-cyan">Referência ativa: {geo.label}</p>}
-        <div className="mt-3">
-          <button type="button" onClick={() => setAdvancedOpen((value) => !value)} className="inline-flex items-center gap-2 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-xs font-semibold text-[var(--text-primary)]">
-            {advancedOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            Filtros avançados e Score NODERE
-          </button>
-        </div>
-        {advancedOpen && (
-          <div className="mt-3 grid gap-3 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-main)] p-3 md:grid-cols-6">
-            <input name="minRating" type="number" min="0" max="5" step="0.1" placeholder="Nota mínima" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
-            <input name="maxRating" type="number" min="0" max="5" step="0.1" placeholder="Nota máxima" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
-            <input name="minReviews" type="number" min="0" placeholder="Mín. avaliações" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
-            <select name="hasWebsite" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="">
-              <option value="">Site: qualquer</option>
-              <option value="true">Com site</option>
-              <option value="false">Sem site</option>
-            </select>
-            <select name="hasWhatsApp" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="">
-              <option value="">WhatsApp: qualquer</option>
-              <option value="true">Com WhatsApp</option>
-              <option value="false">Sem WhatsApp</option>
-            </select>
-            <div className="grid grid-cols-2 gap-2">
-              <select name="sortBy" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="nodere_score">
-                <option value="nodere_score">Score NODERE</option>
-                <option value="rating">Avaliação</option>
-                <option value="review_count">Avaliações</option>
-                <option value="relevance">Relevância</option>
-              </select>
-              <select name="sortDir" className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" defaultValue="desc">
-                <option value="desc">Maior</option>
-                <option value="asc">Menor</option>
-              </select>
+    <section className="space-y-6">
+      <form onSubmit={onSubmit} className="overflow-hidden rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] shadow-glow">
+        <div className="border-b border-[var(--border-soft)] px-4 py-4 md:px-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-black text-[var(--text-primary)]">
+                <Sparkles className="h-4 w-4 text-[var(--brand-primary)]" />
+                Busca NODERE
+              </div>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">Configure a fonte, localização e critérios comerciais antes de consultar.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="nodere-status-badge" data-tone="progress">
+                <span className="nodere-status-dot" aria-hidden="true" />
+                Google Places
+              </span>
+              <span className="nodere-status-badge" data-tone="good">
+                <span className="nodere-status-dot" aria-hidden="true" />
+                Deduplicação ativa
+              </span>
             </div>
           </div>
-        )}
-        <div className="mt-3 space-y-2">
+        </div>
+
+        <div className="grid gap-5 p-4 md:p-5">
+          <div className="grid gap-4 xl:grid-cols-[minmax(220px,0.72fr)_minmax(0,1fr)]">
+            <div className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-main)] p-4">
+              <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-[var(--text-muted)]">
+                <Filter className="h-4 w-4 text-[var(--brand-primary)]" />
+                Fonte da busca
+              </div>
+              <label className={labelClass}>
+                <span className={labelTextClass}>Modo</span>
+                <select name="mode" className={fieldClass} defaultValue="places">
+                  <option value="places">Google Places</option>
+                  <option value="cnpj">CNPJ direto</option>
+                  <option value="global">Busca internacional</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-main)] p-4">
+              <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-[var(--text-muted)]">
+                <Building2 className="h-4 w-4 text-[var(--brand-primary)]" />
+                Empresa e intenção comercial
+              </div>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <label className={labelClass}>
+                  <span className={labelTextClass}>CNPJ</span>
+                  <input name="cnpj" value={cnpj} onChange={(event) => setCnpj(formatCnpj(event.target.value))} placeholder="00.000.000/0000-00" className={fieldClass} />
+                </label>
+                <label className={labelClass}>
+                  <span className={labelTextClass}>Nome da empresa</span>
+                  <input name="companyName" placeholder="Nome da empresa" className={fieldClass} />
+                </label>
+                <label className={labelClass}>
+                  <span className={labelTextClass}>Segmento</span>
+                  <select value={selectedSegment} onChange={(event) => setSelectedSegment(event.target.value)} name="segment" className={fieldClass}>
+                    <option value="">Segmento</option>
+                    {allSegments.map((segment) => <option key={segment} value={segment}>{segment}</option>)}
+                    <option value={ADD_SEGMENT}>Adicionar segmento...</option>
+                  </select>
+                </label>
+                <label className={labelClass}>
+                  <span className={labelTextClass}>{selectedSegment === ADD_SEGMENT ? "Novo segmento" : "Palavra-chave"}</span>
+                  {selectedSegment === ADD_SEGMENT ? (
+                    <input value={customSegment} onChange={(event) => setCustomSegment(event.target.value)} placeholder="Novo segmento" className={fieldClass} />
+                  ) : (
+                    <input name="keyword" placeholder="Palavra-chave" className={fieldClass} />
+                  )}
+                </label>
+              </div>
+              {selectedSegment === ADD_SEGMENT && (
+                <label className={`${labelClass} mt-3`}>
+                  <span className={labelTextClass}>Palavra-chave adicional</span>
+                  <input name="keyword" placeholder="Palavra-chave" className={fieldClass} />
+                </label>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-main)] p-4">
+            <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-[var(--text-muted)]">
+              <Globe2 className="h-4 w-4 text-[var(--brand-primary)]" />
+              Localização e raio
+            </div>
+            <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-[1fr_120px_180px_1.4fr_150px_auto_auto]">
+              <label className={labelClass}>
+                <span className={labelTextClass}>Cidade</span>
+                <input name="city" placeholder="Cidade" className={fieldClass} />
+              </label>
+              <label className={labelClass}>
+                <span className={labelTextClass}>Estado</span>
+                <input name="state" placeholder="UF" className={fieldClass} />
+              </label>
+              <label className={labelClass}>
+                <span className={labelTextClass}>País</span>
+                <select name="country" className={fieldClass} defaultValue="BR">
+                  {COUNTRIES.map((country) => <option key={country.code} value={country.code}>{country.name}</option>)}
+                </select>
+              </label>
+              <label className={labelClass}>
+                <span className={labelTextClass}>Endereço de referência</span>
+                <input name="referenceAddress" placeholder="Rua, número, bairro ou ponto de referência" className={fieldClass} />
+              </label>
+              <label className={labelClass}>
+                <span className={labelTextClass}>Raio</span>
+                <select name="radiusKm" className={fieldClass} defaultValue="">
+                  <option value="">Cidade inteira</option>
+                  {[1, 5, 10, 25, 50].map((km) => <option key={km} value={km}>{km} km</option>)}
+                </select>
+              </label>
+              <button type="button" onClick={(event) => geocodeReference(event.currentTarget.form!)} className="inline-flex h-11 items-center justify-center gap-2 self-end rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]">
+                <Navigation className="h-4 w-4" />
+                Usar endereço
+              </button>
+              <button type="button" onClick={useMyLocation} className="inline-flex h-11 items-center justify-center gap-2 self-end rounded-lg border border-[var(--status-progress-border)] bg-[var(--status-progress-bg)] px-3 text-sm font-bold text-[var(--status-progress)] transition hover:bg-cyan/20">
+                <LocateFixed className="h-4 w-4" />
+                Minha localização
+              </button>
+            </div>
+            {geo.label && <p className="mt-2 text-xs font-semibold text-[var(--status-progress)]">Referência ativa: {geo.label}</p>}
+          </div>
+
+          <div className="flex flex-col gap-3 border-t border-[var(--border-soft)] pt-4 md:flex-row md:items-center md:justify-between">
+            <button type="button" onClick={() => setAdvancedOpen((value) => !value)} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-2.5 text-sm font-bold text-[var(--text-primary)] md:w-auto">
+              {advancedOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              Filtros avançados e Score NODERE
+            </button>
+            {loading ? (
+              <button type="button" onClick={cancelSearch} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-[var(--status-critical-border)] bg-[var(--status-critical-bg)] px-4 text-sm font-black text-[var(--status-critical)] md:w-auto">
+                <X className="h-4 w-4" /> Cancelar busca
+              </button>
+            ) : (
+              <button className="btn-action h-11 w-full justify-center px-5 md:w-auto">
+                <Search className="h-4 w-4" /> Buscar
+              </button>
+            )}
+          </div>
+
+          {advancedOpen && (
+            <div className="grid gap-3 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-main)] p-4 md:grid-cols-3 xl:grid-cols-6">
+              <label className={labelClass}>
+                <span className={labelTextClass}>Nota mínima</span>
+                <input name="minRating" type="number" min="0" max="5" step="0.1" placeholder="0.0" className={fieldClass} />
+              </label>
+              <label className={labelClass}>
+                <span className={labelTextClass}>Nota máxima</span>
+                <input name="maxRating" type="number" min="0" max="5" step="0.1" placeholder="5.0" className={fieldClass} />
+              </label>
+              <label className={labelClass}>
+                <span className={labelTextClass}>Mín. avaliações</span>
+                <input name="minReviews" type="number" min="0" placeholder="0" className={fieldClass} />
+              </label>
+              <label className={labelClass}>
+                <span className={labelTextClass}>Site</span>
+                <select name="hasWebsite" className={fieldClass} defaultValue="">
+                  <option value="">Qualquer</option>
+                  <option value="true">Com site</option>
+                  <option value="false">Sem site</option>
+                </select>
+              </label>
+              <label className={labelClass}>
+                <span className={labelTextClass}>WhatsApp</span>
+                <select name="hasWhatsApp" className={fieldClass} defaultValue="">
+                  <option value="">Qualquer</option>
+                  <option value="true">Com WhatsApp</option>
+                  <option value="false">Sem WhatsApp</option>
+                </select>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className={labelClass}>
+                  <span className={labelTextClass}>Ordenar por</span>
+                  <select name="sortBy" className={fieldClass} defaultValue="nodere_score">
+                    <option value="nodere_score">Score NODERE</option>
+                    <option value="rating">Avaliação</option>
+                    <option value="review_count">Avaliações</option>
+                    <option value="relevance">Relevância</option>
+                  </select>
+                </label>
+                <label className={labelClass}>
+                  <span className={labelTextClass}>Direção</span>
+                  <select name="sortDir" className={fieldClass} defaultValue="desc">
+                    <option value="desc">Maior</option>
+                    <option value="asc">Menor</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-[var(--border-soft)] px-4 py-3 md:px-5">
+          <div className="space-y-2">
           <p className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
             <CheckCircle2 className="h-3.5 w-3.5 text-cyan" />
             {message}
@@ -335,6 +449,7 @@ export function SearchPanel() {
               {warning}
             </p>
           )}
+          </div>
         </div>
       </form>
       <div className="lg:hidden">
@@ -350,7 +465,27 @@ export function SearchPanel() {
         focusedId={focusedMapCompany?.id}
         onFocus={setFocusedMapCompany}
       />
-      {results.length > 0 && <CompanyTable companies={results} />}
+      {results.length > 0 && (
+        <section className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)]">
+          <div className="flex flex-col gap-3 border-b border-[var(--border-soft)] p-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-black text-[var(--text-primary)]">Resultados da busca atual</p>
+              <p className="mt-1 text-xs text-[var(--text-secondary)]">Empresas retornadas pela consulta atual, sem misturar com leads já salvos no CRM.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="nodere-status-badge" data-tone="good">
+                <span className="nodere-status-dot" aria-hidden="true" />
+                {results.length} resultado(s)
+              </span>
+              <span className="nodere-status-badge" data-tone="progress">
+                <span className="nodere-status-dot" aria-hidden="true" />
+                Ordenação aplicada na busca
+              </span>
+            </div>
+          </div>
+          <CompanyTable companies={results} embedded />
+        </section>
+      )}
       {upgradeOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-lg rounded-2xl border border-[var(--border-soft)] bg-[var(--bg-card)] p-6 shadow-glow">
@@ -503,22 +638,22 @@ function GoogleMapPanel({
   }, [focusedId, mappedCompanies]);
 
   return (
-    <section className={`${open ? "grid" : "hidden lg:grid"} gap-4 lg:grid-cols-[1.2fr_0.8fr]`}>
+    <section className={`${open ? "grid" : "hidden lg:grid"} gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]`}>
       <div className="overflow-hidden rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)]">
-        <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
-          <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+        <div className="flex flex-col gap-2 border-b border-line px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-sm font-black text-[var(--text-primary)]">
             <MapPin className="h-4 w-4 text-[var(--brand-primary)]" />
-            Google Maps visual
+            Mapa da busca
           </div>
-          <span className="truncate text-xs text-[var(--text-secondary)]">{query}</span>
+          <span className="max-w-full truncate rounded-full border border-[var(--border-soft)] bg-[var(--bg-hover)] px-3 py-1 text-xs text-[var(--text-secondary)] sm:max-w-[55%]">{query}</span>
         </div>
         {mapsKey ? (
-          <div ref={mapRef} className="h-[360px] w-full bg-[var(--bg-hover)]" />
+          <div ref={mapRef} className="h-[420px] w-full bg-[var(--bg-hover)]" />
         ) : (
           <iframe
             title="Google Maps visual"
             src={embedUrl}
-            className="h-[360px] w-full border-0 bg-[var(--bg-hover)]"
+            className="h-[420px] w-full border-0 bg-[var(--bg-hover)]"
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
           />
@@ -526,15 +661,20 @@ function GoogleMapPanel({
         {!mapsKey && <p className="border-t border-[var(--border-soft)] px-4 py-3 text-xs text-[var(--text-secondary)]">Mapa visual por incorporação Google. Pins interativos ficam disponíveis quando a integração avançada de mapas estiver ativa.</p>}
         {mapMessage && <p className="border-t border-[var(--border-soft)] px-4 py-3 text-xs text-[var(--warning)]">{mapMessage}</p>}
       </div>
-      <div className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] p-4">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">Empresas no mapa</p>
-          <span className="rounded-full bg-cyan/10 px-2 py-1 text-xs font-bold text-cyan">{mappedCompanies.length}/{results.length}</span>
+      <div className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)]">
+        <div className="border-b border-[var(--border-soft)] p-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-black text-[var(--text-primary)]">Empresas no mapa</p>
+            <span className="nodere-status-badge" data-tone={mappedCompanies.length ? "progress" : "low"}>
+              <span className="nodere-status-dot" aria-hidden="true" />
+              {mappedCompanies.length}/{results.length}
+            </span>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
+            Clique em uma empresa para centralizar no mapa e rolar até o resultado correspondente.
+          </p>
         </div>
-        <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
-          Clique em uma empresa para centralizar no mapa e rolar até o resultado correspondente.
-        </p>
-        <div className="mt-3 max-h-[276px] space-y-2 overflow-y-auto pr-1">
+        <div className="max-h-[420px] space-y-2 overflow-y-auto p-4">
           {results.length === 0 && (
             <p className="rounded-lg border border-dashed border-[var(--border-soft)] p-3 text-xs text-[var(--text-muted)]">
               Execute uma busca para carregar empresas reais e visualizar a região no mapa.
@@ -548,7 +688,7 @@ function GoogleMapPanel({
                 onFocus(company);
                 document.getElementById(`result-${company.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
               }}
-              className={`w-full rounded-lg border px-3 py-2 text-left transition hover:border-cyan ${focusedId === company.id ? "border-cyan bg-cyan/10" : "border-[var(--border-soft)] bg-[var(--bg-hover)]"}`}
+              className={`w-full rounded-lg border px-3 py-2 text-left transition hover:border-[var(--brand-primary)] ${focusedId === company.id ? "border-[var(--brand-primary)] bg-[var(--status-progress-bg)] shadow-[0_0_0_1px_var(--status-progress-border)]" : "border-[var(--border-soft)] bg-[var(--bg-hover)]"}`}
             >
               <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">{company.name}</span>
               <span className="mt-1 block truncate text-xs text-[var(--text-secondary)]">{company.address || `${company.city}/${company.state}`} · Score {company.score}</span>

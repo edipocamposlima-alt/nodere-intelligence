@@ -1,4 +1,4 @@
-import { ExternalLink, Facebook, FileText, Globe2, Instagram, Linkedin, MessageCircle, Phone, ShieldCheck, Star, Youtube, Zap } from "lucide-react";
+import { ExternalLink, Facebook, Globe2, Instagram, Linkedin, MessageCircle, Phone, ShieldCheck, Star, Users, Youtube, Zap } from "lucide-react";
 import { cookies } from "next/headers";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getCompany, getCompanyAudit, getCompanyIntelligence } from "@/lib/api";
@@ -7,9 +7,7 @@ import { AuditPanel } from "./AuditPanel";
 import { IntelligencePanel } from "./IntelligencePanel";
 import { DiagnosisPanel } from "./DiagnosisPanel";
 import { LeadOperations } from "./LeadOperations";
-import { getApiBaseUrl } from "@/lib/apiBase";
-
-const API_URL = getApiBaseUrl();
+import { CompanyPdfActions } from "./CompanyPdfActions";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +40,31 @@ function linkedinSearchUrl(name: string) {
 function notInformed(value?: string | number | null) {
   if (value === 0) return "0";
   return value ? String(value) : "Não informado";
+}
+
+function commercialEmail(company: any) {
+  return notInformed(company.emailPrincipal || company.email_principal || company.email);
+}
+
+function commercialSummary(company: any) {
+  const existing = company.businessSummary || company.resumoSobreEmpresa || company.resumo_sobre_empresa || company.resumo;
+  if (existing) return String(existing);
+  const signals = [
+    company.website ? "site localizado" : "site não localizado",
+    company.phone ? "telefone localizado" : "telefone não localizado",
+    company.mapsUrl ? "Google Maps localizado" : "Google Maps não localizado",
+    company.rating ? `avaliação ${company.rating}${company.reviewCount ? ` com ${company.reviewCount} avaliações` : ""}` : "avaliação não localizada"
+  ];
+  return `${company.name || "Empresa"} em ${notInformed(company.city)}/${notInformed(company.state)} no segmento ${notInformed(company.category)}. Sinais comerciais: ${signals.join(", ")}.`;
+}
+
+function InfoCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-lg border border-line bg-ink/70 p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-1 break-words text-sm font-semibold text-white">{value}</p>
+    </div>
+  );
 }
 
 function CompanyLoadError({ id, message }: { id: string; message: string }) {
@@ -96,6 +119,18 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
   const notes = Array.isArray(company.notes) ? company.notes : [];
   const companyName = company.name || "Empresa sem nome";
   const companyId = encodeURIComponent(company.id);
+  const companyRecord = company as typeof company & {
+    crmId?: string;
+    crm_id?: string;
+    leadId?: string;
+    lead_id?: string;
+    company_id?: string;
+    duplicateCount?: number;
+    duplicateIds?: string[];
+  };
+  const crmRecordId = String(companyRecord.crmId || companyRecord.crm_id || companyRecord.leadId || companyRecord.lead_id || companyRecord.company_id || company.id || "");
+  const crmRecordHref = crmRecordId ? `/app/crm/clientes/${encodeURIComponent(crmRecordId)}?tab=overview&return=/companies/${companyId}` : "";
+  const duplicateCount = Number(companyRecord.duplicateCount || (Array.isArray(companyRecord.duplicateIds) ? companyRecord.duplicateIds.length : 0));
 
   const checks: [string, boolean | null][] = [
     ["Site", Boolean(company.website)],
@@ -128,10 +163,18 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                   Chamar no WhatsApp
                 </a>
               )}
-              <a href={`${API_URL}/companies/${companyId}/export-pdf`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-4 py-2 text-sm text-white">
-                <FileText className="h-4 w-4" />
-                Exportar PDF
-              </a>
+              <CompanyPdfActions companyId={company.id} companyName={companyName} />
+              {crmRecordHref ? (
+                <a href={crmRecordHref} className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/15 px-4 py-2 text-sm font-semibold text-emerald-100">
+                  <Users className="h-4 w-4" />
+                  Abrir CRM
+                </a>
+              ) : (
+                <a href={`/crm?create=${companyId}`} className="inline-flex items-center gap-2 rounded-lg border border-warning/40 bg-warning/15 px-4 py-2 text-sm font-semibold text-warning">
+                  <Users className="h-4 w-4" />
+                  Criar cadastro CRM
+                </a>
+              )}
               {company.website && (
                 <a href={externalUrl(company.website)} target="_blank" rel="noopener noreferrer" className="btn-action">
                   <Globe2 className="h-4 w-4" />
@@ -175,6 +218,11 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                 </a>
               )}
             </div>
+            {duplicateCount > 1 && (
+              <p className="mt-3 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
+                Existe mais de um registro CRM relacionado. O atalho abre o registro principal vinculado a esta ficha.
+              </p>
+            )}
           </div>
 
           {/* Score cards */}
@@ -197,6 +245,37 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
             )}
             <EnrichTrigger companyId={company.id} enrichmentStatus={company.enrichmentStatus} hasWebsite={Boolean(company.website)} />
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-line bg-panel/90 p-5">
+        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-cyan">Dados comerciais da empresa</p>
+            <h3 className="mt-1 text-lg font-semibold text-white">Informações localizadas na busca e no CRM</h3>
+          </div>
+          <span className="nodere-status-badge" data-tone="progress">
+            <span className="nodere-status-dot" aria-hidden="true" />
+            Dados persistidos na ficha
+          </span>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <InfoCard label="Segmento" value={notInformed(company.category)} />
+          <InfoCard label="Cidade" value={notInformed(company.city)} />
+          <InfoCard label="Estado" value={notInformed(company.state)} />
+          <InfoCard label="CNPJ" value={notInformed(company.cnpj)} />
+          <InfoCard label="Telefone" value={notInformed(company.phone)} />
+          <InfoCard label="E-mail" value={commercialEmail(company)} />
+          <InfoCard label="Site" value={notInformed(company.website)} />
+          <InfoCard label="Maps" value={notInformed(company.mapsUrl)} />
+          <InfoCard label="Avaliação" value={notInformed(company.rating)} />
+          <InfoCard label="Avaliações" value={notInformed(company.reviewCount)} />
+          <InfoCard label="Score" value={notInformed(company.nodereScore ?? company.score)} />
+          <InfoCard label="Origem" value={(company.mapsUrl || company.source === "google_places") ? "Google Places/Maps" : notInformed(company.source)} />
+        </div>
+        <div className="mt-4 rounded-lg border border-line bg-ink/70 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Resumo sobre a empresa</p>
+          <p className="mt-2 text-sm leading-6 text-slate-200">{commercialSummary(company)}</p>
         </div>
       </section>
 

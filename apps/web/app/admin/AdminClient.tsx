@@ -373,7 +373,12 @@ export function AdminClient() {
                     <td className="px-4 py-3">{roleLabels[user.role]}</td>
                     <td className="px-4 py-3">{roles.find((role) => role.id === user.customRoleId)?.name || "Padrão"}</td>
                     <td className="px-4 py-3">{accessLevels.find((item) => item.key === user.visibilityLevel)?.label || "Leitura e Edição"}</td>
-                    <td className="px-4 py-3"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${user.active ? "bg-success/15 text-success" : "bg-rose-500/15 text-rose-300"}`}>{user.active ? "Ativo" : "Inativo"}</span></td>
+                    <td className="px-4 py-3">
+                      <span className="nodere-status-badge" data-tone={user.active ? "done" : "discarded"} title={user.active ? "Ativo: Concluído / finalizado" : "Inativo: Descartado / ignorado"}>
+                        <span className="nodere-status-dot" aria-hidden="true" />
+                        {user.active ? "Ativo" : "Inativo"}
+                      </span>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-2">
                         <button onClick={() => void updateUser(user, { visibilityLevel: user.visibilityLevel === "full" ? "read_edit" : "full" })} className="rounded-lg border border-line px-3 py-2 text-xs text-slate-200">Alternar acesso</button>

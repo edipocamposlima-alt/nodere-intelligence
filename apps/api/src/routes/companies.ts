@@ -20,6 +20,7 @@ import {
   updateCompany,
   updateDocument,
   saveCompanies,
+  saveSearchResultAsCrmLead,
   updateCrmStage,
   updateStatus,
   updateTask
@@ -47,6 +48,7 @@ import { parse as parseCsvSync } from "csv-parse/sync";
 import * as XLSX from "xlsx";
 import nodemailer from "nodemailer";
 import multer from "multer";
+import PDFDocument from "pdfkit";
 
 const router = Router();
 router.use(requireWorkspaceMutation("owner", "admin", "operator"));
@@ -176,6 +178,66 @@ router.get("/search", async (req, res, next) => {
       }))
     });
   } catch (err) { next(err); }
+});
+
+router.post("/save-from-search", async (req, res, next) => {
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    if (!workspaceId) return res.status(400).json({ error: "workspace_id não identificado na sessão." });
+    const body = z.record(z.unknown()).parse(req.body ?? {}) as Record<string, any>;
+    const now = new Date().toISOString();
+    const company = {
+      id: String((body as any).id || (body as any).placeId || (body as any).googlePlaceId || `search-${randomUUID()}`),
+      name: String(body.name || "Empresa sem nome"),
+      legalName: body.legalName,
+      cnpj: cleanDigits(String(body.cnpj || "")),
+      category: String(body.category || "Empresa"),
+      city: String(body.city || ""),
+      state: String(body.state || ""),
+      address: String(body.address || ""),
+      phone: normalizePhone(String(body.phone || "")),
+      whatsapp: normalizeWhatsapp(String(body.whatsapp || body.phone || "")),
+      email: String(body.email || body.emailPrincipal || body.email_principal || ""),
+      emailPrincipal: String(body.emailPrincipal || body.email_principal || body.email || ""),
+      website: String(body.website || ""),
+      instagram: String(body.instagram || ""),
+      facebook: String(body.facebook || ""),
+      linkedin: String(body.linkedin || ""),
+      youtube: String(body.youtube || ""),
+      rating: body.rating,
+      reviewCount: body.reviewCount,
+      mapsUrl: body.mapsUrl,
+      businessSummary: String(body.businessSummary || body.resumoSobreEmpresa || body.resumo_sobre_empresa || body.summary || ""),
+      resumoSobreEmpresa: String(body.resumoSobreEmpresa || body.resumo_sobre_empresa || body.businessSummary || body.summary || ""),
+      latitude: body.latitude,
+      longitude: body.longitude,
+      status: String(body.status || "Novo Lead"),
+      score: Number(body.score ?? 50),
+      opportunityLevel: body.opportunityLevel === "Alta" || body.opportunityLevel === "Baixa" ? body.opportunityLevel : "Media",
+      detectedOpportunities: Array.isArray(body.detectedOpportunities) ? body.detectedOpportunities : [],
+      suggestions: Array.isArray(body.suggestions) ? body.suggestions : [],
+      notes: [],
+      createdAt: (body as any).createdAt || now,
+      updatedAt: now,
+      source: (body as any).source || "google_places",
+      placeId: (body as any).placeId || (body as any).googlePlaceId || (body as any).google_place_id || (body as any).id,
+      googlePlaceId: (body as any).googlePlaceId || (body as any).placeId || (body as any).google_place_id || (body as any).id,
+      crmSaved: true,
+      isCrmLead: true
+    } as any;
+    const result = await saveSearchResultAsCrmLead(company, workspaceId);
+    if (result.duplicate) {
+      return res.status(409).json({
+        error: "DUPLICATE_LEAD",
+        message: "Lead já consta no banco de dados NODERE.",
+        company: result.company,
+        reason: result.reason
+      });
+    }
+    await markOnboardingStep(workspaceId, "crm").catch(() => undefined);
+    logRequestMetric(req, "company_saved", result.company.id, { source: "search", status: result.company.status });
+    return res.status(201).json({ company: result.company, message: "Lead salvo no CRM." });
+  } catch (err) { return next(err); }
 });
 
 router.get("/import/template", (_req, res) => {
@@ -1273,8 +1335,21 @@ router.get("/:id/export-pdf", async (req, res, next) => {
 </body>
 </html>`;
 
-  res.setHeader("Content-Type", "text/html; charset=utf-8");
-  return res.send(html);
+  const pdf = await renderCompanyExportPdf({
+    company,
+    diagnosis,
+    checks,
+    notes,
+    tasks,
+    documents,
+    opportunities: company.detectedOpportunities,
+    suggestions: company.suggestions,
+    generatedBy: String((req as any).session?.name || (req as any).session?.email || "NODERE"),
+    logoDataUri: embeddedLogoDataUri
+  });
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `inline; filename="ficha-cliente-${safeFileName(company.name || company.id)}.pdf"`);
+  return res.send(pdf);
   } catch (error) {
     return next(error);
   }
@@ -1296,6 +1371,122 @@ router.post("/:id/sequences", (req, res) => {
 });
 
 export default router;
+
+async function renderCompanyExportPdf(input: {
+  company: any;
+  diagnosis: any;
+  checks: Array<{ label: string; ok: boolean }>;
+  notes: Array<{ body?: string; createdAt?: string }>;
+  tasks: Array<{ title?: string; status?: string; dueAt?: string }>;
+  documents: Array<{ title?: string; fileName?: string }>;
+  opportunities: string[];
+  suggestions: string[];
+  generatedBy: string;
+  logoDataUri: string;
+}) {
+  const doc = new PDFDocument({ size: "A4", margin: 48, bufferPages: true, info: { Title: `Ficha Cliente - ${input.company.name}`, Author: "NODERE" } });
+  const chunks: Buffer[] = [];
+  doc.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+  const done = new Promise<Buffer>((resolve) => doc.on("end", () => resolve(Buffer.concat(chunks))));
+  const generatedAt = new Date().toISOString();
+  const logo = dataUriToBuffer(input.logoDataUri);
+
+  function header() {
+    if (logo) doc.image(logo, 48, 34, { width: 34, height: 34 });
+    doc.fillColor("#00D69E").fontSize(14).text("NODERE", 88, 38);
+    doc.fillColor("#64748B").fontSize(8).text("Inteligência comercial", 88, 56);
+    doc.fillColor("#64748B").fontSize(8).text(formatPtBrDate(generatedAt), 420, 42, { align: "right", width: 124 });
+    doc.moveTo(48, 78).lineTo(547, 78).strokeColor("#E2E8F0").stroke();
+    doc.moveDown(2);
+  }
+
+  function section(title: string) {
+    if (doc.y > 690) {
+      doc.addPage();
+      header();
+    }
+    doc.moveDown(0.8);
+    doc.fillColor("#0F172A").fontSize(13).text(title, { underline: false });
+    doc.moveTo(48, doc.y + 4).lineTo(547, doc.y + 4).strokeColor("#E2E8F0").stroke();
+    doc.moveDown(0.8);
+  }
+
+  function line(label: string, value: unknown) {
+    doc.fillColor("#475569").fontSize(9).text(`${label}: `, { continued: true });
+    doc.fillColor("#0F172A").fontSize(9).text(String(value || "Não informado"));
+  }
+
+  function bullet(value: unknown) {
+    if (doc.y > 720) {
+      doc.addPage();
+      header();
+    }
+    doc.fillColor("#0F172A").fontSize(9).text(`• ${String(value || "Não informado")}`, { indent: 8 });
+  }
+
+  header();
+  doc.fillColor("#0F172A").fontSize(20).text(`Ficha Comercial - ${input.company.name || "Cliente"}`);
+  doc.fillColor("#64748B").fontSize(9).text(`Gerado por ${input.generatedBy} em ${formatPtBrDate(generatedAt)}`);
+
+  section("Dados da empresa");
+  line("Segmento", input.company.category);
+  line("Endereço", input.company.address || [input.company.city, input.company.state].filter(Boolean).join("/"));
+  line("CNPJ", input.company.cnpj);
+  line("Telefone", input.company.phone || input.company.telefonePrincipal || input.company.telefone_principal);
+  line("WhatsApp", input.company.whatsapp);
+  line("E-mail", input.company.emailPrincipal || input.company.email_principal || input.company.email);
+  line("Site", input.company.website);
+  line("Maps", input.company.mapsUrl || input.company.maps_url);
+  line("Resumo comercial", input.company.businessSummary || input.company.resumoSobreEmpresa || input.company.resumo_sobre_empresa || input.company.resumo);
+
+  section("Score e oportunidade");
+  line("Score NODERE", `${input.company.score ?? 0}/100`);
+  line("Nível", input.company.opportunityLevel);
+  line("Rating Google", `${input.company.rating ?? "-"} (${input.company.reviewCount ?? 0} avaliações)`);
+
+  section("Sinais digitais");
+  input.checks.forEach((check) => bullet(`${check.ok ? "OK" : "Pendente"} - ${check.label}`));
+
+  section("Oportunidades detectadas");
+  (input.opportunities?.length ? input.opportunities : ["Nenhuma oportunidade detectada."]).forEach(bullet);
+
+  section("Sugestões comerciais");
+  (input.suggestions?.length ? input.suggestions : ["Sem sugestões no momento."]).forEach(bullet);
+
+  section("Histórico e observações");
+  (input.notes?.length ? input.notes : [{ body: "Sem observações registradas." }]).slice(0, 12).forEach((note) => bullet(`${note.createdAt ? `${formatPtBrDate(note.createdAt)} - ` : ""}${note.body || ""}`));
+
+  section("Follow-ups e agenda");
+  (input.tasks?.length ? input.tasks : [{ title: "Sem follow-ups registrados." }]).slice(0, 12).forEach((task) => bullet(`${task.title || "Tarefa"}${task.status ? ` - ${task.status}` : ""}${task.dueAt ? ` - ${formatPtBrDate(task.dueAt)}` : ""}`));
+
+  section("Documentos anexados");
+  (input.documents?.length ? input.documents : [{ title: "Sem documentos anexados." }]).slice(0, 12).forEach((item) => bullet(`${item.title || "Documento"}${item.fileName ? ` - ${item.fileName}` : ""}`));
+
+  if (input.diagnosis) {
+    section("Diagnóstico IA");
+    bullet(input.diagnosis.summary || "Diagnóstico sem resumo.");
+    (input.diagnosis.suggestedServices || []).slice(0, 6).forEach((service: string) => bullet(`Serviço sugerido: ${service}`));
+  }
+
+  const range = doc.bufferedPageRange();
+  for (let index = range.start; index < range.start + range.count; index += 1) {
+    doc.switchToPage(index);
+    doc.moveTo(48, 760).lineTo(547, 760).strokeColor("#E2E8F0").stroke();
+    doc.fillColor("#64748B").fontSize(8).text("NODERE", 48, 770);
+    doc.text(`Página ${index + 1} de ${range.count}`, 440, 770, { width: 107, align: "right" });
+  }
+  doc.end();
+  return done;
+}
+
+function dataUriToBuffer(value: string) {
+  const match = String(value || "").match(/^data:[^;]+;base64,(.+)$/);
+  return match ? Buffer.from(match[1], "base64") : null;
+}
+
+function safeFileName(value: string) {
+  return String(value || "documento").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase();
+}
 
 function escapeHtml(value: unknown) {
   return String(value ?? "")

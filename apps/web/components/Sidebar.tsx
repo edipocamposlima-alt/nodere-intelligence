@@ -33,7 +33,7 @@ export function Sidebar() {
   const progress = total > 0 ? Math.min(100, (remaining / total) * 100) : 0;
 
   return (
-    <aside className="hidden h-screen w-72 overflow-hidden border-r border-[var(--border-soft)] bg-[var(--bg-sidebar)] p-5 text-[var(--text-secondary)] lg:flex lg:flex-col">
+    <aside className="hidden h-[100dvh] w-72 overflow-hidden border-r border-[var(--border-soft)] bg-[var(--bg-sidebar)] p-5 text-[var(--text-secondary)] lg:flex lg:flex-col">
       <Link href="/dashboard" className="flex items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--bg-card)] px-4 py-5 transition hover:border-[var(--brand-primary)]">
         <Logo variant="full" height={38} />
       </Link>

@@ -119,6 +119,15 @@ Como mínimo operacional, cole conversas na Caixa de Entrada ou salve conteúdos
 ## Dashboard e relatórios
 O Dashboard mostra totais reais do CRM, pipeline e oportunidades. A busca fica separada em **Buscas** para manter a tela inicial limpa. Relatórios leem os dados atuais do backend.
 
+### Regra obrigatória de atualização
+Toda alteração relevante na plataforma deve revisar **Relatórios Executivos** e **Ajuda / Manual NODERE** antes de ser considerada concluída.
+
+A regra vale para mudanças em CRM, Ficha Comercial, Dashboard, Discovery, Relatórios, Propostas, Contratos, Produtos/Serviços, WhatsApp, E-mail, Agenda, IA, Admin, CMS, Configurações, Permissões, Planos, Integrações, PDFs, Exportações, tema, mobile/PWA e navegação.
+
+O relatório final de cada tarefa deve conter a seção **Atualização obrigatória — Relatórios Executivos e Manual NODERE**, informando se ambos foram revisados, quais ajustes foram feitos, o que não exigiu atualização e se há pendências.
+
+Arquivo oficial da regra: `REGRA_ATUALIZACAO_RELATORIOS_MANUAL.md`.
+
 ## Enriquecimento CNPJ, decisor e LinkedIn
 O NODERE exibe campos de enriquecimento público na ficha do cliente. Quando CNPJ, decisor, e-mail ou LinkedIn não forem encontrados por fonte pública/API autorizada, o sistema mostra “não localizado em fonte pública”. O usuário pode complementar manualmente quando tiver uma fonte confiável. Não invente decisores.
 
@@ -141,7 +150,7 @@ Em **Configurações**, ajuste:
 - densidade compacta/expandida;
 - visual em cards/listas.
 
-As preferências são salvas no navegador e aplicadas globalmente em todas as páginas. O modo claro altera fundo, textos, bordas e painéis. Os temas alteram a cor principal e a identidade operacional.
+As preferências são salvas em `nodere_settings`, aplicadas antes da renderização visual da página e sincronizadas com o backend quando disponível. O sistema mantém compatibilidade com chaves antigas, mas a fonte local oficial do tema é única. O modo claro/escuro deve permanecer estável ao trocar páginas, atualizar o navegador, fazer logout/login, reabrir o navegador, usar mobile ou PWA.
 
 ## Mobile e app instalado
 No celular, o menu inferior é rolável para permitir acesso a:

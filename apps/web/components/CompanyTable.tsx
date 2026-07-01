@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Bot, CheckCircle2, Download, ExternalLink, FileText, MessageCircle, PhoneCall, Save, Search, Trash2, X } from "lucide-react";
 import { Company } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
-import { addCompanyNote, generateAiCallScript, generateAiDiagnosis, generateAiWhatsappMessage, getCompanies, updateCompany } from "@/lib/api";
+import { ApiRequestError, generateAiCallScript, generateAiDiagnosis, generateAiWhatsappMessage, getCompanies, saveSearchResultAsLead, updateCompany } from "@/lib/api";
 import { downloadNoderePdf } from "@/lib/pdf";
 
 const whatsappMessage =
@@ -21,6 +21,46 @@ function isValidBrazilMobileWhatsapp(value?: string) {
 
 function hasInvalidWhatsapp(company: Company) {
   return Boolean(company.whatsapp) && !isValidBrazilMobileWhatsapp(company.whatsapp);
+}
+
+function valueOrNotLocated(value: unknown) {
+  if (value === 0) return "0";
+  const clean = String(value ?? "").trim();
+  return clean || "Não localizado";
+}
+
+function companyEmail(company: Company) {
+  return valueOrNotLocated(company.emailPrincipal || company.email || (company as any).email_principal);
+}
+
+function companySummary(company: Company) {
+  const existing = valueOrNotLocated(company.businessSummary || company.resumoSobreEmpresa || (company as any).resumo_sobre_empresa || (company as any).resumo);
+  if (existing !== "Não localizado") return existing;
+  const signals = [
+    company.website ? "site localizado" : "site não localizado",
+    company.phone ? "telefone localizado" : "telefone não localizado",
+    company.mapsUrl ? "Google Maps localizado" : "Google Maps não localizado",
+    company.rating ? `avaliação ${company.rating}${company.reviewCount ? ` com ${company.reviewCount} avaliações` : ""}` : "avaliação não localizada"
+  ];
+  return `${company.name || "Empresa"} em ${valueOrNotLocated(company.city)}/${valueOrNotLocated(company.state)} no segmento ${valueOrNotLocated(company.category)}. Sinais comerciais: ${signals.join(", ")}.`;
+}
+
+function exportRow(company: Company) {
+  return {
+    segmento: valueOrNotLocated(company.category),
+    empresa: valueOrNotLocated(company.name),
+    cidade: valueOrNotLocated(company.city),
+    estado: valueOrNotLocated(company.state),
+    CNPJ: valueOrNotLocated(company.cnpj),
+    telefone: valueOrNotLocated(company.phone),
+    email: companyEmail(company),
+    site: valueOrNotLocated(company.website),
+    avaliacao: valueOrNotLocated(company.rating),
+    avaliacoes: valueOrNotLocated(company.reviewCount),
+    score: valueOrNotLocated(company.nodereScore ?? company.score),
+    maps: valueOrNotLocated(company.mapsUrl),
+    resumo_sobre_a_empresa: companySummary(company)
+  };
 }
 
 function normalizeSearch(value: unknown) {
@@ -41,7 +81,12 @@ function companyMatchesQuery(company: Company, query: string) {
     company.address,
     company.phone,
     company.whatsapp,
+    company.cnpj,
+    company.email,
+    company.emailPrincipal,
     company.website,
+    company.mapsUrl,
+    companySummary(company),
     company.linkedin,
     company.instagram,
     company.facebook,
@@ -54,7 +99,7 @@ function companyMatchesQuery(company: Company, query: string) {
   return normalizeSearch(query).split(/\s+/).every((term) => haystack.includes(term));
 }
 
-export function CompanyTable({ companies, initialQuery = "" }: { companies: Company[]; initialQuery?: string }) {
+export function CompanyTable({ companies, initialQuery = "", embedded = false }: { companies: Company[]; initialQuery?: string; embedded?: boolean }) {
   const router = useRouter();
   const [baseCompanies, setBaseCompanies] = useState(companies);
   const [visibleCompanies, setVisibleCompanies] = useState(companies);
@@ -114,18 +159,20 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
   async function saveLead(company: Company) {
     setSaved((current) => ({ ...current, [company.id]: "saving" }));
     try {
-      await addCompanyNote(company.id, `Lead salvo no CRM a partir da busca em ${new Date().toLocaleString("pt-BR")}.`);
+      const savedLead = await saveSearchResultAsLead(company);
       const stored = JSON.parse(localStorage.getItem("nodere_saved_leads") || "[]") as string[];
-      localStorage.setItem("nodere_saved_leads", JSON.stringify(Array.from(new Set([...stored, company.id]))));
+      localStorage.setItem("nodere_saved_leads", JSON.stringify(Array.from(new Set([...stored, company.id, savedLead.company.id]))));
       setSaved((current) => ({ ...current, [company.id]: "saved" }));
       setMessages((current) => ({ ...current, [company.id]: "Lead salvo com sucesso." }));
       setVisibleCompanies((items) => items.filter((item) => item.id !== company.id));
     } catch (error) {
       setSaved((current) => ({ ...current, [company.id]: "error" }));
+      const isDuplicate = error instanceof ApiRequestError && error.status === 409;
       setMessages((current) => ({
         ...current,
-        [company.id]: error instanceof Error ? error.message : "Não foi possível salvar o lead."
+        [company.id]: isDuplicate ? "Lead já consta no banco de dados NODERE." : error instanceof Error ? error.message : "Não foi possível salvar o lead."
       }));
+      if (isDuplicate) setVisibleCompanies((items) => items.filter((item) => item.id !== company.id));
     }
   }
 
@@ -143,21 +190,13 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
   }
 
   function exportCsv() {
-    const rows = (selectedCompanies.length ? selectedCompanies : visibleCompanies).map((company) => ({
-      empresa: company.name,
-      cidade: company.city,
-      estado: company.state,
-      segmento: company.category,
-      telefone: company.phone ?? "",
-      site: company.website ?? "",
-      avaliacao: company.rating ?? "",
-      avaliacoes: company.reviewCount ?? "",
-      score: company.score,
-      maps: company.mapsUrl ?? ""
-    }));
-    const header = Object.keys(rows[0] ?? { empresa: "", cidade: "", estado: "" });
-    const csv = [header.join(";"), ...rows.map((row) => header.map((key) => `"${String((row as any)[key] ?? "").replace(/"/g, '""')}"`).join(";"))].join("\n");
-    downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `nodere-empresas-${Date.now()}.csv`);
+    const rows = (selectedCompanies.length ? selectedCompanies : visibleCompanies).map(exportRow);
+    const header = ["segmento", "empresa", "cidade", "estado", "CNPJ", "telefone", "email", "site", "avaliacao", "avaliacoes", "score", "maps", "resumo_sobre_a_empresa"];
+    const csv = [
+      header.join(";"),
+      ...rows.map((row) => header.map((key) => `"${String((row as any)[key] ?? "").replace(/"/g, '""')}"`).join(";"))
+    ].join("\r\n");
+    downloadBlob(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }), `nodere-empresas-${Date.now()}.csv`);
   }
 
   async function exportPdf() {
@@ -165,12 +204,18 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
     const content = [
       "NODERE",
       `Relatorio de empresas - ${new Date().toLocaleString("pt-BR")}`,
+      `Filtros aplicados: ${query || "sem filtro local"} | Empresas exportadas: ${list.length}`,
       "",
       ...list.flatMap((company, index) => [
         `${index + 1}. ${company.name}`,
-        `Segmento: ${company.category} | ${company.city}/${company.state}`,
-        `Score: ${company.score} | Avaliacao: ${company.rating ?? "-"} (${company.reviewCount ?? 0})`,
-        `Falha principal: ${company.detectedOpportunities[0] ?? "Sem alerta critico"}`,
+        `Segmento: ${valueOrNotLocated(company.category)}`,
+        `Cidade/Estado: ${valueOrNotLocated(company.city)}/${valueOrNotLocated(company.state)}`,
+        `CNPJ: ${valueOrNotLocated(company.cnpj)}`,
+        `Telefone: ${valueOrNotLocated(company.phone)} | E-mail: ${companyEmail(company)}`,
+        `Site: ${valueOrNotLocated(company.website)}`,
+        `Avaliacao: ${valueOrNotLocated(company.rating)} | Avaliacoes: ${valueOrNotLocated(company.reviewCount)} | Score: ${valueOrNotLocated(company.nodereScore ?? company.score)}`,
+        `Maps: ${valueOrNotLocated(company.mapsUrl)}`,
+        `Resumo: ${companySummary(company)}`,
         ""
       ])
     ].join("\n");
@@ -245,15 +290,15 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-line bg-panel/90">
-      <div className="flex flex-col gap-3 border-b border-line p-3">
+    <div className={embedded ? "overflow-hidden bg-panel/90" : "overflow-hidden rounded-lg border border-line bg-panel/90"}>
+      <div className="flex flex-col gap-3 border-b border-line p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-ink px-3 py-2">
+          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-ink px-3 py-2.5">
             <Search className="h-4 w-4 shrink-0 text-cyan" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Filtrar empresas salvas por nome, cidade, segmento, telefone, site ou observação..."
+              placeholder="Filtrar resultados por nome, cidade, segmento, telefone, site ou observação..."
               className="w-full bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-500"
             />
             {query && (
@@ -262,8 +307,15 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
               </button>
             )}
           </label>
-          <div className="text-sm text-slate-400">
-            {selectedCompanies.length ? `${selectedCompanies.length} selecionada(s)` : `${visibleCompanies.length} de ${baseCompanies.length} empresa(s)`}
+          <div className="flex flex-wrap gap-2 text-sm">
+            <span className="nodere-status-badge" data-tone="progress">
+              <span className="nodere-status-dot" aria-hidden="true" />
+              {visibleCompanies.length} visível(is)
+            </span>
+            <span className="nodere-status-badge" data-tone={selectedCompanies.length ? "good" : "neutral"}>
+              <span className="nodere-status-dot" aria-hidden="true" />
+              {selectedCompanies.length} selecionada(s)
+            </span>
           </div>
         </div>
         {(loadingCompanies || loadError) && (
@@ -271,23 +323,24 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
             {loadError || "Carregando empresas salvas do backend..."}
           </div>
         )}
-        <div className="flex flex-wrap gap-2">
-          <button onClick={saveSelected} disabled={selectedCompanies.length === 0} className="btn-primary px-3 py-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="mr-1 text-xs font-bold uppercase tracking-wide text-slate-500">Ações em massa</span>
+          <button onClick={saveSelected} disabled={selectedCompanies.length === 0} className="btn-primary min-h-9 px-3 py-2 text-xs">
             <Save className="h-4 w-4" />Salvar selecionadas
           </button>
-          <button onClick={ignoreSelected} disabled={selectedCompanies.length === 0} className="btn-secondary px-3 py-2 text-xs">
+          <button onClick={ignoreSelected} disabled={selectedCompanies.length === 0} className="btn-secondary min-h-9 px-3 py-2 text-xs">
             <Trash2 className="h-4 w-4" />Ignorar
           </button>
-          <button onClick={exportCsv} disabled={visibleCompanies.length === 0} className="btn-secondary px-3 py-2 text-xs">
+          <button onClick={exportCsv} disabled={visibleCompanies.length === 0} className="btn-secondary min-h-9 px-3 py-2 text-xs">
             <Download className="h-4 w-4" />CSV
           </button>
-          <button onClick={exportPdf} disabled={visibleCompanies.length === 0} className="btn-primary px-3 py-2 text-xs">
+          <button onClick={exportPdf} disabled={visibleCompanies.length === 0} className="btn-primary min-h-9 px-3 py-2 text-xs">
             <FileText className="h-4 w-4" />PDF
           </button>
           <button
             type="button"
             onClick={() => setInvalidWhatsappOnly((value) => !value)}
-            className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${invalidWhatsappOnly ? "bg-warning text-ink" : "border border-warning/40 bg-warning/10 text-amber-100 hover:bg-warning/20"}`}
+            className={`min-h-9 rounded-lg px-3 py-2 text-xs font-semibold transition ${invalidWhatsappOnly ? "bg-warning text-ink" : "border border-warning/40 bg-warning/10 text-amber-100 hover:bg-warning/20"}`}
           >
             Mostrar apenas leads com WhatsApp inválido
           </button>
@@ -305,7 +358,7 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
             </p>
           </div>
         ) : (
-        <table className="w-full min-w-[840px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[1180px] border-collapse text-left text-sm">
           <thead className="border-b border-line text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-4 py-3">
@@ -318,10 +371,11 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
                   }}
                 />
               </th>
-              <th className="px-4 py-3">Empresa</th>
-              <th className="px-4 py-3">Score</th>
-              <th className="px-4 py-3">Avaliação</th>
-              <th className="px-4 py-3">Falhas detectadas</th>
+              <th className="px-4 py-3">Empresa / segmento</th>
+              <th className="px-4 py-3">Localização</th>
+              <th className="px-4 py-3">Contato e links</th>
+              <th className="px-4 py-3">Avaliação / score</th>
+              <th className="px-4 py-3">Resumo sobre a empresa</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Ações</th>
             </tr>
@@ -341,8 +395,21 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
                     {company.name}
                   </Link>
                   <p className="mt-1 text-xs text-slate-500">
-                    {company.category} · {company.city}/{company.state}
+                    {valueOrNotLocated(company.category)}
                   </p>
+                  <p className="mt-2 text-[11px] text-slate-500">CNPJ: {valueOrNotLocated(company.cnpj)}</p>
+                </td>
+                <td className="px-4 py-4 text-slate-300">
+                  <p>{valueOrNotLocated(company.city)}/{valueOrNotLocated(company.state)}</p>
+                  <p className="mt-1 max-w-[220px] text-xs text-slate-500">{valueOrNotLocated(company.address)}</p>
+                </td>
+                <td className="px-4 py-4 text-xs text-slate-300">
+                  <div className="max-w-[260px] space-y-1">
+                    <p>Telefone: {valueOrNotLocated(company.phone)}</p>
+                    <p>E-mail: {companyEmail(company)}</p>
+                    <p className="truncate">Site: {valueOrNotLocated(company.website)}</p>
+                    <p className="truncate">Maps: {valueOrNotLocated(company.mapsUrl)}</p>
+                  </div>
                 </td>
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-2">
@@ -353,14 +420,18 @@ export function CompanyTable({ companies, initialQuery = "" }: { companies: Comp
                     </div>
                       <StatusBadge value={company.nodereClassification || company.opportunityLevel} />
                   </div>
-                </td>
-                <td className="px-4 py-4 text-slate-300">
-                  {company.rating ?? "-"} · {company.reviewCount ?? 0} avaliações
+                  <p className="mt-2 text-xs text-slate-400">
+                    Avaliação: {valueOrNotLocated(company.rating)} · {valueOrNotLocated(company.reviewCount)} avaliações
+                  </p>
                 </td>
                 <td className="px-4 py-4 text-slate-400">
-                  <div className="flex max-w-xs flex-wrap gap-1">
+                  <p className="max-w-[320px] text-xs leading-5 text-slate-300">{companySummary(company)}</p>
+                  <div className="mt-2 flex max-w-xs flex-wrap gap-1">
                     {(company.digitalGaps?.length ? company.digitalGaps : company.detectedOpportunities.slice(0, 3)).slice(0, 4).map((gap) => (
-                      <span key={gap} className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-100">{gap}</span>
+                      <span key={gap} className="nodere-status-badge text-[11px]" data-tone="moderate" title="Necessita análise">
+                        <span className="nodere-status-dot" aria-hidden="true" />
+                        {gap}
+                      </span>
                     ))}
                     {!(company.digitalGaps?.length || company.detectedOpportunities.length) && <span>Sem alerta crítico</span>}
                   </div>

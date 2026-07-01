@@ -7,22 +7,32 @@ interface BadgeProps {
   children: ReactNode;
   variant?: BadgeVariant;
   className?: string;
+  title?: string;
 }
 
 const badgeVariants: Record<BadgeVariant, string> = {
-  default: "border-border-soft bg-bg-hover text-text-secondary",
-  success: "border-[color:rgb(22_163_74_/_0.2)] bg-[var(--success-dark-soft)] text-[var(--success)]",
-  warning: "border-[color:rgb(245_158_11_/_0.2)] bg-[var(--warning-dark-soft)] text-[var(--warning)]",
-  danger: "border-[color:rgb(220_38_38_/_0.2)] bg-[var(--danger-dark-soft)] text-[var(--danger)]",
-  info: "border-[color:rgb(37_99_235_/_0.2)] bg-[var(--info-dark-soft)] text-[var(--info)]",
+  default: "nodere-status-badge",
+  success: "nodere-status-badge",
+  warning: "nodere-status-badge",
+  danger: "nodere-status-badge",
+  info: "nodere-status-badge",
   ai: "border-[var(--ai-border)] bg-[var(--ai-bg)] text-[var(--ai-text)]",
   purple: "border-[color:rgb(124_58_237_/_0.2)] bg-[var(--purple-dark-soft)] text-[var(--purple)]",
-  orange: "border-[color:rgb(249_115_22_/_0.2)] bg-[var(--orange-dark-soft)] text-[var(--orange)]"
+  orange: "nodere-status-badge"
 };
 
-export function Badge({ children, variant = "default", className }: BadgeProps) {
+const dataTone: Partial<Record<BadgeVariant, string>> = {
+  default: "neutral",
+  success: "done",
+  warning: "moderate",
+  danger: "critical",
+  info: "progress",
+  orange: "waiting"
+};
+
+export function Badge({ children, variant = "default", className, title }: BadgeProps) {
   return (
-    <span className={cn("inline-flex items-center rounded-badge border px-2.5 py-0.5 text-xs font-medium", badgeVariants[variant], className)}>
+    <span className={cn("inline-flex items-center", badgeVariants[variant], className)} data-tone={dataTone[variant]} title={title}>
       {children}
     </span>
   );

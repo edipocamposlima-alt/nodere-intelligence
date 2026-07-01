@@ -4,7 +4,7 @@ import { z } from "zod";
 import { config } from "../config.js";
 import { getSupabase } from "../db/supabase.js";
 import { getRequestWorkspaceId } from "../middleware/session.js";
-import { saveCompanies, searchCompaniesWithMeta, updateCompany } from "../services/companyStore.js";
+import { filterUnsavedSearchResults, saveSearchResultAsCrmLead, searchCompaniesWithMeta, updateCompany } from "../services/companyStore.js";
 import { calculateOpportunityScore } from "../services/scoring.js";
 import { scanWebsite } from "../services/websiteScanner.js";
 import { Company, SearchRequest, WebsiteScan } from "../types.js";
@@ -47,11 +47,13 @@ router.post("/search", async (req, res, next) => {
     const input = discoverySearchSchema.parse(req.body ?? {}) as SearchRequest;
     const workspaceId = getRequestWorkspaceId(req);
     const result = await searchCompaniesWithMeta(input, workspaceId);
-    await logDiscoveryRun(workspaceId, input, result.source, result.companies.length, { warning: result.warning });
+    const filtered = await filterUnsavedSearchResults(result.companies, workspaceId);
+    await logDiscoveryRun(workspaceId, input, result.source, filtered.companies.length, { warning: result.warning, existingCount: filtered.duplicates.length });
     return res.json({
       source: result.source,
-      warning: result.warning,
-      companies: result.companies.map(publicCompany)
+      warning: result.warning || (filtered.duplicates.length ? "Lead já consta no banco de dados NODERE." : undefined),
+      existingCount: filtered.duplicates.length,
+      companies: filtered.companies.map(publicCompany)
     });
   } catch (error) {
     return next(error);
@@ -161,8 +163,16 @@ router.post("/add-to-crm", async (req, res, next) => {
   try {
     const body = z.object({ company: z.record(z.unknown()) }).parse(req.body ?? {});
     const company = normalizeIncomingCompany(body.company);
-    const saved = await saveCompanies([company], getRequestWorkspaceId(req));
-    return res.status(201).json({ company: publicCompany(saved[0]) });
+    const result = await saveSearchResultAsCrmLead(company, getRequestWorkspaceId(req));
+    if (result.duplicate) {
+      return res.status(409).json({
+        error: "DUPLICATE_LEAD",
+        message: "Lead já consta no banco de dados NODERE.",
+        company: publicCompany(result.company),
+        reason: result.reason
+      });
+    }
+    return res.status(201).json({ company: publicCompany(result.company) });
   } catch (error) {
     return next(error);
   }

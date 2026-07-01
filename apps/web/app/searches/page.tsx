@@ -6,7 +6,6 @@ import { getSearchHistory, getEnrichmentQueue } from "@/lib/api";
 import { RerunButton } from "./RerunButton";
 import { CsvImportPanel } from "./CsvImportPanel";
 import { ExternalSearchTabs } from "./ExternalSearchTabs";
-import { Logo } from "@/components/brand/Logo";
 
 export const metadata: Metadata = {
   title: "Busca de empresas | NODERE",
@@ -17,14 +16,16 @@ export default async function SearchesPage() {
   const [history, queue] = await Promise.all([getSearchHistory(), getEnrichmentQueue()]);
 
   return (
-    <div className="space-y-8 p-4 md:p-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="space-y-6 p-4 md:p-6">
+      <div className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] p-4 md:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-[var(--text-primary)]">Busca de empresas NODERE</h1>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">Pesquise empresas reais, salve leads e acompanhe enriquecimento comercial.</p>
+          <p className="text-xs font-black uppercase tracking-wide text-[var(--brand-primary)]">Discovery comercial</p>
+          <h1 className="mt-1 text-2xl font-black text-[var(--text-primary)]">Busca de Empresas</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">Pesquise empresas reais no Google Places, CNPJ ou busca internacional, deduplique resultados e envie oportunidades qualificadas para o CRM.</p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <CreditsBadge />
           <div className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] px-4 py-3 text-center">
             <p className="text-xs text-[var(--text-muted)]">Enriquecendo</p>
@@ -32,14 +33,10 @@ export default async function SearchesPage() {
             <p className="text-xs text-[var(--text-muted)]">na fila</p>
           </div>
         </div>
+        </div>
       </div>
 
-      <section className="space-y-3">
-        <div className="nodere-brand-surface overflow-hidden rounded-lg border border-[rgba(3,98,76,0.32)] p-4 shadow-glow">
-          <Logo variant="full" height={72} className="search-brand-logo" />
-          <h2 className="mt-4 text-lg font-semibold text-[var(--text-primary)]">Busca inteligente de empresas</h2>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">Pesquise, selecione empresas em massa, salve leads, exporte CSV ou baixe relatório PDF.</p>
-        </div>
+      <section className="space-y-4">
         <SearchPanel />
         <ExternalSearchTabs />
       </section>

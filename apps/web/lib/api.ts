@@ -10,6 +10,66 @@ function authHeaders(token?: string | null): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function clientAuthHeaders(includeJson = false): Record<string, string> {
+  const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
+  return {
+    ...(includeJson ? { "Content-Type": "application/json" } : {}),
+    ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {})
+  };
+}
+
+function fileNameFromDisposition(value: string | null, fallback: string) {
+  const match = String(value || "").match(/filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i);
+  const raw = match?.[1] || match?.[2] || fallback;
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
+function triggerDownload(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function openBlobInNewTab(blob: Blob) {
+  const url = URL.createObjectURL(blob);
+  const opened = window.open(url, "_blank", "noopener,noreferrer");
+  if (!opened) triggerDownload(blob, `nodere-documento-${Date.now()}.pdf`);
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+export async function fetchAuthenticatedFile(path: string, options: { method?: string; body?: unknown; headers?: HeadersInit; fileName?: string; openInNewTab?: boolean } = {}) {
+  const hasBody = options.body !== undefined;
+  const response = await fetch(`${API_URL}${path}`, {
+    method: options.method || (hasBody ? "POST" : "GET"),
+    headers: {
+      ...clientAuthHeaders(hasBody),
+      ...(options.headers ?? {})
+    },
+    body: hasBody ? JSON.stringify(options.body) : undefined,
+    cache: "no-store",
+    credentials: "include"
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    const data = payload as { message?: string; error?: string };
+    throw new ApiRequestError(data.message || data.error || `API retornou HTTP ${response.status}`, response.status, payload);
+  }
+  const blob = await response.blob();
+  const fileName = fileNameFromDisposition(response.headers.get("content-disposition"), options.fileName || `nodere-documento-${Date.now()}.pdf`);
+  if (options.openInNewTab) openBlobInNewTab(blob);
+  else triggerDownload(blob, fileName);
+  return { blob, fileName, contentType: response.headers.get("content-type") || blob.type };
+}
+
 function companyPath(id: string, suffix = "") {
   return `/companies/${encodeURIComponent(id)}${suffix}`;
 }
@@ -50,15 +110,15 @@ function withAuthToken(token?: string | null): RequestInit | undefined {
 
 async function api<T>(path: string, options?: RequestInit, fallback?: T): Promise<T> {
   try {
-    const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
     const response = await fetch(`${API_URL}${path}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
-        ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}),
+        ...clientAuthHeaders(false),
         ...(options?.headers ?? {})
       },
-      cache: "no-store"
+      cache: "no-store",
+      credentials: "include"
     });
 
     if (!response.ok) {
@@ -134,6 +194,13 @@ export function createCompany(payload: {
   serviceInterest?: string;
 }) {
   return api<Company>("/companies", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function saveSearchResultAsLead(company: Company) {
+  return api<{ company: Company; message?: string }>("/companies/save-from-search", {
+    method: "POST",
+    body: JSON.stringify(company)
+  });
 }
 
 export function createLead(payload: {
@@ -245,16 +312,19 @@ export function deleteLeadDeal(id: string, dealId: string) {
 export function searchCompanies(payload: { mode?: "places" | "cnpj" | "global"; city?: string; state?: string; country?: string; segment?: string; keyword?: string; companyName?: string; limit?: number; lat?: number; lng?: number; radiusKm?: number; minRating?: number; maxRating?: number; hasWebsite?: boolean | null; hasWhatsApp?: boolean | null; minReviews?: number; sortBy?: "relevance" | "rating" | "review_count" | "nodere_score"; sortDir?: "asc" | "desc" }, signal?: AbortSignal) {
   return api<{
     companies: Company[];
+    duplicates?: Array<{ id: string; name: string; existingId: string; reason: string; message: string }>;
     search: {
       source?: "google" | "mock" | "fallback";
       warning?: string;
+      existingCount?: number;
+      existingMessage?: string;
       error?: { message?: string; activationUrl?: string; reason?: string; code?: string; status?: number };
     };
   }>("/searches", { method: "POST", body: JSON.stringify(payload), signal });
 }
 
 export function searchCompanyByCnpj(cnpj: string) {
-  return api<{ company: Company; source: "receitaws" }>(`/search/cnpj?q=${encodeURIComponent(cnpj)}`);
+  return api<{ company: Company; source: "receitaws" | "crm"; existing?: boolean; message?: string }>(`/searches/cnpj?q=${encodeURIComponent(cnpj)}`);
 }
 
 export function getWorkspaceSegments() {
@@ -412,6 +482,7 @@ export type NodereProposal = {
   status: "draft" | "sent" | "accepted" | "rejected" | "expired";
   service_type?: string | null;
   content?: string | null;
+  metadata?: Record<string, unknown> | null;
   items: ProposalSnapshotItem[];
   subtotal: number;
   discount: number;
@@ -430,8 +501,11 @@ export function getProposals() {
 export function createProposal(payload: {
   lead_id: string;
   title: string;
+  document_type?: "proposal" | "contract";
   service_type?: string;
   content?: string;
+  customer_notes?: string | null;
+  internal_notes?: string | null;
   items: ProposalItemPayload[];
   status?: NodereProposal["status"];
   valid_until?: string | null;
@@ -439,50 +513,27 @@ export function createProposal(payload: {
   return api<NodereProposal>("/proposals", { method: "POST", body: JSON.stringify(payload) });
 }
 
-export async function downloadProposalPdf(id: string, fileName = "proposta-nodere.pdf") {
-  const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
-  const response = await fetch(`${API_URL}/proposals/${encodeURIComponent(id)}/pdf`, {
-    method: "POST",
-    headers: {
-      ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {})
-    }
+export function deleteProposal(id: string, reason?: string) {
+  return api<NodereProposal>(`/proposals/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    body: JSON.stringify({ reason })
   });
-  if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    throw new ApiRequestError(payload.message || `API retornou HTTP ${response.status}`, response.status, payload);
-  }
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+}
+
+export async function downloadProposalPdf(id: string, fileName = "proposta-nodere.pdf") {
+  return fetchAuthenticatedFile(`/proposals/${encodeURIComponent(id)}/pdf`, { method: "POST", fileName });
 }
 
 export async function downloadContractPdf(id: string, fileName = "contrato-nodere.pdf") {
-  const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
-  const response = await fetch(`${API_URL}/proposals/${encodeURIComponent(id)}/contract-pdf`, {
-    method: "POST",
-    headers: {
-      ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {})
-    }
-  });
-  if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    throw new ApiRequestError(payload.message || `API retornou HTTP ${response.status}`, response.status, payload);
-  }
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+  return fetchAuthenticatedFile(`/proposals/${encodeURIComponent(id)}/contract-pdf`, { method: "POST", fileName });
+}
+
+export function downloadCompanyPdf(id: string, fileName = "ficha-cliente-nodere.pdf") {
+  return fetchAuthenticatedFile(`/companies/${encodeURIComponent(id)}/export-pdf`, { method: "GET", fileName });
+}
+
+export function openCompanyPdf(id: string, fileName = "ficha-cliente-nodere.pdf") {
+  return fetchAuthenticatedFile(`/companies/${encodeURIComponent(id)}/export-pdf`, { method: "GET", fileName, openInNewTab: true });
 }
 
 export function getCrmCards(params = "") {
@@ -857,32 +908,7 @@ export function getReportDashboard(filters: ReportFilters) {
 }
 
 export async function downloadReportPdf(filters: ReportFilters = { period: "30d", groupBy: "day" }) {
-  const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
-  const response = await fetch(`${API_URL}/reports/pdf`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {})
-    },
-    body: JSON.stringify(filters),
-    cache: "no-store"
-  });
-  if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    throw new ApiRequestError(payload.message || payload.error || `API retornou HTTP ${response.status}`, response.status);
-  }
-  const blob = await response.blob();
-  const disposition = response.headers.get("content-disposition") || "";
-  const match = disposition.match(/filename="?([^"]+)"?/i);
-  const fileName = match?.[1] || `relatorio-nodere-${Date.now()}.pdf`;
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = fileName;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
+  return fetchAuthenticatedFile("/reports/pdf", { method: "POST", body: filters, fileName: `relatorio-nodere-${Date.now()}.pdf` });
 }
 
 export async function downloadReportCsv(filters: ReportFilters = { period: "30d", groupBy: "day" }) {

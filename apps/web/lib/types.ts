@@ -42,6 +42,10 @@ export interface Company {
   distanceKm?: number;
   cnpj?: string;
   legalName?: string;
+  email?: string;
+  emailPrincipal?: string;
+  businessSummary?: string;
+  resumoSobreEmpresa?: string;
   companySize?: string;
   revenueRange?: string;
   decisionMakers?: DecisionMaker[];

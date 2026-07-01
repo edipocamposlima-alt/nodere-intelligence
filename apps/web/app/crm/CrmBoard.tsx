@@ -402,7 +402,7 @@ export function CrmBoard({ companies, onLeadClick }: { companies: Company[]; onL
                 if (companyId) void moveLead(companyId, column);
                 setDraggedId(null);
               }}
-              className="crm-stage flex h-[680px] flex-col overflow-hidden rounded-xl border shadow-[0_16px_48px_rgba(0,0,0,0.22)]"
+              className="crm-stage flex h-[min(680px,calc(100dvh-220px))] min-h-[420px] flex-col overflow-hidden rounded-xl border shadow-[0_16px_48px_rgba(0,0,0,0.22)]"
               style={{
                 borderColor: hexToRgba(stageColor, 0.56),
                 background: `linear-gradient(180deg, ${hexToRgba(stageColor, 0.18)} 0%, var(--bg-card) 100%)`

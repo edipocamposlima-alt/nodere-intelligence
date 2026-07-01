@@ -14,7 +14,6 @@ import {
   ProposalItemPayload
 } from "@/lib/api";
 import type { Company } from "@/lib/types";
-import { RichTextEditor } from "@/components/RichTextEditor";
 
 type SelectedItemState = {
   quantity: number;
@@ -71,9 +70,11 @@ export default function AppProposalsPage() {
   const [message, setMessage] = useState("Carregando propostas...");
   const [loading, setLoading] = useState(false);
   const [leadId, setLeadId] = useState("");
+  const [documentType, setDocumentType] = useState<"proposal" | "contract">("proposal");
   const [title, setTitle] = useState("Proposta comercial NODERE");
   const [serviceType, setServiceType] = useState("Google Ads + CRM");
-  const [content, setContent] = useState("Diagnóstico, plano de ação comercial e execução acompanhada pelo CRM NODERE.");
+  const [customerNotes, setCustomerNotes] = useState("");
+  const [internalNotes, setInternalNotes] = useState("");
   const [validUntil, setValidUntil] = useState("");
 
   const selectedCompany = companies.find((item) => item.id === leadId);
@@ -183,14 +184,23 @@ export default function AppProposalsPage() {
       const created = await createProposal({
         lead_id: leadId,
         title,
+        document_type: documentType,
         service_type: serviceType,
-        content,
+        customer_notes: customerNotes.trim() || null,
+        internal_notes: internalNotes.trim() || null,
         items: buildPayloadItems(),
         valid_until: validUntil || null
       });
+      if (documentType === "contract") {
+        await downloadContractPdf(created.id, `contrato-${slug(created.title || created.id)}.pdf`);
+      } else {
+        await downloadProposalPdf(created.id, `proposta-${slug(created.title || created.id)}.pdf`);
+      }
       setProposals((current) => [created, ...current]);
       setSelectedItems({});
-      setMessage(`Proposta salva para ${selectedCompany?.name || "lead selecionado"} com snapshot comercial.`);
+      setCustomerNotes("");
+      setInternalNotes("");
+      setMessage(`${documentType === "contract" ? "Contrato" : "Proposta"} salvo(a) para ${selectedCompany?.name || "lead selecionado"} com snapshot comercial e PDF gerado.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Erro ao salvar proposta.");
     } finally {
@@ -233,7 +243,14 @@ export default function AppProposalsPage() {
 
       <div className="settings-content proposals-grid">
         <section className="proposal-editor">
-          <h2><FileText size={18} /> Nova proposta</h2>
+          <h2><FileText size={18} /> Composição comercial</h2>
+          <label>
+            Tipo de documento
+            <select value={documentType} onChange={(event) => setDocumentType(event.target.value as "proposal" | "contract")}>
+              <option value="proposal">Proposta</option>
+              <option value="contract">Contrato</option>
+            </select>
+          </label>
           <label>
             Lead/empresa
             <select value={leadId} onChange={(event) => setLeadId(event.target.value)}>
@@ -250,10 +267,14 @@ export default function AppProposalsPage() {
             Tipo de serviço
             <input value={serviceType} onChange={(event) => setServiceType(event.target.value)} />
           </label>
-          <div>
-            <span className="mb-1.5 block text-sm font-semibold">Conteúdo</span>
-            <RichTextEditor value={content} onChange={setContent} minHeight={220} placeholder="Diagnóstico, escopo, condições e próximos passos..." />
-          </div>
+          <label>
+            Observações comerciais para o cliente
+            <textarea value={customerNotes} onChange={(event) => setCustomerNotes(event.target.value)} placeholder="Texto opcional que aparecerá no PDF. Produtos, descrições, condições, forma de pagamento e prazos vêm do catálogo." />
+          </label>
+          <label>
+            Observações internas da negociação
+            <textarea value={internalNotes} onChange={(event) => setInternalNotes(event.target.value)} placeholder="Histórico interno. Não aparece no PDF do cliente." />
+          </label>
 
           <div className="proposal-items">
             <div className="proposal-items-title">
@@ -340,7 +361,7 @@ export default function AppProposalsPage() {
           </div>
 
           <button className="btn-primary" type="button" onClick={handleCreate} disabled={loading || !leadId || !selectedRows.length}>
-            <Save size={16} /> Salvar proposta
+            <Save size={16} /> {documentType === "contract" ? "Gerar contrato PDF" : "Gerar proposta PDF"}
           </button>
         </section>
 

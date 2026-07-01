@@ -5,6 +5,7 @@ import { MoreHorizontal, MessageCircle } from "lucide-react";
 import type { Company } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
+import { StatusBadge } from "@/components/StatusBadge";
 
 interface LeadCardProps {
   lead: Company;
@@ -35,7 +36,6 @@ function formatDate(value?: string) {
 export function LeadCard({ lead, onEdit, onArchive }: LeadCardProps) {
   const temperature = temperatureFor(lead);
   const temperatureLabel = temperature === "hot" ? "Quente" : temperature === "warm" ? "Morno" : "Frio";
-  const temperatureVariant = temperature === "hot" ? "danger" : temperature === "warm" ? "warning" : "info";
 
   return (
     <article
@@ -55,7 +55,7 @@ export function LeadCard({ lead, onEdit, onArchive }: LeadCardProps) {
       </div>
 
       <div className="mb-2 flex flex-wrap gap-1">
-        <Badge variant={temperatureVariant}>{temperatureLabel}</Badge>
+        <StatusBadge value={temperatureLabel} />
         {lead.probability !== undefined && <Badge variant="default">{lead.probability}%</Badge>}
         {lead.category && <Badge className="max-w-[128px] truncate">{lead.category}</Badge>}
       </div>
