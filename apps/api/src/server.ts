@@ -143,6 +143,15 @@ app.get("/api/health/providers", async (_req, res) => {
 });
 
 app.get("/api/health/supabase", async (_req, res) => {
+  const supabaseKeyRole = (() => {
+    const key = config.supabase.serviceRoleKey || "";
+    try {
+      const payload = JSON.parse(Buffer.from(key.split(".")[1] || "", "base64url").toString("utf8"));
+      return typeof payload.role === "string" ? payload.role : "unknown";
+    } catch {
+      return key ? "unknown" : "missing";
+    }
+  })();
   const missing = [
     !config.supabase.url ? "SUPABASE_URL" : "",
     !config.supabase.serviceRoleKey ? "SUPABASE_SERVICE_ROLE_KEY" : ""
@@ -173,6 +182,7 @@ app.get("/api/health/supabase", async (_req, res) => {
       message: "Supabase conectado e tabela nodere_companies acessivel.",
       platformUsersAccessible: !usersError,
       platformUsersError: usersError ? { code: usersError.code || null, message: usersError.message || "Erro ao consultar nodere_platform_users." } : null,
+      supabaseKeyRole,
       backendTime: new Date().toISOString()
     });
   } catch (error) {
