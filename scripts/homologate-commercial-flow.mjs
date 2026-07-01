@@ -216,9 +216,10 @@ async function getOrCreateCompany() {
   const id = `${runId}_company`;
   await client.query(
     `insert into public.nodere_companies
-      (id, workspace_id, name, category, city, state, address, status, score, opportunity_level, created_at, updated_at)
-     values ($1, $2, $3, 'Smoke Test', 'Porto Alegre', 'RS', 'Teste', 'Novo Lead', 10, 'Baixa', now(), now())
-     on conflict (id) do update set updated_at = now()`,
+      (id, workspace_id, name, category, city, state, address, status, score, opportunity_level, digital_signals, created_at, updated_at)
+     values ($1, $2, $3, 'Smoke Test', 'Porto Alegre', 'RS', 'Teste', 'Novo Lead', 10, 'Baixa',
+       '{"crmSaved":true,"isCrmLead":true}'::jsonb, now(), now())
+     on conflict (id) do update set digital_signals = coalesce(nodere_companies.digital_signals, '{}'::jsonb) || '{"crmSaved":true,"isCrmLead":true}'::jsonb, updated_at = now()`,
     [id, workspaceId, runId]
   );
   created.companyIds.push(id);

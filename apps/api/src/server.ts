@@ -42,7 +42,6 @@ import { processDueSteps } from "./services/emailSequences.js";
 import { requireAuth } from "./middleware/auth.js";
 import { attachSession, getRequestWorkspaceId, requireWorkspaceRole, requireWorkspaceSession } from "./middleware/session.js";
 import { getSupabase, hasSupabase } from "./db/supabase.js";
-import { query, hasDatabase } from "./db/pool.js";
 import { searchCompaniesWithMeta } from "./services/companyStore.js";
 import { GoogleApiError } from "./services/google.js";
 import { getAppSettings, savePipelineSettings, savePreferences } from "./services/settingsStore.js";
@@ -105,20 +104,6 @@ app.get("/health", (_req, res) => {
 });
 
 app.get("/api/health", (_req, res) => {
-  const databaseUrlMeta = (() => {
-    if (!config.databaseUrl) return null;
-    try {
-      const parsed = new URL(config.databaseUrl);
-      const username = decodeURIComponent(parsed.username || "");
-      return {
-        host: parsed.hostname,
-        port: parsed.port || null,
-        userMode: username === "postgres" ? "postgres" : username.startsWith("postgres.") ? "postgres_project" : username ? "other" : "none"
-      };
-    } catch {
-      return { host: "invalid", port: null, userMode: "invalid" };
-    }
-  })();
   res.json({
     ok: true,
     status: "ok",
@@ -129,9 +114,7 @@ app.get("/api/health", (_req, res) => {
     pageSpeedConfigured: Boolean(config.google.pageSpeedKey),
     openaiConfigured: Boolean(config.openai.apiKey),
     supabaseConfigured: Boolean(config.supabase.url && config.supabase.serviceRoleKey),
-    databaseUrlConfigured: Boolean(config.databaseUrl),
-    databaseUrlMeta,
-    renderGitCommit: process.env.RENDER_GIT_COMMIT || null
+    databaseUrlConfigured: Boolean(config.databaseUrl)
   });
 });
 
@@ -144,15 +127,6 @@ app.get("/api/health/providers", async (_req, res) => {
 });
 
 app.get("/api/health/supabase", async (_req, res) => {
-  const supabaseKeyRole = (() => {
-    const key = config.supabase.serviceRoleKey || "";
-    try {
-      const payload = JSON.parse(Buffer.from(key.split(".")[1] || "", "base64url").toString("utf8"));
-      return typeof payload.role === "string" ? payload.role : "unknown";
-    } catch {
-      return key ? "unknown" : "missing";
-    }
-  })();
   const missing = [
     !config.supabase.url ? "SUPABASE_URL" : "",
     !config.supabase.serviceRoleKey ? "SUPABASE_SERVICE_ROLE_KEY" : ""
@@ -174,55 +148,15 @@ app.get("/api/health/supabase", async (_req, res) => {
       .select("id", { count: "exact", head: true })
       .limit(1);
     if (error) throw error;
-    const { error: usersError } = await sb!
-      .from("nodere_platform_users")
-      .select("id", { count: "exact", head: true })
-      .limit(1);
     return res.json({
       status: "ok",
       message: "Supabase conectado e tabela nodere_companies acessivel.",
-      platformUsersAccessible: !usersError,
-      platformUsersError: usersError ? { code: usersError.code || null, message: usersError.message || "Erro ao consultar nodere_platform_users." } : null,
-      supabaseKeyRole,
       backendTime: new Date().toISOString()
     });
   } catch (error) {
     return res.status(503).json({
       status: "error",
       message: error instanceof Error ? error.message : "Falha ao conectar ao Supabase.",
-      backendTime: new Date().toISOString()
-    });
-  }
-});
-
-app.get("/api/health/database", async (_req, res) => {
-  if (!hasDatabase()) {
-    return res.status(503).json({
-      status: "error",
-      databaseUrlConfigured: false,
-      message: "DATABASE_URL nao configurada.",
-      backendTime: new Date().toISOString()
-    });
-  }
-
-  try {
-    const result = await query<{ current_user: string; current_database: string }>(
-      "select current_user, current_database() as current_database"
-    );
-    const currentUser = result.rows[0]?.current_user || "";
-    return res.json({
-      status: "ok",
-      databaseUrlConfigured: true,
-      currentUserMode: currentUser === "postgres" ? "postgres" : currentUser.startsWith("postgres.") ? "postgres_project" : currentUser ? "other" : "none",
-      currentDatabase: result.rows[0]?.current_database || null,
-      backendTime: new Date().toISOString()
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Falha ao conectar no DATABASE_URL.";
-    return res.status(503).json({
-      status: "error",
-      databaseUrlConfigured: true,
-      message,
       backendTime: new Date().toISOString()
     });
   }
