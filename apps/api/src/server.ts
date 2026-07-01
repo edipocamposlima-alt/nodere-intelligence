@@ -104,6 +104,20 @@ app.get("/health", (_req, res) => {
 });
 
 app.get("/api/health", (_req, res) => {
+  const databaseUrlMeta = (() => {
+    if (!config.databaseUrl) return null;
+    try {
+      const parsed = new URL(config.databaseUrl);
+      const username = decodeURIComponent(parsed.username || "");
+      return {
+        host: parsed.hostname,
+        port: parsed.port || null,
+        userMode: username === "postgres" ? "postgres" : username.startsWith("postgres.") ? "postgres_project" : username ? "other" : "none"
+      };
+    } catch {
+      return { host: "invalid", port: null, userMode: "invalid" };
+    }
+  })();
   res.json({
     ok: true,
     status: "ok",
@@ -114,7 +128,9 @@ app.get("/api/health", (_req, res) => {
     pageSpeedConfigured: Boolean(config.google.pageSpeedKey),
     openaiConfigured: Boolean(config.openai.apiKey),
     supabaseConfigured: Boolean(config.supabase.url && config.supabase.serviceRoleKey),
-    databaseUrlConfigured: Boolean(config.databaseUrl)
+    databaseUrlConfigured: Boolean(config.databaseUrl),
+    databaseUrlMeta,
+    renderGitCommit: process.env.RENDER_GIT_COMMIT || null
   });
 });
 
