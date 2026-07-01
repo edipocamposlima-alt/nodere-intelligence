@@ -112,10 +112,16 @@ function getDatabaseUrlCandidates(databaseUrl: string) {
       parsed.port = "6543";
       candidates.push(parsed.toString());
     }
+    const projectRef = config.supabase.url ? new URL(config.supabase.url).hostname.split(".")[0] : "";
+    const isSupabasePooler = parsed.hostname.endsWith(".pooler.supabase.com") || parsed.hostname === "pooler.supabase.com";
+    if (isSupabasePooler && projectRef && decodeURIComponent(parsed.username) === "postgres") {
+      parsed.username = `postgres.${projectRef}`;
+      candidates.push(parsed.toString());
+    }
   } catch {
     return candidates;
   }
-  return candidates;
+  return [...new Set(candidates)];
 }
 
 async function findActiveUserByEmailWithDatabaseUrl(email: string) {
