@@ -103,27 +103,48 @@ function shouldUseSslForDatabaseUrl(databaseUrl: string) {
   }
 }
 
+function getDatabaseUrlCandidates(databaseUrl: string) {
+  const candidates = [databaseUrl];
+  try {
+    const parsed = new URL(databaseUrl);
+    const isSupabaseDirect = /^db\.[^.]+\.supabase\.co$/.test(parsed.hostname);
+    if (isSupabaseDirect && parsed.port === "5432") {
+      parsed.port = "6543";
+      candidates.push(parsed.toString());
+    }
+  } catch {
+    return candidates;
+  }
+  return candidates;
+}
+
 async function findActiveUserByEmailWithDatabaseUrl(email: string) {
   if (!config.databaseUrl) return null;
-  const client = new Client({
-    connectionString: config.databaseUrl,
-    ssl: shouldUseSslForDatabaseUrl(config.databaseUrl) ? { rejectUnauthorized: false } : false
-  });
-  await client.connect();
-  try {
-    const result = await client.query<PlatformUserRow>(
-      `select *
-       from public.nodere_platform_users
-       where lower(email) = lower($1)
-         and active = true
-       order by updated_at desc
-       limit 1`,
-      [email]
-    );
-    return result.rows[0] || null;
-  } finally {
-    await client.end().catch(() => undefined);
+  let lastError: unknown;
+  for (const databaseUrl of getDatabaseUrlCandidates(config.databaseUrl)) {
+    const client = new Client({
+      connectionString: databaseUrl,
+      ssl: shouldUseSslForDatabaseUrl(databaseUrl) ? { rejectUnauthorized: false } : false
+    });
+    try {
+      await client.connect();
+      const result = await client.query<PlatformUserRow>(
+        `select *
+         from public.nodere_platform_users
+         where lower(email) = lower($1)
+           and active = true
+         order by updated_at desc
+         limit 1`,
+        [email]
+      );
+      return result.rows[0] || null;
+    } catch (error) {
+      lastError = error;
+    } finally {
+      await client.end().catch(() => undefined);
+    }
   }
+  throw lastError;
 }
 
 async function ensureWorkspace(workspaceId: string, _ownerEmail: string, name = "Agência Digital") {
