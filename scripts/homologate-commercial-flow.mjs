@@ -148,19 +148,39 @@ async function loginWithSupabaseAuth(user, previousError) {
 }
 
 async function createSupabaseAuthUserDirect(email, name) {
-  const authUserId = randomUUID();
-  await client.query(
-    `insert into auth.users
-      (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
-       raw_app_meta_data, raw_user_meta_data, created_at, updated_at, is_sso_user, is_anonymous)
-     values
-      ('00000000-0000-0000-0000-000000000000'::uuid, $1::uuid, 'authenticated', 'authenticated', $2,
-       crypt($3, gen_salt('bf')), now(),
-       '{"provider":"email","providers":["email"]}'::jsonb, jsonb_build_object('name', $4::text),
-       now(), now(), false, false)
-     on conflict (id) do nothing`,
-    [authUserId, email, password, name]
+  const existing = await client.query(
+    "select id from auth.users where lower(email) = lower($1) and deleted_at is null order by created_at desc limit 1",
+    [email]
   );
+  const authUserId = existing.rows[0]?.id || randomUUID();
+  if (existing.rows[0]?.id) {
+    await client.query(
+      `update auth.users
+       set aud = 'authenticated',
+           role = 'authenticated',
+           encrypted_password = crypt($2, gen_salt('bf')),
+           email_confirmed_at = coalesce(email_confirmed_at, now()),
+           raw_app_meta_data = '{"provider":"email","providers":["email"]}'::jsonb,
+           raw_user_meta_data = jsonb_build_object('name', $3::text),
+           updated_at = now(),
+           is_sso_user = false,
+           is_anonymous = false
+       where id = $1::uuid`,
+      [authUserId, password, name]
+    );
+  } else {
+    await client.query(
+      `insert into auth.users
+        (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+         raw_app_meta_data, raw_user_meta_data, created_at, updated_at, is_sso_user, is_anonymous)
+       values
+        ('00000000-0000-0000-0000-000000000000'::uuid, $1::uuid, 'authenticated', 'authenticated', $2,
+         crypt($3, gen_salt('bf')), now(),
+         '{"provider":"email","providers":["email"]}'::jsonb, jsonb_build_object('name', $4::text),
+         now(), now(), false, false)`,
+      [authUserId, email, password, name]
+    );
+  }
   await client.query(
     `insert into auth.identities
       (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)

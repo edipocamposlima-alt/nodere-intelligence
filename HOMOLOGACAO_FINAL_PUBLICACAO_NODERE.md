@@ -404,3 +404,74 @@ Depois repetir:
 node scripts/validate-commercial-schema.mjs
 node scripts/homologate-commercial-flow.mjs
 ```
+
+---
+
+## Atualizacao 2026-07-01 - pooler IPv4 ativo, login ainda bloqueado por autenticacao
+
+### Validacoes apos troca da `DATABASE_URL` no Render
+
+- `GET https://nodere-api.onrender.com/health`: HTTP 200.
+- `GET https://nodere-api.onrender.com/api/health`: HTTP 200.
+- Runtime Render publicado no commit `195588b` e depois atualizado em commits subsequentes.
+- `databaseUrlMeta.host`: `aws-1-sa-east-1.pooler.supabase.com`.
+- `databaseUrlMeta.port`: `6543`.
+- `databaseUrlMeta.userMode`: `postgres_project`.
+- `GET https://nodere-api.onrender.com/api/health/supabase`: HTTP 200.
+- `platformUsersAccessible`: true.
+
+### Erro anterior resolvido
+
+O erro abaixo nao ocorre mais apos troca para pooler IPv4:
+
+```text
+connect ENETUNREACH 2600:1f1e:90b:a700:1fb4:4754:dbd3:21f5
+```
+
+### Novo bloqueio comprovado
+
+`scripts/homologate-commercial-flow.mjs` ainda falha no login:
+
+```text
+Login owner falhou: HTTP 500 password authentication failed for user "postgres".
+Supabase Auth HTTP 500: Database error querying schema
+```
+
+Diagnostico:
+
+- O Render esta usando pooler IPv4.
+- O formato do usuario do pooler foi normalizado para `postgres.<project-ref>`.
+- A senha configurada no `DATABASE_URL` do Render ainda e recusada pelo pooler.
+- A alternativa via Supabase Auth tambem falha com erro interno `Database error querying schema`.
+- O fallback do script de homologacao foi ajustado para reutilizar usuarios Auth existentes e evitar duplicidade, mas o erro interno do Supabase Auth persiste.
+
+### Correcoes adicionais realizadas
+
+- Commit `9e70ce3`: tentativa automatica de usuario pooler `postgres.<project-ref>`.
+- Commit `80d31a4`: normalizacao mais ampla de usuario Supabase no fallback de login.
+- Commit `01b2c1a`: diagnostico seguro de runtime em `/api/health`.
+- Commit `195588b`: diagnostico seguro de acesso a `nodere_platform_users`.
+- Commit `322d19c`: diagnostico do papel da chave Supabase.
+- Ajuste pendente de commit: fortalecimento do script `scripts/homologate-commercial-flow.mjs` para nao quebrar por duplicidade em `auth.users`.
+
+### Status
+
+- PLATAFORMA PUBLICADA: NAO
+- FUNCIONALIDADES PRESERVADAS: SIM em build/typecheck local da API
+- INTEGRACOES PRESERVADAS: PARCIAL
+- LIBERADA PARA USO REAL: NAO
+
+### Proximo passo
+
+Corrigir no Render/Supabase a credencial efetiva de banco:
+
+1. Conferir se a senha usada no `DATABASE_URL` do Transaction Pooler e exatamente a senha atual do banco Supabase.
+2. Garantir que caracteres especiais da senha estejam URL-encoded.
+3. Alternativamente, corrigir `SUPABASE_SERVICE_ROLE_KEY`/Auth para permitir login via Supabase Auth sem erro `Database error querying schema`.
+
+Apos isso, repetir:
+
+```text
+node scripts/validate-commercial-schema.mjs
+node scripts/homologate-commercial-flow.mjs
+```
