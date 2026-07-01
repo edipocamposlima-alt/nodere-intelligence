@@ -342,3 +342,65 @@ Em seguida redeploy Render e deploy Vercel `apps/web`.
 - FUNCIONALIDADES PRESERVADAS: SIM em regressao local
 - INTEGRACOES PRESERVADAS: PARCIAL
 - LIBERADA PARA USO REAL: NAO
+
+---
+
+## Atualizacao 2026-07-01 - DATABASE_URL presente, mas conexao Render bloqueada por IPv6
+
+### Validacoes executadas apos configuracao manual
+
+- `GET https://nodere-api.onrender.com/health`: HTTP 200.
+- `GET https://nodere-api.onrender.com/api/health`: HTTP 200.
+- `DATABASE_URL_PRESENT`: true, validado via `databaseUrlConfigured: true`.
+- `GET https://nodere-api.onrender.com/api/health/supabase`: HTTP 200.
+- `node scripts/validate-commercial-schema.mjs`: aprovado contra Supabase `qhopjggnbzewuuktqntp.supabase.co`.
+
+### Bloqueio tecnico comprovado
+
+Primeira homologacao autenticada:
+
+```text
+Login owner falhou: HTTP 500 connect ENETUNREACH 2600:1f1e:90b:a700:1fb4:4754:dbd3:21f5:5432 - Local (:::0)
+```
+
+Apos correcao do fallback para tentar tambem `:6543`:
+
+```text
+Login owner falhou: HTTP 500 connect ENETUNREACH 2600:1f1e:90b:a700:1fb4:4754:dbd3:21f5:6543 - Local (:::0)
+```
+
+### Diagnostico
+
+- O host direto `db.qhopjggnbzewuuktqntp.supabase.co` resolve apenas para IPv6.
+- O Render nao conseguiu abrir conexao TCP para esse endereco IPv6.
+- O pooler regional publico testado nao reconheceu o tenant com o usuario `postgres.qhopjggnbzewuuktqntp`.
+- O ambiente local nao possui `SUPABASE_SERVICE_ROLE_KEY`; existe apenas chave publica anon no frontend, portanto nao ha como substituir ou validar a chave service-role do Render sem acesso ao valor seguro.
+
+### Correcoes realizadas
+
+- Commit `867f453`: pacote completo de pre-publicacao.
+- Merge `b3f78c4` na `main`.
+- Commit `9e9f584`: fallback de login tenta tambem a porta `6543` quando `DATABASE_URL` aponta para Supabase direto em `5432`.
+- Push para `main`: concluido.
+
+### Status desta tentativa
+
+- Backend publicado com `DATABASE_URL_PRESENT=true`: SIM.
+- Schema comercial validado: SIM.
+- Homologacao comercial autenticada: BLOQUEADA no login real da API Render.
+- Frontend Vercel: NAO publicado nesta etapa, pois a regra critica impede publicacao com login real falhando.
+- Plataforma liberada para uso real: NAO.
+
+### Proximo passo obrigatorio
+
+Configurar no Render uma das alternativas seguras abaixo e redeployar `nodere-api`:
+
+1. `DATABASE_URL` com o connection string oficial do Supabase Pooler IPv4 mostrado no painel Supabase para o projeto `qhopjggnbzewuuktqntp`; ou
+2. `SUPABASE_SERVICE_ROLE_KEY` correta do mesmo projeto, garantindo que a API consiga consultar `nodere_platform_users` via Supabase REST sem cair no fallback Postgres.
+
+Depois repetir:
+
+```text
+node scripts/validate-commercial-schema.mjs
+node scripts/homologate-commercial-flow.mjs
+```
