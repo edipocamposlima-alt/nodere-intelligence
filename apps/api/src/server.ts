@@ -42,6 +42,7 @@ import { processDueSteps } from "./services/emailSequences.js";
 import { requireAuth } from "./middleware/auth.js";
 import { attachSession, getRequestWorkspaceId, requireWorkspaceRole, requireWorkspaceSession } from "./middleware/session.js";
 import { getSupabase, hasSupabase } from "./db/supabase.js";
+import { query, hasDatabase } from "./db/pool.js";
 import { searchCompaniesWithMeta } from "./services/companyStore.js";
 import { GoogleApiError } from "./services/google.js";
 import { getAppSettings, savePipelineSettings, savePreferences } from "./services/settingsStore.js";
@@ -189,6 +190,39 @@ app.get("/api/health/supabase", async (_req, res) => {
     return res.status(503).json({
       status: "error",
       message: error instanceof Error ? error.message : "Falha ao conectar ao Supabase.",
+      backendTime: new Date().toISOString()
+    });
+  }
+});
+
+app.get("/api/health/database", async (_req, res) => {
+  if (!hasDatabase()) {
+    return res.status(503).json({
+      status: "error",
+      databaseUrlConfigured: false,
+      message: "DATABASE_URL nao configurada.",
+      backendTime: new Date().toISOString()
+    });
+  }
+
+  try {
+    const result = await query<{ current_user: string; current_database: string }>(
+      "select current_user, current_database() as current_database"
+    );
+    const currentUser = result.rows[0]?.current_user || "";
+    return res.json({
+      status: "ok",
+      databaseUrlConfigured: true,
+      currentUserMode: currentUser === "postgres" ? "postgres" : currentUser.startsWith("postgres.") ? "postgres_project" : currentUser ? "other" : "none",
+      currentDatabase: result.rows[0]?.current_database || null,
+      backendTime: new Date().toISOString()
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Falha ao conectar no DATABASE_URL.";
+    return res.status(503).json({
+      status: "error",
+      databaseUrlConfigured: true,
+      message,
       backendTime: new Date().toISOString()
     });
   }
