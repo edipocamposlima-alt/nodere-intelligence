@@ -108,15 +108,23 @@ function getDatabaseUrlCandidates(databaseUrl: string) {
   try {
     const parsed = new URL(databaseUrl);
     const isSupabaseDirect = /^db\.[^.]+\.supabase\.co$/.test(parsed.hostname);
+    const directProjectRef = parsed.hostname.match(/^db\.([^.]+)\.supabase\.co$/)?.[1] || "";
     if (isSupabaseDirect && parsed.port === "5432") {
       parsed.port = "6543";
       candidates.push(parsed.toString());
     }
-    const projectRef = config.supabase.url ? new URL(config.supabase.url).hostname.split(".")[0] : "";
-    const isSupabasePooler = parsed.hostname.endsWith(".pooler.supabase.com") || parsed.hostname === "pooler.supabase.com";
-    if (isSupabasePooler && projectRef && decodeURIComponent(parsed.username) === "postgres") {
-      parsed.username = `postgres.${projectRef}`;
-      candidates.push(parsed.toString());
+    let configuredProjectRef = "";
+    try {
+      configuredProjectRef = config.supabase.url ? new URL(config.supabase.url).hostname.split(".")[0] : "";
+    } catch {
+      configuredProjectRef = "";
+    }
+    const projectRef = directProjectRef || configuredProjectRef;
+    const isSupabaseDatabase = parsed.hostname.endsWith(".supabase.co") || parsed.hostname.endsWith(".supabase.com");
+    if (isSupabaseDatabase && projectRef && decodeURIComponent(parsed.username) === "postgres") {
+      const withProjectUser = new URL(databaseUrl);
+      withProjectUser.username = `postgres.${projectRef}`;
+      candidates.push(withProjectUser.toString());
     }
   } catch {
     return candidates;
