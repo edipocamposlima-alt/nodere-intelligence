@@ -46,11 +46,11 @@ const aliases: Record<string, string> = {
 };
 
 const statuses = [
-  { value: "pendente", label: "Pendente", className: "bg-amber-400 text-slate-950" },
-  { value: "confirmado", label: "Confirmado", className: "bg-cyan text-slate-950" },
-  { value: "realizado", label: "Realizado", className: "bg-emerald-500 text-white" },
-  { value: "cancelado", label: "Cancelado", className: "bg-rose-500 text-white" },
-  { value: "reagendado", label: "Reagendado", className: "bg-violet-500 text-white" }
+  { value: "pendente", label: "Pendente", tone: "waiting" },
+  { value: "confirmado", label: "Confirmado", tone: "progress" },
+  { value: "realizado", label: "Realizado", tone: "done" },
+  { value: "cancelado", label: "Cancelado", tone: "discarded" },
+  { value: "reagendado", label: "Reagendado", tone: "waiting" }
 ];
 
 const priorities = [
@@ -332,7 +332,7 @@ export function CalendarClient({
       return Number.isFinite(reminderTime) && reminderTime <= clock + 24 * 60 * 60 * 1000;
     })
     .sort((a, b) => new Date(a.reminder_at || 0).getTime() - new Date(b.reminder_at || 0).getTime()), [events, clock]);
-  const height = compact ? 420 : "calc(100vh - 300px)";
+  const height = compact ? 420 : "max(560px, calc(100dvh - 300px))";
 
   return (
     <main className={compact ? "space-y-4" : "space-y-6 p-4 md:p-8"}>
@@ -462,7 +462,10 @@ export function CalendarClient({
                     <p className="flex items-center gap-2 font-semibold text-white"><Icon className="h-4 w-4" /> {event.title}</p>
                     <p className="mt-1 text-xs text-slate-400">{new Date(event.start_at).toLocaleString("pt-BR")} · {type.label}</p>
                   </div>
-                  <span className={`rounded-full px-2 py-1 text-[10px] font-black ${status.className}`}>{status.label}</span>
+                  <span className="nodere-status-badge text-[10px]" data-tone={status.tone} title={`${status.label}: ${status.tone}`}>
+                    <span className="nodere-status-dot" aria-hidden="true" />
+                    {status.label}
+                  </span>
                 </div>
               </button>
             );
@@ -473,8 +476,8 @@ export function CalendarClient({
       {message && <p className="rounded-lg border border-cyan/30 bg-cyan/10 px-4 py-3 text-sm text-cyan">{message}</p>}
 
       {showModal && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
-          <form onSubmit={saveEvent} className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-line bg-panel p-5 shadow-2xl">
+        <div className="fixed inset-0 z-50 grid place-items-center overflow-hidden bg-black/70 p-4">
+          <form onSubmit={saveEvent} className="max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-line bg-panel p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-xl font-black text-white">{selectedEvent ? "Editar evento" : "Novo evento"}</h2>

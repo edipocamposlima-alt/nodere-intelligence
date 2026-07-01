@@ -1,4 +1,5 @@
 import { randomBytes, scryptSync, timingSafeEqual, randomUUID } from "node:crypto";
+import { Client } from "pg";
 import { config } from "../config.js";
 import { getSupabase, hasSupabase } from "../db/supabase.js";
 import { SessionRole } from "./adminSession.js";
@@ -91,6 +92,38 @@ function verifyPassword(password: string, stored: string) {
   const actual = Buffer.from(scryptSync(password, salt, 64).toString("hex"));
   const expected = Buffer.from(hash);
   return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
+function shouldUseSslForDatabaseUrl(databaseUrl: string) {
+  try {
+    const host = new URL(databaseUrl).hostname;
+    return !["localhost", "127.0.0.1", "::1"].includes(host);
+  } catch {
+    return true;
+  }
+}
+
+async function findActiveUserByEmailWithDatabaseUrl(email: string) {
+  if (!config.databaseUrl) return null;
+  const client = new Client({
+    connectionString: config.databaseUrl,
+    ssl: shouldUseSslForDatabaseUrl(config.databaseUrl) ? { rejectUnauthorized: false } : false
+  });
+  await client.connect();
+  try {
+    const result = await client.query<PlatformUserRow>(
+      `select *
+       from public.nodere_platform_users
+       where lower(email) = lower($1)
+         and active = true
+       order by updated_at desc
+       limit 1`,
+      [email]
+    );
+    return result.rows[0] || null;
+  } finally {
+    await client.end().catch(() => undefined);
+  }
 }
 
 async function ensureWorkspace(workspaceId: string, _ownerEmail: string, name = "Agência Digital") {
@@ -208,6 +241,15 @@ export async function authenticateUser(emailInput: string, password: string) {
       if (!isUserSchemaMissing(error)) throw error;
       userSchemaAvailable = false;
     }
+  }
+
+  const databaseRow = await findActiveUserByEmailWithDatabaseUrl(email);
+  if (databaseRow && verifyPassword(password, databaseRow.password_hash)) {
+    if (isBuiltInOwner(email) && (databaseRow.role !== "owner" || !databaseRow.active || databaseRow.visibility_level !== "full")) {
+      const fixed = await promoteBuiltInOwner(databaseRow);
+      return toPublic(fixed);
+    }
+    return toPublic(databaseRow);
   }
 
   const row = memoryUsers.get(email);

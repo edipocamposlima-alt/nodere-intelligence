@@ -535,9 +535,13 @@ async function dbReplaceSystemItem(companyId: string, noteId: string, prefix: st
 
 export async function listCompaniesAsync(workspaceId = "default"): Promise<Company[]> {
   if (hasSupabase()) {
-    return withPersistentRead("listar leads", () => dbList(workspaceId), () => memStore.filter((c) => ((c as any).workspaceId ?? "default") === workspaceId).sort((a, b) => b.score - a.score));
+    return withPersistentRead(
+      "listar leads",
+      async () => (await dbList(workspaceId)).filter(isCrmLead),
+      () => memStore.filter((c) => ((c as any).workspaceId ?? "default") === workspaceId && isCrmLead(c)).sort((a, b) => b.score - a.score)
+    );
   }
-  return memStore.filter((c) => ((c as any).workspaceId ?? "default") === workspaceId).sort((a, b) => b.score - a.score);
+  return memStore.filter((c) => ((c as any).workspaceId ?? "default") === workspaceId && isCrmLead(c)).sort((a, b) => b.score - a.score);
 }
 
 export function listCompanies(): Company[] {
@@ -546,9 +550,12 @@ export function listCompanies(): Company[] {
 
 export async function getCompanyAsync(id: string, workspaceId = "default"): Promise<Company | undefined> {
   if (hasSupabase()) {
-    return withPersistentRead("carregar lead", () => dbGet(id, workspaceId), () => memStore.find((c) => c.id === id && (((c as any).workspaceId ?? "default") === workspaceId)));
+    return withPersistentRead("carregar lead", async () => {
+      const company = await dbGet(id, workspaceId);
+      return company && isCrmLead(company) ? company : undefined;
+    }, () => memStore.find((c) => c.id === id && (((c as any).workspaceId ?? "default") === workspaceId) && isCrmLead(c)));
   }
-  return memStore.find((c) => c.id === id && (((c as any).workspaceId ?? "default") === workspaceId));
+  return memStore.find((c) => c.id === id && (((c as any).workspaceId ?? "default") === workspaceId) && isCrmLead(c));
 }
 
 export function getCompany(id: string): Company | undefined {
@@ -558,17 +565,12 @@ export function getCompany(id: string): Company | undefined {
 export async function searchCompaniesWithMeta(input: SearchRequest, workspaceId = "default") {
   if (config.useMockData) {
     const generated = generateMockSearch(input).map((company) => ({ ...company, source: "demo" as const }));
-    syncToMem(generated, workspaceId);
-    if (hasSupabase()) await withPersistentWrite("salvar resultados demonstrativos", () => dbUpsert(generated, workspaceId), () => undefined);
     return { source: "mock" as const, companies: generated, warning: "Modo demonstrativo ativo (USE_MOCK_DATA=true)." };
   }
 
   try {
     const generated = await searchGooglePlaces(input);
     const withStatus = generated.map((c) => ({ ...c, enrichmentStatus: "pending" as const, source: "google_places" as const }));
-    syncToMem(withStatus, workspaceId);
-    if (hasSupabase()) await withPersistentWrite("salvar resultados da busca", () => dbUpsert(withStatus, workspaceId), () => undefined);
-    queueEnrichmentForAll(withStatus);
     return { source: "google" as const, companies: withStatus };
   } catch (error) {
     if (error instanceof GoogleApiError) throw error;
@@ -581,10 +583,45 @@ export async function searchCompanies(input: SearchRequest, workspaceId = "defau
 }
 
 export async function saveCompanies(items: Company[], workspaceId = "default") {
-  const scoped = items.map((item) => ({ ...item, enrichmentStatus: item.enrichmentStatus ?? "pending" as const }));
-  syncToMem(scoped, workspaceId);
-  if (hasSupabase()) await withPersistentWrite("salvar leads importados", () => dbUpsert(scoped, workspaceId), () => undefined);
-  return scoped;
+  const existing = await listCompaniesAsync(workspaceId);
+  const saved: Company[] = [];
+  for (const item of items) {
+    const duplicate = findDuplicateInList(item, [...existing, ...saved]);
+    if (duplicate) {
+      saved.push(duplicate.company);
+      continue;
+    }
+    const scoped = markAsCrmLead({ ...item, enrichmentStatus: item.enrichmentStatus ?? "pending" as const });
+    syncToMem([scoped], workspaceId);
+    if (hasSupabase()) await withPersistentWrite("salvar leads no CRM", () => dbUpsert([scoped], workspaceId), () => undefined);
+    queueEnrichmentForAll([scoped]);
+    saved.push(scoped);
+  }
+  return saved;
+}
+
+export async function saveSearchResultAsCrmLead(item: Company, workspaceId = "default") {
+  const duplicate = await findExistingCrmLead(item, workspaceId);
+  if (duplicate) return { company: duplicate.company, created: false, duplicate: true, reason: duplicate.reason };
+  const [saved] = await saveCompanies([markAsCrmLead(item)], workspaceId);
+  return { company: saved, created: true, duplicate: false, reason: null };
+}
+
+export async function findExistingCrmLead(item: Partial<Company>, workspaceId = "default") {
+  const existing = await listCompaniesAsync(workspaceId);
+  return findDuplicateInList(item, existing);
+}
+
+export async function filterUnsavedSearchResults(items: Company[], workspaceId = "default") {
+  const existing = await listCompaniesAsync(workspaceId);
+  const companies: Company[] = [];
+  const duplicates: Array<{ company: Company; existing: Company; reason: string }> = [];
+  for (const item of items) {
+    const duplicate = findDuplicateInList(item, existing);
+    if (duplicate) duplicates.push({ company: item, existing: duplicate.company, reason: duplicate.reason });
+    else companies.push(item);
+  }
+  return { companies, duplicates };
 }
 
 export async function updateCrmStage(id: string, input: CrmStageUpdateInput, workspaceId = "default"): Promise<Company | undefined> {
@@ -851,6 +888,89 @@ function syncToMem(items: Company[], workspaceId = "default") {
   }
 }
 
+function markAsCrmLead(company: Company): Company {
+  return {
+    ...company,
+    status: company.status || "Novo Lead",
+    source: company.source || "manual",
+    updatedAt: company.updatedAt || new Date().toISOString(),
+    createdAt: company.createdAt || new Date().toISOString(),
+    crmSaved: true,
+    isCrmLead: true
+  } as Company;
+}
+
+function isCrmLead(company: Company) {
+  const raw = company as unknown as Record<string, unknown>;
+  if (raw.crmSaved === true || raw.isCrmLead === true || raw.crm_saved === true || raw.is_crm_lead === true) return true;
+  if (company.source && !["google_places", "demo", "test"].includes(String(company.source))) return true;
+  if ((company.notes ?? []).length > 0) return true;
+  if (company.lastContactAt || company.nextAction || company.dealValue || company.ownerId) return true;
+  if (company.status && company.status !== "Novo Lead") return true;
+  return false;
+}
+
+function findDuplicateInList(candidate: Partial<Company>, existing: Company[]) {
+  const keys = getDedupeKeys(candidate);
+  for (const key of keys) {
+    const match = existing.find((company) => getDedupeKeys(company).some((existingKey) => existingKey.type === key.type && existingKey.value === key.value));
+    if (match) return { company: match, reason: key.type };
+  }
+  return null;
+}
+
+function getDedupeKeys(company: Partial<Company>) {
+  const raw = company as unknown as Record<string, unknown>;
+  const signals = (raw.digitalSignals || raw.digital_signals || {}) as Record<string, unknown>;
+  const keys: Array<{ type: string; value: string }> = [];
+  const add = (type: string, value: unknown) => {
+    const clean = String(value ?? "").trim().toLowerCase();
+    if (clean) keys.push({ type, value: clean });
+  };
+
+  add("place_id", raw.placeId || raw.googlePlaceId || raw.google_place_id || signals.placeId || signals.googlePlaceId || signals.google_place_id || (company.source === "google_places" ? company.id : ""));
+  const cnpj = cleanDigits(String(company.cnpj || raw.cnpj || ""));
+  if (cnpj) add("cnpj", cnpj);
+  const phone = normalizePhoneKey(company.phone || company.whatsapp || raw.phone || raw.whatsapp);
+  if (phone) add("phone", phone);
+  const nameCityState = normalizeSearchText([company.name, company.city, company.state].filter(Boolean).join("|"));
+  if (company.name && (company.city || company.state) && nameCityState) add("name_city_state", nameCityState);
+  const domain = normalizeDomainKey(company.website || raw.website);
+  if (domain) add("domain", domain);
+
+  return keys;
+}
+
+function normalizePhoneKey(value: unknown) {
+  const digits = cleanDigits(String(value || ""));
+  if (!digits) return "";
+  return digits.startsWith("55") ? digits.slice(2) : digits;
+}
+
+function normalizeDomainKey(value: unknown) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw) return "";
+  try {
+    const url = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+    return url.hostname.replace(/^www\./, "");
+  } catch {
+    return raw.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
+  }
+}
+
+function cleanDigits(value: string) {
+  return value.replace(/\D/g, "");
+}
+
+function normalizeSearchText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function mapPublicNotes(rows: Record<string, unknown>[]) {
   return rows
     .filter((n) => {
@@ -931,6 +1051,7 @@ function generateMockSearch(input: SearchRequest): Company[] {
       rating,
       reviewCount,
       mapsUrl: `https://maps.google.com/?q=${encodeURIComponent(`${segment} ${city}`)}`,
+      businessSummary: `${segment} em ${city}/${input.state || "BR"} com dados demonstrativos para validacao de interface. Sinais comerciais: ${i < 2 ? "site nao localizado" : "site localizado"}, telefone ${i === 2 ? "nao localizado" : "localizado"}, avaliacao ${rating} com ${reviewCount} avaliacoes.`,
       hasGoogleAds: i === 3 ? true : null,
       hasDescription: i > 1,
       hasRecentPhotos: i > 1,

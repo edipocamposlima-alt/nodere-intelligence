@@ -7,6 +7,7 @@ import { Bell, CreditCard, Download, Search, X } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { getInboxUnreadCount } from "@/lib/api";
 import { getPageTitle } from "@/lib/page-titles";
+import { applyThemeSettings, persistAndApplyThemeSettings, readThemeSettings } from "@/lib/theme";
 import { useAuth } from "@/context/AuthProvider";
 import { useCredits } from "@/context/CreditsProvider";
 
@@ -22,7 +23,6 @@ type UserPrefs = {
 
 const API_URL = getApiBaseUrl();
 const PREFS_KEY = "nodere_user_preferences";
-const SETTINGS_KEY = "nodere_settings";
 
 const defaultPrefs: UserPrefs = {
   theme: "dark",
@@ -36,7 +36,8 @@ function readPrefs(): UserPrefs {
   if (typeof window === "undefined") return defaultPrefs;
   try {
     const profile = JSON.parse(localStorage.getItem("nodere_user_profile") || "{}");
-    return { ...defaultPrefs, displayName: profile.name || "", ...JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") };
+    const themeSettings = readThemeSettings();
+    return { ...defaultPrefs, displayName: profile.name || "", ...JSON.parse(localStorage.getItem(PREFS_KEY) || "{}"), theme: themeSettings.mode };
   } catch {
     return defaultPrefs;
   }
@@ -44,25 +45,8 @@ function readPrefs(): UserPrefs {
 
 function applyPrefs(prefs: UserPrefs) {
   if (typeof window === "undefined") return;
-  const root = document.documentElement;
-  const resolvedTheme = prefs.theme === "system"
-    ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
-    : prefs.theme;
-  root.dataset.theme = resolvedTheme;
-  root.classList.toggle("light", resolvedTheme === "light");
-  root.classList.toggle("dark", resolvedTheme === "dark");
-  root.dataset.fontSize = prefs.fontSize;
-  root.dataset.density = prefs.density;
-  const currentSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify({
-    ...currentSettings,
-    theme: prefs.theme === "system" ? "Sistema" : prefs.theme === "light" ? "Claro" : "Escuro",
-    mode: prefs.theme,
-    layoutDensity: prefs.density,
-    colorPrimary: "#03624C"
-  }));
+  persistAndApplyThemeSettings({ mode: prefs.theme, fontSize: prefs.fontSize, layoutDensity: prefs.density });
   localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
-  window.dispatchEvent(new Event("nodere:theme-change"));
 }
 
 export function Header() {
@@ -85,7 +69,7 @@ export function Header() {
     if (typeof window === "undefined") return;
     const stored = readPrefs();
     setPrefs(stored);
-    applyPrefs(stored);
+    applyThemeSettings(readThemeSettings());
     setGlobalQuery(new URLSearchParams(window.location.search).get("q") ?? "");
   }, [pathname]);
 

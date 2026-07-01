@@ -113,7 +113,8 @@ app.get("/api/health", (_req, res) => {
     googlePlacesConfigured: Boolean(config.google.placesKey),
     pageSpeedConfigured: Boolean(config.google.pageSpeedKey),
     openaiConfigured: Boolean(config.openai.apiKey),
-    supabaseConfigured: Boolean(config.supabase.url && config.supabase.serviceRoleKey)
+    supabaseConfigured: Boolean(config.supabase.url && config.supabase.serviceRoleKey),
+    databaseUrlConfigured: Boolean(config.databaseUrl)
   });
 });
 

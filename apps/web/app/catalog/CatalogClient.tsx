@@ -273,7 +273,12 @@ export function CatalogClient() {
                     <td className="px-4 py-3 text-slate-300">{item.category}</td>
                     <td className="px-4 py-3 text-slate-300">{unitLabel(item.billing_unit || item.unit_measure)}</td>
                     <td className="px-4 py-3 text-slate-300">{money(item.price)}</td>
-                    <td className="px-4 py-3"><span className={`rounded-full px-2 py-1 text-xs font-bold ${item.status === "active" ? "bg-emerald-500/15 text-emerald-300" : "bg-slate-500/15 text-slate-300"}`}>{item.status === "active" ? "Ativo" : "Inativo"}</span></td>
+                    <td className="px-4 py-3">
+                      <span className="nodere-status-badge" data-tone={item.status === "active" ? "done" : "discarded"} title={item.status === "active" ? "Ativo: Concluído / finalizado" : "Inativo: Descartado / ignorado"}>
+                        <span className="nodere-status-dot" aria-hidden="true" />
+                        {item.status === "active" ? "Ativo" : "Inativo"}
+                      </span>
+                    </td>
                     <td className="px-4 py-3">
                       {canManage ? (
                         <div className="flex gap-2">

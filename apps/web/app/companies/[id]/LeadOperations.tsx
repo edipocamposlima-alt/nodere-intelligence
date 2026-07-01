@@ -1263,7 +1263,7 @@ export function LeadOperations({ company }: { company: Company }) {
 
       {previewVersion && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="max-h-[86vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-line bg-panel shadow-glow">
+          <div className="max-h-[86dvh] w-full max-w-3xl overflow-hidden rounded-2xl border border-line bg-panel shadow-glow">
             <div className="flex items-center justify-between border-b border-line p-4">
               <div>
                 <p className="font-semibold text-white">Versão {previewVersion.version_number}</p>
@@ -1271,7 +1271,7 @@ export function LeadOperations({ company }: { company: Company }) {
               </div>
               <button onClick={() => setPreviewVersion(null)} className="rounded-lg border border-line px-3 py-2 text-sm text-white">Fechar</button>
             </div>
-            <div className="max-h-[70vh] overflow-y-auto p-5">
+            <div className="max-h-[70dvh] overflow-y-auto p-5">
               <RichTextPreview value={previewVersion.content || ""} />
             </div>
           </div>

@@ -26,8 +26,7 @@ const PUBLIC_PREFIXES = [
   "/privacy",
   "/termos",
   "/privacidade",
-  "/pagina",
-  "/manual"
+  "/pagina"
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -48,7 +47,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
       <CreditsProvider>
-        <div className="flex min-h-screen nodere-grid">
+        <div className="flex min-h-[100dvh] nodere-grid">
           <Sidebar />
           <main className="min-w-0 flex-1 pb-20 lg:pb-0">
             <Header />

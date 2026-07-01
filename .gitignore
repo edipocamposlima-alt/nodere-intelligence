@@ -18,6 +18,7 @@ build/
 coverage/
 uploads/
 *.tsbuildinfo
+nodere-site-premium/
 
 # Logs
 *.log

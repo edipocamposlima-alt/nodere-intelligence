@@ -9,12 +9,12 @@ const INTENT_LABELS = {
   urgent: "Urgente"
 };
 
-const INTENT_COLORS = {
-  local: "bg-blue-500/15 text-blue-200",
-  service: "bg-emerald-500/15 text-emerald-200",
-  competitor: "bg-amber-500/15 text-amber-200",
-  informational: "bg-slate-500/15 text-slate-300",
-  urgent: "bg-red-500/15 text-red-200"
+const INTENT_TONES = {
+  local: "good",
+  service: "high",
+  competitor: "moderate",
+  informational: "neutral",
+  urgent: "critical"
 };
 
 const COMPETITION_COLORS = {
@@ -78,7 +78,8 @@ export function IntelligencePanel({ intel }: { intel: GoogleIntelligence }) {
             <Zap className="h-4 w-4 text-cyan" />
             <span className="text-sm font-medium text-white">Google Ads</span>
           </div>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${adsConnectionStatus === "connected" ? "bg-emerald-500/15 text-emerald-300" : adsConnectionStatus === "configured" ? "bg-amber-500/15 text-amber-300" : "bg-slate-500/15 text-slate-400"}`}>
+          <span className="nodere-status-badge" data-tone={adsConnectionStatus === "connected" ? "done" : adsConnectionStatus === "configured" ? "waiting" : "low"} title="Status da conexão Google Ads">
+            <span className="nodere-status-dot" aria-hidden="true" />
             {adsConnectionStatus === "connected" ? "Conectado" : adsConnectionStatus === "configured" ? "Configurado" : "Não configurado"}
           </span>
         </div>
@@ -185,7 +186,8 @@ export function IntelligencePanel({ intel }: { intel: GoogleIntelligence }) {
                 <tr key={kw.keyword} className="bg-panel/40">
                   <td className="px-3 py-2 font-medium text-white">{kw.keyword}</td>
                   <td className="px-3 py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${INTENT_COLORS[kw.intent]}`}>
+                    <span className="nodere-status-badge text-[10px]" data-tone={INTENT_TONES[kw.intent]} title={`Intenção: ${INTENT_LABELS[kw.intent]}`}>
+                      <span className="nodere-status-dot" aria-hidden="true" />
                       {INTENT_LABELS[kw.intent]}
                     </span>
                   </td>
@@ -206,7 +208,8 @@ export function IntelligencePanel({ intel }: { intel: GoogleIntelligence }) {
         <div className="flex items-center gap-2">
           <Info className="h-4 w-4 text-cyan shrink-0" />
           <h3 className="text-sm font-semibold text-white">Google Business Profile</h3>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${gbp.status === "authorized" ? "bg-emerald-500/15 text-emerald-300" : gbp.status === "error" ? "bg-red-500/15 text-red-300" : "bg-slate-500/15 text-slate-400"}`}>
+          <span className="nodere-status-badge" data-tone={gbp.status === "authorized" ? "done" : gbp.status === "error" ? "critical" : gbp.status === "configured" ? "waiting" : "low"} title="Status do Google Business Profile">
+            <span className="nodere-status-dot" aria-hidden="true" />
             {gbp.status === "authorized" ? "Autorizado" : gbp.status === "error" ? "Erro" : gbp.status === "configured" ? "Configurado" : "Não configurado"}
           </span>
         </div>

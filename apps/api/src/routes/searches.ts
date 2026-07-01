@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { getRequestWorkspaceId, isPrivilegedSession } from "../middleware/session.js";
-import { searchCompaniesWithMeta } from "../services/companyStore.js";
+import { filterUnsavedSearchResults, findExistingCrmLead, searchCompaniesWithMeta } from "../services/companyStore.js";
 import { consumeSearch } from "../services/credits.js";
 import { listSearchHistory, saveSearch, getSearch, touchSearch } from "../db/searchHistory.js";
 import { calculateOpportunityScore } from "../services/scoring.js";
@@ -102,6 +102,15 @@ router.get("/cnpj", async (req, res, next) => {
       updatedAt: new Date().toISOString()
     };
     const company = { ...base, ...calculateOpportunityScore(base) };
+    const duplicate = await findExistingCrmLead(company, getRequestWorkspaceId(req));
+    if (duplicate) {
+      return res.json({
+        company: duplicate.company,
+        existing: true,
+        message: "Lead já consta no banco de dados NODERE.",
+        source: "crm"
+      });
+    }
     return res.json({ company, source: "receitaws" });
   } catch (error) {
     return next(error);
@@ -221,7 +230,8 @@ router.post("/", async (req, res, next) => {
       await consumeSearch([input.companyName, input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" "), workspaceId);
     }
     const result = await searchCompaniesWithMeta(input, workspaceId);
-    const companies = filterAndSortCompanies(result.companies as Company[], input);
+    const filteredByCrm = await filterUnsavedSearchResults(result.companies as Company[], workspaceId);
+    const companies = filterAndSortCompanies(filteredByCrm.companies as Company[], input);
     const companyIds = companies.map((c) => c.id);
     if (companies.length > 0) {
       await markOnboardingStep(workspaceId, "search").catch(() => undefined);
@@ -253,9 +263,18 @@ router.post("/", async (req, res, next) => {
         resultCount: companies.length,
         source: result.source,
         warning: (result as any).warning,
-        error: (result as any).error
+        error: (result as any).error,
+        existingCount: filteredByCrm.duplicates.length,
+        existingMessage: filteredByCrm.duplicates.length ? "Lead já consta no banco de dados NODERE." : undefined
       },
-      companies
+      companies,
+      duplicates: filteredByCrm.duplicates.map((item) => ({
+        id: item.company.id,
+        name: item.company.name,
+        existingId: item.existing.id,
+        reason: item.reason,
+        message: "Lead já consta no banco de dados NODERE."
+      }))
     });
   } catch (error) {
     next(error);
@@ -274,7 +293,8 @@ router.post("/:id/rerun", async (req, res, next) => {
       segment: saved.segment,
       keyword: saved.keyword
     }, workspaceId);
-    const companies = filterAndSortCompanies(result.companies as Company[], {});
+    const filteredByCrm = await filterUnsavedSearchResults(result.companies as Company[], workspaceId);
+    const companies = filterAndSortCompanies(filteredByCrm.companies as Company[], {});
     if (companies.length > 0) {
       await markOnboardingStep(workspaceId, "search").catch(() => undefined);
     }
@@ -301,9 +321,18 @@ router.post("/:id/rerun", async (req, res, next) => {
         lastRanAt: saved.lastRanAt,
         resultCount: companies.length,
         source: result.source,
-        warning: (result as any).warning
+        warning: (result as any).warning,
+        existingCount: filteredByCrm.duplicates.length,
+        existingMessage: filteredByCrm.duplicates.length ? "Lead já consta no banco de dados NODERE." : undefined
       },
-      companies
+      companies,
+      duplicates: filteredByCrm.duplicates.map((item) => ({
+        id: item.company.id,
+        name: item.company.name,
+        existingId: item.existing.id,
+        reason: item.reason,
+        message: "Lead já consta no banco de dados NODERE."
+      }))
     });
   } catch (error) {
     return next(error);

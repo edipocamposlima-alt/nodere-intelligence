@@ -5,15 +5,9 @@ import { Bell, CheckCircle2, Code2, Download, FileText, Mail, Palette, Save, Ser
 import { getBackendRootUrl } from "@/lib/apiBase";
 import { getPublicSettings, savePublicSettings } from "@/lib/api";
 import { AdminFetchError, adminFetch, getAdminToken } from "@/lib/adminAuth";
+import { applyThemeSettings, defaultThemeSettings, normalizeThemeSettings, persistAndApplyThemeSettings, readThemeSettings } from "@/lib/theme";
 
-const STORAGE_KEY = "nodere_settings";
 const BACKEND_ROOT_URL = getBackendRootUrl();
-
-const themePresets: Record<string, { primary: string; mode: Settings["mode"]; cyan: string; panel: string; ink: string; line: string }> = {
-  "Escuro": { primary: "#03624C", mode: "dark", cyan: "#00DF82", panel: "#111827", ink: "#081018", line: "#243244" },
-  "Claro": { primary: "#03624C", mode: "light", cyan: "#03624C", panel: "#FFFFFF", ink: "#F8FAFC", line: "#E2E8F0" },
-  "Sistema": { primary: "#03624C", mode: "system", cyan: "#00DF82", panel: "#111827", ink: "#081018", line: "#243244" }
-};
 
 type Settings = {
   theme: string;
@@ -24,6 +18,7 @@ type Settings = {
   layoutDensity: "ultraCompact" | "compact" | "comfortable" | "executive" | "large";
   cardStyle: "cards" | "list" | "glass" | "solid" | "borderless" | "elevated";
   backendUrl: string;
+  themeUpdatedAt?: string;
 };
 
 type SettingsUser = {
@@ -53,46 +48,20 @@ type DownloadLog = {
 };
 
 const defaults: Settings = {
-  theme: "Escuro",
-  colorPrimary: "#03624C",
-  mode: "dark",
-  fontFamily: "Inter",
-  fontSize: "normal",
-  layoutDensity: "compact",
-  cardStyle: "cards",
+  ...defaultThemeSettings,
   backendUrl: BACKEND_ROOT_URL
 };
 
 function normalizeSettings(settings: Settings): Settings {
-  const theme = settings.theme in themePresets ? settings.theme : "Escuro";
-  const preset = themePresets[theme];
   return {
     ...settings,
-    theme,
-    mode: preset.mode,
+    ...normalizeThemeSettings(settings),
     colorPrimary: "#03624C"
   };
 }
 
 function applySettings(settings: Settings) {
-  const normalized = normalizeSettings(settings);
-  const preset = themePresets[normalized.theme];
-  const resolvedMode = normalized.mode === "system"
-    ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
-    : normalized.mode;
-  document.documentElement.style.setProperty("--nodere-primary", "#03624C");
-  document.documentElement.style.setProperty("--color-cyan", resolvedMode === "light" ? "#03624C" : preset.cyan);
-  document.documentElement.style.setProperty("--color-panel", resolvedMode === "light" ? "#FFFFFF" : preset.panel);
-  document.documentElement.style.setProperty("--color-ink", resolvedMode === "light" ? "#F8FAFC" : preset.ink);
-  document.documentElement.style.setProperty("--color-line", resolvedMode === "light" ? "#E2E8F0" : preset.line);
-  document.documentElement.dataset.theme = resolvedMode;
-  document.documentElement.classList.toggle("light", resolvedMode === "light");
-  document.documentElement.classList.toggle("dark", resolvedMode === "dark");
-  document.documentElement.dataset.fontSize = normalized.fontSize;
-  document.documentElement.dataset.density = normalized.layoutDensity;
-  document.documentElement.dataset.cardStyle = normalized.cardStyle;
-  const font = normalized.fontFamily === "System default" ? "system-ui" : normalized.fontFamily;
-  document.body.style.fontFamily = `${font}, Inter, system-ui, sans-serif`;
+  applyThemeSettings(settings);
 }
 
 function normalizeAuditEvent(row: Record<string, unknown>): AuditEvent {
@@ -138,18 +107,21 @@ export function SettingsClient() {
   const [smtpStatus, setSmtpStatus] = useState("Não testado");
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    const next = normalizeSettings(saved ? { ...defaults, ...JSON.parse(saved) } : defaults);
+    const next = normalizeSettings({ ...defaults, ...readThemeSettings() });
     setSettings(next);
     applySettings(next);
 
     getPublicSettings()
       .then((payload) => {
         const remote = payload.preferences ?? {};
-        const merged = normalizeSettings({ ...next, ...remote } as Settings);
+        const shouldUseRemoteTheme = !next.themeUpdatedAt && Boolean(remote.theme || remote.mode);
+        const merged = normalizeSettings({
+          ...remote,
+          ...next,
+          ...(shouldUseRemoteTheme ? { theme: remote.theme, mode: remote.mode } : {})
+        } as Settings);
         setSettings(merged);
         applySettings(merged);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
         setStatus("Preferências carregadas do backend persistente.");
       })
       .catch((error) => {
@@ -163,22 +135,22 @@ export function SettingsClient() {
   function update<K extends keyof Settings>(key: K, value: Settings[K]) {
     let next = { ...settings, [key]: value };
     if (key === "theme") {
-      const preset = themePresets[String(value)];
-      if (preset) next = { ...next, colorPrimary: preset.primary, mode: preset.mode };
+      const mode = value === "Claro" ? "light" : value === "Sistema" ? "system" : "dark";
+      next = { ...next, colorPrimary: "#03624C", mode };
     } else if (key === "colorPrimary") {
       next = { ...next, colorPrimary: "#03624C" };
+    } else if (key === "mode") {
+      next = { ...next, theme: value === "light" ? "Claro" : value === "system" ? "Sistema" : "Escuro" };
     }
     setSettings(next);
-    applySettings(next);
+    persistAndApplyThemeSettings(next);
   }
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const normalized = { ...settings, colorPrimary: "#03624C" };
     setSettings(normalized);
-    applySettings(normalized);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
-    window.dispatchEvent(new Event("nodere:theme-change"));
+    persistAndApplyThemeSettings(normalized);
     setStatus("Configurações salvas neste navegador.");
 
     try {
@@ -420,7 +392,8 @@ export function SettingsClient() {
                       <p className="font-semibold text-white">{user.name}</p>
                       <p className="text-xs text-slate-400">{user.email}</p>
                     </div>
-                    <span className={`rounded-full px-2 py-1 text-xs font-bold ${user.active ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"}`}>
+                    <span className="nodere-status-badge" data-tone={user.active ? "done" : "discarded"} title={user.active ? "Usuário ativo" : "Usuário inativo"}>
+                      <span className="nodere-status-dot" aria-hidden="true" />
                       {user.active ? "Ativo" : "Inativo"}
                     </span>
                   </div>

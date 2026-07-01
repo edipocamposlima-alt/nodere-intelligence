@@ -12,7 +12,7 @@ import { logRequestMetric } from "../services/metricsStore.js";
 import { isMissingSupabaseSchema } from "../utils/supabaseErrors.js";
 
 const router = Router();
-router.use(requireWorkspaceMutation("owner", "admin", "operator"));
+router.use(requireWorkspaceMutation("owner", "admin", "operator", "viewer"));
 
 const proposalItemSchema = z.object({
   catalog_item_id: z.string().min(1),
@@ -28,8 +28,11 @@ const proposalItemSchema = z.object({
 const proposalPayloadSchema = z.object({
   lead_id: z.string().min(1),
   title: z.string().min(2).default("Proposta comercial NODERE"),
+  document_type: z.enum(["proposal", "contract"]).default("proposal"),
   service_type: z.string().optional(),
   content: z.string().optional(),
+  customer_notes: z.string().optional().nullable(),
+  internal_notes: z.string().optional().nullable(),
   items: z.array(proposalItemSchema).min(1, "Selecione pelo menos um produto/serviço ativo do catálogo."),
   currency: z.string().default("BRL"),
   status: z.enum(["draft", "sent", "accepted", "rejected", "expired"]).default("draft"),
@@ -113,7 +116,7 @@ router.post("/", requireWorkspaceRole("owner", "admin", "operator"), async (req,
       title: body.title,
       status: body.status,
       service_type: body.service_type || lead.category || null,
-      content: body.content || buildDefaultProposalContent(lead, commercial.items),
+      content: body.customer_notes || body.content || "",
       items: commercial.items,
       subtotal: commercial.subtotal,
       discount: commercial.discount,
@@ -122,13 +125,24 @@ router.post("/", requireWorkspaceRole("owner", "admin", "operator"), async (req,
       valid_until: body.valid_until || null,
       version: 1,
       created_by: String((req as any).session?.userId || (req as any).admin?.userId || ""),
-      metadata: { lead_name: lead.name, lead_city: lead.city, lead_state: lead.state, commercial_snapshot: true }
+      metadata: {
+        lead_name: lead.name,
+        lead_city: lead.city,
+        lead_state: lead.state,
+        commercial_snapshot: true,
+        document_type: body.document_type,
+        customer_notes: body.customer_notes || body.content || "",
+        internal_notes: body.internal_notes || ""
+      }
     };
     const { data, error } = await sb.from("nodere_proposals").insert(row).select("*").single();
     if (error) throw error;
     await insertProposalAudit(workspaceId, row.created_by, "proposal_created", row.id, {
       lead_id: lead.id,
       total: row.total,
+      document_type: body.document_type,
+      customer_notes: Boolean(body.customer_notes || body.content),
+      internal_notes: body.internal_notes || "",
       items: commercial.items.map(auditItem)
     }).catch(() => undefined);
     logRequestMetric(req, "proposal_generated", lead.id, { proposalId: row.id, source: "block05" });
@@ -208,7 +222,7 @@ router.delete("/templates/:id", requireWorkspaceRole("owner", "admin"), async (r
   }
 });
 
-router.post("/generate", async (req, res, next) => {
+router.post("/generate", requireWorkspaceRole("owner", "admin", "operator"), async (req, res, next) => {
   try {
     const body = z.object({
       template_id: z.string(),
@@ -243,7 +257,7 @@ router.post("/generate", async (req, res, next) => {
   }
 });
 
-router.post("/versions", async (req, res, next) => {
+router.post("/versions", requireWorkspaceRole("owner", "admin", "operator"), async (req, res, next) => {
   try {
     const body = z.object({
       lead_id: z.string(),
@@ -348,6 +362,46 @@ router.patch("/:id", requireWorkspaceRole("owner", "admin", "operator"), async (
     if (error) throw error;
     if (!data) return res.status(404).json({ message: "Proposta não encontrada." });
     await insertProposalAudit(workspaceId, String((req as any).session?.userId || ""), "proposal_updated", String(req.params.id), { status: data.status, items: Array.isArray(data.items) ? data.items.map(auditItem) : [] }).catch(() => undefined);
+    res.json(data);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/:id", requireWorkspaceRole("owner", "admin"), async (req, res, next) => {
+  try {
+    const body = z.object({ reason: z.string().trim().min(3).optional() }).parse(req.body ?? {});
+    const workspaceId = getRequestWorkspaceId(req);
+    const sb = getSupabase();
+    if (!sb) return res.status(503).json({ message: "Supabase não configurado." });
+    const userId = String((req as any).session?.userId || (req as any).admin?.userId || "");
+    const { data: current, error: currentError } = await sb
+      .from("nodere_proposals")
+      .select("id, metadata")
+      .eq("workspace_id", workspaceId)
+      .eq("id", req.params.id)
+      .maybeSingle();
+    if (currentError) throw currentError;
+    if (!current) return res.status(404).json({ message: "Proposta não encontrada." });
+    const metadata = current.metadata && typeof current.metadata === "object" ? current.metadata as Record<string, unknown> : {};
+    const deletedAt = new Date().toISOString();
+    const { data, error } = await sb
+      .from("nodere_proposals")
+      .update({
+        metadata: {
+          ...metadata,
+          deleted_at: deletedAt,
+          deleted_by: userId,
+          delete_reason: body.reason || "Exclusão lógica solicitada pela ficha comercial."
+        },
+        updated_at: deletedAt
+      })
+      .eq("workspace_id", workspaceId)
+      .eq("id", req.params.id)
+      .select("*")
+      .maybeSingle();
+    if (error) throw error;
+    await insertProposalAudit(workspaceId, userId, "proposal_deleted", String(req.params.id), { deleted_at: deletedAt, reason: body.reason || "" }).catch(() => undefined);
     res.json(data);
   } catch (error) {
     next(error);
@@ -547,21 +601,25 @@ async function insertProposalAudit(workspaceId: string, userId: string, action: 
 
 async function renderProposalPdf(proposal: any, lead: any, documentType: "proposal" | "contract" = "proposal") {
   return new Promise<Buffer>((resolve, reject) => {
-    const doc = new PDFDocument({ size: "A4", margin: 48 });
+    const doc = new PDFDocument({ size: "A4", margin: 48, bufferPages: true, info: { Title: String(proposal.title || "Documento NODERE"), Author: "NODERE" } });
     const chunks: Buffer[] = [];
     doc.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
     const logoPath = findNoderePdfIcon();
+    const generatedAt = new Date().toISOString();
     if (logoPath) doc.image(logoPath, 48, 44, { width: 28, height: 28 });
     doc.fillColor("#00382F").fontSize(22).text("NODERE", logoPath ? 86 : 48, 48, { continued: false });
+    doc.fillColor("#6B7280").fontSize(8).text(`Gerado em ${new Date(generatedAt).toLocaleString("pt-BR")}`, 390, 48, { width: 150, align: "right" });
     doc.moveDown(0.4);
     doc.fillColor("#00D69E").fontSize(12).text(documentType === "contract" ? "Contrato comercial" : "Proposta comercial", { continued: false });
     doc.moveDown(1);
     doc.fillColor("#111827").fontSize(18).text(String(proposal.title || "Proposta comercial"));
     if (lead?.name) doc.fontSize(12).fillColor("#374151").text(`Cliente: ${lead.name}`);
     if (lead?.city || lead?.state) doc.text(`Localidade: ${[lead.city, lead.state].filter(Boolean).join(" / ")}`);
+    doc.fillColor("#374151").fontSize(9).text(`Versão: ${proposal.version || proposal.metadata?.version || 1}`);
+    doc.fillColor("#374151").fontSize(9).text(`Responsável: ${proposal.created_by || proposal.metadata?.created_by || "NODERE"}`);
     doc.moveDown();
     doc.fontSize(11).fillColor("#1F2937").text(String(proposal.content || ""), { align: "left" });
 
@@ -593,6 +651,13 @@ async function renderProposalPdf(proposal: any, lead: any, documentType: "propos
     if (proposal.valid_until) doc.fillColor("#6B7280").fontSize(9).text(`Validade: ${new Date(proposal.valid_until).toLocaleDateString("pt-BR")}`);
     doc.moveDown(2);
     doc.fillColor("#6B7280").fontSize(9).text("Documento gerado automaticamente pela plataforma NODERE.");
+    const range = doc.bufferedPageRange();
+    for (let index = range.start; index < range.start + range.count; index += 1) {
+      doc.switchToPage(index);
+      doc.moveTo(48, 760).lineTo(547, 760).strokeColor("#E5E7EB").stroke();
+      doc.fillColor("#6B7280").fontSize(8).text("NODERE", 48, 770);
+      doc.text(`Página ${index + 1} de ${range.count}`, 440, 770, { width: 107, align: "right" });
+    }
     doc.end();
   });
 }

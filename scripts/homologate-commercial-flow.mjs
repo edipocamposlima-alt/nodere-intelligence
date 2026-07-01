@@ -119,6 +119,9 @@ async function loginWithSupabaseAuth(user, previousError) {
         body: JSON.stringify({ email: user.email, password, data: { name: `${runId} ${user.role}` } })
       });
       authBody = await authResponse.json().catch(() => ({}));
+      if (!authResponse.ok || !authBody.user) {
+        await createSupabaseAuthUserDirect(user.email, `${runId} ${user.role}`);
+      }
     }
     await confirmSupabaseAuthUser(user.email);
     authResponse = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
@@ -142,6 +145,33 @@ async function loginWithSupabaseAuth(user, previousError) {
     throw new Error(`Troca Supabase session ${user.role} falhou: HTTP ${linkResponse.status} ${linkBody.message || ""}`);
   }
   return linkBody.token;
+}
+
+async function createSupabaseAuthUserDirect(email, name) {
+  const authUserId = randomUUID();
+  await client.query(
+    `insert into auth.users
+      (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+       raw_app_meta_data, raw_user_meta_data, created_at, updated_at, is_sso_user, is_anonymous)
+     values
+      ('00000000-0000-0000-0000-000000000000'::uuid, $1::uuid, 'authenticated', 'authenticated', $2,
+       crypt($3, gen_salt('bf')), now(),
+       '{"provider":"email","providers":["email"]}'::jsonb, jsonb_build_object('name', $4::text),
+       now(), now(), false, false)
+     on conflict (id) do nothing`,
+    [authUserId, email, password, name]
+  );
+  await client.query(
+    `insert into auth.identities
+      (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+     values
+      ($1::text, $1::uuid, jsonb_build_object('sub', $1::text, 'email', $2::text, 'email_verified', true, 'phone_verified', false),
+       'email', now(), now(), now())
+     on conflict (provider, provider_id) do update
+       set identity_data = excluded.identity_data,
+           updated_at = now()`,
+    [authUserId, email]
+  );
 }
 
 async function confirmSupabaseAuthUser(email) {
@@ -286,6 +316,9 @@ try {
     body: JSON.stringify({
       lead_id: companyId,
       title: `${runId} Percent Proposal`,
+      document_type: "proposal",
+      customer_notes: `${runId} CUSTOMER_NOTE_VISIBLE`,
+      internal_notes: `${runId} INTERNAL_NOTE_HIDDEN`,
       items: [{ catalog_item_id: activeItem.id, quantity: 2, discount_type: "percent", discount_percent: 10, discount_reason: "Smoke percent" }]
     })
   });
@@ -320,7 +353,11 @@ try {
   const pdfText = Buffer.from(pdf.body).toString("latin1");
   record("PDF gerado", pdf.response.ok && pdf.response.headers.get("content-type")?.includes("application/pdf"), `HTTP ${pdf.response.status}`);
   record("PDF nao expoe observacoes internas", !pdfText.includes("SMOKE_INTERNAL_NOTE_DO_NOT_EXPOSE"));
+  record("PDF nao expoe observacao interna global", !pdfText.includes("INTERNAL_NOTE_HIDDEN"));
   record("PDF nao expoe motivo interno do desconto", !pdfText.includes("Smoke percent"));
+
+  const contractPdf = await api(`/api/proposals/${encodeURIComponent(percentProposal.body.id)}/contract-pdf`, tokens.operator, { method: "POST" });
+  record("PDF de contrato gerado", contractPdf.response.ok && contractPdf.response.headers.get("content-type")?.includes("application/pdf"), `HTTP ${contractPdf.response.status}`);
 
   const audit = await client.query(
     `select action from public.nodere_audit_logs
@@ -329,7 +366,7 @@ try {
     [workspaceId, created.proposalIds]
   );
   const auditActions = new Set(audit.rows.map((row) => row.action));
-  record("auditoria registra criacao/PDF", auditActions.has("proposal_created") && auditActions.has("proposal_pdf_generated"), [...auditActions].join(","));
+  record("auditoria registra criacao/PDF", auditActions.has("proposal_created") && auditActions.has("proposal_pdf_generated") && auditActions.has("contract_pdf_generated"), [...auditActions].join(","));
 
   const inactive = await api(`/api/catalog/${encodeURIComponent(activeItem.id)}`, tokens.admin, { method: "DELETE" });
   record("admin inativa produto/servico", inactive.response.ok, `HTTP ${inactive.response.status}`);

@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Download, LayoutGrid, ListFilter, Plus, Search, SlidersHorizontal } from "lucide-react";
 import type { Company } from "@/lib/types";
 import { CrmBoard } from "./CrmBoard";
 import { LeadDrawer } from "@/components/crm/LeadDrawer";
 
 export function CrmSwitcher({ companies }: { companies: Company[] }) {
+  const router = useRouter();
   const [items, setItems] = useState(companies);
   const [view, setView] = useState<"kanban" | "list">("kanban");
   const [query, setQuery] = useState("");
@@ -61,8 +63,10 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
   }
 
   function openLead(lead: Company) {
-    setSelectedLead(lead);
-    setDrawerOpen(true);
+    const params = new URLSearchParams();
+    params.set("tab", "overview");
+    params.set("return", "/crm");
+    router.push(`/app/crm/clientes/${encodeURIComponent(lead.id)}?${params.toString()}`);
   }
 
   return (
@@ -172,7 +176,7 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
                   <td className="px-4 py-3">{company.status}</td>
                   <td className="px-4 py-3 text-slate-300">{company.city}/{company.state}</td>
                   <td className="px-4 py-3 text-slate-400">{company.lastContactAt ? new Date(company.lastContactAt).toLocaleDateString("pt-BR") : "Sem contato"}</td>
-                  <td className="px-4 py-3"><Link href={`/companies/${encodeURIComponent(company.id)}`} className="text-cyan" onClick={(event) => event.stopPropagation()}>Abrir ficha 360º</Link></td>
+                  <td className="px-4 py-3"><Link href={`/app/crm/clientes/${encodeURIComponent(company.id)}?tab=overview&return=/crm`} className="text-cyan" onClick={(event) => event.stopPropagation()}>Abrir ficha CRM</Link></td>
                 </tr>
               ))}
               {filtered.length === 0 && (

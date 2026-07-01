@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Moon, Sun } from "lucide-react";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { persistAndApplyThemeSettings, readThemeSettings } from "@/lib/theme";
 
 const PLAN_LABELS: Record<string, { label: string; color: string }> = {
   trial: { label: "Trial", color: "var(--warning)" },
@@ -36,20 +37,14 @@ export default function PlatformTopbar() {
   }
 
   useEffect(() => {
-    const root = document.documentElement;
-    const initial = root.dataset.theme === "light" || root.classList.contains("light") ? "light" : "dark";
+    const initial = readThemeSettings().mode === "light" ? "light" : "dark";
     setTheme(initial);
   }, []);
 
   function toggleTheme() {
     const next = theme === "light" ? "dark" : "light";
-    const root = document.documentElement;
-    root.dataset.theme = next;
-    root.classList.toggle("light", next === "light");
-    root.classList.toggle("dark", next === "dark");
-    localStorage.setItem("nodere_theme", next);
+    persistAndApplyThemeSettings({ mode: next });
     setTheme(next);
-    window.dispatchEvent(new Event("nodere:theme-change"));
   }
 
   return (

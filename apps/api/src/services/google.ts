@@ -224,6 +224,17 @@ function normalizePlace(place: GooglePlace, input: SearchRequest): Company {
     rating: place.rating,
     reviewCount: place.userRatingCount,
     mapsUrl: place.googleMapsUri,
+    businessSummary: buildCommercialSummary({
+      name: place.displayName?.text,
+      category: place.primaryTypeDisplayName?.text ?? input.segment,
+      city: input.city,
+      state: input.state,
+      website: place.websiteUri,
+      phone,
+      rating: place.rating,
+      reviewCount: place.userRatingCount,
+      hasGoogleMaps: Boolean(place.googleMapsUri)
+    }),
     latitude: place.location?.latitude,
     longitude: place.location?.longitude,
     status: "Novo Lead",
@@ -238,6 +249,29 @@ function normalizePlace(place: GooglePlace, input: SearchRequest): Company {
   };
 
   return { ...base, ...calculateOpportunityScore(base) };
+}
+
+function buildCommercialSummary(input: {
+  name?: string;
+  category?: string;
+  city?: string;
+  state?: string;
+  website?: string;
+  phone?: string;
+  rating?: number;
+  reviewCount?: number;
+  hasGoogleMaps?: boolean;
+}) {
+  const company = input.name || "Empresa";
+  const segment = input.category || "segmento não localizado";
+  const location = [input.city, input.state].filter(Boolean).join("/") || "localização não localizada";
+  const signals = [
+    input.website ? "possui site público" : "site não localizado",
+    input.phone ? "telefone localizado" : "telefone não localizado",
+    input.hasGoogleMaps ? "perfil no Google Maps localizado" : "link do Google Maps não localizado",
+    input.rating ? `avaliação ${input.rating}${input.reviewCount ? ` com ${input.reviewCount} avaliações` : ""}` : "avaliação não localizada"
+  ];
+  return `${company} atua em ${segment} em ${location}. Sinais comerciais: ${signals.join(", ")}. Oportunidade indicada para validação de presença digital e abordagem comercial sem inferir dados não localizados.`;
 }
 
 function normalizePhone(phone?: string) {

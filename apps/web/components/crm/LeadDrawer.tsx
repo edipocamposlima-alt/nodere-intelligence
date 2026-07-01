@@ -7,6 +7,7 @@ import { CRM_STAGES } from "@/lib/crm-stages";
 import { InboxMessage, addLeadActivity, addLeadContact, addLeadDeal, createLead, deleteLeadActivity, deleteLeadContact, deleteLeadDeal, getInboxMessagesByCompany, getLeadActivities, getLeadContacts, getLeadDeals, updateLeadActivity, updateLeadContact, updateLeadDeal } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/Input";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
 import { RichTextEditor, RichTextPreview } from "@/components/RichTextEditor";
@@ -495,8 +496,8 @@ export function LeadDrawer({ lead, open, onClose, onCreated }: LeadDrawerProps) 
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true">
-      <div className="ml-auto flex h-full w-full max-w-5xl flex-col overflow-hidden border-l border-border-soft bg-bg-main shadow-modal lg:w-[72vw]">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true">
+      <div className="ml-auto flex h-[100dvh] max-h-[100dvh] w-full max-w-5xl flex-col overflow-hidden border-l border-border-soft bg-bg-main shadow-modal lg:w-[72vw]">
         <header className="flex items-start justify-between gap-4 border-b border-border-soft bg-bg-card px-5 py-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-glow">{isNew ? "Novo Lead" : "Ficha comercial"}</p>
@@ -567,7 +568,7 @@ export function LeadDrawer({ lead, open, onClose, onCreated }: LeadDrawerProps) 
                   <p className="text-xs text-text-muted">Valor em negociação</p>
                   <p className="mt-1 text-2xl font-black text-text-primary">{estimatedValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
                 </div>
-                <Badge variant={draft.temperature === "Quente" ? "danger" : draft.temperature === "Morno" ? "warning" : "info"}>{draft.temperature}</Badge>
+                <StatusBadge value={draft.temperature} />
               </aside>
             </div>
           )}
@@ -816,7 +817,7 @@ export function LeadDrawer({ lead, open, onClose, onCreated }: LeadDrawerProps) 
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <Badge variant={String(deal.status) === "won" ? "success" : String(deal.status) === "lost" ? "danger" : "info"}>{dealStatusLabels[String(deal.status)] || String(deal.status || "Em negociação")}</Badge>
-                        {Boolean(details.temperature) && <Badge variant={details.temperature === "Quente" ? "danger" : details.temperature === "Morno" ? "warning" : "info"}>{String(details.temperature)}</Badge>}
+                        {Boolean(details.temperature) && <StatusBadge value={String(details.temperature)} />}
                         {Boolean(details.probability) && <Badge variant="default">{String(details.probability)}%</Badge>}
                         {Boolean(deal.ended_at) && <Badge variant="default">Previsão: {new Date(`${String(deal.ended_at).slice(0, 10)}T12:00:00`).toLocaleDateString("pt-BR")}</Badge>}
                       </div>
@@ -843,7 +844,7 @@ export function LeadDrawer({ lead, open, onClose, onCreated }: LeadDrawerProps) 
           )}
         </main>
 
-        <footer className="flex items-center justify-between border-t border-border-soft bg-bg-card px-5 py-4">
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border-soft bg-bg-card px-5 py-4">
           <p className="text-sm text-text-muted">{message}</p>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={onClose}>Cancelar</Button>

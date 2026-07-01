@@ -270,7 +270,8 @@ export function MarketingClient() {
                     <p className="text-xs uppercase text-slate-500">{platform.category || platform.provider || "social"}</p>
                   </div>
                 </div>
-                <span className={`mt-4 inline-flex rounded-full px-2 py-1 text-xs font-bold ${platform.configured ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-500/15 text-amber-300"}`}>
+                <span className="nodere-status-badge mt-4" data-tone={platform.configured ? "done" : "waiting"} title={platform.configured ? "Integração configurada" : "Aguardando configuração"}>
+                  <span className="nodere-status-dot" aria-hidden="true" />
                   {platform.configured ? "CONECTÁVEL" : "PENDENTE"}
                 </span>
                 {!platform.configured && <p className="mt-3 text-xs text-slate-400">Env vars: {platform.requiredEnv.join(", ")}</p>}

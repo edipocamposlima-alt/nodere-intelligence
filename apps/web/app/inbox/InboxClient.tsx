@@ -14,6 +14,21 @@ const filters = [
   { value: "resolved", label: "Resolvidas" }
 ];
 
+function inboxStatusTone(status?: string) {
+  if (status === "unread") return "critical";
+  if (status === "flagged") return "waiting";
+  if (status === "resolved") return "done";
+  return "progress";
+}
+
+function inboxStatusLabel(status?: string) {
+  if (status === "unread") return "Não lida";
+  if (status === "flagged") return "Marcada";
+  if (status === "resolved") return "Resolvida";
+  if (status === "read") return "Lida";
+  return status || "Lida";
+}
+
 const interactionTypes = [
   { value: "whatsapp", label: "WhatsApp" },
   { value: "email", label: "Email" },
@@ -148,7 +163,7 @@ export function InboxClient() {
 
       {message && <p className="rounded-lg border border-cyan/30 bg-cyan/10 px-4 py-3 text-sm text-cyan">{message}</p>}
 
-      <section className="grid min-h-[68vh] overflow-hidden rounded-2xl border border-line bg-panel/80 lg:grid-cols-[380px_minmax(0,1fr)]">
+      <section className="grid min-h-[68dvh] overflow-hidden rounded-2xl border border-line bg-panel/80 lg:grid-cols-[380px_minmax(0,1fr)]">
         <aside className="border-b border-line bg-ink/70 p-4 lg:border-b-0 lg:border-r">
           <div className="flex items-center gap-2 rounded-lg border border-line bg-panel px-3 py-2">
             <Search className="h-4 w-4 text-slate-500" />
@@ -156,12 +171,13 @@ export function InboxClient() {
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             {filters.map((filter) => (
-              <button key={filter.value || "all"} onClick={() => setStatus(filter.value)} className={`rounded-full px-3 py-1.5 text-xs font-bold ${status === filter.value ? "bg-emerald-400 text-slate-950" : "border border-line text-slate-300 hover:text-white"}`}>
+              <button key={filter.value || "all"} onClick={() => setStatus(filter.value)} className={`nodere-status-badge ${status === filter.value ? "" : "opacity-70 hover:opacity-100"}`} data-tone={filter.value ? inboxStatusTone(filter.value) : "neutral"} title={filter.label}>
+                <span className="nodere-status-dot" aria-hidden="true" />
                 {filter.label}
               </button>
             ))}
           </div>
-          <div className="mt-4 max-h-[58vh] space-y-2 overflow-y-auto pr-1">
+          <div className="mt-4 max-h-[58dvh] space-y-2 overflow-y-auto pr-1">
             {loading && <p className="text-sm text-slate-400">Carregando mensagens...</p>}
             {!loading && filtered.length === 0 && (
               <InboxEmptyState
@@ -173,7 +189,10 @@ export function InboxClient() {
               <button key={item.id} onClick={() => setSelectedId(item.id)} className={`w-full rounded-xl border p-3 text-left transition ${selected?.id === item.id ? "border-emerald-300 bg-emerald-400/10" : "border-line bg-panel/80 hover:border-cyan/60"}`}>
                 <div className="flex items-center justify-between gap-3">
                   <p className="truncate font-bold text-white">{item.company?.name || item.subject || item.phone_from || "Interação sem empresa"}</p>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${item.status === "unread" ? "bg-rose-500 text-white" : item.status === "flagged" ? "bg-amber-300 text-slate-950" : "bg-white/10 text-slate-300"}`}>{item.status}</span>
+                  <span className="nodere-status-badge text-[10px]" data-tone={inboxStatusTone(item.status)} title={inboxStatusLabel(item.status)}>
+                    <span className="nodere-status-dot" aria-hidden="true" />
+                    {inboxStatusLabel(item.status)}
+                  </span>
                 </div>
                 <p className="mt-1 line-clamp-2 text-sm text-slate-400">{item.body || item.subject || "Sem texto"}</p>
                 <p className="mt-2 text-xs text-slate-500">{item.type} · {item.sent_at ? new Date(item.sent_at).toLocaleString("pt-BR") : "sem data"}</p>
@@ -182,7 +201,7 @@ export function InboxClient() {
           </div>
         </aside>
 
-        <section className="grid min-h-[68vh] lg:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="grid min-h-[68dvh] lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="flex flex-col p-5">
             {selected ? (
               <>
@@ -237,8 +256,8 @@ export function InboxClient() {
       </section>
 
       {openModal && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
-          <form onSubmit={saveInteraction} className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-line bg-panel p-5 shadow-2xl">
+        <div className="fixed inset-0 z-50 grid place-items-center overflow-hidden bg-black/70 p-4">
+          <form onSubmit={saveInteraction} className="max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-line bg-panel p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-xl font-black text-white">Registrar interação</h2>
