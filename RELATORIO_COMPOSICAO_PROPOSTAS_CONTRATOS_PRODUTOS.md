@@ -1,133 +1,100 @@
-# Relatorio - Composicao de Propostas e Contratos por Produtos/Servicos
+# Relatorio - Composicao Controlada de Propostas e Contratos por Produtos/Servicos
 
-Data: 2026-06-30
+Data: 2026-07-01
 
 ## O que foi implementado
 
-- A composicao em `apps/web/app/app/proposals/page.tsx` foi ajustada para remover o editor livre de conteudo comercial.
-- A tela passou a ter selecao de tipo de documento: proposta ou contrato.
-- O documento e montado obrigatoriamente pela lista de produtos/servicos ativos do catalogo.
-- Ao salvar, o frontend chama a API de propostas e aciona automaticamente o PDF correto:
-  - proposta: `POST /api/proposals/:id/pdf`
-  - contrato: `POST /api/proposals/:id/contract-pdf`
-- O backend passou a aceitar `document_type`, `customer_notes` e `internal_notes`.
-- `customer_notes` e salvo em `content` e aparece no PDF.
-- `internal_notes` e salvo em `metadata` e auditoria, sem aparecer no PDF.
-- O smoke tecnico foi reforcado para validar PDF de contrato e nao exposicao de observacao interna global.
+- A composicao de propostas e contratos passou a usar exclusivamente produtos/servicos ativos do catalogo oficial.
+- A aba `Propostas e Contratos` da Ficha Comercial agora monta documentos por checkbox a partir dos produtos/servicos vinculados ao cliente.
+- A pagina global `/app/proposals` tambem passou a permitir ajuste controlado de valor aplicado, mantendo o valor base do catalogo bloqueado.
+- Nome, descricao, condicoes de pagamento, forma de pagamento, prazo e valor base sao congelados no snapshot comercial salvo em `nodere_proposals.items`.
+- Itens livres/manuais continuam bloqueados porque o backend exige `catalog_item_id` valido e ativo.
+- PDF de proposta e contrato usa o snapshot salvo, nao o estado atual do catalogo.
+- Observacoes comerciais para o cliente aparecem no PDF.
+- Observacoes internas e motivo interno de desconto nao aparecem no PDF.
 
-## Como produtos/servicos sao selecionados
+## Regras comerciais aplicadas
 
-- A tela lista somente itens ativos vindos de `GET /api/catalog`.
-- Cada item e selecionado por checkbox.
-- O payload enviado para propostas usa obrigatoriamente `catalog_item_id`.
-- O backend rejeita item livre/manual porque cada item precisa apontar para um item ativo do catalogo.
+- Campos bloqueados no documento:
+  - nome do produto/servico;
+  - descricao;
+  - condicoes de pagamento;
+  - forma de pagamento;
+  - prazo de execucao/entrega;
+  - valor base do catalogo.
+- Campos editaveis na composicao:
+  - quantidade;
+  - valor aplicado;
+  - desconto por percentual;
+  - desconto por valor;
+  - observacao comercial para o cliente;
+  - observacao interna da negociacao.
+- Desconto por percentual e desconto por valor sao mutuamente exclusivos.
+- Motivo do desconto e obrigatorio quando houver desconto.
+- Mudanca de preco aplicado e/ou desconto gera log comercial interno por item.
 
-## Campos bloqueados
+## Versionamento e historico
 
-Estes campos nao sao editaveis na composicao da proposta/contrato:
+- Novos documentos recebem `document_group_id`, `version_number` e `is_current_version` em `metadata`.
+- Ao criar nova versao, versoes anteriores do mesmo grupo sao preservadas e marcadas como nao atuais.
+- A Ficha Comercial destaca o documento atual e permite iniciar uma nova versao a partir dele.
+- O backend registra auditoria em `proposal_audit_logs`.
+- O backend registra atividade em `communications` para alimentar historico/timeline da conta com `Proposta gerada` ou `Contrato gerado`.
 
-- nome do produto/servico;
-- descricao;
-- condicoes de pagamento;
-- forma de pagamento;
-- prazo de execucao/entrega;
-- orientacao comercial cadastrada.
+## Permissoes
 
-Esses dados sao congelados no snapshot salvo em `nodere_proposals.items`.
+- `owner` e `admin`: podem gerar propostas e contratos.
+- `operator`: pode gerar propostas conforme regra atual, mas nao contrato pela Ficha Comercial.
+- `viewer`: somente leitura; nao visualiza o compositor de documentos.
+- O backend continua protegido por `requireWorkspaceRole("owner", "admin", "operator")` para criacao/edicao de propostas.
 
-## Campos que podem ser alterados
+## Fontes de dados reutilizadas
 
-Durante a composicao, o usuario pode ajustar:
+- Catalogo oficial: `catalog_items`.
+- Propostas/contratos: `nodere_proposals`.
+- Auditoria: `proposal_audit_logs`.
+- Timeline/historico: `communications`.
+- Cliente/lead: entidade carregada pelo CRM/workspace atual.
 
-- quantidade;
-- desconto por percentual;
-- desconto por valor;
-- motivo do desconto;
-- observacao comercial do item para o cliente;
-- observacao interna do item;
-- observacao comercial global para o cliente;
-- observacao interna global da negociacao.
+## Endpoints reutilizados ou ajustados
 
-## Como descontos sao registrados
-
-- O backend aceita desconto por percentual OU por valor.
-- Se percentual e valor forem enviados juntos, a API retorna erro de validacao.
-- Se houver desconto, o motivo e obrigatorio.
-- O item salvo registra:
-  - valor unitario original do catalogo;
-  - total bruto;
-  - tipo de desconto;
-  - percentual ou valor aplicado;
-  - total final;
-  - observacao interna com o motivo do desconto.
-
-## Como observacoes internas sao tratadas
-
-- Observacoes internas por item ficam em `internal_item_note`.
-- Observacao interna global fica em `metadata.internal_notes`.
-- Observacoes internas entram na auditoria.
-- Observacoes internas nao sao renderizadas no PDF do cliente.
-
-## Como PDF e gerado
-
-- O PDF de proposta usa o endpoint `POST /api/proposals/:id/pdf`.
-- O PDF de contrato usa o endpoint `POST /api/proposals/:id/contract-pdf`.
-- Ambos usam exclusivamente o snapshot salvo em `nodere_proposals.items`.
-- O PDF exibe observacoes comerciais para o cliente quando preenchidas.
-- O PDF nao exibe motivo interno de desconto nem observacoes internas.
-
-## Como o documento se vincula ao cliente
-
-- Cada documento e criado com `lead_id`.
-- A API valida se o lead existe no workspace antes de salvar.
-- O registro fica persistido em `nodere_proposals` e relacionado ao cliente/lead.
+- `GET /api/catalog?status=active`
+- `POST /api/proposals`
+- `POST /api/proposals/:id/pdf`
+- `POST /api/proposals/:id/contract-pdf`
+- `PATCH /api/proposals/:id`
 
 ## Arquivos alterados
 
 - `apps/api/src/routes/proposals.ts`
+- `apps/web/app/app/crm/clientes/[id]/CrmClientFullPage.tsx`
 - `apps/web/app/app/proposals/page.tsx`
-- `apps/web/app/manual/page.tsx`
 - `apps/web/lib/api.ts`
-- `scripts/homologate-commercial-flow.mjs`
 - `RELATORIO_COMPOSICAO_PROPOSTAS_CONTRATOS_PRODUTOS.md`
 
-## Endpoints criados/ajustados
-
-- Ajustado `POST /api/proposals`
-  - aceita `document_type`;
-  - aceita `customer_notes`;
-  - aceita `internal_notes`;
-  - mantem obrigatoriedade de `catalog_item_id`.
-- Reutilizado `POST /api/proposals/:id/pdf`.
-- Reutilizado `POST /api/proposals/:id/contract-pdf`.
-
-## Migrations criadas
+## Migrations
 
 Nenhuma migration nova foi criada nesta etapa.
 
-Motivo: a estrutura existente ja possui `content`, `metadata` e `items` em `nodere_proposals`, alem do snapshot comercial por item. A alteracao foi feita preservando compatibilidade e evitando mudanca desnecessaria de banco.
+Justificativa: os campos adicionais foram salvos em estruturas ja existentes (`metadata` e `items` de `nodere_proposals`) para preservar compatibilidade e evitar alteracao desnecessaria de banco.
 
-## Testes executados
+## Validacoes executadas
 
-Executados localmente:
-
-- `apps/api`: `npm run build` - aprovado.
 - `apps/api`: `npm run typecheck` - aprovado.
+- `apps/api`: `npm run build` - aprovado.
 - `apps/web`: `npm run lint` - aprovado.
+- `apps/web`: `npm run typecheck` - aprovado.
 - `apps/web`: `npm run build` - aprovado.
-- `apps/web`: `npm run typecheck` - aprovado apos o build regenerar `.next/types`.
 - raiz: `npm run build` - aprovado.
-
-Observacao: o primeiro `apps/web npm run typecheck` falhou porque `.next/types` ainda nao estava regenerado. Depois de `apps/web npm run build`, o typecheck foi repetido e aprovado.
+- `git diff --check` - aprovado.
 
 ## Pendencias
 
-- Persistir URL do PDF gerado em storage ainda depende de estrutura/decisao de storage definitiva. Hoje o PDF e gerado pelo backend sob demanda e baixado pelo navegador.
-- Versionamento avancado com destaque automatico de ultima versao permanece seguindo a estrutura atual de `version`/historico existente; nao foi criada regra nova de versionamento nesta etapa.
-- Evento explicito na Visao Geral depende do consumo do audit log/metricas ja existentes.
+- Homologacao funcional autenticada em ambiente real ainda nao foi executada nesta rodada.
+- Persistencia de URL publica de PDF em storage permanece como decisao futura; hoje o PDF e gerado pelo backend sob demanda.
 
 ## Status final
 
 Aprovado em validacao tecnica local.
 
-Nao foi feito deploy, push ou commit nesta etapa.
+Nao foi feito commit, push ou deploy nesta etapa.

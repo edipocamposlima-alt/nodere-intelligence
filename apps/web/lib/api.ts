@@ -452,6 +452,7 @@ export function saveProposalVersion(payload: { lead_id: string; content: string;
 export type ProposalItemPayload = {
   catalog_item_id: string;
   quantity: number;
+  unit_price_override?: number | null;
   discount_type?: "none" | "percent" | "amount";
   discount_percent?: number | null;
   discount_amount?: number | null;
@@ -467,11 +468,14 @@ export type ProposalSnapshotItem = ProposalItemPayload & {
   snapshot_commercial_guidance?: string;
   snapshot_billing_unit?: string;
   snapshot_unit_price: number;
+  snapshot_base_unit_price?: number;
   snapshot_payment_terms?: string;
   snapshot_payment_method?: string;
   snapshot_execution_deadline?: string;
   gross_total: number;
+  original_total?: number;
   final_total: number;
+  price_change_log?: Record<string, unknown> | null;
 };
 
 export type NodereProposal = {
@@ -509,6 +513,8 @@ export function createProposal(payload: {
   items: ProposalItemPayload[];
   status?: NodereProposal["status"];
   valid_until?: string | null;
+  document_group_id?: string | null;
+  change_reason?: string | null;
 }) {
   return api<NodereProposal>("/proposals", { method: "POST", body: JSON.stringify(payload) });
 }

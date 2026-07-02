@@ -17,6 +17,7 @@ router.use(requireWorkspaceMutation("owner", "admin", "operator", "viewer"));
 const proposalItemSchema = z.object({
   catalog_item_id: z.string().min(1),
   quantity: z.coerce.number().positive().default(1),
+  unit_price_override: z.coerce.number().min(0).optional().nullable(),
   discount_type: z.enum(["none", "percent", "amount"]).default("none"),
   discount_percent: z.coerce.number().min(0).max(100).optional().nullable(),
   discount_amount: z.coerce.number().min(0).optional().nullable(),
@@ -36,7 +37,9 @@ const proposalPayloadSchema = z.object({
   items: z.array(proposalItemSchema).min(1, "Selecione pelo menos um produto/serviço ativo do catálogo."),
   currency: z.string().default("BRL"),
   status: z.enum(["draft", "sent", "accepted", "rejected", "expired"]).default("draft"),
-  valid_until: z.string().nullable().optional()
+  valid_until: z.string().nullable().optional(),
+  document_group_id: z.string().optional().nullable(),
+  change_reason: z.string().optional().nullable()
 });
 
 const systemTemplates = [
@@ -109,6 +112,10 @@ router.post("/", requireWorkspaceRole("owner", "admin", "operator"), async (req,
     const sb = getSupabase();
     if (!sb) return res.status(503).json({ message: "Supabase não configurado para salvar propostas." });
     const commercial = await buildCommercialSnapshot(sb, workspaceId, body.items);
+    const documentGroupId = body.document_group_id || randomUUID();
+    const versionNumber = await nextDocumentVersion(sb, workspaceId, body.lead_id, documentGroupId, body.document_type);
+    await markPreviousVersionsNotCurrent(sb, workspaceId, body.lead_id, documentGroupId);
+    const userId = String((req as any).session?.userId || (req as any).admin?.userId || "");
     const row = {
       id: randomUUID(),
       workspace_id: workspaceId,
@@ -123,28 +130,43 @@ router.post("/", requireWorkspaceRole("owner", "admin", "operator"), async (req,
       total: commercial.total,
       currency: body.currency || "BRL",
       valid_until: body.valid_until || null,
-      version: 1,
-      created_by: String((req as any).session?.userId || (req as any).admin?.userId || ""),
+      version: versionNumber,
+      created_by: userId,
       metadata: {
         lead_name: lead.name,
         lead_city: lead.city,
         lead_state: lead.state,
         commercial_snapshot: true,
         document_type: body.document_type,
+        document_group_id: documentGroupId,
+        version_number: versionNumber,
+        is_current_version: true,
         customer_notes: body.customer_notes || body.content || "",
-        internal_notes: body.internal_notes || ""
+        internal_notes: body.internal_notes || "",
+        selected_product_service_ids: commercial.items.map((item) => item.product_service_id || item.catalog_item_id),
+        original_total_value: commercial.subtotal,
+        final_total_value: commercial.total,
+        discount_type: commercial.discount > 0 ? "mixed_or_item_level" : "none",
+        discount_amount: commercial.discount,
+        generated_pdf_url: null,
+        change_reason: body.change_reason || "",
+        created_by: userId,
+        updated_by: userId
       }
     };
     const { data, error } = await sb.from("nodere_proposals").insert(row).select("*").single();
     if (error) throw error;
-    await insertProposalAudit(workspaceId, row.created_by, "proposal_created", row.id, {
+    await insertProposalAudit(workspaceId, row.created_by, body.document_type === "contract" ? "contract_created" : "proposal_created", row.id, {
       lead_id: lead.id,
       total: row.total,
       document_type: body.document_type,
+      document_group_id: documentGroupId,
+      version_number: versionNumber,
       customer_notes: Boolean(body.customer_notes || body.content),
       internal_notes: body.internal_notes || "",
       items: commercial.items.map(auditItem)
     }).catch(() => undefined);
+    await recordProposalActivity(workspaceId, lead.id, userId, body.document_type === "contract" ? "Contrato gerado" : "Proposta gerada", row, body.document_type).catch(() => undefined);
     logRequestMetric(req, "proposal_generated", lead.id, { proposalId: row.id, source: "block05" });
     res.status(201).json(data);
   } catch (error) {
@@ -344,9 +366,10 @@ router.patch("/:id", requireWorkspaceRole("owner", "admin", "operator"), async (
     const workspaceId = getRequestWorkspaceId(req);
     const sb = getSupabase();
     if (!sb) return res.status(503).json({ message: "Supabase não configurado." });
-    const updates: Record<string, unknown> = { ...body, updated_at: new Date().toISOString() };
-    if (body.items) {
-      const commercial = await buildCommercialSnapshot(sb, workspaceId, body.items);
+    const { document_group_id: _documentGroupId, change_reason: _changeReason, items: bodyItems, ...safeBody } = body;
+    const updates: Record<string, unknown> = { ...safeBody, updated_at: new Date().toISOString() };
+    if (bodyItems) {
+      const commercial = await buildCommercialSnapshot(sb, workspaceId, bodyItems);
       updates.items = commercial.items;
       updates.subtotal = commercial.subtotal;
       updates.discount = commercial.discount;
@@ -494,9 +517,39 @@ async function buildCommercialSnapshot(sb: NonNullable<ReturnType<typeof getSupa
   return { items, subtotal, discount, total };
 }
 
+async function nextDocumentVersion(sb: NonNullable<ReturnType<typeof getSupabase>>, workspaceId: string, leadId: string, groupId: string, documentType: string) {
+  const { data } = await sb
+    .from("nodere_proposals")
+    .select("id, version, metadata")
+    .eq("workspace_id", workspaceId)
+    .eq("lead_id", leadId);
+  const versions = (data ?? [])
+    .filter((item: any) => item?.metadata?.document_group_id === groupId || item?.id === groupId)
+    .map((item: any) => Number(item.version || item.metadata?.version_number || 0))
+    .filter((value: number) => Number.isFinite(value));
+  return Math.max(0, ...versions) + 1;
+}
+
+async function markPreviousVersionsNotCurrent(sb: NonNullable<ReturnType<typeof getSupabase>>, workspaceId: string, leadId: string, groupId: string) {
+  const { data } = await sb
+    .from("nodere_proposals")
+    .select("id, metadata")
+    .eq("workspace_id", workspaceId)
+    .eq("lead_id", leadId);
+  await Promise.all((data ?? [])
+    .filter((item: any) => (item?.metadata?.document_group_id === groupId || item?.id === groupId) && item?.metadata?.is_current_version !== false)
+    .map((item: any) => sb
+      .from("nodere_proposals")
+      .update({ metadata: { ...((item.metadata as Record<string, unknown>) || {}), is_current_version: false }, updated_at: new Date().toISOString() })
+      .eq("workspace_id", workspaceId)
+      .eq("id", item.id)));
+}
+
 function buildSnapshotItem(catalog: any, input: z.infer<typeof proposalItemSchema>) {
   const quantity = Number(input.quantity || 0);
-  const unitPrice = Number(catalog.promotional_price ?? catalog.price ?? 0);
+  const baseUnitPrice = Number(catalog.promotional_price ?? catalog.price ?? 0);
+  const unitPrice = input.unit_price_override !== undefined && input.unit_price_override !== null ? Number(input.unit_price_override) : baseUnitPrice;
+  const originalTotal = roundMoney(baseUnitPrice * quantity);
   const grossTotal = roundMoney(unitPrice * quantity);
   const requestedPercent = Number(input.discount_percent || 0);
   const requestedAmount = Number(input.discount_amount || 0);
@@ -513,6 +566,10 @@ function buildSnapshotItem(catalog: any, input: z.infer<typeof proposalItemSchem
   }
   const discountAmount = discountType === "percent" ? roundMoney(grossTotal * (requestedPercent / 100)) : discountType === "amount" ? roundMoney(requestedAmount) : 0;
   if (discountAmount > grossTotal) throw validationError("Desconto não pode ser maior que o valor bruto do item.");
+  const hasPriceOverride = roundMoney(unitPrice) !== roundMoney(baseUnitPrice);
+  const shouldLogCommercialChange = hasDiscount || hasPriceOverride;
+  const priceOverrideNote = hasPriceOverride ? `Valor aplicado alterado de ${formatMoney(baseUnitPrice)} para ${formatMoney(unitPrice)}.` : "";
+  const discountNote = hasDiscount ? `Desconto aplicado: ${formatMoney(discountAmount)}. Motivo: ${input.discount_reason}` : "";
   return {
     catalog_item_id: catalog.id,
     product_service_id: catalog.id,
@@ -521,10 +578,12 @@ function buildSnapshotItem(catalog: any, input: z.infer<typeof proposalItemSchem
     snapshot_commercial_guidance: catalog.commercial_guidance || catalog.scope || catalog.deliverables || "",
     snapshot_billing_unit: catalog.billing_unit || catalog.unit_measure || "unit",
     snapshot_unit_price: unitPrice,
+    snapshot_base_unit_price: baseUnitPrice,
     snapshot_payment_terms: catalog.payment_conditions || "",
     snapshot_payment_method: catalog.payment_method || "",
     snapshot_execution_deadline: catalog.execution_deadline || catalog.execution_time || (catalog.delivery_days ? `${catalog.delivery_days} dias` : ""),
     quantity,
+    original_total: originalTotal,
     gross_total: grossTotal,
     discount_type: discountType,
     discount_percent: discountType === "percent" ? requestedPercent : null,
@@ -532,7 +591,19 @@ function buildSnapshotItem(catalog: any, input: z.infer<typeof proposalItemSchem
     discount_reason: input.discount_reason || null,
     final_total: roundMoney(grossTotal - discountAmount),
     customer_item_note: input.customer_item_note || "",
-    internal_item_note: [input.internal_item_note, hasDiscount ? `Desconto aplicado: ${formatMoney(discountAmount)}. Motivo: ${input.discount_reason}` : ""].filter(Boolean).join("\n")
+    internal_item_note: [input.internal_item_note, priceOverrideNote, discountNote].filter(Boolean).join("\n"),
+    price_change_log: shouldLogCommercialChange ? {
+      changed_at: new Date().toISOString(),
+      product_service_id: catalog.id,
+      product_service_name: catalog.name,
+      original_value: originalTotal,
+      applied_value_before_discount: grossTotal,
+      applied_value: roundMoney(grossTotal - discountAmount),
+      discount_type: discountType,
+      discount_percent: discountType === "percent" ? requestedPercent : null,
+      discount_amount: discountAmount,
+      reason: input.discount_reason || input.internal_item_note || priceOverrideNote
+    } : null
   };
 }
 
@@ -551,13 +622,16 @@ function auditItem(item: any) {
     product_service_id: item.product_service_id || item.catalog_item_id,
     name: item.snapshot_name,
     quantity: item.quantity,
+    original_total: item.original_total,
+    base_unit_price: item.snapshot_base_unit_price,
     unit_price: item.snapshot_unit_price,
     gross_total: item.gross_total,
     discount_type: item.discount_type,
     discount_percent: item.discount_percent,
     discount_amount: item.discount_amount,
     discount_reason: item.discount_reason,
-    final_total: item.final_total
+    final_total: item.final_total,
+    price_change_log: item.price_change_log || null
   };
 }
 
@@ -599,6 +673,31 @@ async function insertProposalAudit(workspaceId: string, userId: string, action: 
   });
 }
 
+async function recordProposalActivity(workspaceId: string, leadId: string, userId: string, title: string, proposal: any, documentType: "proposal" | "contract") {
+  const sb = getSupabase();
+  if (!sb) return;
+  await sb.from("communications").insert({
+    id: randomUUID(),
+    workspace_id: workspaceId,
+    company_id: leadId,
+    type: documentType,
+    direction: "internal",
+    subject: title,
+    body: `${title}: ${proposal.title}. Total ${formatMoney(proposal.total || 0)}. Versão ${proposal.version || 1}.`,
+    status: "done",
+    sent_at: new Date().toISOString(),
+    sent_by: userId || null,
+    metadata: {
+      proposal_id: proposal.id,
+      document_type: documentType,
+      document_group_id: proposal.metadata?.document_group_id,
+      version_number: proposal.version || proposal.metadata?.version_number || 1,
+      total: proposal.total,
+      selected_product_service_ids: proposal.metadata?.selected_product_service_ids || []
+    }
+  });
+}
+
 async function renderProposalPdf(proposal: any, lead: any, documentType: "proposal" | "contract" = "proposal") {
   return new Promise<Buffer>((resolve, reject) => {
     const doc = new PDFDocument({ size: "A4", margin: 48, bufferPages: true, info: { Title: String(proposal.title || "Documento NODERE"), Author: "NODERE" } });
@@ -621,7 +720,15 @@ async function renderProposalPdf(proposal: any, lead: any, documentType: "propos
     doc.fillColor("#374151").fontSize(9).text(`Versão: ${proposal.version || proposal.metadata?.version || 1}`);
     doc.fillColor("#374151").fontSize(9).text(`Responsável: ${proposal.created_by || proposal.metadata?.created_by || "NODERE"}`);
     doc.moveDown();
-    doc.fontSize(11).fillColor("#1F2937").text(String(proposal.content || ""), { align: "left" });
+    const proposalContent = String(proposal.content || "").trim();
+    const customerNotes = String(proposal.metadata?.customer_notes || "").trim();
+    if (proposalContent) {
+      doc.fontSize(11).fillColor("#1F2937").text(proposalContent, { align: "left" });
+    }
+    if (customerNotes && customerNotes !== proposalContent) {
+      doc.moveDown(0.5);
+      doc.fillColor("#1F2937").fontSize(10).text(customerNotes, { align: "left" });
+    }
 
     const items = Array.isArray(proposal.items) ? proposal.items : [];
     if (items.length) {

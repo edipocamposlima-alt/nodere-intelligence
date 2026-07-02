@@ -17,6 +17,7 @@ import type { Company } from "@/lib/types";
 
 type SelectedItemState = {
   quantity: number;
+  applied_price: number;
   discount_type: "none" | "percent" | "amount";
   discount_percent: number;
   discount_amount: number;
@@ -53,6 +54,7 @@ function catalogPrice(item: CatalogItem) {
 function defaultSelection(): SelectedItemState {
   return {
     quantity: 1,
+    applied_price: 0,
     discount_type: "none",
     discount_percent: 0,
     discount_amount: 0,
@@ -88,7 +90,8 @@ export default function AppProposalsPage() {
   const totals = useMemo(() => {
     return selectedRows.reduce(
       (acc, row) => {
-        const gross = catalogPrice(row.catalog) * Number(row.selection.quantity || 0);
+        const appliedPrice = Number(row.selection.applied_price || catalogPrice(row.catalog));
+        const gross = appliedPrice * Number(row.selection.quantity || 0);
         const discount = row.selection.discount_type === "percent"
           ? gross * (Number(row.selection.discount_percent || 0) / 100)
           : row.selection.discount_type === "amount"
@@ -107,10 +110,14 @@ export default function AppProposalsPage() {
     setLoading(true);
     try {
       const [companyRows, proposalRows, catalogRows] = await Promise.all([getCompanies(), getProposals(), getCatalogItems()]);
+      const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+      const requestedLeadId = params.get("lead_id") || "";
+      const requestedType = params.get("type");
       setCompanies(companyRows);
       setProposals(proposalRows);
       setCatalogItems(catalogRows);
-      setLeadId((current) => current || companyRows[0]?.id || "");
+      setLeadId((current) => current || (requestedLeadId && companyRows.some((company) => company.id === requestedLeadId) ? requestedLeadId : companyRows[0]?.id || ""));
+      if (requestedType === "contract" || requestedType === "proposal") setDocumentType(requestedType);
       setMessage(proposalRows.length ? "Propostas carregadas." : "Nenhuma proposta persistente criada ainda.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Não foi possível carregar propostas.");
@@ -130,7 +137,8 @@ export default function AppProposalsPage() {
         delete next[itemId];
         return next;
       }
-      return { ...current, [itemId]: current[itemId] || defaultSelection() };
+      const catalog = activeCatalogItems.find((item) => item.id === itemId);
+      return { ...current, [itemId]: current[itemId] || { ...defaultSelection(), applied_price: catalog ? catalogPrice(catalog) : 0 } };
     });
   }
 
@@ -145,7 +153,9 @@ export default function AppProposalsPage() {
     if (!leadId) return "Selecione um lead/empresa antes de salvar a proposta.";
     if (!selectedRows.length) return "Selecione pelo menos um produto/serviço ativo do catálogo.";
     for (const row of selectedRows) {
-      const gross = catalogPrice(row.catalog) * Number(row.selection.quantity || 0);
+      const appliedPrice = Number(row.selection.applied_price || catalogPrice(row.catalog));
+      const gross = appliedPrice * Number(row.selection.quantity || 0);
+      if (appliedPrice < 0) return `Informe valor aplicado válido para ${row.catalog.name}.`;
       if (Number(row.selection.quantity || 0) <= 0) return `Informe quantidade válida para ${row.catalog.name}.`;
       if (row.selection.discount_type === "percent" && Number(row.selection.discount_amount || 0) > 0) return "Use desconto por percentual OU por valor.";
       if (row.selection.discount_type === "amount" && Number(row.selection.discount_percent || 0) > 0) return "Use desconto por percentual OU por valor.";
@@ -164,6 +174,7 @@ export default function AppProposalsPage() {
     return selectedRows.map(({ catalog, selection }) => ({
       catalog_item_id: catalog.id,
       quantity: Number(selection.quantity || 1),
+      unit_price_override: Number(selection.applied_price || catalogPrice(catalog)),
       discount_type: selection.discount_type,
       discount_percent: selection.discount_type === "percent" ? Number(selection.discount_percent || 0) : null,
       discount_amount: selection.discount_type === "amount" ? Number(selection.discount_amount || 0) : null,
@@ -284,7 +295,9 @@ export default function AppProposalsPage() {
             {!activeCatalogItems.length && <p className="muted">Nenhum produto/serviço ativo no catálogo.</p>}
             {activeCatalogItems.map((item) => {
               const selected = selectedItems[item.id];
-              const gross = selected ? catalogPrice(item) * Number(selected.quantity || 0) : 0;
+              const base = catalogPrice(item);
+              const appliedPrice = selected ? Number(selected.applied_price || base) : base;
+              const gross = selected ? appliedPrice * Number(selected.quantity || 0) : 0;
               const discount = selected?.discount_type === "percent"
                 ? gross * (Number(selected.discount_percent || 0) / 100)
                 : selected?.discount_type === "amount"
@@ -296,8 +309,9 @@ export default function AppProposalsPage() {
                     <input type="checkbox" checked={Boolean(selected)} onChange={(event) => toggleItem(item.id, event.target.checked)} />
                     <span>
                       <strong>{item.name}</strong>
-                      <small>{item.type === "service" ? "Serviço" : "Produto"} · {unitLabel(item.billing_unit || item.unit_measure)} · {money(catalogPrice(item))}</small>
+                      <small>{item.type === "service" ? "Serviço" : "Produto"} · {unitLabel(item.billing_unit || item.unit_measure)} · Valor base {money(base)}</small>
                       <small>{item.description_short}</small>
+                      <small>Condição: {item.payment_conditions || "Não informada"} · Forma: {item.payment_method || "Não informada"} · Prazo: {item.execution_time || (item.delivery_days ? `${item.delivery_days} dias` : "Não informado")}</small>
                     </span>
                   </label>
                   {selected && (
@@ -305,6 +319,14 @@ export default function AppProposalsPage() {
                       <label>
                         Quantidade/horas/recorrência
                         <input type="number" min="1" value={selected.quantity} onChange={(event) => updateItem(item.id, { quantity: Number(event.target.value) })} />
+                      </label>
+                      <label>
+                        Valor aplicado
+                        <input type="number" min="0" step="0.01" value={selected.applied_price || base} onChange={(event) => updateItem(item.id, { applied_price: Number(event.target.value) })} />
+                      </label>
+                      <label>
+                        Valor base bloqueado
+                        <input disabled value={money(base)} />
                       </label>
                       <label>
                         Tipo de desconto
@@ -340,7 +362,9 @@ export default function AppProposalsPage() {
                         Observação interna
                         <input value={selected.internal_item_note} onChange={(event) => updateItem(item.id, { internal_item_note: event.target.value })} />
                       </label>
-                      <span>{money(Math.max(0, gross - Math.min(discount, gross)))}</span>
+                      <span>Original {money(base * Number(selected.quantity || 0))}</span>
+                      <span>Aplicado {money(gross)}</span>
+                      <span>Final {money(Math.max(0, gross - Math.min(discount, gross)))}</span>
                     </div>
                   )}
                 </div>

@@ -1,6 +1,7 @@
 import process from "node:process";
 import { randomUUID, randomBytes, scryptSync } from "node:crypto";
 import { createRequire } from "node:module";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -9,13 +10,20 @@ const root = path.resolve(__dirname, "..");
 const apiRequire = createRequire(path.join(root, "apps", "api", "package.json"));
 const { Client } = apiRequire("pg");
 
-const databaseUrl = process.env.COMMERCIAL_DATABASE_URL || process.env.DATABASE_URL;
+loadEnvFiles([".env", ".env.local", ".env.production", "apps/api/.env", "apps/api/.env.local", "apps/api/.env.production", "apps/web/.env.local"]);
+
+const databaseUrl = normalizeDatabaseUrl(process.env.COMMERCIAL_DATABASE_URL || process.env.DATABASE_URL);
 const apiBaseUrl = (process.env.COMMERCIAL_API_BASE_URL || "https://nodere-api.onrender.com").replace(/\/+$/, "");
 const supabaseUrl = (process.env.COMMERCIAL_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/+$/, "");
 const supabaseAnonKey = process.env.COMMERCIAL_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const supabaseServiceRoleKey = process.env.COMMERCIAL_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 if (!databaseUrl) {
   console.error("COMMERCIAL_DATABASE_URL ou DATABASE_URL ausente.");
+  process.exit(1);
+}
+const databaseHost = safeHost(databaseUrl);
+if (["localhost", "127.0.0.1", "::1"].includes(databaseHost)) {
+  console.error("DATABASE_URL aponta para banco local. Configure COMMERCIAL_DATABASE_URL remoto para homologacao funcional real.");
   process.exit(1);
 }
 
@@ -35,6 +43,42 @@ function hashPassword(raw) {
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(raw, salt, 64).toString("hex");
   return `scrypt:${salt}:${hash}`;
+}
+
+function loadEnvFiles(files) {
+  for (const relative of files) {
+    const full = path.join(root, relative);
+    if (!fs.existsSync(full)) continue;
+    const content = fs.readFileSync(full, "utf8");
+    for (const line of content.split(/\r?\n/)) {
+      const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+      if (!match) continue;
+      const [, key, raw] = match;
+      if (process.env[key]) continue;
+      let value = raw.trim();
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
+      process.env[key] = value;
+    }
+  }
+}
+
+function safeHost(value) {
+  try {
+    return value ? new URL(value).hostname : "";
+  } catch {
+    return "";
+  }
+}
+
+function normalizeDatabaseUrl(rawUrl) {
+  if (!rawUrl) return "";
+  try {
+    const parsed = new URL(rawUrl);
+    parsed.searchParams.delete("sslmode");
+    return parsed.toString();
+  } catch {
+    return rawUrl;
+  }
 }
 
 async function ensureWorkspace() {
@@ -340,12 +384,14 @@ try {
       document_type: "proposal",
       customer_notes: `${runId} CUSTOMER_NOTE_VISIBLE`,
       internal_notes: `${runId} INTERNAL_NOTE_HIDDEN`,
-      items: [{ catalog_item_id: activeItem.id, quantity: 2, discount_type: "percent", discount_percent: 10, discount_reason: "Smoke percent" }]
+      items: [{ catalog_item_id: activeItem.id, quantity: 2, unit_price_override: 1100, discount_type: "percent", discount_percent: 10, discount_reason: "Smoke percent" }]
     })
   });
   if (!percentProposal.response.ok) throw new Error(`desconto percentual HTTP ${percentProposal.response.status}: ${percentProposal.body?.message || ""}`);
   created.proposalIds.push(percentProposal.body.id);
-  record("desconto percentual funciona", Number(percentProposal.body.discount) === 240 && Number(percentProposal.body.total) === 2160);
+  record("preco aplicado ajustavel funciona", Number(percentProposal.body.items?.[0]?.snapshot_unit_price) === 1100 && Number(percentProposal.body.items?.[0]?.snapshot_base_unit_price) === 1200);
+  record("desconto percentual funciona", Number(percentProposal.body.discount) === 220 && Number(percentProposal.body.total) === 1980);
+  record("alteracao de preco/desconto gera log interno", Boolean(percentProposal.body.items?.[0]?.price_change_log));
   record("snapshot comercial salvo corretamente", Array.isArray(percentProposal.body.items) && percentProposal.body.items[0]?.snapshot_name?.includes(runId));
 
   await api(`/api/catalog/${encodeURIComponent(activeItem.id)}`, tokens.admin, {
@@ -356,7 +402,22 @@ try {
   const preserved = Array.isArray(proposalsAfterChange.body)
     ? proposalsAfterChange.body.find((item) => item.id === percentProposal.body.id)
     : null;
-  record("alteracao posterior no catalogo nao altera proposta", preserved?.items?.[0]?.snapshot_unit_price === 1200);
+  record("alteracao posterior no catalogo nao altera proposta", preserved?.items?.[0]?.snapshot_unit_price === 1100 && preserved?.items?.[0]?.snapshot_base_unit_price === 1200);
+
+  const nextVersion = await api("/api/proposals", tokens.operator, {
+    method: "POST",
+    body: JSON.stringify({
+      lead_id: companyId,
+      title: `${runId} Percent Proposal v2`,
+      document_type: "proposal",
+      document_group_id: percentProposal.body.metadata?.document_group_id,
+      change_reason: "Smoke version",
+      items: [{ catalog_item_id: activeItem.id, quantity: 1, unit_price_override: 1000 }]
+    })
+  });
+  if (!nextVersion.response.ok) throw new Error(`nova versao HTTP ${nextVersion.response.status}: ${nextVersion.body?.message || ""}`);
+  created.proposalIds.push(nextVersion.body.id);
+  record("versionamento por document_group_id funciona", Number(nextVersion.body.version) === 2 && nextVersion.body.metadata?.is_current_version === true);
 
   const amountProposal = await api("/api/proposals", tokens.operator, {
     method: "POST",

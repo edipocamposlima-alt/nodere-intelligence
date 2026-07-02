@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Bot, BriefcaseBusiness, CalendarDays, CheckCircle2, Copy, Download, FileText, FolderOpen, Globe2, Linkedin, Mail, MapPin, MessageCircle, PackageCheck, Pencil, Phone, Plus, Send, Sparkles, Trash2, Users, XCircle } from "lucide-react";
 import type { Company } from "@/lib/types";
-import { CalendarEvent, InboxMessage, NodereProposal, addLeadDeal, deleteProposal, downloadContractPdf, downloadProposalPdf, getCalendarEvents, getInboxMessagesByCompany, getLeadActivities, getLeadContacts, getLeadDeals, getProposals, updateLeadDeal } from "@/lib/api";
+import { CalendarEvent, CatalogItem, InboxMessage, NodereProposal, ProposalItemPayload, addLeadDeal, createProposal, deleteProposal, downloadContractPdf, downloadProposalPdf, getCalendarEvents, getCatalogItems, getInboxMessagesByCompany, getLeadActivities, getLeadContacts, getLeadDeals, getProposals, updateLeadDeal } from "@/lib/api";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
 
 type TabId = "overview" | "history" | "contacts" | "deals" | "products" | "proposals" | "whatsapp" | "email" | "agenda" | "ai" | "apollo" | "files";
@@ -37,6 +37,7 @@ type Loaded = {
 };
 
 type ProductNegotiationDraft = {
+  catalogItemId: string;
   productServiceName: string;
   description: string;
   category: string;
@@ -97,6 +98,7 @@ function decimalFromInput(value: string) {
 
 function emptyProductNegotiation(): ProductNegotiationDraft {
   return {
+    catalogItemId: "",
     productServiceName: "",
     description: "",
     category: "serviço",
@@ -133,6 +135,7 @@ function parseProductNegotiation(item: Record<string, unknown>): ProductNegotiat
   const value = String(details.negotiatedValue ?? item.total_price ?? item.contracted_price ?? "");
   return {
     ...emptyProductNegotiation(),
+    catalogItemId: String(details.catalogItemId || details.catalog_item_id || item.catalog_item_id || item.product_service_id || catalog.id || ""),
     productServiceName: String(details.productServiceName || item.item_name || catalog.name || ""),
     description: String(details.description || item.description || catalog.description_short || ""),
     category: String(details.category || catalog.type || "serviço"),
@@ -187,8 +190,9 @@ function payloadFromProductNegotiation(draft: ProductNegotiationDraft) {
   const negotiatedValue = decimalFromInput(draft.negotiatedValue);
   const discountValue = decimalFromInput(draft.discountValue);
   const finalValue = draft.finalValue ? decimalFromInput(draft.finalValue) : Math.max(negotiatedValue - discountValue, 0);
-  const details = { ...draft, negotiatedValue, discountValue, finalValue };
+  const details = { ...draft, catalogItemId: draft.catalogItemId || "", negotiatedValue, discountValue, finalValue };
   return {
+    catalogItemId: draft.catalogItemId || undefined,
     itemName: draft.productServiceName,
     itemType: draft.category === "produto" ? "product" : "service",
     totalPrice: finalValue,
@@ -397,7 +401,7 @@ export function CrmClientFullPage({ company }: { company: Company }) {
               onChange={(deals) => setLoaded((current) => ({ ...current, deals }))}
             />
           )}
-          {activeTab === "proposals" && <ProposalsSection company={company} items={loaded.proposals} role={role} onChange={(proposals) => setLoaded((current) => ({ ...current, proposals }))} />}
+          {activeTab === "proposals" && <ProposalsSection company={company} products={loaded.deals} items={loaded.proposals} role={role} onChange={(proposals) => setLoaded((current) => ({ ...current, proposals }))} />}
           {activeTab === "whatsapp" && <ListSection title="WhatsApp" empty="Nenhuma conversa WhatsApp encontrada." items={loaded.whatsapp as unknown as Array<Record<string, unknown>> | undefined} fields={["body", "message", "direction", "sent_at", "created_at"]} />}
           {activeTab === "email" && <ListSection title="E-mail" empty="Nenhum e-mail encontrado nesta ficha." items={(loaded.inbox || []).filter((item) => item.type === "email") as unknown as Array<Record<string, unknown>>} fields={["subject", "body", "message", "direction", "sent_at", "created_at"]} />}
           {activeTab === "agenda" && <ListSection title="Agenda" empty="Nenhuma tarefa ou evento vinculado." items={loaded.agenda as unknown as Array<Record<string, unknown>> | undefined} fields={["title", "status", "start_at", "end_at", "responsible"]} />}
@@ -940,8 +944,58 @@ function slug(value: string) {
   return String(value || "documento").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase();
 }
 
-function ProposalsSection({ company, items, role, onChange }: { company: Company; items?: NodereProposal[]; role: string; onChange: (items: NodereProposal[]) => void }) {
+type DocumentSelectionState = {
+  quantity: number;
+  appliedPrice: string;
+  discountType: "none" | "percent" | "amount";
+  discountPercent: string;
+  discountAmount: string;
+  discountReason: string;
+  customerNote: string;
+  internalNote: string;
+};
+
+function proposalUnitLabel(value?: string | null) {
+  const labels: Record<string, string> = {
+    unit: "Unidade",
+    hour: "Hora",
+    monthly: "Mensalidade",
+    package: "Pacote",
+    project: "Projeto",
+    daily: "Diária",
+    other: "Outro"
+  };
+  return labels[String(value || "")] || value || "Unidade";
+}
+
+function catalogBasePrice(item: CatalogItem) {
+  return Number(item.promotional_price ?? item.price ?? 0);
+}
+
+function newDocumentSelection(item: CatalogItem): DocumentSelectionState {
+  return {
+    quantity: 1,
+    appliedPrice: String(catalogBasePrice(item)),
+    discountType: "none",
+    discountPercent: "",
+    discountAmount: "",
+    discountReason: "",
+    customerNote: "",
+    internalNote: ""
+  };
+}
+
+function ProposalsSection({ company, products, items, role, onChange }: { company: Company; products?: Array<Record<string, unknown>>; items?: NodereProposal[]; role: string; onChange: (items: NodereProposal[]) => void }) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
+  const [selected, setSelected] = useState<Record<string, DocumentSelectionState>>({});
+  const [documentType, setDocumentType] = useState<"proposal" | "contract">("proposal");
+  const [documentGroupId, setDocumentGroupId] = useState<string | null>(null);
+  const [title, setTitle] = useState(`Proposta comercial - ${company.name}`);
+  const [customerNotes, setCustomerNotes] = useState("");
+  const [internalNotes, setInternalNotes] = useState("");
+  const [validUntil, setValidUntil] = useState("");
+  const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const groups = groupProposals(items);
   const currentDocument = groups[0]?.current;
@@ -949,6 +1003,44 @@ function ProposalsSection({ company, items, role, onChange }: { company: Company
   const canDelete = ["owner", "admin"].includes(role);
   const canEditProposal = ["owner", "admin", "operator"].includes(role);
   const canEditContract = ["owner", "admin"].includes(role);
+  const activeCatalog = useMemo(() => catalogItems.filter((item) => item.status === "active"), [catalogItems]);
+  const linkedCatalogIds = useMemo(() => {
+    const ids = new Set<string>();
+    (products || []).forEach((item) => {
+      const draft = parseProductNegotiation(item);
+      if (draft.catalogItemId) ids.add(draft.catalogItemId);
+      const matched = activeCatalog.find((catalog) => catalog.name.toLowerCase() === draft.productServiceName.toLowerCase());
+      if (matched) ids.add(matched.id);
+    });
+    return ids;
+  }, [activeCatalog, products]);
+  const selectableCatalog = useMemo(() => {
+    return activeCatalog.filter((item) => linkedCatalogIds.has(item.id));
+  }, [activeCatalog, linkedCatalogIds]);
+  const selectedRows = selectableCatalog.filter((item) => selected[item.id]).map((item) => ({ catalog: item, selection: selected[item.id] }));
+  const totals = selectedRows.reduce((acc, row) => {
+    const unit = decimalFromInput(row.selection.appliedPrice) || catalogBasePrice(row.catalog);
+    const gross = unit * Number(row.selection.quantity || 0);
+    const discount = row.selection.discountType === "percent"
+      ? gross * (decimalFromInput(row.selection.discountPercent) / 100)
+      : row.selection.discountType === "amount"
+        ? decimalFromInput(row.selection.discountAmount)
+        : 0;
+    const safeDiscount = Math.min(discount, gross);
+    acc.original += catalogBasePrice(row.catalog) * Number(row.selection.quantity || 0);
+    acc.applied += gross;
+    acc.discount += safeDiscount;
+    acc.final += Math.max(0, gross - safeDiscount);
+    return acc;
+  }, { original: 0, applied: 0, discount: 0, final: 0 });
+
+  useEffect(() => {
+    let mounted = true;
+    getCatalogItems("?status=active")
+      .then((rows) => { if (mounted) setCatalogItems(rows); })
+      .catch((error) => { if (mounted) setNotice(error instanceof Error ? error.message : "Não foi possível carregar catálogo ativo."); });
+    return () => { mounted = false; };
+  }, []);
 
   async function downloadDocument(item: NodereProposal) {
     const type = proposalDocumentType(item);
@@ -981,6 +1073,89 @@ function ProposalsSection({ company, items, role, onChange }: { company: Company
     return proposalDocumentType(item) === "contract" ? canEditContract : canEditProposal;
   }
 
+  function toggleProduct(item: CatalogItem, checked: boolean) {
+    setSelected((current) => {
+      const next = { ...current };
+      if (!checked) delete next[item.id];
+      else next[item.id] = next[item.id] || newDocumentSelection(item);
+      return next;
+    });
+  }
+
+  function updateSelected(itemId: string, patch: Partial<DocumentSelectionState>) {
+    setSelected((current) => ({ ...current, [itemId]: { ...(current[itemId] || { quantity: 1, appliedPrice: "0", discountType: "none", discountPercent: "", discountAmount: "", discountReason: "", customerNote: "", internalNote: "" }), ...patch } }));
+  }
+
+  function validateDocument() {
+    if (documentType === "contract" && !canEditContract) return "Seu perfil não possui permissão para gerar contratos.";
+    if (!selectedRows.length) return "Selecione pelo menos um produto/serviço vinculado e ativo.";
+    for (const row of selectedRows) {
+      const unit = decimalFromInput(row.selection.appliedPrice);
+      const quantity = Number(row.selection.quantity || 0);
+      if (unit < 0 || quantity <= 0) return `Informe valor aplicado e quantidade válidos para ${row.catalog.name}.`;
+      if (row.selection.discountType === "percent" && decimalFromInput(row.selection.discountAmount) > 0) return "Use desconto por percentual OU por valor.";
+      if (row.selection.discountType === "amount" && decimalFromInput(row.selection.discountPercent) > 0) return "Use desconto por percentual OU por valor.";
+      const discountValue = row.selection.discountType === "percent" ? unit * quantity * (decimalFromInput(row.selection.discountPercent) / 100) : row.selection.discountType === "amount" ? decimalFromInput(row.selection.discountAmount) : 0;
+      if (discountValue > 0 && !row.selection.discountReason.trim()) return `Informe o motivo do desconto para ${row.catalog.name}.`;
+      if (discountValue > unit * quantity) return `Desconto maior que o valor aplicado em ${row.catalog.name}.`;
+    }
+    return "";
+  }
+
+  function buildDocumentItems(): ProposalItemPayload[] {
+    return selectedRows.map(({ catalog, selection }) => {
+      const unit = decimalFromInput(selection.appliedPrice) || catalogBasePrice(catalog);
+      const base = catalogBasePrice(catalog);
+      const priceDelta = unit !== base ? `Preço aplicado alterado de ${money(base)} para ${money(unit)}.` : "";
+      return {
+        catalog_item_id: catalog.id,
+        quantity: Number(selection.quantity || 1),
+        unit_price_override: unit,
+        discount_type: selection.discountType,
+        discount_percent: selection.discountType === "percent" ? decimalFromInput(selection.discountPercent) : null,
+        discount_amount: selection.discountType === "amount" ? decimalFromInput(selection.discountAmount) : null,
+        discount_reason: selection.discountType !== "none" ? selection.discountReason.trim() : null,
+        customer_item_note: selection.customerNote.trim() || null,
+        internal_item_note: [priceDelta, selection.internalNote.trim()].filter(Boolean).join(" ") || null
+      } as ProposalItemPayload;
+    });
+  }
+
+  async function createControlledDocument() {
+    const validation = validateDocument();
+    if (validation) {
+      setNotice(validation);
+      return;
+    }
+    try {
+      setSaving(true);
+      const created = await createProposal({
+        lead_id: company.id,
+        title: title.trim() || `${documentType === "contract" ? "Contrato" : "Proposta"} - ${company.name}`,
+        document_type: documentType,
+        service_type: selectedRows.map((row) => row.catalog.name).join(", "),
+        customer_notes: customerNotes.trim() || null,
+        internal_notes: internalNotes.trim() || null,
+        items: buildDocumentItems(),
+        valid_until: validUntil || null,
+        document_group_id: documentGroupId,
+        change_reason: internalNotes.trim() || "Documento gerado pela ficha comercial com produtos/serviços selecionados."
+      });
+      if (documentType === "contract") await downloadContractPdf(created.id, `contrato-${slug(created.title || created.id)}.pdf`);
+      else await downloadProposalPdf(created.id, `proposta-${slug(created.title || created.id)}.pdf`);
+      onChange([created, ...(items || [])]);
+      setSelected({});
+      setCustomerNotes("");
+      setInternalNotes("");
+      setDocumentGroupId(null);
+      setNotice(`${documentType === "contract" ? "Contrato" : "Proposta"} gerado(a), salvo(a) e vinculado(a) a ${company.name}.`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Não foi possível gerar o documento.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div>
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -988,13 +1163,82 @@ function ProposalsSection({ company, items, role, onChange }: { company: Company
           <h2 className="text-xl font-black">Propostas e Contratos</h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">Histórico controlado de documentos vinculados a {company.name}.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {canCreate && <Link href={`/app/proposals?lead_id=${encodeURIComponent(company.id)}&type=proposal`} className="inline-flex items-center gap-2 rounded-lg bg-electric px-3 py-2 text-sm font-bold text-white"><Plus className="h-4 w-4" /> Criar nova proposta</Link>}
-          {canCreate && <Link href={`/app/proposals?lead_id=${encodeURIComponent(company.id)}&type=contract`} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm font-bold"><FileText className="h-4 w-4" /> Criar novo contrato</Link>}
-        </div>
+        {!canCreate && <span className="rounded-full border border-line px-3 py-1 text-xs font-bold text-[var(--text-secondary)]">Somente leitura</span>}
       </div>
 
       {notice && <p className="mt-4 rounded-lg border border-line bg-ink/60 px-4 py-3 text-sm">{notice}</p>}
+
+      {canCreate && (
+        <section className="mt-4 rounded-xl border border-line bg-ink/60 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-black">Selecionar produtos/serviços</h3>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">Nome, descrição, pagamento, forma, prazo e valor base vêm do cadastro oficial. Aqui só é possível ajustar preço aplicado, desconto e observações.</p>
+              {documentGroupId && <p className="mt-2 rounded-lg border border-cyan/30 bg-cyan/10 px-3 py-2 text-xs font-semibold text-cyan">Nova versão vinculada ao documento atual. A versão anterior será preservada no histórico.</p>}
+            </div>
+            <select value={documentType} onChange={(event) => setDocumentType(event.target.value as "proposal" | "contract")} className="rounded-lg border border-line bg-panel px-3 py-2 text-sm">
+              <option value="proposal">Proposta</option>
+              {canEditContract && <option value="contract">Contrato</option>}
+            </select>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <Field label="Título do documento" value={title} onChange={setTitle} />
+            <Field label="Validade" type="date" value={validUntil} onChange={setValidUntil} />
+            <TextAreaField label="Observações comerciais para o cliente" value={customerNotes} onChange={setCustomerNotes} />
+            <TextAreaField label="Observações internas da negociação" value={internalNotes} onChange={setInternalNotes} />
+          </div>
+          <div className="mt-4 space-y-3">
+            {selectableCatalog.map((catalog) => {
+              const state = selected[catalog.id];
+              const base = catalogBasePrice(catalog);
+              const applied = state ? decimalFromInput(state.appliedPrice) || base : base;
+              const gross = applied * Number(state?.quantity || 1);
+              const discount = state?.discountType === "percent" ? gross * (decimalFromInput(state.discountPercent) / 100) : state?.discountType === "amount" ? decimalFromInput(state.discountAmount) : 0;
+              return (
+                <article key={catalog.id} className="rounded-lg border border-line bg-panel p-3">
+                  <label className="flex items-start gap-3">
+                    <input type="checkbox" checked={Boolean(state)} onChange={(event) => toggleProduct(catalog, event.target.checked)} />
+                    <span className="min-w-0">
+                      <strong>{catalog.name}</strong>
+                      <small className="mt-1 block text-[var(--text-secondary)]">{catalog.type === "service" ? "Serviço" : "Produto"} · {proposalUnitLabel(catalog.billing_unit || catalog.unit_measure)} · Valor base {money(base)}</small>
+                      <small className="mt-1 block text-[var(--text-secondary)]">{catalog.description_short || "Sem descrição."}</small>
+                      <small className="mt-1 block text-[var(--text-secondary)]">Condição: {catalog.payment_conditions || "Não informada"} · Forma: {catalog.payment_method || "Não informada"} · Prazo: {catalog.execution_time || (catalog.delivery_days ? `${catalog.delivery_days} dias` : "Não informado")}</small>
+                    </span>
+                  </label>
+                  {state && (
+                    <div className="mt-3 grid gap-3 md:grid-cols-3">
+                      <Field label="Quantidade" type="number" value={String(state.quantity)} onChange={(value) => updateSelected(catalog.id, { quantity: Number(value || 1) })} />
+                      <Field label="Valor aplicado" value={state.appliedPrice} onChange={(value) => updateSelected(catalog.id, { appliedPrice: value })} />
+                      <SelectField label="Tipo de desconto" value={state.discountType} options={["none", "percent", "amount"]} labels={{ none: "Sem desconto", percent: "Percentual", amount: "Valor R$" }} onChange={(value) => updateSelected(catalog.id, { discountType: value as DocumentSelectionState["discountType"], discountPercent: "", discountAmount: "" })} />
+                      {state.discountType === "percent" && <Field label="Desconto %" value={state.discountPercent} onChange={(value) => updateSelected(catalog.id, { discountPercent: value, discountAmount: "" })} />}
+                      {state.discountType === "amount" && <Field label="Desconto R$" value={state.discountAmount} onChange={(value) => updateSelected(catalog.id, { discountAmount: value, discountPercent: "" })} />}
+                      {state.discountType !== "none" && <Field label="Motivo do desconto" value={state.discountReason} onChange={(value) => updateSelected(catalog.id, { discountReason: value })} required />}
+                      <Field label="Observação comercial do item" value={state.customerNote} onChange={(value) => updateSelected(catalog.id, { customerNote: value })} />
+                      <Field label="Observação interna do item" value={state.internalNote} onChange={(value) => updateSelected(catalog.id, { internalNote: value })} />
+                      <div className="rounded-lg border border-line bg-ink/70 p-3 text-sm">
+                        <p>Original: <strong>{money(base * Number(state.quantity || 1))}</strong></p>
+                        <p>Aplicado: <strong>{money(gross)}</strong></p>
+                        <p>Desconto: <strong>{money(Math.min(discount, gross))}</strong></p>
+                        <p>Final: <strong>{money(Math.max(0, gross - Math.min(discount, gross)))}</strong></p>
+                      </div>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+            {!selectableCatalog.length && <p className="rounded-lg border border-dashed border-line p-5 text-center text-sm text-[var(--text-secondary)]">Nenhum produto/serviço ativo disponível para composição. Cadastre itens no catálogo oficial antes de gerar documentos.</p>}
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-panel p-3 text-sm">
+            <span>Original: <strong>{money(totals.original)}</strong></span>
+            <span>Aplicado: <strong>{money(totals.applied)}</strong></span>
+            <span>Desconto: <strong>{money(totals.discount)}</strong></span>
+            <span>Total final: <strong>{money(totals.final)}</strong></span>
+          </div>
+          <button type="button" disabled={saving || !selectedRows.length} onClick={createControlledDocument} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+            <FileText className="h-4 w-4" /> {saving ? "Gerando..." : documentType === "contract" ? "Gerar contrato PDF" : "Gerar proposta PDF"}
+          </button>
+        </section>
+      )}
 
       {currentDocument && (
         <section className="mt-4 rounded-xl border border-cyan/40 bg-cyan/10 p-4">
@@ -1015,6 +1259,7 @@ function ProposalsSection({ company, items, role, onChange }: { company: Company
           <div className="mt-4 flex flex-wrap gap-2">
             <button type="button" onClick={() => downloadDocument(currentDocument)} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm font-bold"><Download className="h-4 w-4" /> Baixar PDF</button>
             <Link href="/app/proposals" className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm font-bold"><FileText className="h-4 w-4" /> Visualizar</Link>
+            {canEdit(currentDocument) && <button type="button" onClick={() => { setDocumentType(proposalDocumentType(currentDocument)); setDocumentGroupId(String(currentDocument.metadata?.document_group_id || currentDocument.id)); setTitle(currentDocument.title); setNotice("Monte a nova versão selecionando novamente os produtos/serviços e ajustes permitidos."); }} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm font-bold"><Copy className="h-4 w-4" /> Nova versão</button>}
             {canEdit(currentDocument) && <Link href="/app/proposals" className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm font-bold"><Pencil className="h-4 w-4" /> Editar</Link>}
             {canDelete && <button type="button" onClick={() => removeDocument(currentDocument)} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm font-bold text-red-300"><Trash2 className="h-4 w-4" /> Excluir</button>}
           </div>
