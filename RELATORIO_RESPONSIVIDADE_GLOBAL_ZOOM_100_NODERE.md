@@ -74,15 +74,42 @@ A aplicacao autenticada tinha pontos de largura fixa e grids agressivos que func
 
 ## Validacao desktop 1366x768
 
-Pendente para execucao em producao apos deploy desta correcao.
+Executada em producao com viewport 1366x768 e sessao autenticada.
+
+Rotas validadas:
+
+- `/dashboard`: sem overflow horizontal; header nao sobrepoe conteudo.
+- `/companies`: sem overflow horizontal; 474 cards; 0 tabelas na lista.
+- `/crm`: sem overflow horizontal da pagina; Kanban com scroll proprio.
+- `/discovery`: sem overflow horizontal; formulario responsivo.
+- `/catalog`: sem overflow horizontal da pagina.
+- `/app/proposals`: sem overflow horizontal da pagina.
+- `/reports`: sem overflow horizontal da pagina.
+- `/settings`: sem overflow horizontal da pagina; tabela interna permanece contida.
+- `/app/dashboard`: sem overflow horizontal; header nao sobrepoe conteudo.
 
 ## Validacao zoom 100
 
-Pendente para execucao em producao apos deploy desta correcao.
+Executada em producao usando viewport real 1366x768 com `deviceScaleFactor: 1`, equivalente a validacao objetiva de zoom 100%.
+
+Resultado:
+
+- `documentElement.scrollWidth <= clientWidth` nas rotas principais.
+- `body.scrollWidth <= clientWidth` nas rotas principais.
+- Header sticky com `bottom` igual ao topo do conteudo, sem sobreposicao.
+- Sidebar presente em desktop e sem invadir area principal.
+- CRM/Funil com scroll horizontal limitado ao container Kanban.
 
 ## Validacao mobile
 
-Pendente para execucao em producao apos deploy desta correcao.
+Executada em producao com viewport 375x812.
+
+Rotas validadas:
+
+- `/dashboard`: sem overflow horizontal.
+- `/companies`: sem overflow horizontal; 474 cards; 0 tabelas na lista.
+- `/crm`: sem overflow horizontal da pagina; Kanban com scroll proprio.
+- `/discovery`: sem overflow horizontal.
 
 ## Validacao tema claro/escuro
 
@@ -90,12 +117,19 @@ As correcoes usam tokens/classes existentes do tema. Nenhum provider ou persiste
 
 ## Deploy
 
-Pendente.
+- Commit: `763d6ae`
+- Mensagem: `fix: ajustar responsividade global em zoom 100`
+- Push: realizado em `main`
+- Vercel deployment: `dpl_AwpS9ic7oX4zWU1NzNvHXvf8E3gN`
+- URL do deployment: `https://web-rf5xu9po3-edipo-lima-s-projects.vercel.app`
+- Alias: `https://nodere.com.br`
+- Alias: `https://www.nodere.com.br`
+- Status: `READY`
+- Render/backend: nao necessario.
 
 ## Pendencias
 
-- Publicar frontend na Vercel.
-- Validar producao no dominio `nodere.com.br`.
+Nao ha pendencia critica restante para responsividade global em zoom 100 nas rotas principais testadas.
 
 ## Status atual
 
@@ -107,4 +141,5 @@ Pendente.
 - Empresas preservada em cards: SIM
 - CRM/Funil ajustado: SIM
 - Testes tecnicos aprovados: SIM
-- Producao validada: PENDENTE
+- Producao validada: SIM
+- Ferramenta liberada: SIM
