@@ -195,14 +195,14 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b border-line bg-ink/90 px-4 py-3 backdrop-blur md:px-8">
-      <div className="flex items-center justify-between gap-4">
-        <Link href={dashboardHref} className="min-w-0">
+    <header className="nodere-topbar sticky top-0 z-20 border-b border-line bg-ink/90 px-3 py-3 backdrop-blur md:px-5 xl:px-8">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 xl:flex-nowrap xl:gap-4">
+        <Link href={dashboardHref} className="min-w-0 flex-1 xl:flex-none">
           <span className="block truncate text-base font-semibold text-[var(--text-primary)] md:text-lg">{pageTitle}</span>
-          <span className="hidden text-xs text-[var(--text-secondary)] sm:block">{brandName} · Operação comercial e inteligência de prospecção</span>
+          <span className="hidden max-w-[42vw] truncate text-xs text-[var(--text-secondary)] sm:block xl:max-w-none">{brandName} · Operação comercial e inteligência de prospecção</span>
         </Link>
 
-        <form onSubmit={submitGlobalSearch} className="hidden w-full max-w-md items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 md:flex">
+        <form onSubmit={submitGlobalSearch} className="order-3 hidden min-w-0 w-full items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 md:flex xl:order-none xl:max-w-md">
           <Search className="h-4 w-4 text-slate-500" />
           <input
             value={globalQuery}
@@ -213,11 +213,11 @@ export function Header() {
           />
         </form>
 
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 shrink-0 items-center gap-2">
           {credits && (
             <Link
               href="/billing"
-              className={`hidden items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold sm:inline-flex ${
+              className={`hidden shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold sm:inline-flex ${
                 credits.remaining < 5 || credits.blocked
                   ? "border-rose-400/50 bg-rose-500/15 text-rose-200"
                   : credits.remaining <= 10
@@ -234,7 +234,7 @@ export function Header() {
           <button
             type="button"
             onClick={() => void installApp()}
-            className="hidden items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 text-xs font-semibold text-[var(--text-primary)] hover:border-electric/60 hover:bg-electric/10 md:inline-flex"
+            className="hidden shrink-0 items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 text-xs font-semibold text-[var(--text-primary)] hover:border-electric/60 hover:bg-electric/10 2xl:inline-flex"
             title="Instalar aplicativo NODERE"
           >
             <Download className="h-4 w-4" />
@@ -243,7 +243,7 @@ export function Header() {
 
           <button
             type="button"
-            className="flex items-center gap-2 rounded-lg border border-line bg-white/5 px-2 py-1.5 text-left hover:border-electric/60 hover:bg-electric/10"
+            className="flex min-w-0 shrink items-center gap-2 rounded-lg border border-line bg-white/5 px-2 py-1.5 text-left hover:border-electric/60 hover:bg-electric/10"
             onClick={() => setShowPrefsModal(true)}
             title="Preferências"
           >
@@ -255,7 +255,7 @@ export function Header() {
                 {initial}
               </div>
             )}
-            <span className="hidden max-w-64 truncate text-sm font-bold text-[var(--text-primary)] lg:block" title={shownName}>{shownName}</span>
+            <span className="hidden max-w-28 truncate text-sm font-bold text-[var(--text-primary)] xl:block 2xl:max-w-52" title={shownName}>{shownName}</span>
             <span aria-hidden="true" title="Preferências">⚙️</span>
           </button>
 

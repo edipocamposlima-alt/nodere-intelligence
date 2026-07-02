@@ -270,7 +270,7 @@ export function SearchPanel() {
         </div>
 
         <div className="grid gap-5 p-4 md:p-5">
-          <div className="grid gap-4 xl:grid-cols-[minmax(220px,0.72fr)_minmax(0,1fr)]">
+          <div className="grid min-w-0 gap-4 2xl:grid-cols-[minmax(220px,0.72fr)_minmax(0,1fr)]">
             <div className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-main)] p-4">
               <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-[var(--text-muted)]">
                 <Filter className="h-4 w-4 text-[var(--brand-primary)]" />
@@ -291,7 +291,7 @@ export function SearchPanel() {
                 <Building2 className="h-4 w-4 text-[var(--brand-primary)]" />
                 Empresa e intenção comercial
               </div>
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid min-w-0 gap-3 md:grid-cols-2 2xl:grid-cols-4">
                 <label className={labelClass}>
                   <span className={labelTextClass}>CNPJ</span>
                   <input name="cnpj" value={cnpj} onChange={(event) => setCnpj(formatCnpj(event.target.value))} placeholder="00.000.000/0000-00" className={fieldClass} />
@@ -331,7 +331,7 @@ export function SearchPanel() {
               <Globe2 className="h-4 w-4 text-[var(--brand-primary)]" />
               Localização e raio
             </div>
-            <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-[1fr_120px_180px_1.4fr_150px_auto_auto]">
+            <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_72px_140px_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,1fr)_96px_160px_minmax(0,1.3fr)_130px_auto_auto]">
               <label className={labelClass}>
                 <span className={labelTextClass}>Cidade</span>
                 <input name="city" placeholder="Cidade" className={fieldClass} />
@@ -386,7 +386,7 @@ export function SearchPanel() {
           </div>
 
           {advancedOpen && (
-            <div className="grid gap-3 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-main)] p-4 md:grid-cols-3 xl:grid-cols-6">
+            <div className="grid min-w-0 gap-3 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-main)] p-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
               <label className={labelClass}>
                 <span className={labelTextClass}>Nota mínima</span>
                 <input name="minRating" type="number" min="0" max="5" step="0.1" placeholder="0.0" className={fieldClass} />
@@ -638,7 +638,7 @@ function GoogleMapPanel({
   }, [focusedId, mappedCompanies]);
 
   return (
-    <section className={`${open ? "grid" : "hidden lg:grid"} gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]`}>
+    <section className={`${open ? "grid" : "hidden lg:grid"} min-w-0 gap-4 2xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]`}>
       <div className="overflow-hidden rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)]">
         <div className="flex flex-col gap-2 border-b border-line px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm font-black text-[var(--text-primary)]">

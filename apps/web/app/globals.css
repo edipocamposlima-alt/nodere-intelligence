@@ -1787,6 +1787,65 @@ textarea {
     linear-gradient(rgba(66, 215, 255, 0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgba(66, 215, 255, 0.04) 1px, transparent 1px);
   background-size: 42px 42px;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
+.nodere-app-shell {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
+.nodere-app-main {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.nodere-app-content {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.nodere-app-content > main,
+.nodere-app-content > section,
+.nodere-app-content > div {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.nodere-topbar {
+  max-width: 100%;
+}
+
+.nodere-sidebar {
+  contain: layout paint;
+}
+
+.nodere-kanban-scroll {
+  width: 100%;
+  max-width: calc(100vw - 2rem);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 1024px) {
+  .nodere-kanban-scroll {
+    max-width: calc(100vw - 18rem);
+  }
+}
+
+@media (min-width: 1280px) {
+  .nodere-kanban-scroll {
+    max-width: calc(100vw - 20rem);
+  }
 }
 
 :root[data-theme="light"] .nodere-grid {

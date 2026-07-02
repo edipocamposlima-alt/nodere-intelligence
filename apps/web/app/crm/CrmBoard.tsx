@@ -344,15 +344,15 @@ export function CrmBoard({ companies, onLeadClick }: { companies: Company[]; onL
   }
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <div className="flex flex-col gap-3 rounded-lg border border-line bg-panel/90 p-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-white">CRM</h2>
           <p className="mt-1 text-sm text-slate-400">Arraste os leads entre etapas para atualizar o funil comercial.</p>
         </div>
-        <label className="flex items-center gap-2 rounded-lg border border-line bg-ink px-3 py-2 text-sm text-slate-300">
+        <label className="flex min-w-0 items-center gap-2 rounded-lg border border-line bg-ink px-3 py-2 text-sm text-slate-300 md:min-w-[260px]">
           <Search className="h-4 w-4 text-cyan" />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Pesquisar lead..." className="bg-transparent outline-none" />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Pesquisar lead..." className="min-w-0 flex-1 bg-transparent outline-none" />
         </label>
       </div>
 
@@ -387,7 +387,7 @@ export function CrmBoard({ companies, onLeadClick }: { companies: Company[]; onL
 
       {message && <p className="rounded-lg border border-electric/30 bg-electric/10 px-3 py-2 text-sm text-[var(--text-primary)]">{message}</p>}
 
-      <div className="grid auto-cols-[19rem] grid-flow-col gap-4 overflow-x-auto pb-2">
+      <div className="nodere-kanban-scroll grid auto-cols-[minmax(16rem,18rem)] grid-flow-col gap-4 pb-3">
         {columns.map((column, index) => {
           const leads = filtered.filter((company) => company.status === column);
           const stageColor = colorForStage(column, index);
@@ -402,7 +402,7 @@ export function CrmBoard({ companies, onLeadClick }: { companies: Company[]; onL
                 if (companyId) void moveLead(companyId, column);
                 setDraggedId(null);
               }}
-              className="crm-stage flex h-[min(680px,calc(100dvh-220px))] min-h-[420px] flex-col overflow-hidden rounded-xl border shadow-[0_16px_48px_rgba(0,0,0,0.22)]"
+              className="crm-stage flex h-[min(680px,calc(100dvh-240px))] min-h-[400px] min-w-0 flex-col overflow-hidden rounded-xl border shadow-[0_16px_48px_rgba(0,0,0,0.22)]"
               style={{
                 borderColor: hexToRgba(stageColor, 0.56),
                 background: `linear-gradient(180deg, ${hexToRgba(stageColor, 0.18)} 0%, var(--bg-card) 100%)`

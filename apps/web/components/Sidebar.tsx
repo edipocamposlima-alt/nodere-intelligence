@@ -72,12 +72,12 @@ export function Sidebar() {
   const progress = total > 0 ? Math.min(100, (remaining / total) * 100) : 0;
 
   return (
-    <aside className="hidden h-[100dvh] w-72 overflow-hidden border-r border-[var(--border-soft)] bg-[var(--bg-sidebar)] p-5 text-[var(--text-secondary)] lg:flex lg:flex-col">
+    <aside className="nodere-sidebar hidden h-[100dvh] w-64 shrink-0 overflow-hidden border-r border-[var(--border-soft)] bg-[var(--bg-sidebar)] p-4 text-[var(--text-secondary)] xl:w-72 xl:p-5 lg:flex lg:flex-col">
       <Link href={dashboardHref} className="flex items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--bg-card)] px-4 py-5 transition hover:border-[var(--brand-primary)]">
         <Logo variant="full" height={38} />
       </Link>
 
-      <nav className="nodere-tools-scroll mt-8 min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
+      <nav className="nodere-tools-scroll mt-5 min-h-0 flex-1 space-y-4 overflow-y-auto pr-1 xl:mt-8 xl:space-y-5">
         {groups.map((group) => (
           <section key={group.label} className="space-y-1">
             <p className="px-3 pb-1 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{group.label}</p>
@@ -88,12 +88,12 @@ export function Sidebar() {
                 <Link
                   key={`${group.label}-${item.label}-${href}`}
                   href={href}
-                  className={`group flex items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm transition hover:border-[var(--brand-primary)] hover:bg-[var(--nav-active-bg)] hover:text-[var(--text-primary)] ${active ? "border-[var(--brand-primary)] bg-[var(--nav-active-bg)] text-[var(--text-primary)]" : "border-transparent text-[var(--text-secondary)]"}`}
+                  className={`group flex min-w-0 items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm transition hover:border-[var(--brand-primary)] hover:bg-[var(--nav-active-bg)] hover:text-[var(--text-primary)] ${active ? "border-[var(--brand-primary)] bg-[var(--nav-active-bg)] text-[var(--text-primary)]" : "border-transparent text-[var(--text-secondary)]"}`}
                 >
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] text-[var(--text-muted)] transition group-hover:border-[var(--brand-primary)] group-hover:text-[var(--brand-glow)]">
                     <item.icon className="h-4 w-4" style={{ strokeWidth: 2.4 }} />
                   </span>
-                  {item.label}
+                  <span className="min-w-0 truncate">{item.label}</span>
                 </Link>
               );
             })}

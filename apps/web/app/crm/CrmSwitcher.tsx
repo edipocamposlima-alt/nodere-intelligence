@@ -70,7 +70,7 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
   }
 
   return (
-    <section className="space-y-5">
+    <section className="min-w-0 space-y-5">
       <div className="rounded-2xl border border-line bg-panel/90 p-5 shadow-card">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
@@ -128,7 +128,7 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-line bg-panel/90 p-4 shadow-card">
+      <div className="min-w-0 rounded-2xl border border-line bg-panel/90 p-4 shadow-card">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-wrap gap-2">
             <button onClick={() => changeView("kanban")} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold ${view === "kanban" ? "bg-electric text-white" : "border border-line bg-white/5 text-slate-300 hover:bg-white/10"}`}>
@@ -140,14 +140,14 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
               Lista
             </button>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <label className="flex min-w-[240px] flex-1 items-center gap-2 rounded-lg border border-line bg-ink px-3 py-2 text-sm text-slate-300 xl:max-w-sm">
+          <div className="flex min-w-0 flex-wrap gap-2">
+            <label className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-ink px-3 py-2 text-sm text-slate-300 sm:min-w-[240px] xl:max-w-sm">
               <Search className="h-4 w-4 text-cyan" />
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar empresa, cidade ou etapa" className="min-w-0 flex-1 bg-transparent outline-none" />
             </label>
-            <label className="flex items-center gap-2 rounded-lg border border-line bg-ink px-3 py-2 text-sm text-slate-300">
+            <label className="flex min-w-0 items-center gap-2 rounded-lg border border-line bg-ink px-3 py-2 text-sm text-slate-300">
               <SlidersHorizontal className="h-4 w-4 text-cyan" />
-              <select value={stage} onChange={(event) => setStage(event.target.value)} className="bg-transparent outline-none">
+              <select value={stage} onChange={(event) => setStage(event.target.value)} className="min-w-0 bg-transparent outline-none">
               <option value="">Todas as etapas</option>
                 {stages.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
@@ -156,7 +156,7 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
         </div>
       </div>
       {view === "kanban" ? <CrmBoard companies={filtered} onLeadClick={openLead} /> : (
-        <div className="overflow-x-auto rounded-2xl border border-line bg-panel/90 shadow-card">
+        <div className="max-w-full overflow-x-auto rounded-2xl border border-line bg-panel/90 shadow-card">
           <table className="w-full min-w-[760px] text-sm">
             <thead className="border-b border-line text-left text-xs text-slate-400">
               <tr>
