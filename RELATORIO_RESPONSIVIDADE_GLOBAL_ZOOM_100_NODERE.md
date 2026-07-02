@@ -196,7 +196,45 @@ E falha se encontrar:
 - Responsividade anterior reprovada reconhecida: SIM
 - Causa raiz do mascaramento por `clip` identificada: SIM
 - Correcao estrutural aplicada: SIM
-- Publicacao/validacao em producao: PENDENTE nesta revisao ate novo deploy.
+- Primeiro deploy do reteste: `dpl_B6h4TxKuYq7GeiymqzUWbFXAiSLQ`
+- Resultado do primeiro reteste em producao: REPROVADO na rota `/companies`.
+
+### Reprovacao visual apos primeiro deploy
+
+O primeiro reteste em producao confirmou que `/dashboard` ja estava sem overflow global, mas `/companies` ainda tinha vazamento visual em badges de alerta. A falha nao aparecia por `scrollWidth`, mas aparecia por `getBoundingClientRect()`:
+
+- Rota: `/companies`
+- Viewport desktop 1366x768
+- Elemento: `.nodere-status-badge.text-[11px]`
+- Texto: `Empresa tem poucas avaliacoes para gerar autoridade local.`
+- Excesso medido: `overRight: 120`
+- Viewport mobile 375x812
+- Mesmo elemento com excesso medido: `overRight: 71`
+- Outro alerta afetado: `Nao foram detectados sinais de Google Ads.`
+
+### Correcao final dos badges
+
+A causa raiz restante era o `white-space: nowrap` da classe global `.nodere-status-badge`. Em cards estreitos, textos longos de status ficavam proibidos de quebrar linha e escapavam do bloco.
+
+Correcao aplicada:
+
+- `.nodere-status-badge` agora respeita `max-width: 100%`.
+- Foi adicionado `min-width: 0`.
+- `line-height` foi ajustado para leitura em duas linhas.
+- `white-space: nowrap` foi removido.
+- Foram adicionados `overflow-wrap: anywhere` e `word-break: break-word`.
+
+Essa correcao preserva o visual dos badges curtos e impede vazamento em alertas, tabelas, cards, filtros, Inbox, Catalogo, Admin, Settings, Discovery e Empresas.
+
+### Validacoes tecnicas apos correcao dos badges
+
+- `node --check scripts/validate-responsive-overflow.mjs` aprovado.
+- `git diff --check` aprovado, apenas aviso LF/CRLF do Windows.
+- `apps/web`: `npm run lint` aprovado.
+- `apps/web`: `npm run typecheck` aprovado.
+- `apps/web`: `npm run build` aprovado.
+- Raiz: `npm run build` aprovado.
+- Publicacao/validacao final em producao: PENDENTE ate novo deploy da correcao dos badges.
 
 ## Status atual
 
@@ -208,5 +246,5 @@ E falha se encontrar:
 - Empresas preservada em cards: SIM
 - CRM/Funil ajustado: SIM
 - Testes tecnicos aprovados: SIM
-- Producao validada: SIM
-- Ferramenta liberada: SIM
+- Producao validada: PENDENTE no ultimo deploy da correcao dos badges
+- Ferramenta liberada: PENDENTE ate validacao visual final em producao

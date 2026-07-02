@@ -1,8 +1,9 @@
 const BASE_URL = process.env.NODERE_RESPONSIVE_BASE_URL || "https://nodere.com.br";
 const DEBUG_URL = process.env.CHROME_DEBUG_URL || "http://127.0.0.1:9222";
 const TOLERANCE = Number(process.env.NODERE_OVERFLOW_TOLERANCE || 2);
+const ALLOW_LOGIN = process.env.NODERE_ALLOW_LOGIN === "1";
 
-const routes = [
+const defaultRoutes = [
   "/dashboard",
   "/companies",
   "/crm",
@@ -14,12 +15,29 @@ const routes = [
   "/app/dashboard"
 ];
 
-const viewports = [
+const routes = (process.env.NODERE_RESPONSIVE_ROUTES || "")
+  .split(",")
+  .map((route) => route.trim())
+  .filter(Boolean);
+if (routes.length === 0) routes.push(...defaultRoutes);
+
+const defaultViewports = [
   { name: "desktop-1366", width: 1366, height: 768, mobile: false },
   { name: "notebook-1440", width: 1440, height: 900, mobile: false },
   { name: "desktop-1920", width: 1920, height: 1080, mobile: false },
   { name: "mobile-375", width: 375, height: 812, mobile: true }
 ];
+
+const viewports = (process.env.NODERE_RESPONSIVE_VIEWPORTS || "")
+  .split(",")
+  .map((item) => item.trim())
+  .filter(Boolean)
+  .map((item) => {
+    const [name, size] = item.split(":");
+    const [width, height] = size.split("x").map(Number);
+    return { name, width, height, mobile: width <= 480 };
+  });
+if (viewports.length === 0) viewports.push(...defaultViewports);
 
 let messageId = 0;
 
@@ -42,13 +60,13 @@ async function waitForLoad() {
     expression: "document.readyState",
     returnByValue: true
   });
-  for (let attempt = 0; attempt < 40; attempt += 1) {
+  for (let attempt = 0; attempt < 16; attempt += 1) {
     const result = await cdp("Runtime.evaluate", {
       expression: "document.readyState",
       returnByValue: true
     });
     if (result.result?.result?.value === "complete") return;
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    await new Promise((resolve) => setTimeout(resolve, 200));
   }
 }
 
@@ -106,13 +124,17 @@ async function auditRoute(route, viewport) {
   return result.result.result.value;
 }
 
-const version = await fetch(`${DEBUG_URL}/json/version`).then((response) => {
+let target = await fetch(`${DEBUG_URL}/json/new?about:blank`, { method: "PUT" }).then((response) => {
   if (!response.ok) throw new Error(`Chrome debug endpoint unavailable: ${response.status}`);
   return response.json();
 });
+if (!target.webSocketDebuggerUrl) {
+  const targets = await fetch(`${DEBUG_URL}/json/list`).then((response) => response.json());
+  target = targets.find((item) => item.type === "page");
+}
 
-const wsUrl = version.webSocketDebuggerUrl;
-if (!wsUrl) throw new Error("Chrome debug endpoint did not expose webSocketDebuggerUrl.");
+const wsUrl = target?.webSocketDebuggerUrl;
+if (!wsUrl) throw new Error("Chrome debug endpoint did not expose a page webSocketDebuggerUrl.");
 
 const pending = new Map();
 const ws = new WebSocket(wsUrl);
@@ -122,7 +144,11 @@ await new Promise((resolve, reject) => {
 });
 
 ws.addEventListener("message", (event) => {
-  const payload = JSON.parse(String(event.data));
+  let raw = event.data;
+  if (raw instanceof ArrayBuffer) raw = Buffer.from(raw).toString("utf8");
+  else if (ArrayBuffer.isView(raw)) raw = Buffer.from(raw.buffer).toString("utf8");
+  else raw = String(raw);
+  const payload = JSON.parse(raw);
   if (payload.id && pending.has(payload.id)) {
     const item = pending.get(payload.id);
     pending.delete(payload.id);
@@ -131,19 +157,8 @@ ws.addEventListener("message", (event) => {
   }
 });
 
-await cdp("Target.createTarget", { url: "about:blank" });
-const targets = await cdp("Target.getTargets");
-const page = targets.result.targetInfos.find((target) => target.type === "page" && target.url === "about:blank") || targets.result.targetInfos.find((target) => target.type === "page");
-const attached = await cdp("Target.attachToTarget", { targetId: page.targetId, flatten: true });
-const sessionId = attached.result.sessionId;
-const baseCdp = cdp;
-globalThis.cdp = (method, params = {}) => baseCdp(method, params, sessionId);
-
-await globalThis.cdp("Page.enable");
-await globalThis.cdp("Runtime.enable");
-
-const originalCdp = cdp;
-cdp = globalThis.cdp;
+await cdp("Page.enable");
+await cdp("Runtime.enable");
 
 const results = [];
 for (const viewport of viewports) {
@@ -152,7 +167,9 @@ for (const viewport of viewports) {
   }
 }
 
-await originalCdp("Target.closeTarget", { targetId: page.targetId });
+if (target?.id) {
+  await fetch(`${DEBUG_URL}/json/close/${target.id}`).catch(() => undefined);
+}
 ws.close();
 
 const failures = results.filter((item) =>
@@ -160,7 +177,7 @@ const failures = results.filter((item) =>
   item.bodyScrollWidth > item.bodyClientWidth + TOLERANCE ||
   item.headerOverlap ||
   item.offenders.length > 0 ||
-  item.isLogin
+  (!ALLOW_LOGIN && item.isLogin)
 );
 
 console.log(JSON.stringify({ ok: failures.length === 0, failures, results }, null, 2));
