@@ -1,6 +1,6 @@
 # Relatorio Final - Conclusao das Alteracoes NODERE
 
-Data: 2026-07-01
+Data: 2026-07-02
 
 ## O que foi revisado
 
@@ -12,13 +12,14 @@ Data: 2026-07-01
 - Scripts de validacao comercial e homologacao comercial.
 - Saude da API publicada no Render.
 - Conectividade Supabase exposta pelo backend publicado.
-- Sessao real owner/admin aberta em producao via Chrome.
+- Sessao real owner/admin em producao via Chrome.
+- Deploy do backend no Render e frontend na Vercel.
 
 ## Estado do Git
 
 - Branch ativa: `main`.
-- Ultimo commit: `31b1d56 docs: registrar publicacao final NODERE`.
-- Arquivos modificados nesta etapa:
+- Commit publicado da implementacao: `b568560 fix: finalizar composicao comercial controlada`.
+- Arquivos alterados nesta etapa:
   - `apps/api/src/routes/proposals.ts`
   - `apps/web/app/app/crm/clientes/[id]/CrmClientFullPage.tsx`
   - `apps/web/app/app/proposals/page.tsx`
@@ -39,6 +40,8 @@ Data: 2026-07-01
 - Ficha Comercial passou a bloquear geracao de contrato para `operator`, mantendo proposta permitida conforme regra atual.
 - `scripts/homologate-commercial-flow.mjs` passou a carregar arquivos `.env` da mesma forma que o validador de schema.
 - `scripts/homologate-commercial-flow.mjs` passou a impedir homologacao funcional real contra `localhost`, evitando falso positivo.
+- `scripts/homologate-commercial-flow.mjs` passou a normalizar `sslmode` para compatibilidade com o Supabase Transaction Pooler.
+- Homologacao comercial passou a validar preco aplicado, log interno e versionamento por `document_group_id`.
 
 ## O que foi preservado
 
@@ -49,30 +52,33 @@ Data: 2026-07-01
 - Estrutura de banco atual, sem migration nova.
 - Arquivos e artefatos fora do escopo nao foram removidos.
 
-## Funcionalidades testadas localmente
+## Funcionalidades testadas
 
-- Permissoes por perfil em rotas protegidas.
-- Calendario.
-- Relatorios e exportacao CSV segura.
-- CRM avancado.
-- Historico WhatsApp.
-- IA/Discovery.
-- Build e typecheck da API.
-- Build, typecheck/lint do frontend.
-- Build da raiz.
-- Schema comercial via Supabase REST.
+- Login real por perfil: owner, admin, operator e viewer.
+- Catalogo: criacao por owner, edicao por admin, bloqueio para operator/viewer, visualizacao por viewer.
+- Propostas/Contratos: bloqueio de item manual/livre, selecao por item ativo, preco aplicado, desconto percentual, desconto em valor, motivo obrigatorio, snapshot, versionamento, PDF de proposta e PDF de contrato.
+- Auditoria: criacao de proposta e geracao de PDFs.
+- Preservacao de snapshot apos alteracao posterior no catalogo.
+- Dashboard, CRM, catalogo e propostas em producao.
 
 ## Integracoes testadas
 
 - API Render:
   - `GET https://nodere-api.onrender.com/health` retornou `200`.
-  - `GET https://nodere-api.onrender.com/api/health` retornou `200`.
   - `GET https://nodere-api.onrender.com/api/health/supabase` retornou `200`.
 - Supabase:
   - Validador confirmou tabelas/colunas obrigatorias via REST no projeto `qhopjggnbzewuuktqntp.supabase.co`.
+  - Homologacao funcional usou `DATABASE_URL` remoto do Supabase Transaction Pooler apenas em memoria de sessao.
+- Render:
+  - Servico `nodere-api`.
+  - Commit live: `b568560`.
+- Vercel:
+  - Deployment ID: `dpl_Hx5h2hrVqoJ9AKKpLtAWGYjLmQ9y`.
+  - URL: `https://web-bas7ibxig-edipo-lima-s-projects.vercel.app`.
+  - Aliases: `https://nodere.com.br` e `https://www.nodere.com.br`.
 - Chrome/producao:
   - Sessao owner/admin real detectada em `https://nodere.com.br/dashboard`.
-  - Dashboard verde com menu interno, usuario `Edipo Lima`, creditos e botao sair visiveis.
+  - Dashboard verde com menu interno e usuario autenticado.
 
 ## Testes executados
 
@@ -90,34 +96,54 @@ Data: 2026-07-01
 - raiz: `npm run build` - aprovado.
 - `git diff --check` - aprovado.
 - `node scripts/validate-commercial-schema.mjs` - aprovado.
-- `node scripts/homologate-commercial-flow.mjs` - reprovado por bloqueio de ambiente remoto.
+- `node scripts/homologate-commercial-flow.mjs` - aprovado apos deploy do backend.
 
 ## Resultado da homologacao autenticada
 
-Parcial.
+Aprovada.
 
-Foi confirmada sessao real owner/admin em producao no Chrome, com dashboard autenticado carregado.
+Resultado do script funcional real:
 
-Nao foi possivel concluir a homologacao funcional completa de criacao/edicao/inativacao de dados smoke porque o script automatizado exige conexao remota direta ao banco e o ambiente local possui apenas:
-
-- `DATABASE_URL` apontando para `localhost`;
-- `NEXT_PUBLIC_SUPABASE_URL`;
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`;
-- sem `COMMERCIAL_DATABASE_URL`;
-- sem `SUPABASE_SERVICE_ROLE_KEY` local;
-- sem `COMMERCIAL_SUPABASE_SERVICE_ROLE_KEY` local.
-
-Mensagem exata do bloqueio:
-
-```text
-DATABASE_URL aponta para banco local. Configure COMMERCIAL_DATABASE_URL remoto para homologacao funcional real.
-```
+- `OK login real por perfil - owner/admin/operator/viewer`
+- `OK owner cria produto/servico`
+- `OK admin edita produto/servico`
+- `OK operator nao cria catalogo`
+- `OK viewer nao edita catalogo`
+- `OK viewer visualiza catalogo`
+- `OK proposta nao aceita item manual/livre`
+- `OK motivo obrigatorio quando houver desconto`
+- `OK percentual e valor nao podem ser usados juntos`
+- `OK preco aplicado ajustavel funciona`
+- `OK desconto percentual funciona`
+- `OK alteracao de preco/desconto gera log interno`
+- `OK snapshot comercial salvo corretamente`
+- `OK alteracao posterior no catalogo nao altera proposta`
+- `OK versionamento por document_group_id funciona`
+- `OK desconto em valor funciona`
+- `OK PDF gerado`
+- `OK PDF nao expoe observacoes internas`
+- `OK PDF nao expoe observacao interna global`
+- `OK PDF nao expoe motivo interno do desconto`
+- `OK PDF de contrato gerado`
+- `OK auditoria registra criacao/PDF`
+- `OK admin inativa produto/servico`
+- `OK proposta so permite item ativo do catalogo`
 
 ## Resultado do deploy
 
-Deploy nao realizado.
+- Backend publicado no Render: aprovado.
+- Frontend publicado na Vercel: aprovado.
+- `nodere.com.br`: aprovado.
+- `www.nodere.com.br`: aprovado.
 
-Motivo: a regra do roteiro determina nao publicar se a homologacao funcional autenticada real nao passar. A homologacao automatizada real ficou bloqueada por falta de `COMMERCIAL_DATABASE_URL` remoto ou service role local segura para preparar dados smoke.
+## Producao validada
+
+- `/login`: aprovado, layout publico sem PrivateShell.
+- `/dashboard`: aprovado com sessao owner/admin.
+- `/app/dashboard`: aprovado.
+- `/catalog`: aprovado.
+- `/crm`: aprovado.
+- `/app/proposals`: aprovado, compositor com checkboxes do catalogo.
 
 ## Migrations criadas
 
@@ -125,16 +151,8 @@ Nenhuma migration nova foi criada.
 
 ## Pendencias reais
 
-1. Configurar temporariamente, apenas na sessao local ou ambiente seguro de CI, uma destas opcoes:
-   - `COMMERCIAL_DATABASE_URL` remoto do Supabase Transaction Pooler; ou
-   - `COMMERCIAL_SUPABASE_SERVICE_ROLE_KEY` com adaptacao futura do script para REST completo.
-2. Reexecutar:
-   - `node scripts/homologate-commercial-flow.mjs`
-3. Se a homologacao passar, fazer commit/push/deploy controlado de backend e frontend.
-4. Validar producao apos deploy.
+Nenhuma pendencia critica restante para uso real desta entrega.
 
 ## Status final
 
-Reprovado para publicacao automatica nesta rodada por bloqueio externo de ambiente de homologacao real.
-
-Localmente, a implementacao esta aprovada tecnicamente e os testes automatizados disponiveis passaram.
+Aprovado para uso real.
