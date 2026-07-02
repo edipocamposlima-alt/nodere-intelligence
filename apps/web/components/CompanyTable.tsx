@@ -289,6 +289,105 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
     }
   }
 
+  function renderCompanyActions(company: Company, compact = false) {
+    const iconButtonClass = "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-white/5 text-slate-300 transition hover:border-electric hover:text-white";
+    return (
+      <div className={compact ? "space-y-3" : "space-y-2"}>
+        <div className="grid grid-cols-2 gap-2 xl:grid-cols-1">
+          <button
+            onClick={() => saveLead(company)}
+            disabled={saved[company.id] === "saving" || saved[company.id] === "saved"}
+            className="btn-primary min-h-9 justify-center px-3 py-2 text-xs"
+          >
+            {saved[company.id] === "saved" ? <CheckCircle2 className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+            {saved[company.id] === "saving" ? "Salvando" : saved[company.id] === "saved" ? "Salvo" : "Salvar lead"}
+          </button>
+          <Link href={`/companies/${encodeURIComponent(company.id)}`} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 text-xs font-semibold text-white transition hover:border-electric">
+            <FileText className="h-4 w-4" />
+            Ficha
+          </Link>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {isValidBrazilMobileWhatsapp(company.whatsapp) && (
+            <a
+              href={`https://wa.me/${company.whatsapp!.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMessage)}`}
+              target="_blank"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-success/30 bg-success/10 text-emerald-200 transition hover:bg-success/20"
+              aria-label="Chamar no WhatsApp"
+              title="Chamar no WhatsApp"
+            >
+              <MessageCircle className="h-4 w-4" />
+            </a>
+          )}
+          {company.phone && (
+            <a href={`tel:${String(company.phone).replace(/[^\d+]/g, "")}`} className={iconButtonClass} aria-label="Ligar para empresa" title="Ligar para empresa">
+              <PhoneCall className="h-4 w-4" />
+            </a>
+          )}
+          {company.website && (
+            <a target="_blank" href={company.website} className={iconButtonClass} aria-label="Abrir site" title="Abrir site">
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
+          {company.mapsUrl && (
+            <a target="_blank" href={company.mapsUrl} className={iconButtonClass} aria-label="Abrir Google Maps" title="Abrir Google Maps">
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
+          <button type="button" onClick={() => void runAi(company, "diagnosis")} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan/30 bg-cyan/10 text-cyan transition hover:bg-cyan/20" aria-label="Gerar diagnóstico IA" title="Gerar diagnóstico IA">
+            <Bot className="h-4 w-4" />
+          </button>
+          <button type="button" onClick={() => void runAi(company, "whatsapp")} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-400/30 bg-emerald-400/10 text-emerald-200 transition hover:bg-emerald-400/20" aria-label="Gerar WhatsApp IA" title="Gerar WhatsApp IA">
+            <MessageCircle className="h-4 w-4" />
+          </button>
+          <button type="button" onClick={() => void runAi(company, "call")} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-violet-400/30 bg-violet-400/10 text-violet-200 transition hover:bg-violet-400/20" aria-label="Gerar roteiro de ligação" title="Gerar roteiro de ligação">
+            <PhoneCall className="h-4 w-4" />
+          </button>
+        </div>
+
+        {company.whatsapp && !isValidBrazilMobileWhatsapp(company.whatsapp) && (
+          <button
+            type="button"
+            className="w-full rounded-lg border border-warning/30 bg-warning/10 px-2 py-2 text-left text-[11px] text-amber-100 transition hover:bg-warning/20"
+            title="Clique para corrigir"
+            onClick={() => {
+              setEditingWhatsapp((current) => ({ ...current, [company.id]: true }));
+              setWhatsappDrafts((current) => ({ ...current, [company.id]: company.whatsapp ?? "" }));
+            }}
+          >
+            WhatsApp inválido — clique para corrigir
+          </button>
+        )}
+
+        {aiLoading[company.id] && <p className="text-xs text-cyan">Gerando IA comercial...</p>}
+        {aiMessages[company.id] && (
+          <div className="max-w-xl whitespace-pre-wrap rounded-lg border border-cyan/25 bg-cyan/10 p-3 text-xs leading-5 text-[var(--text-primary)]">
+            {aiMessages[company.id]}
+          </div>
+        )}
+        {editingWhatsapp[company.id] && (
+          <div className="flex flex-wrap gap-2">
+            <input
+              value={whatsappDrafts[company.id] ?? ""}
+              onChange={(event) => setWhatsappDrafts((current) => ({ ...current, [company.id]: event.target.value }))}
+              placeholder="(XX) 9XXXX-XXXX"
+              className="min-w-[180px] flex-1 rounded-lg border border-line bg-ink px-3 py-2 text-xs text-white outline-none focus:border-electric"
+            />
+            <button type="button" onClick={() => void saveWhatsapp(company)} className="btn-action px-3 py-2 text-xs">Salvar</button>
+            <button type="button" onClick={() => setEditingWhatsapp((current) => ({ ...current, [company.id]: false }))} className="btn-secondary px-3 py-2 text-xs">Cancelar</button>
+            {whatsappErrors[company.id] && <p className="w-full text-xs text-red-300">{whatsappErrors[company.id]}</p>}
+          </div>
+        )}
+        {messages[company.id] && (
+          <p className={`text-xs ${saved[company.id] === "error" ? "text-red-300" : "text-emerald-300"}`}>
+            {messages[company.id]}
+          </p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className={embedded ? "overflow-hidden bg-panel/90" : "overflow-hidden rounded-lg border border-line bg-panel/90"}>
       <div className="flex flex-col gap-3 border-b border-line p-4">
@@ -346,7 +445,7 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
           </button>
         </div>
       </div>
-      <div className="overflow-x-auto">
+      <div className="bg-ink/20">
         {visibleCompanies.length === 0 ? (
           <div className="p-8 text-center">
             <Search className="mx-auto h-9 w-9 text-slate-600" />
@@ -358,168 +457,164 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
             </p>
           </div>
         ) : (
-        <table className="w-full min-w-[1180px] border-collapse text-left text-sm">
-          <thead className="border-b border-line text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  onChange={(event) => {
-                    const checked = event.target.checked;
-                    setSelected(Object.fromEntries(visibleCompanies.map((company) => [company.id, checked])));
-                  }}
-                />
-              </th>
-              <th className="px-4 py-3">Empresa / segmento</th>
-              <th className="px-4 py-3">Localização</th>
-              <th className="px-4 py-3">Contato e links</th>
-              <th className="px-4 py-3">Avaliação / score</th>
-              <th className="px-4 py-3">Resumo sobre a empresa</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {visibleCompanies.map((company) => (
-              <tr id={`result-${company.id}`} key={company.id} className="scroll-mt-28 hover:bg-white/[0.03]">
-                <td className="px-4 py-4">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(selected[company.id])}
-                    onChange={(event) => setSelected((current) => ({ ...current, [company.id]: event.target.checked }))}
-                  />
-                </td>
-                <td className="px-4 py-4">
-                  <Link href={`/companies/${encodeURIComponent(company.id)}`} className="font-medium text-white hover:text-cyan">
-                    {company.name}
-                  </Link>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {valueOrNotLocated(company.category)}
-                  </p>
-                  <p className="mt-2 text-[11px] text-slate-500">CNPJ: {valueOrNotLocated(company.cnpj)}</p>
-                </td>
-                <td className="px-4 py-4 text-slate-300">
-                  <p>{valueOrNotLocated(company.city)}/{valueOrNotLocated(company.state)}</p>
-                  <p className="mt-1 max-w-[220px] text-xs text-slate-500">{valueOrNotLocated(company.address)}</p>
-                </td>
-                <td className="px-4 py-4 text-xs text-slate-300">
-                  <div className="max-w-[260px] space-y-1">
-                    <p>Telefone: {valueOrNotLocated(company.phone)}</p>
-                    <p>E-mail: {companyEmail(company)}</p>
-                    <p className="truncate">Site: {valueOrNotLocated(company.website)}</p>
-                    <p className="truncate">Maps: {valueOrNotLocated(company.mapsUrl)}</p>
-                  </div>
-                </td>
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-2">
-                    <div>
-                      <span className="text-lg font-semibold text-white">{company.nodereScore ?? company.score * 10}</span>
-                      <span className="text-xs text-slate-500">/1000</span>
-                      <p className="text-[11px] text-slate-500">Legado {company.score}/100</p>
+          <>
+            <div className="space-y-3 p-3 md:hidden">
+              {visibleCompanies.map((company) => (
+                <article id={`result-${company.id}`} key={company.id} className="scroll-mt-28 rounded-lg border border-line bg-panel/95 p-4 shadow-lg shadow-black/10">
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 shrink-0"
+                      checked={Boolean(selected[company.id])}
+                      onChange={(event) => setSelected((current) => ({ ...current, [company.id]: event.target.checked }))}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <Link href={`/companies/${encodeURIComponent(company.id)}`} className="line-clamp-2 text-base font-black text-white hover:text-cyan">
+                        {company.name}
+                      </Link>
+                      <p className="mt-1 text-xs text-slate-400">{valueOrNotLocated(company.category)}</p>
+                      <p className="mt-1 text-[11px] text-slate-500">CNPJ: {valueOrNotLocated(company.cnpj)}</p>
                     </div>
-                      <StatusBadge value={company.nodereClassification || company.opportunityLevel} />
+                    <StatusBadge value={company.status} />
                   </div>
-                  <p className="mt-2 text-xs text-slate-400">
-                    Avaliação: {valueOrNotLocated(company.rating)} · {valueOrNotLocated(company.reviewCount)} avaliações
-                  </p>
-                </td>
-                <td className="px-4 py-4 text-slate-400">
-                  <p className="max-w-[320px] text-xs leading-5 text-slate-300">{companySummary(company)}</p>
-                  <div className="mt-2 flex max-w-xs flex-wrap gap-1">
-                    {(company.digitalGaps?.length ? company.digitalGaps : company.detectedOpportunities.slice(0, 3)).slice(0, 4).map((gap) => (
-                      <span key={gap} className="nodere-status-badge text-[11px]" data-tone="moderate" title="Necessita análise">
-                        <span className="nodere-status-dot" aria-hidden="true" />
-                        {gap}
-                      </span>
-                    ))}
-                    {!(company.digitalGaps?.length || company.detectedOpportunities.length) && <span>Sem alerta crítico</span>}
-                  </div>
-                </td>
-                <td className="px-4 py-4">
-                  <StatusBadge value={company.status} />
-                </td>
-                <td className="px-4 py-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      onClick={() => saveLead(company)}
-                      disabled={saved[company.id] === "saving" || saved[company.id] === "saved"}
-                      className="btn-primary px-3 py-2 text-xs"
-                    >
-                      {saved[company.id] === "saved" ? <CheckCircle2 className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-                      {saved[company.id] === "saving" ? "Salvando" : saved[company.id] === "saved" ? "Salvo" : "Salvar lead"}
-                    </button>
-                    <Link href={`/companies/${encodeURIComponent(company.id)}`} className="inline-flex items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 text-xs font-semibold text-white hover:border-electric">
-                      <FileText className="h-4 w-4" />
-                      Ficha
-                    </Link>
-                    {isValidBrazilMobileWhatsapp(company.whatsapp) && (
-                      <a
-                        href={`https://wa.me/${company.whatsapp!.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMessage)}`}
-                        target="_blank"
-                        className="rounded-lg border border-success/30 bg-success/10 p-2 text-emerald-200 hover:bg-success/20"
-                        aria-label="Chamar no WhatsApp"
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                      </a>
-                    )}
-                    {company.whatsapp && !isValidBrazilMobileWhatsapp(company.whatsapp) && (
-                      <button
-                        type="button"
-                        className="rounded-lg border border-warning/30 bg-warning/10 px-2 py-2 text-[11px] text-amber-100 transition hover:bg-warning/20"
-                        title="Clique para corrigir"
-                        onClick={() => {
-                          setEditingWhatsapp((current) => ({ ...current, [company.id]: true }));
-                          setWhatsappDrafts((current) => ({ ...current, [company.id]: company.whatsapp ?? "" }));
-                        }}
-                      >
-                        WhatsApp inválido — clique para corrigir
-                      </button>
-                    )}
-                    {company.mapsUrl && (
-                      <a target="_blank" href={company.mapsUrl} className="rounded-lg border border-line bg-white/5 p-2 text-slate-300 hover:text-white" aria-label="Abrir Google Maps">
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    )}
-                    <button type="button" onClick={() => void runAi(company, "diagnosis")} className="rounded-lg border border-cyan/30 bg-cyan/10 p-2 text-cyan hover:bg-cyan/20" aria-label="Gerar diagnóstico IA">
-                      <Bot className="h-4 w-4" />
-                    </button>
-                    <button type="button" onClick={() => void runAi(company, "whatsapp")} className="rounded-lg border border-emerald-400/30 bg-emerald-400/10 p-2 text-emerald-200 hover:bg-emerald-400/20" aria-label="Gerar WhatsApp IA">
-                      <MessageCircle className="h-4 w-4" />
-                    </button>
-                    <button type="button" onClick={() => void runAi(company, "call")} className="rounded-lg border border-violet-400/30 bg-violet-400/10 p-2 text-violet-200 hover:bg-violet-400/20" aria-label="Gerar roteiro de ligação">
-                      <PhoneCall className="h-4 w-4" />
-                    </button>
-                  </div>
-                  {aiLoading[company.id] && <p className="mt-2 text-xs text-cyan">Gerando IA comercial...</p>}
-                  {aiMessages[company.id] && (
-                    <div className="mt-2 max-w-xl whitespace-pre-wrap rounded-lg border border-cyan/25 bg-cyan/10 p-3 text-xs leading-5 text-[var(--text-primary)]">
-                      {aiMessages[company.id]}
+
+                  <div className="mt-4 grid gap-3 text-xs text-slate-300">
+                    <div className="rounded-lg border border-line bg-ink/60 p-3">
+                      <p className="font-bold text-slate-200">Localização</p>
+                      <p className="mt-1">{valueOrNotLocated(company.city)}/{valueOrNotLocated(company.state)}</p>
+                      <p className="mt-1 line-clamp-2 text-slate-500">{valueOrNotLocated(company.address)}</p>
                     </div>
-                  )}
-                  {editingWhatsapp[company.id] && (
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div className="rounded-lg border border-line bg-ink/60 p-3">
+                      <p className="font-bold text-slate-200">Contato e links</p>
+                      <p className="mt-1">Telefone: {valueOrNotLocated(company.phone)}</p>
+                      <p className="truncate">E-mail: {companyEmail(company)}</p>
+                      <p className="truncate">Site: {valueOrNotLocated(company.website)}</p>
+                      <p className="truncate">Maps: {valueOrNotLocated(company.mapsUrl)}</p>
+                    </div>
+                    <div className="rounded-lg border border-line bg-ink/60 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <span className="text-xl font-black text-white">{company.nodereScore ?? company.score * 10}</span>
+                          <span className="text-xs text-slate-500">/1000</span>
+                          <p className="text-[11px] text-slate-500">Legado {company.score}/100</p>
+                        </div>
+                        <StatusBadge value={company.nodereClassification || company.opportunityLevel} />
+                      </div>
+                      <p className="mt-2 text-slate-400">Avaliação: {valueOrNotLocated(company.rating)} · {valueOrNotLocated(company.reviewCount)} avaliações</p>
+                    </div>
+                    <div className="rounded-lg border border-line bg-ink/60 p-3">
+                      <p className="font-bold text-slate-200">Resumo sobre a empresa</p>
+                      <p className="mt-1 line-clamp-4 leading-5 text-slate-300" title={companySummary(company)}>{companySummary(company)}</p>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {(company.digitalGaps?.length ? company.digitalGaps : company.detectedOpportunities.slice(0, 3)).slice(0, 4).map((gap) => (
+                          <span key={gap} className="nodere-status-badge text-[11px]" data-tone="moderate" title="Necessita análise">
+                            <span className="nodere-status-dot" aria-hidden="true" />
+                            {gap}
+                          </span>
+                        ))}
+                        {!(company.digitalGaps?.length || company.detectedOpportunities.length) && <span>Sem alerta crítico</span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/5 p-3">
+                    {renderCompanyActions(company, true)}
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="hidden max-h-[calc(100dvh-260px)] min-h-[320px] overflow-auto md:block">
+              <table className="w-full min-w-[1040px] border-separate border-spacing-0 text-left text-sm">
+                <thead className="sticky top-0 z-20 bg-panel/95 text-xs uppercase tracking-wide text-slate-500 backdrop-blur">
+                  <tr>
+                    <th className="w-12 border-b border-line px-4 py-3">
                       <input
-                        value={whatsappDrafts[company.id] ?? ""}
-                        onChange={(event) => setWhatsappDrafts((current) => ({ ...current, [company.id]: event.target.value }))}
-                        placeholder="(XX) 9XXXX-XXXX"
-                        className="min-w-[180px] flex-1 rounded-lg border border-line bg-ink px-3 py-2 text-xs text-white outline-none focus:border-electric"
+                        type="checkbox"
+                        checked={allSelected}
+                        onChange={(event) => {
+                          const checked = event.target.checked;
+                          setSelected(Object.fromEntries(visibleCompanies.map((company) => [company.id, checked])));
+                        }}
                       />
-                      <button type="button" onClick={() => void saveWhatsapp(company)} className="btn-action px-3 py-2 text-xs">Salvar</button>
-                      <button type="button" onClick={() => setEditingWhatsapp((current) => ({ ...current, [company.id]: false }))} className="btn-secondary px-3 py-2 text-xs">Cancelar</button>
-                      {whatsappErrors[company.id] && <p className="w-full text-xs text-red-300">{whatsappErrors[company.id]}</p>}
-                    </div>
-                  )}
-                  {messages[company.id] && (
-                    <p className={`mt-2 text-xs ${saved[company.id] === "error" ? "text-red-300" : "text-emerald-300"}`}>
-                      {messages[company.id]}
-                    </p>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    </th>
+                    <th className="w-[240px] border-b border-line px-4 py-3">Empresa / segmento</th>
+                    <th className="w-[200px] border-b border-line px-4 py-3">Localização</th>
+                    <th className="w-[240px] border-b border-line px-4 py-3">Contato e links</th>
+                    <th className="w-[180px] border-b border-line px-4 py-3">Avaliação / score</th>
+                    <th className="w-[280px] border-b border-line px-4 py-3">Resumo sobre a empresa</th>
+                    <th className="w-[130px] border-b border-line px-4 py-3">Status</th>
+                    <th className="sticky right-0 z-30 w-[220px] border-b border-l border-line bg-panel/95 px-4 py-3 shadow-[-16px_0_24px_rgba(0,0,0,0.25)]">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {visibleCompanies.map((company) => (
+                    <tr id={`result-${company.id}`} key={company.id} className="scroll-mt-28 align-top hover:bg-white/[0.03]">
+                      <td className="px-4 py-4">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(selected[company.id])}
+                          onChange={(event) => setSelected((current) => ({ ...current, [company.id]: event.target.checked }))}
+                        />
+                      </td>
+                      <td className="px-4 py-4">
+                        <Link href={`/companies/${encodeURIComponent(company.id)}`} className="line-clamp-2 font-medium text-white hover:text-cyan" title={company.name}>
+                          {company.name}
+                        </Link>
+                        <p className="mt-1 line-clamp-2 text-xs text-slate-500" title={valueOrNotLocated(company.category)}>
+                          {valueOrNotLocated(company.category)}
+                        </p>
+                        <p className="mt-2 text-[11px] text-slate-500">CNPJ: {valueOrNotLocated(company.cnpj)}</p>
+                      </td>
+                      <td className="px-4 py-4 text-slate-300">
+                        <p>{valueOrNotLocated(company.city)}/{valueOrNotLocated(company.state)}</p>
+                        <p className="mt-1 line-clamp-3 text-xs text-slate-500" title={valueOrNotLocated(company.address)}>{valueOrNotLocated(company.address)}</p>
+                      </td>
+                      <td className="px-4 py-4 text-xs text-slate-300">
+                        <div className="space-y-1">
+                          <p>Telefone: {valueOrNotLocated(company.phone)}</p>
+                          <p className="truncate" title={companyEmail(company)}>E-mail: {companyEmail(company)}</p>
+                          <p className="truncate" title={valueOrNotLocated(company.website)}>Site: {valueOrNotLocated(company.website)}</p>
+                          <p className="truncate" title={valueOrNotLocated(company.mapsUrl)}>Maps: {valueOrNotLocated(company.mapsUrl)}</p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex flex-col gap-2">
+                          <div>
+                            <span className="text-lg font-semibold text-white">{company.nodereScore ?? company.score * 10}</span>
+                            <span className="text-xs text-slate-500">/1000</span>
+                            <p className="text-[11px] text-slate-500">Legado {company.score}/100</p>
+                          </div>
+                          <StatusBadge value={company.nodereClassification || company.opportunityLevel} />
+                        </div>
+                        <p className="mt-2 text-xs text-slate-400">
+                          Avaliação: {valueOrNotLocated(company.rating)} · {valueOrNotLocated(company.reviewCount)} avaliações
+                        </p>
+                      </td>
+                      <td className="px-4 py-4 text-slate-400">
+                        <p className="line-clamp-4 text-xs leading-5 text-slate-300" title={companySummary(company)}>{companySummary(company)}</p>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {(company.digitalGaps?.length ? company.digitalGaps : company.detectedOpportunities.slice(0, 3)).slice(0, 4).map((gap) => (
+                            <span key={gap} className="nodere-status-badge text-[11px]" data-tone="moderate" title="Necessita análise">
+                              <span className="nodere-status-dot" aria-hidden="true" />
+                              {gap}
+                            </span>
+                          ))}
+                          {!(company.digitalGaps?.length || company.detectedOpportunities.length) && <span>Sem alerta crítico</span>}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <StatusBadge value={company.status} />
+                      </td>
+                      <td className="sticky right-0 z-10 border-l border-line bg-panel/95 px-4 py-4 shadow-[-16px_0_24px_rgba(0,0,0,0.18)]">
+                        {renderCompanyActions(company)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>
