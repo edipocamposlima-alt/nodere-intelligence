@@ -424,6 +424,19 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
         )}
         <div className="flex flex-wrap items-center gap-2">
           <span className="mr-1 text-xs font-bold uppercase tracking-wide text-slate-500">Ações em massa</span>
+          <label className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={(event) => {
+                const checked = event.target.checked;
+                setSelected(Object.fromEntries(visibleCompanies.map((company) => [company.id, checked])));
+              }}
+              disabled={visibleCompanies.length === 0}
+              className="h-4 w-4"
+            />
+            Selecionar visíveis
+          </label>
           <button onClick={saveSelected} disabled={selectedCompanies.length === 0} className="btn-primary min-h-9 px-3 py-2 text-xs">
             <Save className="h-4 w-4" />Salvar selecionadas
           </button>
@@ -457,164 +470,95 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
             </p>
           </div>
         ) : (
-          <>
-            <div className="space-y-3 p-3 md:hidden">
-              {visibleCompanies.map((company) => (
+          <div className="grid gap-4 p-3 sm:p-4 xl:grid-cols-2">
+            {visibleCompanies.map((company) => {
+              const score = company.nodereScore ?? company.score * 10;
+              const gaps = (company.digitalGaps?.length ? company.digitalGaps : company.detectedOpportunities.slice(0, 3)).slice(0, 4);
+              return (
                 <article id={`result-${company.id}`} key={company.id} className="scroll-mt-28 rounded-lg border border-line bg-panel/95 p-4 shadow-lg shadow-black/10">
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      className="mt-1 h-4 w-4 shrink-0"
-                      checked={Boolean(selected[company.id])}
-                      onChange={(event) => setSelected((current) => ({ ...current, [company.id]: event.target.checked }))}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <Link href={`/companies/${encodeURIComponent(company.id)}`} className="line-clamp-2 text-base font-black text-white hover:text-cyan">
-                        {company.name}
-                      </Link>
-                      <p className="mt-1 text-xs text-slate-400">{valueOrNotLocated(company.category)}</p>
-                      <p className="mt-1 text-[11px] text-slate-500">CNPJ: {valueOrNotLocated(company.cnpj)}</p>
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 shrink-0"
+                        checked={Boolean(selected[company.id])}
+                        onChange={(event) => setSelected((current) => ({ ...current, [company.id]: event.target.checked }))}
+                        aria-label={`Selecionar ${company.name}`}
+                      />
+                      <div className="min-w-0">
+                        <Link href={`/companies/${encodeURIComponent(company.id)}`} className="line-clamp-2 text-base font-black text-white hover:text-cyan" title={company.name}>
+                          {company.name}
+                        </Link>
+                        <p className="mt-1 line-clamp-2 text-xs text-slate-400" title={valueOrNotLocated(company.category)}>
+                          {valueOrNotLocated(company.category)}
+                        </p>
+                        <p className="mt-2 break-words text-[11px] text-slate-500">CNPJ: {valueOrNotLocated(company.cnpj)}</p>
+                      </div>
                     </div>
-                    <StatusBadge value={company.status} />
+                    <div className="flex flex-wrap gap-2 lg:justify-end">
+                      <StatusBadge value={company.status} />
+                      <StatusBadge value={company.nodereClassification || company.opportunityLevel} />
+                    </div>
                   </div>
 
-                  <div className="mt-4 grid gap-3 text-xs text-slate-300">
-                    <div className="rounded-lg border border-line bg-ink/60 p-3">
+                  <div className="mt-4 grid gap-3 text-xs text-slate-300 md:grid-cols-2">
+                    <section className="rounded-lg border border-line bg-ink/60 p-3">
                       <p className="font-bold text-slate-200">Localização</p>
-                      <p className="mt-1">{valueOrNotLocated(company.city)}/{valueOrNotLocated(company.state)}</p>
-                      <p className="mt-1 line-clamp-2 text-slate-500">{valueOrNotLocated(company.address)}</p>
-                    </div>
-                    <div className="rounded-lg border border-line bg-ink/60 p-3">
+                      <p className="mt-1 break-words">{valueOrNotLocated(company.city)}/{valueOrNotLocated(company.state)}</p>
+                      <p className="mt-1 line-clamp-3 break-words text-slate-500" title={valueOrNotLocated(company.address)}>
+                        {valueOrNotLocated(company.address)}
+                      </p>
+                    </section>
+
+                    <section className="rounded-lg border border-line bg-ink/60 p-3">
                       <p className="font-bold text-slate-200">Contato e links</p>
-                      <p className="mt-1">Telefone: {valueOrNotLocated(company.phone)}</p>
-                      <p className="truncate">E-mail: {companyEmail(company)}</p>
-                      <p className="truncate">Site: {valueOrNotLocated(company.website)}</p>
-                      <p className="truncate">Maps: {valueOrNotLocated(company.mapsUrl)}</p>
-                    </div>
-                    <div className="rounded-lg border border-line bg-ink/60 p-3">
-                      <div className="flex items-center justify-between gap-2">
+                      <p className="mt-1 break-words">Telefone: {valueOrNotLocated(company.phone)}</p>
+                      <p className="break-words" title={companyEmail(company)}>E-mail: {companyEmail(company)}</p>
+                      <p className="break-words" title={valueOrNotLocated(company.website)}>Site: {valueOrNotLocated(company.website)}</p>
+                      <p className="break-words" title={valueOrNotLocated(company.mapsUrl)}>Maps: {valueOrNotLocated(company.mapsUrl)}</p>
+                    </section>
+
+                    <section className="rounded-lg border border-line bg-ink/60 p-3">
+                      <div className="flex items-center justify-between gap-3">
                         <div>
-                          <span className="text-xl font-black text-white">{company.nodereScore ?? company.score * 10}</span>
+                          <span className="text-xl font-black text-white">{score}</span>
                           <span className="text-xs text-slate-500">/1000</span>
                           <p className="text-[11px] text-slate-500">Legado {company.score}/100</p>
                         </div>
-                        <StatusBadge value={company.nodereClassification || company.opportunityLevel} />
+                        <div className="text-right text-slate-400">
+                          <p className="font-bold text-slate-200">Avaliação</p>
+                          <p>{valueOrNotLocated(company.rating)} · {valueOrNotLocated(company.reviewCount)} avaliações</p>
+                        </div>
                       </div>
-                      <p className="mt-2 text-slate-400">Avaliação: {valueOrNotLocated(company.rating)} · {valueOrNotLocated(company.reviewCount)} avaliações</p>
-                    </div>
-                    <div className="rounded-lg border border-line bg-ink/60 p-3">
-                      <p className="font-bold text-slate-200">Resumo sobre a empresa</p>
-                      <p className="mt-1 line-clamp-4 leading-5 text-slate-300" title={companySummary(company)}>{companySummary(company)}</p>
+                    </section>
+
+                    <section className="rounded-lg border border-line bg-ink/60 p-3">
+                      <p className="font-bold text-slate-200">Alertas e oportunidades</p>
                       <div className="mt-2 flex flex-wrap gap-1">
-                        {(company.digitalGaps?.length ? company.digitalGaps : company.detectedOpportunities.slice(0, 3)).slice(0, 4).map((gap) => (
+                        {gaps.length ? gaps.map((gap) => (
                           <span key={gap} className="nodere-status-badge text-[11px]" data-tone="moderate" title="Necessita análise">
                             <span className="nodere-status-dot" aria-hidden="true" />
                             {gap}
                           </span>
-                        ))}
-                        {!(company.digitalGaps?.length || company.detectedOpportunities.length) && <span>Sem alerta crítico</span>}
+                        )) : <span className="text-slate-500">Sem alerta crítico</span>}
                       </div>
-                    </div>
+                    </section>
                   </div>
 
-                  <div className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/5 p-3">
+                  <section className="mt-3 rounded-lg border border-line bg-ink/60 p-3 text-xs">
+                    <p className="font-bold text-slate-200">Resumo sobre a empresa</p>
+                    <p className="mt-1 line-clamp-4 break-words leading-5 text-slate-300" title={companySummary(company)}>
+                      {companySummary(company)}
+                    </p>
+                  </section>
+
+                  <section className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/5 p-3">
                     {renderCompanyActions(company, true)}
-                  </div>
+                  </section>
                 </article>
-              ))}
-            </div>
-
-            <div className="hidden max-h-[calc(100dvh-260px)] min-h-[320px] overflow-auto md:block">
-              <table className="w-full min-w-[1040px] border-separate border-spacing-0 text-left text-sm">
-                <thead className="sticky top-0 z-20 bg-panel/95 text-xs uppercase tracking-wide text-slate-500 backdrop-blur">
-                  <tr>
-                    <th className="w-12 border-b border-line px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={allSelected}
-                        onChange={(event) => {
-                          const checked = event.target.checked;
-                          setSelected(Object.fromEntries(visibleCompanies.map((company) => [company.id, checked])));
-                        }}
-                      />
-                    </th>
-                    <th className="w-[240px] border-b border-line px-4 py-3">Empresa / segmento</th>
-                    <th className="w-[200px] border-b border-line px-4 py-3">Localização</th>
-                    <th className="w-[240px] border-b border-line px-4 py-3">Contato e links</th>
-                    <th className="w-[180px] border-b border-line px-4 py-3">Avaliação / score</th>
-                    <th className="w-[280px] border-b border-line px-4 py-3">Resumo sobre a empresa</th>
-                    <th className="w-[130px] border-b border-line px-4 py-3">Status</th>
-                    <th className="sticky right-0 z-30 w-[220px] border-b border-l border-line bg-panel/95 px-4 py-3 shadow-[-16px_0_24px_rgba(0,0,0,0.25)]">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {visibleCompanies.map((company) => (
-                    <tr id={`result-${company.id}`} key={company.id} className="scroll-mt-28 align-top hover:bg-white/[0.03]">
-                      <td className="px-4 py-4">
-                        <input
-                          type="checkbox"
-                          checked={Boolean(selected[company.id])}
-                          onChange={(event) => setSelected((current) => ({ ...current, [company.id]: event.target.checked }))}
-                        />
-                      </td>
-                      <td className="px-4 py-4">
-                        <Link href={`/companies/${encodeURIComponent(company.id)}`} className="line-clamp-2 font-medium text-white hover:text-cyan" title={company.name}>
-                          {company.name}
-                        </Link>
-                        <p className="mt-1 line-clamp-2 text-xs text-slate-500" title={valueOrNotLocated(company.category)}>
-                          {valueOrNotLocated(company.category)}
-                        </p>
-                        <p className="mt-2 text-[11px] text-slate-500">CNPJ: {valueOrNotLocated(company.cnpj)}</p>
-                      </td>
-                      <td className="px-4 py-4 text-slate-300">
-                        <p>{valueOrNotLocated(company.city)}/{valueOrNotLocated(company.state)}</p>
-                        <p className="mt-1 line-clamp-3 text-xs text-slate-500" title={valueOrNotLocated(company.address)}>{valueOrNotLocated(company.address)}</p>
-                      </td>
-                      <td className="px-4 py-4 text-xs text-slate-300">
-                        <div className="space-y-1">
-                          <p>Telefone: {valueOrNotLocated(company.phone)}</p>
-                          <p className="truncate" title={companyEmail(company)}>E-mail: {companyEmail(company)}</p>
-                          <p className="truncate" title={valueOrNotLocated(company.website)}>Site: {valueOrNotLocated(company.website)}</p>
-                          <p className="truncate" title={valueOrNotLocated(company.mapsUrl)}>Maps: {valueOrNotLocated(company.mapsUrl)}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex flex-col gap-2">
-                          <div>
-                            <span className="text-lg font-semibold text-white">{company.nodereScore ?? company.score * 10}</span>
-                            <span className="text-xs text-slate-500">/1000</span>
-                            <p className="text-[11px] text-slate-500">Legado {company.score}/100</p>
-                          </div>
-                          <StatusBadge value={company.nodereClassification || company.opportunityLevel} />
-                        </div>
-                        <p className="mt-2 text-xs text-slate-400">
-                          Avaliação: {valueOrNotLocated(company.rating)} · {valueOrNotLocated(company.reviewCount)} avaliações
-                        </p>
-                      </td>
-                      <td className="px-4 py-4 text-slate-400">
-                        <p className="line-clamp-4 text-xs leading-5 text-slate-300" title={companySummary(company)}>{companySummary(company)}</p>
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {(company.digitalGaps?.length ? company.digitalGaps : company.detectedOpportunities.slice(0, 3)).slice(0, 4).map((gap) => (
-                            <span key={gap} className="nodere-status-badge text-[11px]" data-tone="moderate" title="Necessita análise">
-                              <span className="nodere-status-dot" aria-hidden="true" />
-                              {gap}
-                            </span>
-                          ))}
-                          {!(company.digitalGaps?.length || company.detectedOpportunities.length) && <span>Sem alerta crítico</span>}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <StatusBadge value={company.status} />
-                      </td>
-                      <td className="sticky right-0 z-10 border-l border-line bg-panel/95 px-4 py-4 shadow-[-16px_0_24px_rgba(0,0,0,0.18)]">
-                        {renderCompanyActions(company)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>
