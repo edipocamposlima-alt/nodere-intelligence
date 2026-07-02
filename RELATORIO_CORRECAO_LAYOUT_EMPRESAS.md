@@ -99,29 +99,52 @@ A correcao anterior ainda mantinha a lista de empresas como uma tabela desktop l
 
 ## Validacao visual em producao
 
-Pendente ate publicacao desta correcao.
+Ambiente validado:
 
-Checklist esperado em producao:
+- `https://nodere.com.br/companies`
+- Sessao autenticada real no navegador.
+- Deployment Vercel: `dpl_J5q1TGbgeZJAPMdwgvrjUgEvNZrL`
+- URL do deployment: `https://web-axfexhc4i-edipo-lima-s-projects.vercel.app`
+- Alias de producao: `https://nodere.com.br`
 
-- `https://nodere.com.br/companies` abre com sessao real.
-- Desktop 1366px exibe cards, nao tabela.
-- Notebook/zoom 100% nao mostra barra horizontal no final da lista.
-- Mobile 375px empilha cards em uma coluna.
-- Botoes do card continuam visiveis.
-- Tema claro e tema escuro usam os tokens existentes.
+Resultado desktop/producao:
+
+- Login nao apareceu.
+- Cards renderizados: 474.
+- Tabelas no DOM da lista: 0.
+- Barra horizontal no documento: NAO.
+- `Selecionar visiveis`: SIM.
+- Acoes em massa `Salvar selecionadas`, `Ignorar`, `CSV`, `PDF`: SIM.
+- Acoes por card `Salvar lead`/`Ficha`: SIM.
+- Dados centrais preservados nos cards: SIM.
+
+Resultado mobile 375px:
+
+- Login nao apareceu.
+- Cards renderizados: 474.
+- Tabelas no DOM da lista: 0.
+- Barra horizontal no documento: NAO.
+- Largura do documento igual ao viewport: SIM.
+- Acoes por card visiveis: SIM.
+- Acoes em massa preservadas: SIM.
+
+Tema claro/escuro:
+
+- A tela usa tokens/classes existentes do tema NODERE.
+- Nao houve alteracao no provider de tema nem nas regras de persistencia.
 
 ## Pendencias
 
-- Publicar frontend na Vercel.
-- Validar visualmente em producao com sessao autenticada real.
+Nao ha pendencia critica restante para a aba Empresas.
 
 ## Status atual
 
 - Layout em cards implementado: SIM
 - Tabela horizontal removida como padrao: SIM
-- Barra horizontal no final da lista eliminada no componente: SIM
+- Barra horizontal no final da lista eliminada: SIM
 - Botoes visiveis em cada card: SIM
 - Todas as informacoes preservadas: SIM
 - Todas as funcionalidades preservadas: SIM
 - Testes tecnicos locais aprovados: SIM
-- Producao validada: PENDENTE
+- Producao validada: SIM
+- Ferramenta liberada: SIM
