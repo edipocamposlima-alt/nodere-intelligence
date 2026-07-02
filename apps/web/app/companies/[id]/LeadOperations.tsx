@@ -1643,7 +1643,7 @@ export function LeadOperations({ company }: { company: Company }) {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-emerald-200">Fluxo obrigatório de proposta</p>
-                <h4 className="mt-1 text-lg font-black text-white">Selecionar Produto/Serviço</h4>
+                <h4 className="mt-1 text-lg font-black text-white">Selecionar produtos/serviços</h4>
                 <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-300">
                   A proposta começa pela seleção de produtos/serviços já cadastrados. Os campos comerciais principais ficam bloqueados e devem ser corrigidos na aba Produtos/Serviços quando necessário.
                 </p>
@@ -1798,7 +1798,7 @@ export function LeadOperations({ company }: { company: Company }) {
 
             <div className="mt-4 grid gap-3 lg:grid-cols-2">
               <label className="text-xs font-semibold text-slate-400">
-                Observações comerciais da proposta
+                Observações comerciais para o cliente
                 <textarea
                   value={proposalCustomerNotes}
                   onChange={(event) => setProposalCustomerNotes(event.target.value)}
