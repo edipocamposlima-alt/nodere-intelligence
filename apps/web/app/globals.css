@@ -1788,27 +1788,26 @@ textarea {
     linear-gradient(90deg, rgba(66, 215, 255, 0.04) 1px, transparent 1px);
   background-size: 42px 42px;
   width: 100%;
-  max-width: 100vw;
-  overflow-x: clip;
+  max-width: 100%;
 }
 
 .nodere-app-shell {
   width: 100%;
-  max-width: 100vw;
-  overflow-x: clip;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .nodere-app-main {
   width: 100%;
   max-width: 100%;
-  overflow-x: clip;
+  min-width: 0;
 }
 
 .nodere-app-content {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  overflow-x: clip;
+  box-sizing: border-box;
 }
 
 .nodere-app-content > main,
@@ -1816,6 +1815,18 @@ textarea {
 .nodere-app-content > div {
   max-width: 100%;
   min-width: 0;
+}
+
+.nodere-app-content :where(.grid, .flex, section, article, form, fieldset, label, input, select, textarea) {
+  min-width: 0;
+}
+
+.nodere-app-content :where(img, video, canvas, svg) {
+  max-width: 100%;
+}
+
+.nodere-app-content :where(table) {
+  max-width: 100%;
 }
 
 .nodere-topbar {
@@ -1828,24 +1839,12 @@ textarea {
 
 .nodere-kanban-scroll {
   width: 100%;
-  max-width: calc(100vw - 2rem);
+  max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-inline: contain;
   scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
-}
-
-@media (min-width: 1024px) {
-  .nodere-kanban-scroll {
-    max-width: calc(100vw - 18rem);
-  }
-}
-
-@media (min-width: 1280px) {
-  .nodere-kanban-scroll {
-    max-width: calc(100vw - 20rem);
-  }
 }
 
 :root[data-theme="light"] .nodere-grid {
@@ -3146,7 +3145,7 @@ textarea {
   width: 100%;
   max-width: 100%;
   overflow-y: auto;
-  overflow-x: clip;
+  overflow-x: hidden;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
   scroll-padding-top: 80px;
@@ -5789,8 +5788,8 @@ section,
   }
 
   main {
-    max-width: 100vw;
-    overflow-x: clip;
+    max-width: 100%;
+    min-width: 0;
   }
 
   input,

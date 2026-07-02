@@ -1045,7 +1045,7 @@ export function LeadOperations({ company }: { company: Company }) {
       )}
 
       {tab === "observacoes" && (
-        <div className="mt-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="mt-5 grid min-w-0 gap-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
           <form onSubmit={addNote} className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
               <select name="type" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm">
@@ -1089,7 +1089,7 @@ export function LeadOperations({ company }: { company: Company }) {
       )}
 
       {tab === "agenda" && (
-        <div className="mt-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="mt-5 grid min-w-0 gap-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
           <form onSubmit={addTask} className="space-y-3">
             <input name="title" required placeholder="Título da tarefa" className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
             <input type="hidden" name="description" value={taskDescription} />
@@ -1124,7 +1124,7 @@ export function LeadOperations({ company }: { company: Company }) {
       )}
 
       {tab === "decisores" && (
-        <div className="mt-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="mt-5 grid min-w-0 gap-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
           <form onSubmit={addContact} className={`${cardClass} space-y-4`}>
             <div>
               <h4 className="font-semibold text-white">{editingContactId ? "Editar contato" : "Adicionar novo contato"}</h4>
@@ -1168,7 +1168,7 @@ export function LeadOperations({ company }: { company: Company }) {
             {contacts.length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhum contato cadastrado.</p>}
             {contacts.map((contact) => (
               <article key={contact.id} className="rounded-lg border border-line bg-ink p-4">
-                <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+                <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
                   <div>
                     <p className="font-semibold text-white">{contact.name}</p>
                     <p className="mt-1 text-sm text-slate-400">{contact.role || "Cargo não informado"}</p>
@@ -1197,7 +1197,7 @@ export function LeadOperations({ company }: { company: Company }) {
       )}
 
       {tab === "historico" && (
-        <div className="mt-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="mt-5 grid min-w-0 gap-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
           <div className="space-y-4">
             <form onSubmit={addCommunication} className={`${cardClass} space-y-4`}>
               <div>
@@ -1280,7 +1280,7 @@ export function LeadOperations({ company }: { company: Company }) {
       )}
 
       {tab === "contratos" && (
-        <div className="mt-5 grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="mt-5 grid min-w-0 gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
           <form onSubmit={addNegotiation} className={`${cardClass} space-y-4`}>
             <div>
               <h4 className="font-semibold text-white">{editingNegotiationId ? "Editar negociação" : "Criar nova negociação"}</h4>
@@ -1364,7 +1364,7 @@ export function LeadOperations({ company }: { company: Company }) {
 
       {tab === "ia" && (
         <div className="mt-5 space-y-4">
-          <div className="grid gap-3 md:grid-cols-[260px_1fr_auto]">
+          <div className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,260px)_minmax(0,1fr)_auto]">
             <select value={generationType} onChange={(event) => setGenerationType(event.target.value)} className="rounded-lg border border-line bg-ink px-3 py-2 text-sm">
               {["Resumo comercial", "Mensagem WhatsApp", "E-mail comercial", "Proposta comercial", "Contrato simples", "Objeções e respostas", "Diagnóstico"].map((item) => <option key={item}>{item}</option>)}
             </select>
@@ -1440,7 +1440,7 @@ export function LeadOperations({ company }: { company: Company }) {
                             </span>
                           </span>
                         </label>
-                        <div className="grid min-w-[180px] gap-1 rounded-lg border border-line bg-panel/70 p-3 text-sm">
+                        <div className="grid min-w-0 gap-1 rounded-lg border border-line bg-panel/70 p-3 text-sm sm:min-w-[180px]">
                           <span className="text-xs font-semibold uppercase text-slate-400">Valor base</span>
                           <strong className="text-lg text-white">{formatCurrency(basePrice)}</strong>
                           <span className="text-xs text-slate-400">Valor final: {formatCurrency(rowFinal)}</span>
@@ -1588,7 +1588,7 @@ export function LeadOperations({ company }: { company: Company }) {
       )}
 
       {tab === "enriquecimento" && (
-        <div className="mt-5 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="mt-5 grid min-w-0 gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
           <div className="rounded-lg border border-line bg-ink p-4">
             <h4 className="font-semibold text-white">Enriquecimento externo</h4>
             <p className="mt-2 text-sm leading-6 text-slate-400">
@@ -1648,7 +1648,7 @@ export function LeadOperations({ company }: { company: Company }) {
                   A proposta começa pela seleção de produtos/serviços já cadastrados. Os campos comerciais principais ficam bloqueados e devem ser corrigidos na aba Produtos/Serviços quando necessário.
                 </p>
               </div>
-              <label className="min-w-[220px] text-xs font-semibold text-slate-400">
+              <label className="min-w-0 text-xs font-semibold text-slate-400 sm:min-w-[220px]">
                 Tipo de documento
                 <select
                   value={controlledDocumentType}
@@ -1722,7 +1722,7 @@ export function LeadOperations({ company }: { company: Company }) {
                             </span>
                           </span>
                         </label>
-                        <div className="grid min-w-[210px] gap-1 rounded-lg border border-line bg-panel/70 p-3 text-sm">
+                        <div className="grid min-w-0 gap-1 rounded-lg border border-line bg-panel/70 p-3 text-sm sm:min-w-[210px]">
                           <span className="text-xs font-semibold uppercase text-slate-400">Valor original</span>
                           <strong className="text-lg text-white">{formatCurrency(basePrice)}</strong>
                           <span className="text-xs text-slate-400">Aplicado: {formatCurrency(appliedPrice)}</span>

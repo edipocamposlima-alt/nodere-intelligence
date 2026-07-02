@@ -370,9 +370,9 @@ export function CrmClientFullPage({ company }: { company: Company }) {
 
       {message && <div className="mx-4 mt-4 rounded-lg border border-line bg-panel px-4 py-3 text-sm md:mx-6">{message}</div>}
 
-      <main className="grid gap-4 p-4 md:p-6 xl:grid-cols-[240px_minmax(0,1fr)_300px]">
-        <aside className="rounded-xl border border-line bg-panel p-2 xl:sticky xl:top-24 xl:h-[calc(100dvh-7rem)] xl:overflow-y-auto">
-          <nav className="grid grid-cols-2 gap-1 sm:grid-cols-3 xl:grid-cols-1">
+      <main className="grid min-w-0 gap-4 p-4 md:p-6 2xl:grid-cols-[220px_minmax(0,1fr)_280px]">
+        <aside className="rounded-xl border border-line bg-panel p-2 2xl:sticky 2xl:top-24 2xl:h-[calc(100dvh-7rem)] 2xl:overflow-y-auto">
+          <nav className="grid grid-cols-2 gap-1 sm:grid-cols-3 2xl:grid-cols-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -410,7 +410,7 @@ export function CrmClientFullPage({ company }: { company: Company }) {
           {activeTab === "files" && <ListSection title="Arquivos/Anexos" empty="Nenhum anexo encontrado no histórico carregado." items={[]} fields={[]} />}
         </section>
 
-        <aside className="rounded-xl border border-line bg-panel p-4 xl:sticky xl:top-24 xl:h-[calc(100dvh-7rem)] xl:overflow-y-auto">
+        <aside className="rounded-xl border border-line bg-panel p-4 2xl:sticky 2xl:top-24 2xl:h-[calc(100dvh-7rem)] 2xl:overflow-y-auto">
           <h2 className="text-sm font-black uppercase tracking-[0.14em] text-[var(--text-secondary)]">Resumo comercial</h2>
           <div className="mt-4 space-y-3">
             <ScoreBadge score={company.score || 0} />
@@ -468,7 +468,7 @@ function Overview({ company, loaded, summary }: { company: Company; loaded: Load
         <SummaryCard label="Valor em negociação" value={money(summary.value)} hint={currentDeal ? "Negociação vinculada" : "Estimativa do CRM"} />
       </div>
 
-      <div className="mt-5 grid gap-4 xl:grid-cols-[1fr_0.9fr]">
+      <div className="mt-5 grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
         <section className="rounded-xl border border-line bg-ink/60 p-4">
           <h3 className="font-black">Linha do tempo consolidada</h3>
           <div className="mt-4 space-y-3">

@@ -63,7 +63,7 @@ function SelectFilter({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex min-w-[160px] flex-1 flex-col gap-1 text-xs font-semibold text-[var(--text-secondary)]">
+    <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs font-semibold text-[var(--text-secondary)] sm:min-w-[160px]">
       {label}
       <select
         value={value}
@@ -242,7 +242,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
               <option key={source} value={source}>{source}</option>
             ))}
           </SelectFilter>
-          <label className="flex min-w-[160px] flex-1 flex-col gap-1 text-xs font-semibold text-[var(--text-secondary)]">
+          <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs font-semibold text-[var(--text-secondary)] sm:min-w-[160px]">
             Periodo
             <select
               value={filters.period || "30d"}
@@ -268,7 +268,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
         <Card label="Score medio" value={loading ? "..." : metric(metrics?.avg_score || 0)} sub={`${metric(metrics?.total_companies || 0)} empresas no recorte`} />
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
+      <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <div className="rounded-2xl border border-line bg-panel/90 p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <TrendingUp size={18} className="text-primary" />

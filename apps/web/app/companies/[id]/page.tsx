@@ -281,7 +281,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
 
       <LeadOperations company={company} />
 
-      <div className="grid gap-5 xl:grid-cols-[1fr_1.2fr]">
+      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         {/* Left column */}
         <div className="space-y-5">
           <div className="rounded-lg border border-line bg-panel/90 p-5">

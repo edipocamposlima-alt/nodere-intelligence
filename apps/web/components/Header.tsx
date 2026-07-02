@@ -199,7 +199,7 @@ export function Header() {
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 xl:flex-nowrap xl:gap-4">
         <Link href={dashboardHref} className="min-w-0 flex-1 xl:flex-none">
           <span className="block truncate text-base font-semibold text-[var(--text-primary)] md:text-lg">{pageTitle}</span>
-          <span className="hidden max-w-[42vw] truncate text-xs text-[var(--text-secondary)] sm:block xl:max-w-none">{brandName} · Operação comercial e inteligência de prospecção</span>
+          <span className="hidden max-w-full truncate text-xs text-[var(--text-secondary)] sm:block">{brandName} · Operação comercial e inteligência de prospecção</span>
         </Link>
 
         <form onSubmit={submitGlobalSearch} className="order-3 hidden min-w-0 w-full items-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 md:flex xl:order-none xl:max-w-md">
