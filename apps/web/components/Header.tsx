@@ -64,6 +64,7 @@ export function Header() {
   const { credits } = useCredits();
 
   const pageTitle = useMemo(() => getPageTitle(pathname || "/"), [pathname]);
+  const dashboardHref = pathname?.startsWith("/app") ? "/app/dashboard" : "/dashboard";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -196,7 +197,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-ink/90 px-4 py-3 backdrop-blur md:px-8">
       <div className="flex items-center justify-between gap-4">
-        <Link href="/dashboard" className="min-w-0">
+        <Link href={dashboardHref} className="min-w-0">
           <span className="block truncate text-base font-semibold text-[var(--text-primary)] md:text-lg">{pageTitle}</span>
           <span className="hidden text-xs text-[var(--text-secondary)] sm:block">{brandName} · Operação comercial e inteligência de prospecção</span>
         </Link>

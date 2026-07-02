@@ -4,7 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { CalendarClock, Copy, Download, Eye, FileText, ImageIcon, MessageCircle, Pencil, Plus, RotateCcw, Save, Sparkles, Trash2, Upload } from "lucide-react";
 import { Company } from "@/lib/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
-import { CommercialInsight, createCalendarEvent, generateCommercialInsights, updateCompany as saveCompanyData } from "@/lib/api";
+import { CatalogItem, CommercialInsight, NodereProposal, ProposalItemPayload, createCalendarEvent, createProposal, downloadContractPdf, downloadProposalPdf, generateCommercialInsights, getCatalogItems, updateCompany as saveCompanyData } from "@/lib/api";
 import { downloadNoderePdf } from "@/lib/pdf";
 import { RichTextEditor, RichTextPreview } from "@/components/RichTextEditor";
 import { CompanyMiniCalendar } from "@/app/calendar/CalendarClient";
@@ -17,8 +17,14 @@ type DocumentItem = { id: string; companyId: string; type: string; title: string
 type CompanyFile = { id: string; companyId: string; filename: string; fileUrl: string; fileType?: string; fileSize?: number; createdAt: string; storagePath?: string };
 type Contact = { id: string; name: string; role?: string; email?: string; phone?: string; whatsapp?: string; linkedin_url?: string; notes?: string; created_at?: string };
 type Communication = { id: string; type: string; direction: string; subject?: string; body?: string; sent_by?: string; sent_at: string; status?: string; metadata?: { nextAction?: string; responsible?: string } };
-type ContractItem = { id: string; catalog_items?: { name?: string; code?: string; type?: string }; quantity?: number; contracted_price?: number; status?: string; notes?: string; created_at?: string };
+type ContractItem = { id: string; catalog_item_id?: string; catalog_items?: Partial<CatalogItem>; quantity?: number; contracted_price?: number; discount_pct?: number; status?: string; notes?: string; created_at?: string };
 type ProposalVersion = { id: string; lead_id: string; version_number: number; content?: string; service_type?: string; generated_by?: "user" | "ai"; created_at: string };
+type ControlledDocumentSelection = {
+  quantity: number;
+  appliedPrice: string;
+  discountPercent: string;
+  discountAmount: string;
+};
 type Tab = "dados" | "observacoes" | "agenda" | "decisores" | "historico" | "contratos" | "ia" | "documentos" | "whatsapp" | "enriquecimento";
 
 const inputClass = "mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-white outline-none focus:border-electric disabled:cursor-not-allowed disabled:opacity-60";
@@ -44,6 +50,20 @@ function normalizeCalendarPriority(value: string) {
   if (normalized.includes("alta") || normalized.includes("urgente")) return "alta";
   if (normalized.includes("baixa")) return "baixa";
   return "media";
+}
+
+function formatCurrency(value?: number | null) {
+  return Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function parseDecimalInput(value: string | number | null | undefined) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const normalized = String(value || "").replace(/[^\d,.-]/g, "").trim();
+  if (!normalized) return 0;
+  const numberValue = normalized.includes(",")
+    ? Number(normalized.replace(/\./g, "").replace(",", "."))
+    : Number(normalized);
+  return Number.isFinite(numberValue) ? numberValue : 0;
 }
 
 function authHeaders(): Record<string, string> {
@@ -88,11 +108,18 @@ export function LeadOperations({ company }: { company: Company }) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [communications, setCommunications] = useState<Communication[]>([]);
   const [contracts, setContracts] = useState<ContractItem[]>([]);
+  const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
   const [proposalVersions, setProposalVersions] = useState<ProposalVersion[]>([]);
   const [previewVersion, setPreviewVersion] = useState<ProposalVersion | null>(null);
+  const [generatedControlledDocuments, setGeneratedControlledDocuments] = useState<NodereProposal[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editor, setEditor] = useState("");
+  const [controlledSelections, setControlledSelections] = useState<Record<string, ControlledDocumentSelection>>({});
+  const [controlledDocumentType, setControlledDocumentType] = useState<"proposal" | "contract">("proposal");
+  const [proposalCustomerNotes, setProposalCustomerNotes] = useState("");
+  const [proposalInternalNotes, setProposalInternalNotes] = useState("");
+  const [controlledSaving, setControlledSaving] = useState<"proposal" | "contract" | null>(null);
   const [noteBody, setNoteBody] = useState("");
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [taskDescription, setTaskDescription] = useState("");
@@ -119,6 +146,58 @@ export function LeadOperations({ company }: { company: Company }) {
     return editor || `Olá, tudo bem? Analisei a presença digital da ${lead.name} e identifiquei oportunidades para gerar mais contatos pelo Google. Posso te mostrar um diagnóstico rápido?`;
   }, [lead.name, editor]);
 
+  const activeCatalogById = useMemo(() => new Map(catalogItems.map((item) => [item.id, item])), [catalogItems]);
+
+  const linkedCommercialItems = useMemo(() => {
+    const linked = contracts
+      .map((contract) => {
+        const catalogId = contract.catalog_item_id || contract.catalog_items?.id;
+        const catalog = (catalogId ? activeCatalogById.get(catalogId) : undefined) || contract.catalog_items;
+        if (!catalogId || !catalog) return null;
+        if (catalog.status && catalog.status !== "active") return null;
+        const status = String(contract.status || "active").toLowerCase();
+        if (["inactive", "inativo", "cancelled", "canceled", "deleted", "removido"].includes(status)) return null;
+        return {
+          key: contract.id || catalogId,
+          catalogId,
+          contract,
+          catalog
+        };
+      })
+      .filter(Boolean) as Array<{ key: string; catalogId: string; contract?: ContractItem; catalog: Partial<CatalogItem> }>;
+    const linkedIds = new Set(linked.map((item) => item.catalogId));
+    const catalogOnly = catalogItems
+      .filter((item) => item.status === "active" && !linkedIds.has(item.id))
+      .map((item) => ({
+        key: `catalog-${item.id}`,
+        catalogId: item.id,
+        contract: undefined,
+        catalog: item
+      }));
+    return [...linked, ...catalogOnly];
+  }, [activeCatalogById, catalogItems, contracts]);
+
+  const selectedCommercialRows = useMemo(() => {
+    return linkedCommercialItems.filter((item) => controlledSelections[item.key]);
+  }, [controlledSelections, linkedCommercialItems]);
+
+  const selectedCommercialTotals = useMemo(() => {
+    return selectedCommercialRows.reduce((totals, item) => {
+      const selection = controlledSelections[item.key];
+      const quantity = Math.max(1, Number(selection?.quantity || item.contract?.quantity || 1));
+      const appliedPrice = parseDecimalInput(selection?.appliedPrice);
+      const gross = quantity * appliedPrice;
+      const discountPercent = parseDecimalInput(selection?.discountPercent);
+      const discountAmountInput = parseDecimalInput(selection?.discountAmount);
+      const discountAmount = discountPercent > 0 ? gross * (discountPercent / 100) : discountAmountInput;
+      return {
+        gross: totals.gross + gross,
+        discount: totals.discount + discountAmount,
+        final: totals.final + Math.max(0, gross - discountAmount)
+      };
+    }, { gross: 0, discount: 0, final: 0 });
+  }, [controlledSelections, selectedCommercialRows]);
+
   useEffect(() => {
     api<Note[]>(`${companyPath}/notes`).then((items) => setNotes(Array.isArray(items) ? items : [])).catch(() => {});
     api<Task[]>(`${companyPath}/tasks`).then((items) => setTasks(Array.isArray(items) ? items : [])).catch(() => {});
@@ -128,6 +207,7 @@ export function LeadOperations({ company }: { company: Company }) {
     api<Communication[]>(`${companyPath}/communications`).then((items) => setCommunications(Array.isArray(items) ? items : [])).catch(() => {});
     api<ContractItem[]>(`${companyPath}/contracts`).then((items) => setContracts(Array.isArray(items) ? items : [])).catch(() => {});
     api<ProposalVersion[]>(`/proposals/leads/${encodeURIComponent(company.id)}`).then((items) => setProposalVersions(Array.isArray(items) ? items : [])).catch(() => {});
+    getCatalogItems("?status=active").then((items) => setCatalogItems(Array.isArray(items) ? items : [])).catch(() => {});
   }, [company.id, companyPath]);
 
   useEffect(() => {
@@ -157,6 +237,145 @@ export function LeadOperations({ company }: { company: Company }) {
         companyId: company.id,
         message: err instanceof Error ? err.message : String(err)
       });
+    }
+  }
+
+  function commercialBasePrice(item: Partial<CatalogItem>, contract?: ContractItem) {
+    const catalogPrice = Number(item.promotional_price ?? item.price ?? 0);
+    return catalogPrice > 0 ? catalogPrice : Number(contract?.contracted_price || 0);
+  }
+
+  function commercialDefaultAppliedPrice(item: Partial<CatalogItem>, contract?: ContractItem) {
+    const contracted = Number(contract?.contracted_price || 0);
+    return contracted > 0 ? contracted : commercialBasePrice(item, contract);
+  }
+
+  function executionDeadline(item: Partial<CatalogItem>) {
+    return item.execution_time || (item.delivery_days ? `${item.delivery_days} dias` : "Não informado");
+  }
+
+  function selectionFinalValue(key: string) {
+    const row = linkedCommercialItems.find((item) => item.key === key);
+    const selection = controlledSelections[key];
+    if (!row || !selection) return 0;
+    const quantity = Math.max(1, Number(selection.quantity || 1));
+    const gross = quantity * parseDecimalInput(selection.appliedPrice);
+    const discountPercent = parseDecimalInput(selection.discountPercent);
+    const discountAmountInput = parseDecimalInput(selection.discountAmount);
+    const discountAmount = discountPercent > 0 ? gross * (discountPercent / 100) : discountAmountInput;
+    return Math.max(0, gross - discountAmount);
+  }
+
+  function toggleControlledProduct(key: string, checked: boolean) {
+    const row = linkedCommercialItems.find((item) => item.key === key);
+    if (!row) return;
+    setControlledSelections((current) => {
+      const next = { ...current };
+      if (!checked) {
+        delete next[key];
+        return next;
+      }
+      next[key] = {
+        quantity: Math.max(1, Number(row.contract?.quantity || 1)),
+        appliedPrice: String(commercialDefaultAppliedPrice(row.catalog, row.contract)),
+        discountPercent: "",
+        discountAmount: ""
+      };
+      return next;
+    });
+  }
+
+  function updateControlledSelection(key: string, patch: Partial<ControlledDocumentSelection>) {
+    setControlledSelections((current) => {
+      const previous = current[key];
+      if (!previous) return current;
+      return { ...current, [key]: { ...previous, ...patch } };
+    });
+  }
+
+  function buildProposalItems(): ProposalItemPayload[] {
+    return selectedCommercialRows.map((row) => {
+      const selection = controlledSelections[row.key];
+      const quantity = Math.max(1, Number(selection.quantity || row.contract?.quantity || 1));
+      const appliedPrice = parseDecimalInput(selection.appliedPrice);
+      const discountPercent = parseDecimalInput(selection.discountPercent);
+      const discountAmount = parseDecimalInput(selection.discountAmount);
+      const discountType: ProposalItemPayload["discount_type"] = discountPercent > 0 ? "percent" : discountAmount > 0 ? "amount" : "none";
+      const basePrice = commercialBasePrice(row.catalog, row.contract);
+      const priceChanged = Math.abs(appliedPrice - basePrice) >= 0.01;
+      const internalItemNotes = [
+        row.contract?.notes ? `Contexto do vínculo: ${row.contract.notes}` : "",
+        priceChanged ? `Preço aplicado alterado de ${formatCurrency(basePrice)} para ${formatCurrency(appliedPrice)}.` : "",
+        proposalInternalNotes.trim() ? `Observação interna: ${proposalInternalNotes.trim()}` : ""
+      ].filter(Boolean).join("\n");
+      return {
+        catalog_item_id: row.catalogId,
+        quantity,
+        unit_price_override: appliedPrice,
+        discount_type: discountType,
+        discount_percent: discountType === "percent" ? discountPercent : null,
+        discount_amount: discountType === "amount" ? discountAmount : null,
+        discount_reason: discountType !== "none" ? proposalInternalNotes.trim() : null,
+        customer_item_note: proposalCustomerNotes.trim() || null,
+        internal_item_note: internalItemNotes || null
+      };
+    });
+  }
+
+  function validateControlledDocument() {
+    if (!canEdit) return "Seu perfil possui somente leitura nesta ficha.";
+    if (!selectedCommercialRows.length) return "Selecione pelo menos um produto/serviço vinculado ao cliente.";
+    for (const row of selectedCommercialRows) {
+      const selection = controlledSelections[row.key];
+      const appliedPrice = parseDecimalInput(selection?.appliedPrice);
+      const discountPercent = parseDecimalInput(selection?.discountPercent);
+      const discountAmount = parseDecimalInput(selection?.discountAmount);
+      const basePrice = commercialBasePrice(row.catalog, row.contract);
+      const gross = Math.max(1, Number(selection?.quantity || 1)) * appliedPrice;
+      if (appliedPrice < 0) return `Preço aplicado inválido para ${row.catalog.name || "item selecionado"}.`;
+      if (discountPercent > 0 && discountAmount > 0) return "Informe desconto por percentual OU por valor, nunca os dois.";
+      if ((discountPercent > 0 || discountAmount > 0 || Math.abs(appliedPrice - basePrice) >= 0.01) && !proposalInternalNotes.trim()) {
+        return "Informe as observações internas da negociação para justificar desconto ou alteração de preço.";
+      }
+      if (discountPercent > 100) return `Desconto percentual acima de 100% para ${row.catalog.name || "item selecionado"}.`;
+      if (discountAmount > gross) return `Desconto em valor maior que o total do item ${row.catalog.name || "selecionado"}.`;
+    }
+    return "";
+  }
+
+  async function generateControlledCommercialDocument(documentType: "proposal" | "contract") {
+    const validationMessage = validateControlledDocument();
+    if (validationMessage) {
+      showError(new Error(validationMessage));
+      return;
+    }
+    setControlledSaving(documentType);
+    try {
+      const created = await createProposal({
+        lead_id: company.id,
+        title: `${documentType === "contract" ? "Contrato" : "Proposta"} comercial - ${lead.name}`,
+        document_type: documentType,
+        service_type: lead.category || "Comercial",
+        customer_notes: proposalCustomerNotes.trim() || null,
+        internal_notes: proposalInternalNotes.trim() || null,
+        items: buildProposalItems(),
+        change_reason: proposalInternalNotes.trim() || "Documento gerado pela composição controlada da Ficha 360."
+      });
+      if (documentType === "contract") {
+        await downloadContractPdf(created.id, `contrato-nodere-${lead.name}.pdf`);
+      } else {
+        await downloadProposalPdf(created.id, `proposta-nodere-${lead.name}.pdf`);
+      }
+      setGeneratedControlledDocuments((items) => [created, ...items]);
+      setControlledSelections({});
+      setProposalCustomerNotes("");
+      setProposalInternalNotes("");
+      api<Communication[]>(`${companyPath}/communications`).then((items) => setCommunications(Array.isArray(items) ? items : [])).catch(() => {});
+      showSuccess(`${documentType === "contract" ? "Contrato" : "Proposta"} gerado com snapshot dos produtos selecionados.`);
+    } catch (err) {
+      showError(err);
+    } finally {
+      setControlledSaving(null);
     }
   }
 
@@ -1171,12 +1390,199 @@ export function LeadOperations({ company }: { company: Company }) {
               </div>
             </section>
           )}
-          <RichTextEditor value={editor} onChange={setEditor} minHeight={360} placeholder="O texto gerado ou editado aparece aqui. Você pode alterar antes de salvar, copiar, virar PDF ou usar no WhatsApp." />
+          <section className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-emerald-200">Composição comercial controlada</p>
+                <h4 className="mt-1 text-lg font-black text-white">Selecionar produtos/serviços</h4>
+                <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-300">
+                  Monte propostas e contratos somente com produtos/serviços ativos vinculados a este cliente. Nome, descrição, pagamento, forma e prazo vêm do cadastro e ficam travados no documento.
+                </p>
+              </div>
+              <div className="rounded-lg border border-line bg-panel/80 px-4 py-3 text-right">
+                <p className="text-xs font-semibold uppercase text-slate-400">Total final</p>
+                <p className="text-xl font-black text-emerald-200">{formatCurrency(selectedCommercialTotals.final)}</p>
+                <p className="text-xs text-slate-400">Desconto: {formatCurrency(selectedCommercialTotals.discount)}</p>
+              </div>
+            </div>
+
+            {!linkedCommercialItems.length ? (
+              <div className="mt-4 rounded-lg border border-dashed border-line bg-panel/70 p-4 text-sm text-slate-300">
+                Nenhum produto/serviço ativo está vinculado a este cliente. Vincule itens na aba Produtos/Serviços para liberar a geração controlada de proposta e contrato.
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {linkedCommercialItems.map(({ key, catalog, contract }) => {
+                  const selection = controlledSelections[key];
+                  const checked = Boolean(selection);
+                  const basePrice = commercialBasePrice(catalog, contract);
+                  const appliedPrice = parseDecimalInput(selection?.appliedPrice ?? commercialDefaultAppliedPrice(catalog, contract));
+                  const quantity = Math.max(1, Number(selection?.quantity || contract?.quantity || 1));
+                  const rowFinal = checked ? selectionFinalValue(key) : Math.max(0, quantity * appliedPrice);
+                  return (
+                    <article key={key} className="rounded-lg border border-line bg-ink p-4">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <label className="flex min-w-0 flex-1 gap-3">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={!canEdit}
+                            onChange={(event) => toggleControlledProduct(key, event.target.checked)}
+                            className="mt-1 h-5 w-5 rounded border-line accent-emerald-400 disabled:opacity-50"
+                          />
+                          <span className="min-w-0">
+                            <span className="block text-base font-black text-white">{catalog.name || "Produto/serviço sem nome"}</span>
+                            <span className="mt-1 block text-sm leading-6 text-slate-300">{catalog.description_short || catalog.description_full || "Sem descrição comercial cadastrada."}</span>
+                            <span className="mt-3 grid gap-2 text-xs text-slate-400 sm:grid-cols-3">
+                              <span><b className="text-slate-300">Condição:</b> {catalog.payment_conditions || "Não informado"}</span>
+                              <span><b className="text-slate-300">Forma:</b> {catalog.payment_method || "Não informado"}</span>
+                              <span><b className="text-slate-300">Prazo:</b> {executionDeadline(catalog)}</span>
+                            </span>
+                          </span>
+                        </label>
+                        <div className="grid min-w-[180px] gap-1 rounded-lg border border-line bg-panel/70 p-3 text-sm">
+                          <span className="text-xs font-semibold uppercase text-slate-400">Valor base</span>
+                          <strong className="text-lg text-white">{formatCurrency(basePrice)}</strong>
+                          <span className="text-xs text-slate-400">Valor final: {formatCurrency(rowFinal)}</span>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-3 md:grid-cols-5">
+                        <label className="text-xs font-semibold text-slate-400">
+                          Quantidade
+                          <input
+                            type="number"
+                            min={1}
+                            value={selection?.quantity ?? quantity}
+                            disabled={!checked || !canEdit}
+                            onChange={(event) => updateControlledSelection(key, { quantity: Math.max(1, Number(event.target.value || 1)) })}
+                            className={inputClass}
+                          />
+                        </label>
+                        <label className="text-xs font-semibold text-slate-400">
+                          Preço aplicado
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            value={selection?.appliedPrice ?? String(appliedPrice)}
+                            disabled={!checked || !canEdit}
+                            onChange={(event) => updateControlledSelection(key, { appliedPrice: event.target.value })}
+                            className={inputClass}
+                          />
+                        </label>
+                        <label className="text-xs font-semibold text-slate-400">
+                          Desconto %
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            step="0.01"
+                            value={selection?.discountPercent ?? ""}
+                            disabled={!checked || !canEdit || parseDecimalInput(selection?.discountAmount) > 0}
+                            onChange={(event) => updateControlledSelection(key, { discountPercent: event.target.value })}
+                            className={inputClass}
+                          />
+                        </label>
+                        <label className="text-xs font-semibold text-slate-400">
+                          Desconto R$
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            value={selection?.discountAmount ?? ""}
+                            disabled={!checked || !canEdit || parseDecimalInput(selection?.discountPercent) > 0}
+                            onChange={(event) => updateControlledSelection(key, { discountAmount: event.target.value })}
+                            className={inputClass}
+                          />
+                        </label>
+                        <div className="rounded-lg border border-line bg-panel/80 p-3">
+                          <p className="text-xs font-semibold uppercase text-slate-400">Preço original / novo</p>
+                          <p className="mt-1 text-sm text-slate-300">{formatCurrency(basePrice)} → <b className="text-emerald-200">{formatCurrency(appliedPrice)}</b></p>
+                          <p className="mt-1 text-xs text-slate-400">Final: {formatCurrency(rowFinal)}</p>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              <label className="text-xs font-semibold text-slate-400">
+                Observações comerciais para o cliente
+                <textarea
+                  value={proposalCustomerNotes}
+                  onChange={(event) => setProposalCustomerNotes(event.target.value)}
+                  disabled={!canEdit}
+                  rows={4}
+                  className={`${inputClass} min-h-[120px]`}
+                  placeholder="Mensagem comercial visível no PDF. Ex.: condições combinadas, validade, escopo de atendimento."
+                />
+              </label>
+              <label className="text-xs font-semibold text-slate-400">
+                Observações internas da negociação
+                <textarea
+                  value={proposalInternalNotes}
+                  onChange={(event) => setProposalInternalNotes(event.target.value)}
+                  disabled={!canEdit}
+                  rows={4}
+                  className={`${inputClass} min-h-[120px]`}
+                  placeholder="Obrigatório quando houver desconto ou alteração de preço. Não aparece no PDF."
+                />
+              </label>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="grid gap-1 text-xs text-slate-400">
+                <span>Subtotal: {formatCurrency(selectedCommercialTotals.gross)}</span>
+                <span>Desconto: {formatCurrency(selectedCommercialTotals.discount)}</span>
+                <span className="font-semibold text-emerald-200">Total final: {formatCurrency(selectedCommercialTotals.final)}</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => generateControlledCommercialDocument("proposal")}
+                  disabled={!canEdit || !selectedCommercialRows.length || controlledSaving !== null}
+                  className="inline-flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <FileText className="h-4 w-4" />{controlledSaving === "proposal" ? "Gerando..." : "Gerar proposta PDF"}
+                </button>
+                <button
+                  onClick={() => generateControlledCommercialDocument("contract")}
+                  disabled={!canEdit || !selectedCommercialRows.length || controlledSaving !== null}
+                  className="inline-flex items-center gap-2 rounded-lg bg-warning px-4 py-2 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Pencil className="h-4 w-4" />{controlledSaving === "contract" ? "Gerando..." : "Gerar contrato PDF"}
+                </button>
+              </div>
+            </div>
+
+            {generatedControlledDocuments.length > 0 && (
+              <div className="mt-4 rounded-lg border border-line bg-panel/70 p-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Documentos gerados nesta sessão</p>
+                <div className="mt-2 space-y-2">
+                  {generatedControlledDocuments.map((document) => (
+                    <p key={document.id} className="text-sm text-slate-300">
+                      {document.title} · total {formatCurrency(document.total)} · versão {document.version}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
+          <div className="rounded-lg border border-line bg-ink p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Editor livre auxiliar</p>
+                <p className="mt-1 text-sm text-slate-400">Use este espaço para rascunhos de IA, WhatsApp ou e-mail. Propostas e contratos são gerados pelo bloco de produtos/serviços acima.</p>
+              </div>
+            </div>
+            <RichTextEditor value={editor} onChange={setEditor} minHeight={240} placeholder="Rascunho auxiliar de mensagem, briefing ou instrução. Não substitui a composição comercial por produtos/serviços." />
+          </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => copy(editor)} className="inline-flex items-center gap-2 rounded-lg border border-line bg-ink px-4 py-2 text-sm text-white"><Copy className="h-4 w-4" />Copiar</button>
             <button onClick={() => setEditor("")} className="inline-flex items-center gap-2 rounded-lg border border-line bg-ink px-4 py-2 text-sm text-white"><Trash2 className="h-4 w-4" />Limpar</button>
-            <button onClick={() => saveDocument("proposta")} className="inline-flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-ink"><FileText className="h-4 w-4" />Salvar proposta PDF</button>
-            <button onClick={() => saveDocument("contrato")} className="inline-flex items-center gap-2 rounded-lg bg-warning px-4 py-2 text-sm font-semibold text-ink"><Pencil className="h-4 w-4" />Salvar contrato PDF</button>
           </div>
         </div>
       )}
@@ -1233,6 +1639,211 @@ export function LeadOperations({ company }: { company: Company }) {
 
       {tab === "documentos" && (
         <div className="mt-5 space-y-3">
+          <section className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-emerald-200">Fluxo obrigatório de proposta</p>
+                <h4 className="mt-1 text-lg font-black text-white">Selecionar Produto/Serviço</h4>
+                <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-300">
+                  A proposta começa pela seleção de produtos/serviços já cadastrados. Os campos comerciais principais ficam bloqueados e devem ser corrigidos na aba Produtos/Serviços quando necessário.
+                </p>
+              </div>
+              <label className="min-w-[220px] text-xs font-semibold text-slate-400">
+                Tipo de documento
+                <select
+                  value={controlledDocumentType}
+                  onChange={(event) => setControlledDocumentType(event.target.value as "proposal" | "contract")}
+                  disabled={!canEdit}
+                  className={selectClass}
+                >
+                  <option value="proposal">Proposta</option>
+                  <option value="contract">Contrato</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-4">
+              <div className="rounded-lg border border-line bg-panel/80 p-3">
+                <p className="text-xs font-semibold uppercase text-slate-400">Itens selecionados</p>
+                <p className="mt-1 text-2xl font-black text-white">{selectedCommercialRows.length}</p>
+              </div>
+              <div className="rounded-lg border border-line bg-panel/80 p-3">
+                <p className="text-xs font-semibold uppercase text-slate-400">Total original</p>
+                <p className="mt-1 text-lg font-black text-white">{formatCurrency(selectedCommercialTotals.gross)}</p>
+              </div>
+              <div className="rounded-lg border border-line bg-panel/80 p-3">
+                <p className="text-xs font-semibold uppercase text-slate-400">Economia/desconto</p>
+                <p className="mt-1 text-lg font-black text-amber-200">{formatCurrency(selectedCommercialTotals.discount)}</p>
+              </div>
+              <div className="rounded-lg border border-line bg-panel/80 p-3">
+                <p className="text-xs font-semibold uppercase text-slate-400">Total com desconto</p>
+                <p className="mt-1 text-lg font-black text-emerald-200">{formatCurrency(selectedCommercialTotals.final)}</p>
+              </div>
+            </div>
+
+            {!linkedCommercialItems.length ? (
+              <div className="mt-4 rounded-lg border border-dashed border-line bg-panel/70 p-4 text-sm text-slate-300">
+                Nenhum produto/serviço cadastrado ou ativo está vinculado a este cliente. Cadastre/vincule os itens na aba Produtos/Serviços antes de gerar proposta ou contrato.
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {linkedCommercialItems.map(({ key, catalog, contract }) => {
+                  const selection = controlledSelections[key];
+                  const checked = Boolean(selection);
+                  const basePrice = commercialBasePrice(catalog, contract);
+                  const appliedPrice = parseDecimalInput(selection?.appliedPrice ?? commercialDefaultAppliedPrice(catalog, contract));
+                  const quantity = Math.max(1, Number(selection?.quantity || contract?.quantity || 1));
+                  const originalTotal = quantity * basePrice;
+                  const finalTotal = checked ? selectionFinalValue(key) : Math.max(0, quantity * appliedPrice);
+                  const discountTotal = Math.max(0, originalTotal - finalTotal);
+                  const quantityLabel = catalog.type === "service" || catalog.billing_unit === "hour" ? "Horas/quantidade" : "Quantidade";
+                  return (
+                    <article key={key} className="rounded-lg border border-line bg-ink p-4">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <label className="flex min-w-0 flex-1 gap-3">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={!canEdit}
+                            onChange={(event) => toggleControlledProduct(key, event.target.checked)}
+                            className="mt-1 h-5 w-5 rounded border-line accent-emerald-400 disabled:opacity-50"
+                          />
+                          <span className="min-w-0">
+                            <span className="flex flex-wrap items-center gap-2">
+                              <span className="block text-base font-black text-white">{catalog.name || "Produto/serviço sem nome"}</span>
+                              <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-bold uppercase text-emerald-200">{catalog.type === "service" ? "Serviço" : "Produto"}</span>
+                            </span>
+                            <span className="mt-1 block text-sm leading-6 text-slate-300">{catalog.description_short || catalog.description_full || "Sem descrição comercial cadastrada."}</span>
+                            <span className="mt-3 grid gap-2 text-xs text-slate-400 sm:grid-cols-4">
+                              <span><b className="text-slate-300">Condição:</b> {catalog.payment_conditions || "Não informado"}</span>
+                              <span><b className="text-slate-300">Forma:</b> {catalog.payment_method || "Não informado"}</span>
+                              <span><b className="text-slate-300">Prazo:</b> {executionDeadline(catalog)}</span>
+                              <span><b className="text-slate-300">Unidade:</b> {catalog.billing_unit || catalog.unit_measure || "unidade"}</span>
+                            </span>
+                          </span>
+                        </label>
+                        <div className="grid min-w-[210px] gap-1 rounded-lg border border-line bg-panel/70 p-3 text-sm">
+                          <span className="text-xs font-semibold uppercase text-slate-400">Valor original</span>
+                          <strong className="text-lg text-white">{formatCurrency(basePrice)}</strong>
+                          <span className="text-xs text-slate-400">Aplicado: {formatCurrency(appliedPrice)}</span>
+                          <span className="text-xs text-emerald-200">Final: {formatCurrency(finalTotal)}</span>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-3 md:grid-cols-6">
+                        <label className="text-xs font-semibold text-slate-400">
+                          {quantityLabel}
+                          <input
+                            type="number"
+                            min={1}
+                            value={selection?.quantity ?? quantity}
+                            disabled={!checked || !canEdit}
+                            onChange={(event) => updateControlledSelection(key, { quantity: Math.max(1, Number(event.target.value || 1)) })}
+                            className={inputClass}
+                          />
+                        </label>
+                        <label className="text-xs font-semibold text-slate-400">
+                          Preço aplicado
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            value={selection?.appliedPrice ?? String(appliedPrice)}
+                            disabled={!checked || !canEdit}
+                            onChange={(event) => updateControlledSelection(key, { appliedPrice: event.target.value })}
+                            className={inputClass}
+                          />
+                        </label>
+                        <label className="text-xs font-semibold text-slate-400">
+                          Desconto %
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            step="0.01"
+                            value={selection?.discountPercent ?? ""}
+                            disabled={!checked || !canEdit || parseDecimalInput(selection?.discountAmount) > 0}
+                            onChange={(event) => updateControlledSelection(key, { discountPercent: event.target.value })}
+                            className={inputClass}
+                          />
+                        </label>
+                        <label className="text-xs font-semibold text-slate-400">
+                          Desconto R$
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            value={selection?.discountAmount ?? ""}
+                            disabled={!checked || !canEdit || parseDecimalInput(selection?.discountPercent) > 0}
+                            onChange={(event) => updateControlledSelection(key, { discountAmount: event.target.value })}
+                            className={inputClass}
+                          />
+                        </label>
+                        <div className="rounded-lg border border-line bg-panel/80 p-3">
+                          <p className="text-xs font-semibold uppercase text-slate-400">Total original</p>
+                          <p className="mt-1 text-sm font-bold text-white">{formatCurrency(originalTotal)}</p>
+                          <p className="mt-1 text-xs text-slate-400">Economia: {formatCurrency(discountTotal)}</p>
+                        </div>
+                        <div className="rounded-lg border border-line bg-panel/80 p-3">
+                          <p className="text-xs font-semibold uppercase text-slate-400">Valor com desconto</p>
+                          <p className="mt-1 text-sm font-bold text-emerald-200">{formatCurrency(finalTotal)}</p>
+                          <p className="mt-1 text-xs text-slate-400">{formatCurrency(basePrice)} → {formatCurrency(appliedPrice)}</p>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              <label className="text-xs font-semibold text-slate-400">
+                Observações comerciais da proposta
+                <textarea
+                  value={proposalCustomerNotes}
+                  onChange={(event) => setProposalCustomerNotes(event.target.value)}
+                  disabled={!canEdit}
+                  rows={4}
+                  className={`${inputClass} min-h-[120px]`}
+                  placeholder="Texto permitido no PDF: validade, combinados comerciais, escopo complementar e observações para o cliente."
+                />
+              </label>
+              <label className="text-xs font-semibold text-slate-400">
+                Observações internas da negociação
+                <textarea
+                  value={proposalInternalNotes}
+                  onChange={(event) => setProposalInternalNotes(event.target.value)}
+                  disabled={!canEdit}
+                  rows={4}
+                  className={`${inputClass} min-h-[120px]`}
+                  placeholder="Uso interno. Obrigatório para justificar desconto ou alteração de preço. Não aparece no PDF."
+                />
+              </label>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="max-w-2xl text-xs text-slate-400">
+                Produtos, serviços, descrições, condições, forma de pagamento, prazo e tipo não são editáveis nesta proposta. Ajustes permanentes devem ser feitos no cadastro de Produtos/Serviços.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => generateControlledCommercialDocument("proposal")}
+                  disabled={!canEdit || !selectedCommercialRows.length || controlledSaving !== null}
+                  className="inline-flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <FileText className="h-4 w-4" />{controlledSaving === "proposal" ? "Gerando..." : "Gerar proposta PDF"}
+                </button>
+                <button
+                  onClick={() => generateControlledCommercialDocument("contract")}
+                  disabled={!canEdit || !selectedCommercialRows.length || controlledSaving !== null}
+                  className="inline-flex items-center gap-2 rounded-lg bg-warning px-4 py-2 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Pencil className="h-4 w-4" />{controlledSaving === "contract" ? "Gerando..." : "Gerar contrato PDF"}
+                </button>
+              </div>
+            </div>
+          </section>
+
           {documents.length === 0 && <p className="rounded-lg border border-line bg-ink p-4 text-sm text-slate-400">Nenhuma proposta, contrato ou anexo salvo ainda.</p>}
           {documents.map((document) => (
             <div key={document.id} className="flex flex-col gap-3 rounded-lg border border-line bg-ink p-4 sm:flex-row sm:items-center sm:justify-between">
