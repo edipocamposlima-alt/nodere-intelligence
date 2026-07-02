@@ -7,33 +7,28 @@ import { BarChart3, Building2, CalendarDays, CircleHelp, CreditCard, Download, I
 import { useAuth } from "@/context/AuthProvider";
 
 const primaryItems = [
-  { href: "/dashboard", appHref: "/app/dashboard", label: "Início", icon: BarChart3 },
-  { href: "/searches", appHref: "/app/discovery", label: "Busca", icon: Search },
-  { href: "/crm", label: "CRM", icon: KanbanSquare },
-  { href: "/calendario", label: "Calendário", icon: CalendarDays }
+  { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: BarChart3 },
+  { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search },
+  { href: "/companies", label: "Empresas", icon: Building2 },
+  { href: "/crm", label: "CRM", icon: KanbanSquare }
 ];
 
 const drawerItems = [
-  { href: "/companies", label: "Empresas", icon: Building2 },
-  { href: "/pipeline", label: "Pipeline", icon: KanbanSquare },
+  { href: "/calendario", label: "Agenda", icon: CalendarDays },
   { href: "/app/leads", label: "Leads", icon: Users },
-  { href: "/app/proposals", label: "Propostas", icon: PackageOpen },
-  { href: "/intelligence", label: "Inteligência", icon: Zap },
-  { href: "/inbox", label: "Caixa de entrada", icon: Inbox },
-  { href: "/inbox", label: "WhatsApp", icon: Inbox },
-  { href: "/inbox", label: "E-mail", icon: Inbox },
-  { href: "/inbox", label: "Omnichannel", icon: Inbox },
+  { href: "/app/proposals", label: "Propostas e Contratos", icon: PackageOpen },
+  { href: "/catalog", label: "Produtos / Serviços", icon: PackageOpen },
+  { href: "/inbox", label: "Caixa de Entrada", icon: Inbox },
   { href: "/automations", label: "Automações", icon: Workflow },
-  { href: "/operators", label: "Operadores", icon: Users },
+  { href: "/intelligence", label: "IA / Inteligência", icon: Zap },
   { href: "/reports", label: "Relatórios", icon: LineChart },
+  { href: "/operators", label: "Operadores", icon: Users, adminOnly: true },
   { href: "/marketing", label: "Marketing", icon: Megaphone },
-  { href: "/catalog", label: "Catálogo", icon: PackageOpen },
-  { href: "/app/upgrade?module=OPS-01", label: "Projetos", icon: Workflow },
   { href: "/billing", label: "Faturamento", icon: CreditCard },
-  { href: "/integrations", label: "Integrações", icon: Plug },
   { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: Settings },
-  { href: "/manual", label: "Ajuda / Manual", icon: CircleHelp },
-  { href: "/admin", label: "Administrador", icon: ShieldCheck }
+  { href: "/integrations", label: "Integrações", icon: Plug, adminOnly: true },
+  { href: "/admin", label: "Administrador / CMS", icon: ShieldCheck, adminOnly: true },
+  { href: "/manual", label: "Manual NODERE", icon: CircleHelp }
 ];
 
 export function MobileNav() {
@@ -41,7 +36,8 @@ export function MobileNav() {
   const isApp = pathname.startsWith("/app");
   const [open, setOpen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const isAdmin = user?.role === "owner" || user?.role === "admin";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -110,7 +106,7 @@ export function MobileNav() {
                 </span>
                 Instalar app
               </button>
-              {drawerItems.map((item) => (
+              {drawerItems.filter((item) => !item.adminOnly || isAdmin).map((item) => (
                 <Link
                   key={`${item.label}-${isApp && item.appHref ? item.appHref : item.href}`}
                   href={isApp && item.appHref ? item.appHref : item.href}

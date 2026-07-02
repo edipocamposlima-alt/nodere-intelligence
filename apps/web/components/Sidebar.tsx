@@ -4,79 +4,67 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BarChart3, Building2, CalendarDays, CircleHelp, CreditCard, Inbox, KanbanSquare, LineChart, Megaphone, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
 import { useCredits } from "@/context/CreditsProvider";
+import { useAuth } from "@/context/AuthProvider";
 import { Logo } from "@/components/brand/Logo";
 
 const groups = [
   {
     label: "Principal",
     items: [
-      { href: "/dashboard", appHref: "/app/dashboard", label: "Início / Dashboard", icon: BarChart3 }
+      { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: BarChart3 },
+      { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search },
+      { href: "/companies", label: "Empresas", icon: Building2 },
+      { href: "/crm", label: "CRM / Funil", icon: KanbanSquare }
     ]
   },
   {
-    label: "Descoberta",
+    label: "Comercial",
     items: [
-      { href: "/searches", appHref: "/app/discovery", label: "Busca de empresas / Prospecção", icon: Search },
-      { href: "/companies", label: "Empresas", icon: Building2 }
-    ]
-  },
-  {
-    label: "CRM",
-    items: [
-      { href: "/crm", label: "CRM / Funil", icon: KanbanSquare },
-      { href: "/pipeline", label: "Pipeline", icon: KanbanSquare },
       { href: "/app/leads", label: "Leads", icon: Users },
-      { href: "/calendario", label: "Agenda / Calendário", icon: CalendarDays },
-      { href: "/app/proposals", label: "Propostas", icon: PackageOpen }
+      { href: "/calendario", label: "Agenda", icon: CalendarDays },
+      { href: "/app/proposals", label: "Propostas e Contratos", icon: PackageOpen },
+      { href: "/catalog", label: "Produtos / Serviços", icon: PackageOpen }
     ]
   },
   {
     label: "Comunicação",
     items: [
-      { href: "/inbox", label: "Caixa de entrada", icon: Inbox },
-      { href: "/inbox", label: "WhatsApp", icon: Inbox },
-      { href: "/inbox", label: "E-mail", icon: Inbox },
-      { href: "/inbox", label: "Omnichannel", icon: Inbox },
+      { href: "/inbox", label: "Caixa de Entrada", icon: Inbox },
       { href: "/automations", label: "Automações", icon: Workflow }
     ]
   },
   {
     label: "Inteligência",
     items: [
-      { href: "/intelligence", label: "IA NODERE / Inteligência", icon: Zap }
-    ]
-  },
-  {
-    label: "Analytics",
-    items: [
+      { href: "/intelligence", label: "IA / Inteligência", icon: Zap },
       { href: "/reports", label: "Relatórios", icon: LineChart }
     ]
   },
   {
-    label: "Operações",
+    label: "Gestão",
     items: [
-      { href: "/catalog", label: "Catálogo", icon: PackageOpen },
+      { href: "/operators", label: "Operadores", icon: Users, adminOnly: true },
       { href: "/marketing", label: "Marketing", icon: Megaphone },
-      { href: "/app/upgrade?module=OPS-01", label: "Projetos", icon: Workflow },
-      { href: "/operators", label: "Operadores", icon: Users }
+      { href: "/billing", label: "Faturamento", icon: CreditCard },
+      { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: Settings }
     ]
   },
   {
     label: "Administração",
     items: [
-      { href: "/billing", label: "Faturamento", icon: CreditCard },
-      { href: "/integrations", label: "Integrações", icon: Plug },
-      { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: Settings },
-      { href: "/manual", label: "Ajuda / Manual NODERE", icon: CircleHelp },
-      { href: "/admin", label: "Administrador", icon: ShieldCheck }
+      { href: "/integrations", label: "Integrações", icon: Plug, adminOnly: true },
+      { href: "/admin", label: "Administrador / CMS", icon: ShieldCheck, adminOnly: true },
+      { href: "/manual", label: "Manual NODERE", icon: CircleHelp }
     ]
   }
 ];
 
 export function Sidebar() {
   const { credits, daysLeft, trialExpired } = useCredits();
+  const { user } = useAuth();
   const pathname = usePathname() || "/";
   const isApp = pathname.startsWith("/app");
+  const isAdmin = user?.role === "owner" || user?.role === "admin";
   const dashboardHref = isApp ? "/app/dashboard" : "/dashboard";
   const total = credits?.total || 0;
   const remaining = credits?.remaining || 0;
@@ -93,7 +81,7 @@ export function Sidebar() {
         {groups.map((group) => (
           <section key={group.label} className="space-y-1">
             <p className="px-3 pb-1 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{group.label}</p>
-            {group.items.map((item) => {
+            {group.items.filter((item) => !item.adminOnly || isAdmin).map((item) => {
               const href = isApp && item.appHref ? item.appHref : item.href;
               const active = pathname === href || pathname.startsWith(`${href}/`);
               return (
