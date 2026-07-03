@@ -6497,3 +6497,398 @@ textarea,
 .light :where(.bg-warning, .bg-amber-300, .bg-amber-400) {
   color: #1f2937 !important;
 }
+
+/* CORRECAO 04 - retrabalho editores ricos.
+   Mantem a toolbar imune a padding global, densidade e wrappers flexiveis. */
+.nodere-rich-editor {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.nodere-editor-toolbar {
+  display: flex !important;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 6px;
+  overflow: visible;
+  border-bottom: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--bg-card) 94%, var(--bg-hover));
+  padding: 8px !important;
+}
+
+.nodere-editor-group {
+  display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+  flex: 0 1 auto;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  border: 1px solid color-mix(in srgb, var(--border-soft) 78%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-input) 74%, transparent);
+  padding: 3px;
+}
+
+.nodere-editor-group--selects {
+  flex: 1 1 220px;
+}
+
+.nodere-editor-group--colors {
+  flex: 1 1 180px;
+}
+
+.nodere-editor-toolbar :where(select, button, label, input) {
+  box-sizing: border-box;
+  font-family: var(--nodere-font-family, Inter, system-ui, sans-serif);
+}
+
+.nodere-editor-toolbar select {
+  width: auto !important;
+  min-width: 84px !important;
+  max-width: min(150px, 100%) !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  flex: 1 1 84px;
+  border: 1px solid var(--border-soft) !important;
+  border-radius: 8px !important;
+  background: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  padding: 0 28px 0 9px !important;
+  font-size: 12px !important;
+  font-weight: 700;
+  line-height: 1 !important;
+}
+
+.nodere-editor-tool,
+.nodere-editor-color {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  min-height: 34px !important;
+  flex: 0 0 34px !important;
+  border: 1px solid var(--border-soft) !important;
+  border-radius: 8px !important;
+  background: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+}
+
+.nodere-editor-tool {
+  display: inline-grid !important;
+  place-items: center;
+  appearance: none;
+}
+
+.nodere-editor-tool svg,
+.nodere-editor-color svg {
+  width: 16px !important;
+  height: 16px !important;
+  flex: 0 0 16px;
+  stroke-width: 2.25;
+  pointer-events: none;
+}
+
+.nodere-editor-tool:hover:not(:disabled),
+.nodere-editor-tool--active {
+  border-color: var(--brand-primary) !important;
+  background: color-mix(in srgb, var(--brand-primary) 14%, var(--bg-card)) !important;
+  color: var(--brand-glow) !important;
+}
+
+.nodere-editor-color {
+  position: relative;
+  display: inline-grid !important;
+  place-items: center;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.nodere-editor-color input[type="color"] {
+  position: absolute;
+  inset: auto 4px 4px 4px;
+  width: calc(100% - 8px) !important;
+  height: 7px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  border: 0 !important;
+  border-radius: 999px;
+  padding: 0 !important;
+  cursor: pointer;
+  background: transparent !important;
+}
+
+.nodere-editor-content {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  border: 0;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  padding: 14px;
+  outline: none;
+}
+
+.nodere-editor-content .ProseMirror,
+.nodere-editor-preview .ProseMirror {
+  min-height: inherit;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  outline: none;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.nodere-editor-preview {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.nodere-editor-toolbar .hidden {
+  display: none !important;
+}
+
+:root[data-theme="light"] .nodere-rich-editor,
+.light .nodere-rich-editor {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-soft) !important;
+}
+
+:root[data-theme="light"] .nodere-editor-toolbar,
+.light .nodere-editor-toolbar {
+  background: color-mix(in srgb, var(--bg-card) 92%, var(--bg-hover)) !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="light"] .nodere-editor-group,
+.light .nodere-editor-group {
+  background: color-mix(in srgb, var(--bg-input) 84%, var(--bg-hover)) !important;
+}
+
+@media (max-width: 640px) {
+  .nodere-editor-toolbar {
+    gap: 5px;
+    padding: 7px !important;
+  }
+
+  .nodere-editor-group,
+  .nodere-editor-group--selects,
+  .nodere-editor-group--colors {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .nodere-editor-toolbar select {
+    max-width: none !important;
+  }
+
+  .nodere-editor-content {
+    padding: 12px;
+  }
+}
+
+/* CORRECAO VISUAL NODERE - tema claro com a mesma hierarquia do tema escuro.
+   Esta camada fica no fim para vencer classes legadas sem afetar o dark mode. */
+:root[data-theme="light"],
+.light {
+  --bg-main: #F3F8F5;
+  --bg-card: #FFFFFF;
+  --bg-elevated: #F7FBF8;
+  --bg-hover: #EAF4EF;
+  --bg-input: #FFFFFF;
+  --border: #C9DCD3;
+  --border-soft: #D8E8E0;
+  --border-strong: #92B6A7;
+  --text-primary: #08231E;
+  --text-secondary: #34544D;
+  --text-muted: #647A73;
+  --brand-primary: #03624C;
+  --brand-primary-hover: #0A7A5F;
+  --brand-glow: #007A5E;
+  --brand-glow-dim: rgba(3, 98, 76, 0.18);
+  --shadow-card: 0 18px 46px rgba(3, 98, 76, 0.10), 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+}
+
+:root[data-theme="light"] body,
+.light body {
+  background:
+    radial-gradient(circle at 14% -10%, rgba(0, 223, 130, 0.16), transparent 32%),
+    linear-gradient(180deg, #F7FCF9 0%, #EDF6F1 48%, #F7FBF8 100%) !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="light"] .nodere-app-shell,
+:root[data-theme="light"] .nodere-app-main,
+:root[data-theme="light"] .nodere-app-content,
+.light .nodere-app-shell,
+.light .nodere-app-main,
+.light .nodere-app-content {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(0, 223, 130, 0.12), transparent 30%),
+    linear-gradient(180deg, #F7FCF9 0%, #EEF7F2 100%) !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="light"] .nodere-sidebar,
+:root[data-theme="light"] aside,
+.light .nodere-sidebar,
+.light aside {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 250, 247, 0.94)),
+    radial-gradient(circle at 10% 10%, rgba(0, 223, 130, 0.10), transparent 38%) !important;
+  border-color: var(--border-soft) !important;
+  box-shadow: 12px 0 36px rgba(3, 98, 76, 0.08) !important;
+}
+
+:root[data-theme="light"] .nodere-topbar,
+:root[data-theme="light"] header,
+.light .nodere-topbar,
+.light header {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 10px 30px rgba(3, 98, 76, 0.07) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(
+  .bg-panel,
+  .bg-panel\/40,
+  .bg-panel\/50,
+  .bg-panel\/60,
+  .bg-panel\/70,
+  .bg-panel\/80,
+  .bg-panel\/90,
+  .bg-panel\/95,
+  .bg-white\/5,
+  .bg-white\/10,
+  .bg-white\/\[0\.02\],
+  .bg-white\/\[0\.03\],
+  .bg-white\/\[0\.06\],
+  .bg-white\/\[0\.08\],
+  .rounded-lg.border,
+  .rounded-xl.border,
+  .rounded-2xl.border
+),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(
+  .bg-panel,
+  .bg-panel\/40,
+  .bg-panel\/50,
+  .bg-panel\/60,
+  .bg-panel\/70,
+  .bg-panel\/80,
+  .bg-panel\/90,
+  .bg-panel\/95,
+  .bg-white\/5,
+  .bg-white\/10,
+  .bg-white\/\[0\.02\],
+  .bg-white\/\[0\.03\],
+  .bg-white\/\[0\.06\],
+  .bg-white\/\[0\.08\],
+  .rounded-lg.border,
+  .rounded-xl.border,
+  .rounded-2xl.border
+) {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--shadow-card);
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(
+  .bg-ink,
+  .bg-ink\/20,
+  .bg-ink\/40,
+  .bg-ink\/60,
+  .bg-ink\/70,
+  .bg-ink\/80,
+  .bg-ink\/90,
+  .bg-black,
+  .bg-slate-950,
+  .bg-slate-900,
+  .bg-gray-950
+),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(
+  .bg-ink,
+  .bg-ink\/20,
+  .bg-ink\/40,
+  .bg-ink\/60,
+  .bg-ink\/70,
+  .bg-ink\/80,
+  .bg-ink\/90,
+  .bg-black,
+  .bg-slate-950,
+  .bg-slate-900,
+  .bg-gray-950
+) {
+  background-color: #EEF7F2 !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.text-white, .text-slate-100, .text-slate-200, .text-slate-300),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.text-white, .text-slate-100, .text-slate-200, .text-slate-300) {
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.text-slate-400, .text-slate-500, .text-slate-600),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.text-slate-400, .text-slate-500, .text-slate-600) {
+  color: var(--text-secondary) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.border-line, .border-slate-700, .border-slate-800),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.border-line, .border-slate-700, .border-slate-800) {
+  border-color: var(--border-soft) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(input, select, textarea),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(input, select, textarea) {
+  background-color: #FFFFFF !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.bg-white\/10, .bg-black\/20),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.bg-white\/10, .bg-black\/20) {
+  background-color: #DCECE5 !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.shadow-glow, .shadow-card),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.shadow-glow, .shadow-card) {
+  box-shadow: var(--shadow-card) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.bg-cyan\/10, .bg-electric\/10, .bg-emerald-500\/10, .bg-success\/10),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.bg-cyan\/10, .bg-electric\/10, .bg-emerald-500\/10, .bg-success\/10) {
+  background-color: rgba(0, 223, 130, 0.12) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.bg-warning\/10, .bg-amber-500\/10),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.bg-warning\/10, .bg-amber-500\/10) {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.bg-danger\/10, .bg-red-500\/10),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.bg-danger\/10, .bg-red-500\/10) {
+  background-color: rgba(239, 68, 68, 0.12) !important;
+}

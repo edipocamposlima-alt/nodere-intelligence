@@ -141,37 +141,52 @@ export function RichTextEditor({ value, onChange, minHeight = 220, placeholder, 
 
   const fontSize = String(editor.getAttributes("textStyle").fontSize || "14px");
   const fontFamily = String(editor.getAttributes("textStyle").fontFamily || "Inter");
+  const lineHeight = String(editor.getAttributes("paragraph").lineHeight || editor.getAttributes("heading").lineHeight || "1.5");
 
   return (
     <div className={`nodere-rich-editor ${disabled ? "nodere-rich-editor--readonly" : ""}`}>
       <div className="nodere-editor-toolbar" role="toolbar" aria-label="Formatação do texto">
-        <select aria-label="Fonte" title="Fonte" value={fontFamily} disabled={disabled} onChange={(event) => editor.chain().focus().setFontFamily(event.target.value).run()}>
-          <option value="Inter">Inter</option><option value="Arial">Arial</option><option value="Georgia">Georgia</option><option value="Helvetica">Helvetica</option><option value="Times New Roman">Times</option>
-        </select>
-        <select aria-label="Tamanho da fonte" title="Tamanho da fonte" value={fontSize} disabled={disabled} onChange={(event) => editor.chain().focus().setFontSize(event.target.value).run()}>
-          {[10, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48].map((size) => <option key={size} value={`${size}px`}>{size}</option>)}
-        </select>
-        <ToolButton label="Negrito" disabled={disabled} active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}><Bold /></ToolButton>
-        <ToolButton label="Itálico" disabled={disabled} active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}><Italic /></ToolButton>
-        <ToolButton label="Sublinhado" disabled={disabled} active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()}><UnderlineIcon /></ToolButton>
-        <ToolButton label="Tachado" disabled={disabled} active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}><Strikethrough /></ToolButton>
-        <ToolButton label="Alinhar à esquerda" disabled={disabled} active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()}><AlignLeft /></ToolButton>
-        <ToolButton label="Centralizar" disabled={disabled} active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()}><AlignCenter /></ToolButton>
-        <ToolButton label="Alinhar à direita" disabled={disabled} active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()}><AlignRight /></ToolButton>
-        <ToolButton label="Justificar" disabled={disabled} active={editor.isActive({ textAlign: "justify" })} onClick={() => editor.chain().focus().setTextAlign("justify").run()}><AlignJustify /></ToolButton>
-        <ToolButton label="Lista com marcadores" disabled={disabled} active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}><List /></ToolButton>
-        <ToolButton label="Lista numerada" disabled={disabled} active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered /></ToolButton>
-        <label className="nodere-editor-color" title="Cor do texto"><span>A</span><input type="color" aria-label="Cor do texto" disabled={disabled} value={editor.getAttributes("textStyle").color || "#03624c"} onChange={(event) => editor.chain().focus().setColor(event.target.value).run()} /></label>
-        <label className="nodere-editor-color" title="Cor de fundo"><Highlighter /><input type="color" aria-label="Cor de fundo" disabled={disabled} value={editor.getAttributes("textStyle").backgroundColor || "#d1fae5"} onChange={(event) => editor.chain().focus().setBackgroundColor(event.target.value).run()} /></label>
-        <select aria-label="Espaçamento entre linhas" title="Espaçamento entre linhas" disabled={disabled} defaultValue="1.5" onChange={(event) => editor.chain().focus().setLineHeight(event.target.value).run()}>
-          <option value="1">1,0</option><option value="1.25">1,25</option><option value="1.5">1,5</option><option value="1.75">1,75</option><option value="2">2,0</option>
-        </select>
-        <ToolButton label="Inserir ou editar link" disabled={disabled} active={editor.isActive("link")} onClick={editLink}><Link2 /></ToolButton>
-        <ToolButton label="Remover link" disabled={disabled || !editor.isActive("link")} onClick={() => editor.chain().focus().unsetLink().run()}><Unlink /></ToolButton>
-        {allowImages && <ToolButton label="Anexar imagem" disabled={disabled} onClick={() => fileInputRef.current?.click()}><ImagePlus /></ToolButton>}
-        <ToolButton label="Limpar formatação" disabled={disabled} onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}><RemoveFormatting /></ToolButton>
-        <ToolButton label="Desfazer" disabled={disabled || !editor.can().chain().focus().undo().run()} onClick={() => editor.chain().focus().undo().run()}><Undo2 /></ToolButton>
-        <ToolButton label="Refazer" disabled={disabled || !editor.can().chain().focus().redo().run()} onClick={() => editor.chain().focus().redo().run()}><Redo2 /></ToolButton>
+        <div className="nodere-editor-group nodere-editor-group--selects" aria-label="Fonte e tamanho">
+          <select aria-label="Fonte" title="Fonte" value={fontFamily} disabled={disabled} onChange={(event) => editor.chain().focus().setFontFamily(event.target.value).run()}>
+            <option value="Inter">Inter</option><option value="Arial">Arial</option><option value="Georgia">Georgia</option><option value="Helvetica">Helvetica</option><option value="Times New Roman">Times</option>
+          </select>
+          <select aria-label="Tamanho da fonte" title="Tamanho da fonte" value={fontSize} disabled={disabled} onChange={(event) => editor.chain().focus().setFontSize(event.target.value).run()}>
+            {[10, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48].map((size) => <option key={size} value={`${size}px`}>{size}</option>)}
+          </select>
+        </div>
+        <div className="nodere-editor-group" aria-label="Estilos">
+          <ToolButton label="Negrito" disabled={disabled} active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}><Bold /></ToolButton>
+          <ToolButton label="Itálico" disabled={disabled} active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}><Italic /></ToolButton>
+          <ToolButton label="Sublinhado" disabled={disabled} active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()}><UnderlineIcon /></ToolButton>
+          <ToolButton label="Tachado" disabled={disabled} active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}><Strikethrough /></ToolButton>
+        </div>
+        <div className="nodere-editor-group" aria-label="Alinhamento">
+          <ToolButton label="Alinhar à esquerda" disabled={disabled} active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()}><AlignLeft /></ToolButton>
+          <ToolButton label="Centralizar" disabled={disabled} active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()}><AlignCenter /></ToolButton>
+          <ToolButton label="Alinhar à direita" disabled={disabled} active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()}><AlignRight /></ToolButton>
+          <ToolButton label="Justificar" disabled={disabled} active={editor.isActive({ textAlign: "justify" })} onClick={() => editor.chain().focus().setTextAlign("justify").run()}><AlignJustify /></ToolButton>
+        </div>
+        <div className="nodere-editor-group" aria-label="Listas">
+          <ToolButton label="Lista com marcadores" disabled={disabled} active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}><List /></ToolButton>
+          <ToolButton label="Lista numerada" disabled={disabled} active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered /></ToolButton>
+        </div>
+        <div className="nodere-editor-group nodere-editor-group--colors" aria-label="Cores e espaçamento">
+          <label className="nodere-editor-color" title="Cor do texto"><span>A</span><input type="color" aria-label="Cor do texto" disabled={disabled} value={editor.getAttributes("textStyle").color || "#03624c"} onChange={(event) => editor.chain().focus().setColor(event.target.value).run()} /></label>
+          <label className="nodere-editor-color" title="Cor de fundo"><Highlighter /><input type="color" aria-label="Cor de fundo" disabled={disabled} value={editor.getAttributes("textStyle").backgroundColor || "#d1fae5"} onChange={(event) => editor.chain().focus().setBackgroundColor(event.target.value).run()} /></label>
+          <select aria-label="Espaçamento entre linhas" title="Espaçamento entre linhas" disabled={disabled} value={lineHeight} onChange={(event) => editor.chain().focus().setLineHeight(event.target.value).run()}>
+            <option value="1">1,0</option><option value="1.25">1,25</option><option value="1.5">1,5</option><option value="1.75">1,75</option><option value="2">2,0</option>
+          </select>
+        </div>
+        <div className="nodere-editor-group" aria-label="Links e anexos">
+          <ToolButton label="Inserir ou editar link" disabled={disabled} active={editor.isActive("link")} onClick={editLink}><Link2 /></ToolButton>
+          <ToolButton label="Remover link" disabled={disabled || !editor.isActive("link")} onClick={() => editor.chain().focus().unsetLink().run()}><Unlink /></ToolButton>
+          {allowImages && <ToolButton label="Anexar imagem" disabled={disabled} onClick={() => fileInputRef.current?.click()}><ImagePlus /></ToolButton>}
+        </div>
+        <div className="nodere-editor-group" aria-label="Ações do editor">
+          <ToolButton label="Limpar formatação" disabled={disabled} onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}><RemoveFormatting /></ToolButton>
+          <ToolButton label="Desfazer" disabled={disabled || !editor.can().chain().focus().undo().run()} onClick={() => editor.chain().focus().undo().run()}><Undo2 /></ToolButton>
+          <ToolButton label="Refazer" disabled={disabled || !editor.can().chain().focus().redo().run()} onClick={() => editor.chain().focus().redo().run()}><Redo2 /></ToolButton>
+        </div>
         <input ref={fileInputRef} className="hidden" type="file" accept="image/*" onChange={(event) => addImage(event.target.files?.[0])} />
       </div>
       <EditorContent editor={editor} />

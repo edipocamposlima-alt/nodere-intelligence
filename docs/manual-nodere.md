@@ -119,9 +119,21 @@ Owner, Administrador e Operador podem editar conforme permissões de cada módul
 ### Como usar
 1. Abra a tela ou aba desejada.
 2. Clique no campo de texto.
-3. Use a barra do editor para escolher fonte, tamanho, negrito, itálico, sublinhado, tachado, listas, alinhamento, cor, destaque, links, imagens ou limpar formatação.
+3. Use a barra do editor para escolher fonte, tamanho, negrito, itálico, sublinhado, tachado, listas, alinhamento, cor, destaque, espaçamento, links, imagens ou limpar formatação.
 4. Revise o conteúdo.
 5. Clique no botão de salvar, gerar documento ou publicar da própria tela.
+
+### Barra de ferramentas
+A barra do editor é dividida em grupos para manter os botões alinhados em Observações, Marketing, Propostas, Contratos, Templates, Admin/CMS e demais áreas com texto formatado:
+- Fonte e tamanho.
+- Estilos de texto.
+- Alinhamento.
+- Listas.
+- Cor, destaque e espaçamento.
+- Link, imagem e anexos permitidos pela tela.
+- Limpar formatação, desfazer e refazer.
+
+No celular, os grupos quebram em linhas para evitar botões cortados ou sobrepostos. Se a tela estiver estreita, role o conteúdo normalmente; a toolbar deve permanecer dentro do campo de edição.
 
 ### Boas práticas
 - Use títulos e listas para textos longos.
@@ -137,6 +149,7 @@ Propostas, contratos e documentos usam o conteúdo salvo como origem. O sistema 
 - **Texto sem formatação após salvar**: confirme se clicou no botão de salvar da tela e se a sessão continua autenticada.
 - **Botão indisponível**: confira seu perfil de acesso ou se o registro está em modo somente leitura.
 - **PDF com conteúdo diferente**: gere novamente o documento após salvar as alterações no editor.
+- **Toolbar desalinhada**: atualize a página e confirme que está usando a versão mais recente. A barra padronizada deve exibir botões alinhados e agrupados em tema claro, tema escuro, desktop e mobile.
 
 ## IA
 A IA usa o backend `/api/openai/analyze`. Se a OpenAI retornar quota/billing insuficiente, configure créditos na OpenAI Platform. O texto gerado pode ser editado antes de salvar, copiar ou transformar em documento.
@@ -148,6 +161,19 @@ Configure `GOOGLE_PAGESPEED_API_KEY` no Render para ativar análise de performan
 Na aba **IA / Editor** ou **Propostas e contratos**, use a composição controlada por produtos/serviços quando disponível e revise as observações no editor rico. O documento fica disponível na aba **Propostas e contratos** para baixar.
 
 Os PDFs usam cabeçalho visual NODERE com marca, nome NODERE e conteúdo revisado pelo operador. O relatório exportado pela ficha também exibe o logo NODERE no topo. Observações internas da negociação não devem aparecer no PDF do cliente.
+
+### PDF da Ficha Comercial / Ficha Cliente
+O PDF da ficha segue a mesma identidade visual do relatório NODERE: cabeçalho com logo, título, data de geração, blocos organizados, divisores visuais, rodapé "Gerado pelo NODERE - nodere.com.br" e paginação. As seções principais são:
+- Dados da empresa.
+- Score e oportunidade.
+- Sinais digitais.
+- Oportunidades detectadas.
+- Sugestões comerciais.
+- Histórico e observações.
+- Follow-ups e agenda.
+- Documentos anexados.
+
+Textos vindos de observações, histórico ou editor rico são limpos antes de entrar no PDF para evitar HTML cru, markdown visível, símbolos quebrados ou `\n` literal.
 
 ## Anexos e conversas
 Como mínimo operacional, cole conversas na Caixa de Entrada ou salve conteúdos como documentos vinculados ao lead. Para upload real de arquivos, configure storage dedicado.
@@ -187,6 +213,8 @@ Em **Configurações**, ajuste:
 - visual em cards/listas.
 
 As preferências são salvas em `nodere_settings`, aplicadas antes da renderização visual da página e sincronizadas com o backend quando disponível. O sistema mantém compatibilidade com chaves antigas, mas a fonte local oficial do tema é única. O NODERE mostra os rótulos **Claro** e **Escuro** para o usuário, enquanto usa internamente os valores técnicos `light` e `dark`. Ao carregar a plataforma, o tema é reaplicado no `html` e no `body` para evitar que a interface fique presa no modo escuro. O modo claro/escuro deve permanecer estável ao trocar páginas, atualizar o navegador, fazer logout/login, reabrir o navegador, usar mobile ou PWA.
+
+O tema claro mantém a mesma hierarquia visual do tema escuro: fundo com identidade NODERE, cards com bordas verdes suaves, badges coloridos, barras de progresso, sidebar, topbar, tabelas, abas, indicadores e editores com contraste adequado. O objetivo é clarear a interface sem transformar o sistema em uma tela genérica ou sem marca.
 
 ### Preferências rápidas
 No topo do sistema, clique no botão do usuário para abrir **Preferências rápidas**. Esse painel permite alternar rapidamente:

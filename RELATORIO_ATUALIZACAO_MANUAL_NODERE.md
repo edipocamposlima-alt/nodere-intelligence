@@ -128,3 +128,73 @@ A validacao anterior da Correcao 05 foi reprovada porque a interface ainda podia
 - FAQ ATUALIZADO: SIM
 - PASSO A PASSO ATUALIZADO: SIM
 - RELATORIO ATUALIZADO: SIM
+
+---
+
+## RETRABALHO — CORRECAO 04 EDITORES DE TEXTO
+
+Data da atualizacao: 2026-07-03
+Versao da plataforma: NODERE Sprint atual
+
+### Motivo
+A validacao anterior dos editores foi reprovada porque Observacoes e Marketing ainda podiam exibir toolbar quebrada, botoes desalinhados e controles cortados.
+
+### Funcionalidades alteradas documentadas
+- Editor rico global.
+- Observacoes e historico.
+- Marketing, criar post, campanhas e templates.
+- Propostas e contratos.
+- WhatsApp/templates.
+- Admin/CMS, blog e paginas institucionais.
+
+### Paginas do manual atualizadas
+- Aba Ajuda / Manual NODERE: topico "33. Editor de texto".
+- Documento `docs/manual-nodere.md`: secao "Editor de texto padronizado".
+
+### Novos esclarecimentos adicionados
+- A toolbar agora e organizada em grupos.
+- Botoes e selects do editor nao devem herdar padding global da plataforma.
+- No mobile, os grupos quebram em linhas para evitar corte ou sobreposicao.
+- O usuario deve atualizar a pagina caso veja uma toolbar desalinhada apos publicacao.
+- Viewer continua em modo somente leitura quando a regra da tela exigir.
+
+### Status
+- DOCUMENTACAO ATUALIZADA: SIM
+- MANUAL SINCRONIZADO: SIM
+- NOVAS FUNCIONALIDADES DOCUMENTADAS: NAO SE APLICA
+- FUNCIONALIDADES ALTERADAS DOCUMENTADAS: SIM
+- FAQ ATUALIZADO: SIM
+- PASSO A PASSO ATUALIZADO: SIM
+- RELATORIO ATUALIZADO: SIM
+
+---
+
+## Atualizacao - Padronizacao visual tema claro e PDF Ficha Cliente
+
+Data da atualizacao: 2026-07-03
+Versao da plataforma: NODERE Sprint atual
+
+### Funcionalidades alteradas
+- Tema claro.
+- Identidade visual global de cards, bordas, sidebar, topbar, badges, inputs, tabelas, barras e indicadores.
+- PDF da Ficha Comercial / Ficha Cliente.
+
+### Paginas do manual atualizadas
+- Aba Ajuda / Manual NODERE: topico "14. Tema, fonte e layout".
+- Aba Ajuda / Manual NODERE: topico "30. PDFs e documentos".
+- Documento `docs/manual-nodere.md`: secoes "Tema, fonte e layout" e "PDF da Ficha Comercial / Ficha Cliente".
+
+### Topicos revisados
+- Uso do tema claro sem perder identidade NODERE.
+- Padrao visual de PDFs comerciais.
+- Limpeza de textos formatados antes de PDF.
+- Organizacao das secoes da ficha no PDF.
+
+### Status
+- DOCUMENTACAO ATUALIZADA: SIM
+- MANUAL SINCRONIZADO: SIM
+- NOVAS FUNCIONALIDADES DOCUMENTADAS: NAO SE APLICA
+- FUNCIONALIDADES ALTERADAS DOCUMENTADAS: SIM
+- FAQ ATUALIZADO: SIM
+- PASSO A PASSO ATUALIZADO: SIM
+- RELATORIO ATUALIZADO: SIM

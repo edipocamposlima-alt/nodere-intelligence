@@ -1384,108 +1384,158 @@ async function renderCompanyExportPdf(input: {
   generatedBy: string;
   logoDataUri: string;
 }) {
-  const doc = new PDFDocument({ size: "A4", margin: 48, bufferPages: true, info: { Title: `Ficha Cliente - ${input.company.name}`, Author: "NODERE" } });
+  const doc = new PDFDocument({ size: "A4", margin: 42, bufferPages: true, info: { Title: `Ficha Cliente - ${input.company.name}`, Author: "NODERE" } });
   const chunks: Buffer[] = [];
   doc.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
   const done = new Promise<Buffer>((resolve) => doc.on("end", () => resolve(Buffer.concat(chunks))));
   const generatedAt = new Date().toISOString();
   const logo = dataUriToBuffer(input.logoDataUri);
 
+  const palette = {
+    primary: "#03624C",
+    accent: "#00DF82",
+    ink: "#0A0F1E",
+    text: "#1F2937",
+    muted: "#64748B",
+    border: "#D9E4DF",
+    soft: "#F4FAF7",
+    panel: "#FFFFFF",
+    success: "#047857",
+    warning: "#B45309",
+    danger: "#B91C1C"
+  };
+  const page = { left: 42, right: doc.page.width - 42, top: 118, bottom: doc.page.height - 68 };
+  const contentWidth = page.right - page.left;
+
   function header() {
-    if (logo) doc.image(logo, 48, 34, { width: 34, height: 34 });
-    doc.fillColor("#00D69E").fontSize(14).text("NODERE", 88, 38);
-    doc.fillColor("#64748B").fontSize(8).text("Inteligência comercial", 88, 56);
-    doc.fillColor("#64748B").fontSize(8).text(formatPtBrDate(generatedAt), 420, 42, { align: "right", width: 124 });
-    doc.moveTo(48, 78).lineTo(547, 78).strokeColor("#E2E8F0").stroke();
-    doc.x = 48;
-    doc.y = 96;
+    doc.rect(0, 0, doc.page.width, doc.page.height).fill("#FFFFFF");
+    doc.roundedRect(page.left, 28, contentWidth, 72, 12).strokeColor(palette.border).lineWidth(1).stroke();
+    if (logo) {
+      doc.image(logo, page.left + 14, 42, { width: 32, height: 32 });
+      doc.fillColor(palette.primary).fontSize(19).text("NODERE", page.left + 54, 44);
+    } else {
+      doc.fillColor(palette.primary).fontSize(21).text("NODERE", page.left + 14, 43);
+    }
+    doc.fillColor("#334155").fontSize(9).text("Ficha Comercial / Ficha Cliente", page.left + 54, 66);
+    doc.fillColor(palette.primary).fontSize(10).text("Relatorio comercial NODERE", page.right - 160, 42, { align: "right", width: 146 });
+    doc.fillColor(palette.muted).fontSize(8).text(formatPtBrDate(generatedAt), page.right - 160, 60, { align: "right", width: 146 });
+    doc.y = page.top;
+    doc.x = page.left;
   }
 
-  function section(title: string) {
-    if (doc.y > 690) {
+  function ensureSpace(height = 80) {
+    if (doc.y + height > page.bottom) {
       doc.addPage();
       header();
     }
-    doc.moveDown(0.8);
-    doc.fillColor("#0F172A").fontSize(13).text(title, { underline: false });
-    doc.moveTo(48, doc.y + 4).lineTo(547, doc.y + 4).strokeColor("#E2E8F0").stroke();
-    doc.moveDown(0.8);
   }
 
-  function line(label: string, value: unknown) {
-    doc.fillColor("#475569").fontSize(9).text(`${label}: `, { continued: true });
-    doc.fillColor("#0F172A").fontSize(9).text(cleanPdfText(value || "Não informado"), { width: 390 });
+  function sectionTitle(title: string, subtitle?: string) {
+    ensureSpace(subtitle ? 58 : 42);
+    doc.moveDown(0.45);
+    doc.fillColor(palette.primary).fontSize(8).text("NODERE", page.left, doc.y, { continued: true });
+    doc.fillColor(palette.muted).text("  /  " + title.toUpperCase());
+    doc.fillColor(palette.ink).fontSize(14).text(title, page.left, doc.y + 4, { width: contentWidth });
+    if (subtitle) doc.fillColor(palette.muted).fontSize(8.5).text(cleanPdfText(subtitle), page.left, doc.y + 2, { width: contentWidth });
+    doc.moveTo(page.left, doc.y + 7).lineTo(page.right, doc.y + 7).strokeColor(palette.border).lineWidth(0.8).stroke();
+    doc.y += 18;
   }
 
-  function bullet(value: unknown) {
-    const parts = cleanPdfText(value || "Não informado")
-      .split(/\n+/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-    const lines = parts.length ? parts : ["Não informado"];
-    for (const lineText of lines) {
-      if (doc.y > 720) {
-        doc.addPage();
-        header();
-      }
-      doc.fillColor("#0F172A").fontSize(9).text(`• ${lineText}`, {
-        indent: 8,
-        width: 480,
-        lineGap: 2
+  function metricCard(label: string, value: unknown, x: number, y: number, width: number, tone: "primary" | "success" | "warning" | "danger" = "primary") {
+    const color = tone === "success" ? palette.success : tone === "warning" ? palette.warning : tone === "danger" ? palette.danger : palette.primary;
+    doc.roundedRect(x, y, width, 62, 10).fillAndStroke(palette.soft, palette.border);
+    doc.fillColor(palette.muted).fontSize(8).text(label, x + 12, y + 11, { width: width - 24 });
+    doc.fillColor(color).fontSize(19).text(cleanPdfText(value || "0"), x + 12, y + 30, { width: width - 24, ellipsis: true });
+  }
+
+  function infoBox(title: string, rows: Array<[string, unknown]>) {
+    ensureSpace(42 + rows.length * 26);
+    const startY = doc.y;
+    doc.roundedRect(page.left, startY, contentWidth, 30 + rows.length * 24, 10).fillAndStroke(palette.panel, palette.border);
+    doc.fillColor(palette.primary).fontSize(10).text(title, page.left + 14, startY + 12, { width: contentWidth - 28 });
+    let y = startY + 34;
+    rows.forEach(([label, value]) => {
+      const cleanValue = cleanPdfText(value || "Não informado") || "Não informado";
+      doc.fillColor(palette.muted).fontSize(8).text(label, page.left + 14, y, { width: 120 });
+      doc.fillColor(palette.text).fontSize(9).text(cleanValue, page.left + 142, y, { width: contentWidth - 158, lineGap: 1 });
+      y = Math.max(y + 24, doc.y + 4);
+    });
+    doc.y = y + 6;
+  }
+
+  function listBox(title: string, values: unknown[], tone: "neutral" | "primary" | "success" | "warning" | "danger" = "neutral") {
+    const items = (values.length ? values : ["Não informado"]).map((value) => cleanPdfText(value || "Não informado")).filter(Boolean);
+    sectionTitle(title);
+    const color = tone === "success" ? palette.success : tone === "warning" ? palette.warning : tone === "danger" ? palette.danger : palette.primary;
+    items.forEach((item) => {
+      const paragraphs = item.split(/\n+/).map((part) => part.trim()).filter(Boolean);
+      const parts = paragraphs.length ? paragraphs : [item];
+      parts.forEach((text) => {
+        ensureSpace(34);
+        const y = doc.y;
+        doc.roundedRect(page.left, y, contentWidth, 27, 7).fillAndStroke(tone === "neutral" ? "#FFFFFF" : palette.soft, palette.border);
+        doc.circle(page.left + 14, y + 13.5, 3).fill(color);
+        doc.fillColor(palette.text).fontSize(9).text(text.replace(/^[-•]\s*/, ""), page.left + 26, y + 8, { width: contentWidth - 40, lineGap: 1 });
+        doc.y = Math.max(y + 31, doc.y + 4);
       });
-    }
+    });
   }
 
   header();
-  doc.fillColor("#0F172A").fontSize(20).text(`Ficha Comercial - ${input.company.name || "Cliente"}`);
-  doc.fillColor("#64748B").fontSize(9).text(`Gerado por ${input.generatedBy} em ${formatPtBrDate(generatedAt)}`);
+  doc.fillColor(palette.ink).fontSize(22).text(`Ficha Comercial - ${cleanPdfText(input.company.name || "Cliente")}`, page.left, doc.y, { width: contentWidth - 130 });
+  doc.fillColor(palette.muted).fontSize(9).text(`Gerado por ${cleanPdfText(input.generatedBy || "NODERE")} em ${formatPtBrDate(generatedAt)}`, page.left, doc.y + 4, { width: contentWidth });
+  doc.moveDown(1.1);
 
-  section("Dados da empresa");
-  line("Segmento", input.company.category);
-  line("Endereço", input.company.address || [input.company.city, input.company.state].filter(Boolean).join("/"));
-  line("CNPJ", input.company.cnpj);
-  line("Telefone", input.company.phone || input.company.telefonePrincipal || input.company.telefone_principal);
-  line("WhatsApp", input.company.whatsapp);
-  line("E-mail", input.company.emailPrincipal || input.company.email_principal || input.company.email);
-  line("Site", input.company.website);
-  line("Maps", input.company.mapsUrl || input.company.maps_url);
-  line("Resumo comercial", input.company.businessSummary || input.company.resumoSobreEmpresa || input.company.resumo_sobre_empresa || input.company.resumo);
+  const metricY = doc.y;
+  const cardWidth = (contentWidth - 24) / 3;
+  metricCard("Score NODERE", `${input.company.score ?? 0}/100`, page.left, metricY, cardWidth, "primary");
+  metricCard("Oportunidade", input.company.opportunityLevel || "Não informado", page.left + cardWidth + 12, metricY, cardWidth, String(input.company.opportunityLevel || "").toLowerCase().includes("alta") ? "success" : "warning");
+  metricCard("Avaliações Google", `${input.company.rating ?? "-"} / ${input.company.reviewCount ?? 0}`, page.left + (cardWidth + 12) * 2, metricY, cardWidth, "primary");
+  doc.y = metricY + 82;
 
-  section("Score e oportunidade");
-  line("Score NODERE", `${input.company.score ?? 0}/100`);
-  line("Nível", input.company.opportunityLevel);
-  line("Rating Google", `${input.company.rating ?? "-"} (${input.company.reviewCount ?? 0} avaliações)`);
+  sectionTitle("Dados da empresa", "Informacoes cadastrais e dados comerciais localizados.");
+  infoBox("Cadastro e contato", [
+    ["Empresa", input.company.name],
+    ["Segmento", input.company.category],
+    ["Endereco", input.company.address || [input.company.city, input.company.state].filter(Boolean).join("/")],
+    ["CNPJ", input.company.cnpj],
+    ["Telefone", input.company.phone || input.company.telefonePrincipal || input.company.telefone_principal],
+    ["WhatsApp", input.company.whatsapp],
+    ["E-mail", input.company.emailPrincipal || input.company.email_principal || input.company.email],
+    ["Site", input.company.website],
+    ["Maps", input.company.mapsUrl || input.company.maps_url],
+    ["Resumo comercial", input.company.businessSummary || input.company.resumoSobreEmpresa || input.company.resumo_sobre_empresa || input.company.resumo]
+  ]);
 
-  section("Sinais digitais");
-  input.checks.forEach((check) => bullet(`${check.ok ? "OK" : "Pendente"} - ${check.label}`));
+  sectionTitle("Sinais digitais");
+  input.checks.forEach((check) => {
+    ensureSpace(28);
+    const y = doc.y;
+    doc.roundedRect(page.left, y, contentWidth, 24, 7).fillAndStroke(check.ok ? "#F0FDF4" : "#FFF7ED", check.ok ? "#BBF7D0" : "#FED7AA");
+    doc.fillColor(check.ok ? palette.success : palette.warning).fontSize(8).text(check.ok ? "OK" : "PENDENTE", page.left + 12, y + 8, { width: 60 });
+    doc.fillColor(palette.text).fontSize(9).text(cleanPdfText(check.label), page.left + 78, y + 7, { width: contentWidth - 92 });
+    doc.y = y + 30;
+  });
 
-  section("Oportunidades detectadas");
-  (input.opportunities?.length ? input.opportunities : ["Nenhuma oportunidade detectada."]).forEach(bullet);
-
-  section("Sugestões comerciais");
-  (input.suggestions?.length ? input.suggestions : ["Sem sugestões no momento."]).forEach(bullet);
-
-  section("Histórico e observações");
-  (input.notes?.length ? input.notes : [{ body: "Sem observações registradas." }]).slice(0, 12).forEach((note) => bullet(`${note.createdAt ? `${formatPtBrDate(note.createdAt)} - ` : ""}${note.body || ""}`));
-
-  section("Follow-ups e agenda");
-  (input.tasks?.length ? input.tasks : [{ title: "Sem follow-ups registrados." }]).slice(0, 12).forEach((task) => bullet(`${task.title || "Tarefa"}${task.status ? ` - ${task.status}` : ""}${task.dueAt ? ` - ${formatPtBrDate(task.dueAt)}` : ""}`));
-
-  section("Documentos anexados");
-  (input.documents?.length ? input.documents : [{ title: "Sem documentos anexados." }]).slice(0, 12).forEach((item) => bullet(`${item.title || "Documento"}${item.fileName ? ` - ${item.fileName}` : ""}`));
+  listBox("Oportunidades detectadas", input.opportunities?.length ? input.opportunities : ["Nenhuma oportunidade detectada."], "danger");
+  listBox("Sugestoes comerciais", input.suggestions?.length ? input.suggestions : ["Sem sugestoes no momento."], "success");
+  listBox("Historico e observacoes", (input.notes?.length ? input.notes : [{ body: "Sem observacoes registradas." }]).slice(0, 12).map((note) => `${note.createdAt ? `${formatPtBrDate(note.createdAt)} - ` : ""}${note.body || ""}`), "neutral");
+  listBox("Follow-ups e agenda", (input.tasks?.length ? input.tasks : [{ title: "Sem follow-ups registrados." }]).slice(0, 12).map((task) => `${task.title || "Tarefa"}${task.status ? ` - ${task.status}` : ""}${task.dueAt ? ` - ${formatPtBrDate(task.dueAt)}` : ""}`), "warning");
+  listBox("Documentos anexados", (input.documents?.length ? input.documents : [{ title: "Sem documentos anexados." }]).slice(0, 12).map((item) => `${item.title || "Documento"}${item.fileName ? ` - ${item.fileName}` : ""}`), "primary");
 
   if (input.diagnosis) {
-    section("Diagnóstico IA");
-    bullet(input.diagnosis.summary || "Diagnóstico sem resumo.");
-    (input.diagnosis.suggestedServices || []).slice(0, 6).forEach((service: string) => bullet(`Serviço sugerido: ${service}`));
+    listBox("Diagnostico IA", [
+      input.diagnosis.summary || "Diagnostico sem resumo.",
+      ...(input.diagnosis.suggestedServices || []).slice(0, 6).map((service: string) => `Servico sugerido: ${service}`)
+    ], "success");
   }
 
   const range = doc.bufferedPageRange();
   for (let index = range.start; index < range.start + range.count; index += 1) {
     doc.switchToPage(index);
-    doc.moveTo(48, 760).lineTo(547, 760).strokeColor("#E2E8F0").stroke();
-    doc.fillColor("#64748B").fontSize(8).text("NODERE", 48, 770);
-    doc.text(`Página ${index + 1} de ${range.count}`, 440, 770, { width: 107, align: "right" });
+    doc.moveTo(page.left, 760).lineTo(page.right, 760).strokeColor(palette.border).lineWidth(0.8).stroke();
+    doc.fillColor(palette.muted).fontSize(8).text("Gerado pelo NODERE - nodere.com.br", page.left, 770, { width: 240 });
+    doc.fillColor(palette.muted).fontSize(8).text(`Pagina ${index + 1} de ${range.count}`, page.right - 120, 770, { width: 120, align: "right" });
   }
   doc.end();
   return done;
@@ -1502,6 +1552,7 @@ function safeFileName(value: string) {
 
 function cleanPdfText(value: unknown) {
   return decodeHtmlEntities(String(value ?? ""))
+    .replace(/\\n/g, "\n")
     .replace(/<\s*br\s*\/?>/gi, "\n")
     .replace(/<\/\s*p\s*>/gi, "\n")
     .replace(/<\s*li[^>]*>/gi, "\n- ")
@@ -1509,6 +1560,11 @@ function cleanPdfText(value: unknown) {
     .replace(/<\/\s*(ul|ol|div|section|article|h[1-6]|blockquote)\s*>/gi, "\n")
     .replace(/<\s*(p|ul|ol|div|section|article|h[1-6]|blockquote|span|strong|b|em|i|u|s|a|font)[^>]*>/gi, "")
     .replace(/<[^>]+>/g, "")
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\*(.*?)\*/g, "$1")
+    .replace(/`{1,3}([^`]+)`{1,3}/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
     .replace(/\r/g, "")
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
