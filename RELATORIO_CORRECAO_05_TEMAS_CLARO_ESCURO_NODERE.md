@@ -11,6 +11,7 @@ A entrega anterior foi considerada reprovada porque o modo Claro ainda aparecia 
 - O layout de login ainda forcava `bg-gray-950`, mantendo a tela publica escura mesmo quando o tema salvo era Claro.
 - A camada `DESIGN SYSTEM v2.0` declarava tokens escuros para `:root` de forma incondicional. Isso deixava o tema escuro como base permanente e aumentava o risco de a UI ficar presa em cores escuras.
 - A aplicacao do tema era feita no `html`, mas nao sincronizava `data-theme` e classes no `body`, dificultando CSS e validacoes que dependem do body.
+- A validacao em producao revelou uma causa adicional: o controle de Preferencias rapidas salvava `mode=light`, mas preservava `themeVariant=highContrastDark` e `theme=Alto contraste escuro` vindos de preferencias antigas. A variante escura tinha prioridade e mantinha a tela escura mesmo com o select em Claro.
 
 ### Correcoes adicionais do retrabalho
 - Removido `className="dark"` fixo do `html`.
@@ -18,6 +19,8 @@ A entrega anterior foi considerada reprovada porque o modo Claro ainda aparecia 
 - Login layout passou a usar `bg-[var(--bg-main)]` e `text-[var(--text-primary)]`.
 - O bloco principal de tokens escuros passou de `:root` incondicional para `:root:not([data-theme="light"])`.
 - A camada final de compatibilidade do modo Claro cobre classes legadas `bg-gray-950`, `bg-slate-950`, `bg-slate-900` e `bg-black` nos shells controlados.
+- `writeThemeSettings` agora reseta variantes especiais para `default` quando o usuario escolhe `light`, `dark` ou `system` pelo controle simples.
+- Preferencias rapidas agora enviam explicitamente `themeVariant: default` ao salvar Claro/Escuro/Sistema.
 - Criado `scripts/validate-theme-correction-05.mjs` para reprovar regressao se o HTML voltar a fixar dark, se body nao sincronizar tema ou se o CSS voltar a forcar tokens escuros em `:root`.
 
 ### Evidencias antes/depois
@@ -27,6 +30,7 @@ A entrega anterior foi considerada reprovada porque o modo Claro ainda aparecia 
 - Depois: `html` renderiza sem classe fixa; o boot/script e o provider aplicam `.light`/`.dark` conforme o valor salvo.
 - Depois: medicao local em Chrome no build compilado confirmou `htmlTheme=light`, `bodyTheme=light`, `htmlClass=light`, `bodyClass=light`, topbar branca `rgb(255, 255, 255)` e dashboard visualmente claro.
 - Depois: captura local do Dashboard em Claro mostrou sidebar branca, cards brancos, textos pretos e identidade verde preservada.
+- Durante validacao em producao do primeiro deploy do retrabalho, foi observado `localTheme=light` com `themeVariant=highContrastDark`; essa divergencia foi corrigida antes da liberacao final.
 
 ### Validacao local do retrabalho
 - `node scripts\validate-theme-correction-05.mjs`: aprovado.

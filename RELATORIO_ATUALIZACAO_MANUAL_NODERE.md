@@ -114,6 +114,7 @@ A validacao anterior da Correcao 05 foi reprovada porque a interface ainda podia
 ### Novos esclarecimentos adicionados
 - O usuario ve **Claro/Escuro**, mas a plataforma usa internamente `light/dark`.
 - A preferencia fica em `nodere_settings` e chaves legadas compativeis.
+- Preferencias rapidas resetam variantes especiais antigas ao escolher Claro, Escuro ou Sistema.
 - A classe do tema e aplicada no `html` e no `body`.
 - Como validar ou restaurar o tema apos salvar.
 - Quando fazer logout/login caso a API informe sessao expirada.

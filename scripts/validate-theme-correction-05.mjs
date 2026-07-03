@@ -22,11 +22,13 @@ assert(/bg-\[var\(--bg-main\)\]/.test(loginLayout), "layout de login ainda nao u
 assert(/document\.body\.dataset\.theme = resolvedMode/.test(theme), "ThemeProvider nao sincroniza data-theme no body");
 assert(/document\.body\.classList\.toggle\("light", resolvedMode === "light"\)/.test(theme), "ThemeProvider nao aplica classe light no body");
 assert(/document\.body\.classList\.toggle\("dark", resolvedMode === "dark"\)/.test(theme), "ThemeProvider nao remove classe dark no body quando modo claro");
+assert(/shouldResetVariant/.test(theme), "writeThemeSettings nao reseta variantes escuras ao salvar light/dark simples");
 assert(!/:root,\s*\n:root\[data-theme="dark"\],\s*\n\.dark \{/.test(globals), "CSS ainda declara tokens escuros para :root incondicional");
 assert(/:root:not\(\[data-theme="light"\]\),\s*\n:root\[data-theme="dark"\],\s*\n\.dark:not\(\.light\) \{/.test(globals), "CSS nao protege tokens escuros contra tema claro");
 assert(/bg-gray-950/.test(globals) && /bg-slate-950/.test(globals), "camada final de tema claro nao cobre classes legadas bg-gray-950/bg-slate-950");
 assert(/value="light">Claro/.test(header), "Preferencias rapidas nao mantem enum interno light com label Claro");
 assert(/value="dark">Escuro/.test(header), "Preferencias rapidas nao mantem enum interno dark com label Escuro");
+assert(/themeVariant: "default"/.test(header), "Preferencias rapidas nao resetam variantes especiais ao escolher Claro/Escuro/Sistema");
 
 if (errors.length) {
   console.error("Validacao Correção 05 reprovada:");

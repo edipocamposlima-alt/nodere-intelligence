@@ -45,7 +45,7 @@ function readPrefs(): UserPrefs {
 
 function applyPrefs(prefs: UserPrefs) {
   if (typeof window === "undefined") return;
-  const { settings } = persistAndApplyThemeSettings({ mode: prefs.theme, fontSize: prefs.fontSize, density: prefs.density, layoutDensity: prefs.density });
+  const { settings } = persistAndApplyThemeSettings({ mode: prefs.theme, themeVariant: "default", fontSize: prefs.fontSize, density: prefs.density, layoutDensity: prefs.density });
   localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
   void savePublicSettings(settings as unknown as Record<string, unknown>).catch(() => undefined);
 }

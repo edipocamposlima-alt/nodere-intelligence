@@ -164,7 +164,14 @@ export function writeThemeSettings(next: unknown) {
   if (typeof window === "undefined") return normalizeThemeSettings(next);
   const current = readThemeSettings();
   const data = (next && typeof next === "object" ? next : {}) as Record<string, unknown>;
-  const normalized = normalizeThemeSettings({ ...current, ...data, themeUpdatedAt: new Date().toISOString() });
+  const mode = normalizeThemeMode(data.mode);
+  const shouldResetVariant = !!mode && !("themeVariant" in data) && !("theme" in data);
+  const normalized = normalizeThemeSettings({
+    ...current,
+    ...data,
+    ...(shouldResetVariant ? { themeVariant: "default" } : {}),
+    themeUpdatedAt: new Date().toISOString()
+  });
   window.localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(normalized));
   window.localStorage.setItem(THEME_DIRECT_KEY, normalized.mode);
   window.localStorage.setItem(THEME_LEGACY_KEY, normalized.mode);
