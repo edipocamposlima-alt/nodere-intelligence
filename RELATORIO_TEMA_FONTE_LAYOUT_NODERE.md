@@ -204,34 +204,77 @@ Validacao automatizada em producao:
 - Rotas amostradas: `/dashboard`, `/companies`, `/crm`, `/app/proposals`, `/settings`.
 - Nao houve overflow global nos resultados do Edge isolado: `bodyScrollWidth === bodyClientWidth`.
 
-Validacao com sessao real:
+Validacao com sessao real em producao:
 
-- Uma aba real do Chrome foi encontrada em `https://nodere.com.br/app/proposals`.
+- Uma sessao real owner/admin foi localizada no Chrome em `https://nodere.com.br/dashboard`.
 - A sessao real tinha `nodere_admin_token` presente.
-- A tentativa de homologar todas as combinacoes via Chrome autenticado excedeu o tempo da ponte de automacao e resetou a sessao de ferramenta.
-- Portanto, a persistencia real no backend nao foi marcada como 100% validada neste relatorio.
+- `GET https://nodere-api.onrender.com/api/health` retornou `200`.
+- `GET https://nodere-api.onrender.com/health` retornou `200`.
+- O backend retornou `supabaseConfigured: true` e `databaseUrlConfigured: true`.
+- Foi executado `PATCH https://nodere-api.onrender.com/api/settings` autenticado com as preferencias:
+  - `theme: Claro`
+  - `mode: light`
+  - `themeVariant: default`
+  - `colorPrimary: #0A7A5F`
+  - `fontFamily: Arial`
+  - `fontSize: small`
+  - `density: compact`
+  - `layoutDensity: compact`
+  - `layoutVariant: compact`
+  - `visualStyle: solid`
+  - `cardStyle: solid`
+- Em seguida, `GET https://nodere-api.onrender.com/api/settings` autenticado retornou os mesmos campos persistidos.
+- A existencia e retorno dos campos `themeVariant`, `density`, `layoutVariant`, `visualStyle`, `fontSize` e `colorPrimary` confirmam que o backend Render esta executando o commit `fd76cbf` ou posterior.
+
+Validacao de refresh e fonte de verdade:
+
+- Foram removidos do navegador os caches locais `nodere_settings`, `nodere-theme` e `nodere_theme`.
+- Ao abrir novamente `https://nodere.com.br/settings`, o `ThemeProvider` recarregou as preferencias a partir do backend.
+- O DOM aplicou:
+  - `data-theme: light`
+  - `data-theme-variant: default`
+  - `data-font-size: small`
+  - `data-density: compact`
+  - `data-layout: compact`
+  - `data-visual: solid`
+  - `--brand-primary: #0A7A5F`
+  - `fontFamily: Arial, Helvetica, sans-serif`
+- Conclusao: o `localStorage` nao e a unica fonte de verdade; ele e reidratado pelo backend quando a sessao esta autenticada.
+
+Validacao mobile em producao:
+
+- Executado `node scripts/validate-responsive-overflow.mjs` contra `https://nodere.com.br`.
+- Viewport: `mobile-375:375x812`.
+- Rotas validadas:
+  - `/dashboard`
+  - `/companies`
+  - `/crm`
+  - `/discovery`
+  - `/app/proposals`
+  - `/settings`
+- Resultado: `ok: true`, `failures: []`.
+- Todas as rotas retornaram:
+  - `isLogin: false`
+  - `clientWidth: 375`
+  - `scrollWidth: 375`
+  - `bodyClientWidth: 375`
+  - `bodyScrollWidth: 375`
+  - `headerOverlap: false`
+  - `offenders: []`
 
 Backend:
 
 - Houve alteracao em `apps/api/src/services/settingsStore.ts`.
-- O push para `main` foi realizado.
-- A publicacao manual/confirmada do Render nao foi executada nesta etapa pela ferramenta; se o Render estiver com auto-deploy via GitHub, deve publicar o commit `fd76cbf`.
+- O push para `main` foi realizado anteriormente.
+- O Render foi validado por comportamento em producao: `/api/health` esta ativo e `/api/settings` persiste/retorna os novos campos do commit `fd76cbf` ou posterior.
 
 ## Pendencias
 
-Pendente validar com sessao owner/admin real apos Render publicar o backend:
-
-- Claro + Arial + Compacto
-- Claro + Inter + Confortavel
-- Escuro + Poppins + Elevado premium
-- Verde NODERE + Montserrat + Operacao comercial
-- Alto contraste escuro + fonte grande
-- Sistema + layout padrao
-- Salvar em `/settings`.
-- Recarregar a pagina.
-- Fazer logout/login.
-- Confirmar retorno de `/api/settings` com `fontSize`, `density`, `layoutVariant`, `visualStyle`, `themeVariant` e `colorPrimary`.
+- Persistencia backend validada com sessao owner/admin real.
+- Refresh validado com recarga a partir de `/api/settings`.
+- Mobile 375x812 validado nas rotas principais.
+- Pendente apenas validacao de logout/login real completa, porque a automacao nao possui a senha do usuario. Nao foi feito logout para nao perder a sessao owner/admin ativa e bloquear as validacoes restantes.
 
 ## Status
 
-Status: APROVADO TECNICAMENTE / PUBLICADO FRONTEND / PENDENTE VALIDACAO FINAL DE PERSISTENCIA AUTENTICADA.
+Status: APROVADO TECNICAMENTE / PUBLICADO FRONTEND / BACKEND RENDER VALIDADO / PERSISTENCIA BACKEND VALIDADA / MOBILE VALIDADO / PENDENTE LOGOUT-LOGIN REAL COM CREDENCIAL.
