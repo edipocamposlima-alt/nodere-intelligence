@@ -2,10 +2,15 @@ import { getSupabase, hasSupabase } from "../db/supabase.js";
 
 export interface PublicPreferences {
   theme?: string;
-  mode?: "dark" | "light";
+  mode?: "dark" | "light" | "system";
+  themeVariant?: string;
   colorPrimary?: string;
   fontFamily?: string;
+  fontSize?: string;
+  density?: string;
   layoutDensity?: string;
+  layoutVariant?: string;
+  visualStyle?: string;
   cardStyle?: string;
   backendUrl?: string;
   workspaceWebsite?: string;
@@ -55,12 +60,18 @@ function persistenceError(action: string, error: unknown) {
 }
 
 function sanitizePreferences(input: Partial<PublicPreferences>): PublicPreferences {
+  const colorPrimary = typeof input.colorPrimary === "string" && /^#[0-9a-f]{6}$/i.test(input.colorPrimary) ? input.colorPrimary : undefined;
   return {
     theme: typeof input.theme === "string" ? input.theme : undefined,
-    mode: input.mode === "light" || input.mode === "dark" ? input.mode : undefined,
-    colorPrimary: typeof input.colorPrimary === "string" ? input.colorPrimary : undefined,
+    mode: input.mode === "light" || input.mode === "dark" || input.mode === "system" ? input.mode : undefined,
+    themeVariant: typeof input.themeVariant === "string" ? input.themeVariant : undefined,
+    colorPrimary,
     fontFamily: typeof input.fontFamily === "string" ? input.fontFamily : undefined,
+    fontSize: typeof input.fontSize === "string" ? input.fontSize : undefined,
+    density: typeof input.density === "string" ? input.density : undefined,
     layoutDensity: typeof input.layoutDensity === "string" ? input.layoutDensity : undefined,
+    layoutVariant: typeof input.layoutVariant === "string" ? input.layoutVariant : undefined,
+    visualStyle: typeof input.visualStyle === "string" ? input.visualStyle : undefined,
     cardStyle: typeof input.cardStyle === "string" ? input.cardStyle : undefined,
     backendUrl: typeof input.backendUrl === "string" ? input.backendUrl : undefined,
     workspaceWebsite: typeof input.workspaceWebsite === "string" ? input.workspaceWebsite : undefined,

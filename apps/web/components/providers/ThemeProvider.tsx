@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { applyThemeSettings, persistAndApplyThemeSettings, readThemeSettings, type NodereThemeMode } from "@/lib/theme";
+import { getPublicSettings } from "@/lib/api";
 
 type Theme = NodereThemeMode;
 
@@ -25,6 +26,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const saved = readThemeSettings();
     setThemeState(saved.mode);
     setResolvedTheme(applyThemeSettings(saved));
+    getPublicSettings()
+      .then((payload) => {
+        if (!payload.preferences || Object.keys(payload.preferences).length === 0) return;
+        const current = readThemeSettings();
+        const remoteUpdatedAt = typeof payload.preferences.themeUpdatedAt === "string" ? Date.parse(payload.preferences.themeUpdatedAt) : 0;
+        const localUpdatedAt = typeof current.themeUpdatedAt === "string" ? Date.parse(current.themeUpdatedAt) : 0;
+        if (localUpdatedAt > remoteUpdatedAt && remoteUpdatedAt > 0) return;
+        const { settings, resolved } = persistAndApplyThemeSettings({ ...current, ...payload.preferences });
+        setThemeState(settings.mode);
+        setResolvedTheme(resolved);
+      })
+      .catch(() => undefined);
   }, []);
 
   useEffect(() => {

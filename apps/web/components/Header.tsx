@@ -7,7 +7,7 @@ import { Bell, CreditCard, Download, Search, X } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { getInboxUnreadCount } from "@/lib/api";
 import { getPageTitle } from "@/lib/page-titles";
-import { applyThemeSettings, persistAndApplyThemeSettings, readThemeSettings } from "@/lib/theme";
+import { applyThemeSettings, persistAndApplyThemeSettings, readThemeSettings, type NodereDensity, type NodereFontSize } from "@/lib/theme";
 import { useAuth } from "@/context/AuthProvider";
 import { useCredits } from "@/context/CreditsProvider";
 
@@ -15,8 +15,8 @@ type CompanyListItem = { id: string; name: string };
 type TaskItem = { id: string; title: string; dueAt?: string; status: string; companyId: string; companyName: string };
 type UserPrefs = {
   theme: "dark" | "light" | "system";
-  fontSize: "small" | "normal" | "large";
-  density: "compact" | "comfortable" | "large";
+  fontSize: NodereFontSize;
+  density: NodereDensity;
   avatarUrl: string;
   displayName: string;
 };
@@ -45,7 +45,7 @@ function readPrefs(): UserPrefs {
 
 function applyPrefs(prefs: UserPrefs) {
   if (typeof window === "undefined") return;
-  persistAndApplyThemeSettings({ mode: prefs.theme, fontSize: prefs.fontSize, layoutDensity: prefs.density });
+  persistAndApplyThemeSettings({ mode: prefs.theme, fontSize: prefs.fontSize, density: prefs.density, layoutDensity: prefs.density });
   localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
 }
 
@@ -324,11 +324,13 @@ export function Header() {
                 </select>
               </label>
               <label className="block">
-                <span className="text-sm font-medium text-[var(--text-secondary)]">Fonte</span>
+                <span className="text-sm font-medium text-[var(--text-secondary)]">Tamanho da fonte</span>
                 <select value={prefs.fontSize} onChange={(event) => updatePrefs({ fontSize: event.target.value as UserPrefs["fontSize"] })} className="mt-2 min-h-11 w-full rounded-lg border border-line bg-ink px-3 text-sm outline-none">
+                  <option value="compact">Compacta</option>
                   <option value="small">Pequena</option>
                   <option value="normal">Normal</option>
                   <option value="large">Grande</option>
+                  <option value="extraLarge">Extra grande</option>
                 </select>
               </label>
               <label className="block">
@@ -336,7 +338,7 @@ export function Header() {
                 <select value={prefs.density} onChange={(event) => updatePrefs({ density: event.target.value as UserPrefs["density"] })} className="mt-2 min-h-11 w-full rounded-lg border border-line bg-ink px-3 text-sm outline-none">
                   <option value="compact">Compacto</option>
                   <option value="comfortable">Confortável</option>
-                  <option value="large">Amplo</option>
+                  <option value="spacious">Espaçoso</option>
                 </select>
               </label>
               <label className="block">

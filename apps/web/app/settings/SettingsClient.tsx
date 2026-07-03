@@ -5,18 +5,22 @@ import { Bell, CheckCircle2, Code2, Download, FileText, Mail, Palette, Save, Ser
 import { getBackendRootUrl } from "@/lib/apiBase";
 import { getPublicSettings, savePublicSettings } from "@/lib/api";
 import { AdminFetchError, adminFetch, getAdminToken } from "@/lib/adminAuth";
-import { applyThemeSettings, defaultThemeSettings, normalizeThemeSettings, persistAndApplyThemeSettings, readThemeSettings } from "@/lib/theme";
+import { applyThemeSettings, defaultThemeSettings, normalizeThemeSettings, persistAndApplyThemeSettings, readThemeSettings, type NodereDensity, type NodereFontSize, type NodereLayoutVariant, type NodereThemeMode, type NodereVisualStyle } from "@/lib/theme";
 
 const BACKEND_ROOT_URL = getBackendRootUrl();
 
 type Settings = {
   theme: string;
   colorPrimary: string;
-  mode: "dark" | "light" | "system";
+  mode: NodereThemeMode;
+  themeVariant: "default" | "nodere" | "highContrastDark" | "highContrastLight";
   fontFamily: string;
-  fontSize: "small" | "normal" | "large";
-  layoutDensity: "ultraCompact" | "compact" | "comfortable" | "executive" | "large";
-  cardStyle: "cards" | "list" | "glass" | "solid" | "borderless" | "elevated";
+  fontSize: NodereFontSize;
+  layoutDensity: NodereDensity;
+  density: NodereDensity;
+  layoutVariant: NodereLayoutVariant;
+  visualStyle: NodereVisualStyle;
+  cardStyle: NodereVisualStyle;
   backendUrl: string;
   themeUpdatedAt?: string;
 };
@@ -53,11 +57,7 @@ const defaults: Settings = {
 };
 
 function normalizeSettings(settings: Settings): Settings {
-  return {
-    ...settings,
-    ...normalizeThemeSettings(settings),
-    colorPrimary: "#03624C"
-  };
+  return { ...settings, ...normalizeThemeSettings(settings) };
 }
 
 function applySettings(settings: Settings) {
@@ -114,12 +114,10 @@ export function SettingsClient() {
     getPublicSettings()
       .then((payload) => {
         const remote = payload.preferences ?? {};
-        const shouldUseRemoteTheme = !next.themeUpdatedAt && Boolean(remote.theme || remote.mode);
-        const merged = normalizeSettings({
-          ...remote,
-          ...next,
-          ...(shouldUseRemoteTheme ? { theme: remote.theme, mode: remote.mode } : {})
-        } as Settings);
+        const remoteUpdatedAt = typeof remote.themeUpdatedAt === "string" ? Date.parse(remote.themeUpdatedAt) : 0;
+        const localUpdatedAt = typeof next.themeUpdatedAt === "string" ? Date.parse(next.themeUpdatedAt) : 0;
+        const shouldUseRemote = remoteUpdatedAt >= localUpdatedAt || (!next.themeUpdatedAt && Object.keys(remote).length > 0);
+        const merged = normalizeSettings((shouldUseRemote ? { ...next, ...remote } : { ...remote, ...next }) as Settings);
         setSettings(merged);
         applySettings(merged);
         setStatus("Preferências carregadas do backend persistente.");
@@ -135,20 +133,29 @@ export function SettingsClient() {
   function update<K extends keyof Settings>(key: K, value: Settings[K]) {
     let next = { ...settings, [key]: value };
     if (key === "theme") {
-      const mode = value === "Claro" ? "light" : value === "Sistema" ? "system" : "dark";
-      next = { ...next, colorPrimary: "#03624C", mode };
-    } else if (key === "colorPrimary") {
-      next = { ...next, colorPrimary: "#03624C" };
+      const label = String(value);
+      const mode = label === "Claro" || label === "Alto contraste claro" ? "light" : label === "Sistema" ? "system" : "dark";
+      const themeVariant = label === "Verde NODERE" ? "nodere" : label === "Alto contraste claro" ? "highContrastLight" : label === "Alto contraste escuro" ? "highContrastDark" : "default";
+      next = { ...next, mode, themeVariant };
     } else if (key === "mode") {
-      next = { ...next, theme: value === "light" ? "Claro" : value === "system" ? "Sistema" : "Escuro" };
+      next = { ...next, theme: value === "light" ? "Claro" : value === "system" ? "Sistema" : "Escuro", themeVariant: "default" };
+    } else if (key === "layoutDensity") {
+      next = { ...next, density: value as Settings["density"] };
+    } else if (key === "density") {
+      next = { ...next, layoutDensity: value as Settings["layoutDensity"] };
+    } else if (key === "visualStyle") {
+      next = { ...next, cardStyle: value as Settings["cardStyle"] };
+    } else if (key === "cardStyle") {
+      next = { ...next, visualStyle: value as Settings["visualStyle"] };
     }
-    setSettings(next);
-    persistAndApplyThemeSettings(next);
+    const normalized = normalizeSettings(next);
+    setSettings(normalized);
+    persistAndApplyThemeSettings(normalized);
   }
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const normalized = { ...settings, colorPrimary: "#03624C" };
+    const normalized = normalizeSettings(settings);
     setSettings(normalized);
     persistAndApplyThemeSettings(normalized);
     setStatus("Configurações salvas neste navegador.");
@@ -466,12 +473,15 @@ export function SettingsClient() {
           <label className="space-y-2 text-sm text-slate-300">
             Tema
             <select value={settings.theme} onChange={(event) => update("theme", event.target.value)} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
-              {["Escuro", "Claro", "Sistema"].map((item) => <option key={item}>{item}</option>)}
+              {["Claro", "Escuro", "Sistema", "Verde NODERE", "Alto contraste escuro", "Alto contraste claro"].map((item) => <option key={item}>{item}</option>)}
             </select>
           </label>
           <label className="space-y-2 text-sm text-slate-300">
-            Cor principal oficial
-            <input type="color" value="#03624C" disabled className="h-11 w-full rounded-lg border border-line bg-ink px-2 opacity-80" />
+            Cor principal
+            <div className="flex gap-2">
+              <input type="color" value={settings.colorPrimary} onChange={(event) => update("colorPrimary", event.target.value)} className="h-11 w-16 rounded-lg border border-line bg-ink px-2" />
+              <input value={settings.colorPrimary} onChange={(event) => update("colorPrimary", event.target.value)} className="min-w-0 flex-1 rounded-lg border border-line bg-ink px-3 py-2 font-mono text-sm" />
+            </div>
           </label>
           <label className="space-y-2 text-sm text-slate-300">
             Modo
@@ -484,30 +494,41 @@ export function SettingsClient() {
           <label className="space-y-2 text-sm text-slate-300">
             Fonte
             <select value={settings.fontFamily} onChange={(event) => update("fontFamily", event.target.value)} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
-              {["Inter", "Roboto", "Poppins", "Montserrat", "Manrope", "Nunito Sans", "Lato", "Open Sans", "DM Sans", "Urbanist", "Source Sans 3", "Merriweather", "System default", "Arial"].map((item) => <option key={item}>{item}</option>)}
+              {["Inter", "Arial", "Roboto", "System", "Poppins", "Montserrat", "Manrope", "Nunito Sans", "Lato", "Open Sans", "DM Sans", "Urbanist", "Source Sans 3"].map((item) => <option key={item}>{item}</option>)}
             </select>
           </label>
           <label className="space-y-2 text-sm text-slate-300">
             Tamanho da fonte
             <select value={settings.fontSize} onChange={(event) => update("fontSize", event.target.value as Settings["fontSize"])} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
+              <option value="compact">Compacta</option>
               <option value="small">Pequena</option>
               <option value="normal">Normal</option>
               <option value="large">Grande</option>
+              <option value="extraLarge">Extra grande</option>
             </select>
           </label>
           <label className="space-y-2 text-sm text-slate-300">
             Densidade
             <select value={settings.layoutDensity} onChange={(event) => update("layoutDensity", event.target.value as Settings["layoutDensity"])} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
-              <option value="ultraCompact">Ultra compacto</option>
               <option value="compact">Compacto</option>
-              <option value="comfortable">Expandido</option>
-              <option value="executive">Executivo</option>
-              <option value="large">Cards grandes</option>
+              <option value="comfortable">Confortável</option>
+              <option value="spacious">Espaçoso</option>
+            </select>
+          </label>
+          <label className="space-y-2 text-sm text-slate-300">
+            Layout
+            <select value={settings.layoutVariant} onChange={(event) => update("layoutVariant", event.target.value as Settings["layoutVariant"])} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
+              <option value="standard">Padrão</option>
+              <option value="compact">Compacto</option>
+              <option value="comfortable">Confortável</option>
+              <option value="elevated">Elevado premium</option>
+              <option value="commercial">Operação comercial</option>
+              <option value="highDensity">Alta densidade</option>
             </select>
           </label>
           <label className="space-y-2 text-sm text-slate-300">
             Visual
-            <select value={settings.cardStyle} onChange={(event) => update("cardStyle", event.target.value as Settings["cardStyle"])} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
+            <select value={settings.visualStyle} onChange={(event) => update("visualStyle", event.target.value as Settings["visualStyle"])} className="w-full rounded-lg border border-line bg-ink px-3 py-2">
               <option value="cards">Cards</option>
               <option value="list">Listas</option>
               <option value="glass">Glass premium</option>
