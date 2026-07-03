@@ -80,20 +80,36 @@ PDFs preservados em producao antes do deploy desta correcao:
 
 ## Deploy realizado
 
-Pendente nesta etapa do relatorio. Deve ser preenchido apos:
-
-- commit;
-- push `main`;
-- deploy frontend Vercel;
-- redeploy backend Render;
-- validacao final em producao do PDF Ficha Cliente sem HTML bruto.
+- Commits publicados em `main`:
+  - `ecc5d3d01921ad129495760ab194725b11c90892` - `fix: corrigir editores cards e pdf ficha cliente`.
+  - `d479165` - `fix: alinhar pdf da ficha cliente`.
+  - `e6b159d` - `fix: corrigir overflow mobile em configuracoes`.
+- Frontend Vercel:
+  - deployment `dpl_A6BuYKwBCBM9S25L57CanSGccJgJ`.
+  - URL tecnica `https://web-hrdxhv5c4-edipo-lima-s-projects.vercel.app`.
+  - alias de producao `https://nodere.com.br`.
+  - status `READY`.
+- Backend Render:
+  - API `https://nodere-api.onrender.com` validada em producao.
+  - `GET /api/health`: `200`.
+  - `POST /api/admin/login`: `200`, perfil `owner`.
+  - `GET /api/settings`: `200`.
+  - PDF Ficha Cliente autenticado: `200 application/pdf`, arquivo `%PDF`.
 
 ## Pendencias
 
-- Publicar backend para que a sanitizacao de PDF entre em producao.
-- Publicar frontend para que ajustes visuais do editor/cards entrem em producao.
-- Revalidar PDF Ficha Cliente apos Render publicar novo commit.
+- Nenhuma pendencia tecnica bloqueante identificada nesta rodada.
+- Relatorios antigos e `.codex_tmp/` permanecem fora do commit/deploy por serem artefatos locais ou documentos preexistentes.
 
 ## Status final
 
-Status pre-deploy: APROVADO TECNICAMENTE.
+Status final: APROVADO E PUBLICADO.
+
+Validacao final em producao:
+
+- Login real owner/admin: aprovado.
+- Dashboard, Empresas, CRM, Discovery, Propostas e Configuracoes: aprovados em desktop.
+- Dashboard, Empresas, CRM, Discovery, Propostas e Configuracoes: aprovados em mobile 375px.
+- Overflow global em mobile: `0px` nas rotas validadas.
+- PDF Ficha Cliente: 2 paginas, texto extraido sem tags HTML visiveis, cabecalho NODERE presente.
+- PDFs Proposta/Contrato/Relatorio: endpoints preservados e retornando `application/pdf`.
