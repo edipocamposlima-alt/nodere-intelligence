@@ -4875,6 +4875,21 @@ body {
   color: #a78bfa;
 }
 
+.nodere-settings-page,
+.nodere-settings-page :where(section, div, form, article, label, p, h2, h3, input, select, textarea) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.nodere-settings-page :where(p, span, code, a, button, input, select, textarea) {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.nodere-settings-page :where(button, a) {
+  max-width: 100%;
+}
+
 @media (max-width: 640px) {
   .nodere-editor-toolbar {
     align-items: stretch;

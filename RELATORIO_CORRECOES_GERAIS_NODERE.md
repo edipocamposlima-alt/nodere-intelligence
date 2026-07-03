@@ -7,12 +7,14 @@ Data: 03/07/2026
 - Editor rich text com barra de ferramentas quebrada, com rolagem horizontal e risco de botoes cortados.
 - Icones de editor e botoes de card com contraste/visibilidade inconsistentes.
 - Cards de empresas com acoes secundarias visualmente soltas.
+- Configuracoes em mobile com overflow horizontal real na area administrativa.
 - PDF Ficha Cliente exibindo HTML bruto de observacoes/historico.
 
 ## Arquivos alterados
 
 - `apps/web/app/globals.css`
 - `apps/web/components/CompanyTable.tsx`
+- `apps/web/app/settings/page.tsx`
 - `apps/api/src/routes/companies.ts`
 - `RELATORIO_AUDITORIA_FUNCIONAL_COMPLETA_NODERE.md`
 - `RELATORIO_CORRECOES_GERAIS_NODERE.md`
@@ -30,6 +32,9 @@ Data: 03/07/2026
   - `Ficha` permanece visivel;
   - acoes secundarias organizadas em `nodere-company-action-strip`;
   - botoes usam tokens de tema claro/escuro.
+- `SettingsPage`:
+  - classe `nodere-settings-page` aplicada ao wrapper;
+  - textos, links, botoes e cards agora quebram linha e respeitam `max-width: 100%`.
 
 ## APIs ajustadas
 
