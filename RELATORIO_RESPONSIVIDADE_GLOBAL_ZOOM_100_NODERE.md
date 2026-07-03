@@ -226,6 +226,24 @@ Correcao aplicada:
 
 Essa correcao preserva o visual dos badges curtos e impede vazamento em alertas, tabelas, cards, filtros, Inbox, Catalogo, Admin, Settings, Discovery e Empresas.
 
+### Correcao final da Ficha 360
+
+O reteste autenticado de uma ficha real (`/companies/ChIJj0sXw8ZfXpMROoZMG7bU_7w`) identificou overflow mobile residual nos cards laterais de `Informacoes gerais` e `Enriquecimento publico`.
+
+Correcao aplicada:
+
+- O grid principal da Ficha 360 recebeu `max-w-full`.
+- A coluna lateral recebeu `min-w-0` e `max-w-full`.
+- Cards laterais receberam `min-w-0` e `max-w-full`.
+- Linhas com telefone/avaliacao passaram a permitir quebra e icones com `shrink-0`.
+- Cards internos de enriquecimento e sinais digitais receberam `min-w-0`.
+
+Resultado em producao:
+
+- `/companies/ChIJj0sXw8ZfXpMROoZMG7bU_7w` desktop 1366x768: aprovado.
+- `/companies/ChIJj0sXw8ZfXpMROoZMG7bU_7w` mobile 375x812: aprovado.
+- `bodyScrollWidth` voltou a ser igual ao `bodyClientWidth` no mobile.
+
 ### Validacoes tecnicas apos correcao dos badges
 
 - `node --check scripts/validate-responsive-overflow.mjs` aprovado.
@@ -234,7 +252,47 @@ Essa correcao preserva o visual dos badges curtos e impede vazamento em alertas,
 - `apps/web`: `npm run typecheck` aprovado.
 - `apps/web`: `npm run build` aprovado.
 - Raiz: `npm run build` aprovado.
-- Publicacao/validacao final em producao: PENDENTE ate novo deploy da correcao dos badges.
+- Publicacao/validacao final em producao: APROVADA.
+
+### Deploys do reteste
+
+- Commit estrutural: `2996498` (`fix: corrigir overflow real dos badges em zoom 100`)
+- Deploy Vercel: `dpl_BzDxdWtAebosVGj2N9m8xrnwsrwe`
+- Resultado: corrigiu `/companies`, mas revelou necessidade de validar Ficha 360.
+- Commit final da Ficha 360: `063c521` (`fix: corrigir overflow mobile da ficha 360`)
+- Deploy Vercel final: `dpl_AHkqWdYm6iQJBQj2JjbqFXHxooB3`
+- URL final: `https://web-37v2qf9l7-edipo-lima-s-projects.vercel.app`
+- Alias de producao: `https://nodere.com.br`
+- Backend/Render: nao necessario.
+
+### Evidencia final de producao
+
+Script executado em producao com `NODERE_ALLOW_LOGIN=0`, ou seja, qualquer redirecionamento para login reprovaria o teste.
+
+Rotas aprovadas em desktop 1366x768 e mobile 375x812:
+
+- `/dashboard`
+- `/app/dashboard`
+- `/companies`
+- `/crm`
+- `/discovery`
+- `/catalog`
+- `/app/proposals`
+- `/reports`
+- `/settings`
+- `/companies/ChIJj0sXw8ZfXpMROoZMG7bU_7w`
+
+Resultado consolidado:
+
+- `ok: true`
+- `failures: []`
+- `isLogin: false` em todas as rotas
+- `headerOverlap: false` em todas as rotas
+- `offenders: []` em todas as rotas
+- `documentElement.scrollWidth === clientWidth` nas rotas testadas
+- `bodyScrollWidth === bodyClientWidth` nas rotas testadas
+
+Tambem houve amostragem em 1440x900 e 1920x1080 para `/dashboard`, `/companies`, `/crm`, `/discovery` e `/reports`, todas aprovadas.
 
 ## Status atual
 
@@ -246,5 +304,5 @@ Essa correcao preserva o visual dos badges curtos e impede vazamento em alertas,
 - Empresas preservada em cards: SIM
 - CRM/Funil ajustado: SIM
 - Testes tecnicos aprovados: SIM
-- Producao validada: PENDENTE no ultimo deploy da correcao dos badges
-- Ferramenta liberada: PENDENTE ate validacao visual final em producao
+- Producao validada: SIM
+- Ferramenta liberada: SIM
