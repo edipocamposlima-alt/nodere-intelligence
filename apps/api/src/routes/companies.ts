@@ -1397,7 +1397,8 @@ async function renderCompanyExportPdf(input: {
     doc.fillColor("#64748B").fontSize(8).text("Inteligência comercial", 88, 56);
     doc.fillColor("#64748B").fontSize(8).text(formatPtBrDate(generatedAt), 420, 42, { align: "right", width: 124 });
     doc.moveTo(48, 78).lineTo(547, 78).strokeColor("#E2E8F0").stroke();
-    doc.moveDown(2);
+    doc.x = 48;
+    doc.y = 96;
   }
 
   function section(title: string) {

@@ -45,6 +45,7 @@ Data: 03/07/2026
   - remove `style=`, `font-size`, `font-family` do conteudo vindo de rich text;
   - preserva texto, quebras de linha e listas em formato textual;
   - mantem cabecalho, logo, rodape, paginacao e hierarquia PDFKit.
+  - corrige cursor do PDFKit apos o cabecalho para impedir deslocamento do conteudo para a direita.
 
 PDFs preservados em producao antes do deploy desta correcao:
 
@@ -91,4 +92,3 @@ Pendente nesta etapa do relatorio. Deve ser preenchido apos:
 ## Status final
 
 Status pre-deploy: APROVADO TECNICAMENTE.
-
