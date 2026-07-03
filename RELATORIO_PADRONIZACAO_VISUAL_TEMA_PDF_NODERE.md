@@ -100,9 +100,42 @@ Corrigir a padronizacao visual do NODERE preservando funcionalidades existentes:
 
 ## Pendencias
 
-- Publicacao em producao pendente de commit, push e deploy.
-- Homologacao visual em producao pendente apos publicacao.
+- Nenhuma pendencia tecnica critica identificada nesta entrega.
+- Permanecem fora deste commit os relatorios untracked antigos ja existentes no worktree antes da correcao.
+
+## Publicacao
+
+- Commit publicado: `52e12e9b88bc41d21798fb86e004e717096f7c6e`
+- Mensagem: `fix: padronizar tema claro e pdf da ficha cliente`
+- Branch: `main`
+- Push para `origin/main`: aprovado.
+- Frontend Vercel:
+  - Deployment: `dpl_BYQu4hPkDeqDGQS74NTbKqVneFZh`
+  - URL: `https://web-6och9dhgk-edipo-lima-s-projects.vercel.app`
+  - Alias: `https://nodere.com.br` e `https://www.nodere.com.br`
+  - Status: `READY`
+- Backend Render:
+  - Endpoint validado: `https://nodere-api.onrender.com/api/health`
+  - Status: `200`
+  - Supabase configurado: sim.
+  - DATABASE_URL configurada: sim.
+
+## Homologacao em producao
+
+- Login real owner/admin em producao: aprovado.
+- Dashboard autenticado em producao: aprovado.
+- Tema claro em producao: aprovado, com dashboard autenticado, menu lateral, textos e cards legiveis.
+- Tema escuro em producao: aprovado, preservando identidade visual existente.
+- Mobile 375x812 em producao: aprovado, sem overflow horizontal.
+- Validador responsivo/CDP em producao: aprovado com `NODERE_ALLOW_LOGIN=1`; rotas protegidas redirecionaram para login em perfil isolado sem sessao e nao apresentaram overflow.
+- PDF Ficha Cliente em producao:
+  - Empresa validada: `Clinica Mais Saude`.
+  - Endpoint: `/api/companies/:id/export-pdf`.
+  - Status: `200`.
+  - Content-Type: `application/pdf`.
+  - Assinatura: `%PDF`.
+  - Tamanho validado: `168465` bytes.
 
 ## Status final
 
-APROVADO EM VALIDACAO LOCAL. AGUARDANDO PUBLICACAO.
+APROVADO, PUBLICADO E HOMOLOGADO EM PRODUCAO.
