@@ -1413,15 +1413,26 @@ async function renderCompanyExportPdf(input: {
 
   function line(label: string, value: unknown) {
     doc.fillColor("#475569").fontSize(9).text(`${label}: `, { continued: true });
-    doc.fillColor("#0F172A").fontSize(9).text(String(value || "Não informado"));
+    doc.fillColor("#0F172A").fontSize(9).text(cleanPdfText(value || "Não informado"), { width: 390 });
   }
 
   function bullet(value: unknown) {
-    if (doc.y > 720) {
-      doc.addPage();
-      header();
+    const parts = cleanPdfText(value || "Não informado")
+      .split(/\n+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+    const lines = parts.length ? parts : ["Não informado"];
+    for (const lineText of lines) {
+      if (doc.y > 720) {
+        doc.addPage();
+        header();
+      }
+      doc.fillColor("#0F172A").fontSize(9).text(`• ${lineText}`, {
+        indent: 8,
+        width: 480,
+        lineGap: 2
+      });
     }
-    doc.fillColor("#0F172A").fontSize(9).text(`• ${String(value || "Não informado")}`, { indent: 8 });
   }
 
   header();
@@ -1486,6 +1497,37 @@ function dataUriToBuffer(value: string) {
 
 function safeFileName(value: string) {
   return String(value || "documento").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase();
+}
+
+function cleanPdfText(value: unknown) {
+  return decodeHtmlEntities(String(value ?? ""))
+    .replace(/<\s*br\s*\/?>/gi, "\n")
+    .replace(/<\/\s*p\s*>/gi, "\n")
+    .replace(/<\s*li[^>]*>/gi, "\n- ")
+    .replace(/<\/\s*li\s*>/gi, "")
+    .replace(/<\/\s*(ul|ol|div|section|article|h[1-6]|blockquote)\s*>/gi, "\n")
+    .replace(/<\s*(p|ul|ol|div|section|article|h[1-6]|blockquote|span|strong|b|em|i|u|s|a|font)[^>]*>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\r/g, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
+function decodeHtmlEntities(value: string) {
+  return value
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, "\"")
+    .replace(/&#039;/g, "'")
+    .replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (_match, code) => {
+      const parsed = Number(code);
+      return Number.isFinite(parsed) ? String.fromCharCode(parsed) : "";
+    });
 }
 
 function escapeHtml(value: unknown) {

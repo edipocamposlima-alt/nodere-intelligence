@@ -290,7 +290,7 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
   }
 
   function renderCompanyActions(company: Company, compact = false) {
-    const iconButtonClass = "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-white/5 text-slate-300 transition hover:border-electric hover:text-white";
+    const iconButtonClass = "nodere-company-action-icon";
     return (
       <div className={compact ? "space-y-3" : "space-y-2"}>
         <div className="grid grid-cols-2 gap-2 xl:grid-cols-1">
@@ -302,18 +302,18 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
             {saved[company.id] === "saved" ? <CheckCircle2 className="h-4 w-4" /> : <Save className="h-4 w-4" />}
             {saved[company.id] === "saving" ? "Salvando" : saved[company.id] === "saved" ? "Salvo" : "Salvar lead"}
           </button>
-          <Link href={`/companies/${encodeURIComponent(company.id)}`} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-line bg-white/5 px-3 py-2 text-xs font-semibold text-white transition hover:border-electric">
+          <Link href={`/companies/${encodeURIComponent(company.id)}`} className="nodere-company-action-primary">
             <FileText className="h-4 w-4" />
             Ficha
           </Link>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="nodere-company-action-strip">
           {isValidBrazilMobileWhatsapp(company.whatsapp) && (
             <a
               href={`https://wa.me/${company.whatsapp!.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMessage)}`}
               target="_blank"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-success/30 bg-success/10 text-emerald-200 transition hover:bg-success/20"
+              className="nodere-company-action-icon nodere-company-action-icon--success"
               aria-label="Chamar no WhatsApp"
               title="Chamar no WhatsApp"
             >
@@ -335,13 +335,13 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
               <ExternalLink className="h-4 w-4" />
             </a>
           )}
-          <button type="button" onClick={() => void runAi(company, "diagnosis")} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan/30 bg-cyan/10 text-cyan transition hover:bg-cyan/20" aria-label="Gerar diagnóstico IA" title="Gerar diagnóstico IA">
+          <button type="button" onClick={() => void runAi(company, "diagnosis")} className="nodere-company-action-icon nodere-company-action-icon--info" aria-label="Gerar diagnóstico IA" title="Gerar diagnóstico IA">
             <Bot className="h-4 w-4" />
           </button>
-          <button type="button" onClick={() => void runAi(company, "whatsapp")} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-400/30 bg-emerald-400/10 text-emerald-200 transition hover:bg-emerald-400/20" aria-label="Gerar WhatsApp IA" title="Gerar WhatsApp IA">
+          <button type="button" onClick={() => void runAi(company, "whatsapp")} className="nodere-company-action-icon nodere-company-action-icon--success" aria-label="Gerar WhatsApp IA" title="Gerar WhatsApp IA">
             <MessageCircle className="h-4 w-4" />
           </button>
-          <button type="button" onClick={() => void runAi(company, "call")} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-violet-400/30 bg-violet-400/10 text-violet-200 transition hover:bg-violet-400/20" aria-label="Gerar roteiro de ligação" title="Gerar roteiro de ligação">
+          <button type="button" onClick={() => void runAi(company, "call")} className="nodere-company-action-icon nodere-company-action-icon--accent" aria-label="Gerar roteiro de ligação" title="Gerar roteiro de ligação">
             <PhoneCall className="h-4 w-4" />
           </button>
         </div>
@@ -552,7 +552,7 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
                     </p>
                   </section>
 
-                  <section className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/5 p-3">
+                  <section className="nodere-company-actions-panel mt-4 rounded-lg p-3">
                     {renderCompanyActions(company, true)}
                   </section>
                 </article>
