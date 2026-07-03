@@ -281,26 +281,26 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
 
       <LeadOperations company={company} />
 
-      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+      <div className="grid min-w-0 max-w-full gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         {/* Left column */}
-        <div className="space-y-5">
-          <div className="rounded-lg border border-line bg-panel/90 p-5">
+        <div className="min-w-0 max-w-full space-y-5">
+          <div className="min-w-0 max-w-full rounded-lg border border-line bg-panel/90 p-5">
             <h3 className="font-semibold text-white">Informações gerais</h3>
             <div className="mt-4 space-y-3 text-sm text-slate-300">
-              <p className="flex items-center gap-2">
-                <Star className="h-4 w-4 text-warning" />
-                {company.rating ?? "-"} · {company.reviewCount ?? 0} avaliações
+              <p className="flex min-w-0 items-center gap-2 break-words">
+                <Star className="h-4 w-4 shrink-0 text-warning" />
+                <span className="min-w-0">{company.rating ?? "-"} · {company.reviewCount ?? 0} avaliações</span>
               </p>
-              <p className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-cyan" />
-                {company.phone ?? "Telefone não detectado"}
+              <p className="flex min-w-0 items-center gap-2 break-words">
+                <Phone className="h-4 w-4 shrink-0 text-cyan" />
+                <span className="min-w-0">{company.phone ?? "Telefone não detectado"}</span>
               </p>
               <p>Status CRM: {company.status}</p>
               <p>PageSpeed mobile: {company.pageSpeed ? `${company.pageSpeed}/100` : "não analisado"}</p>
             </div>
           </div>
 
-          <div className="rounded-lg border border-line bg-panel/90 p-5">
+          <div className="min-w-0 max-w-full rounded-lg border border-line bg-panel/90 p-5">
             <h3 className="font-semibold text-white">Enriquecimento público</h3>
             <div className="mt-4 grid gap-2 text-sm">
               {[
@@ -310,7 +310,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
                 ["E-mail público", "não localizado em fonte pública"],
                 ["LinkedIn", company.linkedin || linkedinSearchUrl(companyName)]
               ].map(([label, value]) => (
-                <div key={label} className="rounded-md border border-line bg-ink px-3 py-2">
+                <div key={label} className="min-w-0 rounded-md border border-line bg-ink px-3 py-2">
                   <p className="text-xs text-slate-500">{label}</p>
                   <p className="mt-1 break-words text-slate-300">{value}</p>
                   <p className="mt-1 text-[11px] text-slate-600">Fonte: Google Places/site público quando disponível · Confiança: {value === "não localizado em fonte pública" ? "baixa" : "média"}</p>
@@ -319,11 +319,11 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          <div className="rounded-lg border border-line bg-panel/90 p-5">
+          <div className="min-w-0 max-w-full rounded-lg border border-line bg-panel/90 p-5">
             <h3 className="font-semibold text-white">Sinais digitais</h3>
             <div className="mt-4 grid grid-cols-2 gap-2">
               {checks.map(([label, ok]) => (
-                <div key={label} className="rounded-md border border-line bg-ink px-3 py-2 text-sm">
+                <div key={label} className="min-w-0 rounded-md border border-line bg-ink px-3 py-2 text-sm">
                   <span className={ok === true ? "text-emerald-300" : ok === false ? "text-red-300" : "text-slate-400"}>
                     {ok === true ? "Ativo" : ok === false ? "Ausente" : "Não verificado"}
                   </span>
@@ -333,7 +333,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          <div className="rounded-lg border border-line bg-panel/90 p-5">
+          <div className="min-w-0 max-w-full rounded-lg border border-line bg-panel/90 p-5">
             <h3 className="font-semibold text-white">Oportunidades detectadas</h3>
             <div className="mt-4 space-y-2">
               {detectedOpportunities.length === 0

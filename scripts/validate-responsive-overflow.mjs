@@ -83,6 +83,19 @@ async function auditRoute(route, viewport) {
   const expression = `(() => {
     const vw = document.documentElement.clientWidth;
     const offenders = [];
+    const hasContainedHorizontalScroller = (el) => {
+      let current = el.parentElement;
+      while (current && current !== document.body) {
+        const currentStyle = getComputedStyle(current);
+        const canScrollX = ['auto', 'scroll'].includes(currentStyle.overflowX) && current.scrollWidth > current.clientWidth + ${TOLERANCE};
+        if (canScrollX) {
+          const currentRect = current.getBoundingClientRect();
+          return currentRect.left >= -${TOLERANCE} && currentRect.right <= vw + ${TOLERANCE};
+        }
+        current = current.parentElement;
+      }
+      return false;
+    };
     for (const el of Array.from(document.querySelectorAll('body *'))) {
       const rect = el.getBoundingClientRect();
       const style = getComputedStyle(el);
@@ -91,6 +104,7 @@ async function auditRoute(route, viewport) {
       const overRight = rect.right - vw;
       const overLeft = -rect.left;
       if (overRight > ${TOLERANCE} || overLeft > ${TOLERANCE}) {
+        if (hasContainedHorizontalScroller(el)) continue;
         offenders.push({
           tag: el.tagName.toLowerCase(),
           id: el.id || '',
