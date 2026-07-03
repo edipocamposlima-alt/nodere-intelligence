@@ -85,8 +85,9 @@ PDFs preservados em producao antes do deploy desta correcao:
   - `d479165` - `fix: alinhar pdf da ficha cliente`.
   - `e6b159d` - `fix: corrigir overflow mobile em configuracoes`.
 - Frontend Vercel:
-  - deployment `dpl_A6BuYKwBCBM9S25L57CanSGccJgJ`.
-  - URL tecnica `https://web-hrdxhv5c4-edipo-lima-s-projects.vercel.app`.
+  - deployment final `dpl_3U4m7Zg5V9qjdHu55dFBDQ3Afipt`.
+  - URL tecnica `https://web-emvxzeirx-edipo-lima-s-projects.vercel.app`.
+  - deployment de runtime anterior tambem aprovado `dpl_A6BuYKwBCBM9S25L57CanSGccJgJ`.
   - alias de producao `https://nodere.com.br`.
   - status `READY`.
 - Backend Render:
