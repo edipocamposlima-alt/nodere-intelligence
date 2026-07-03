@@ -186,14 +186,40 @@ Objetivo: impedir blocos escuros residuais em Propostas/Contratos, Ficha 360, Em
 - `apps/api`: `npm run typecheck` - aprovado
 - `apps/api`: `npm run build` - aprovado
 - Raiz: `npm run build` - aprovado
+- `git diff --check` - aprovado, apenas avisos LF/CRLF do Windows
 
 ## Validacao visual e producao
 
-Pendente de publicacao e homologacao final em `https://nodere.com.br`.
+Frontend publicado em producao:
+
+- Commit: `fd76cbf`
+- Vercel deployment: `dpl_CD7LwFWfAHy5tcSHSoFQ7djMmESm`
+- URL: `https://web-4fnxk0a6f-edipo-lima-s-projects.vercel.app`
+- Alias: `https://nodere.com.br`
+
+Validacao automatizada em producao:
+
+- Edge isolado sem sessao confirmou aplicacao visual via `localStorage` das combinacoes obrigatorias.
+- Resultado visual: `data-theme`, `data-theme-variant`, `data-font-size`, `data-density`, `data-layout`, `data-visual`, `fontFamily` e `--brand-primary` mudaram conforme as combinacoes.
+- Rotas amostradas: `/dashboard`, `/companies`, `/crm`, `/app/proposals`, `/settings`.
+- Nao houve overflow global nos resultados do Edge isolado: `bodyScrollWidth === bodyClientWidth`.
+
+Validacao com sessao real:
+
+- Uma aba real do Chrome foi encontrada em `https://nodere.com.br/app/proposals`.
+- A sessao real tinha `nodere_admin_token` presente.
+- A tentativa de homologar todas as combinacoes via Chrome autenticado excedeu o tempo da ponte de automacao e resetou a sessao de ferramenta.
+- Portanto, a persistencia real no backend nao foi marcada como 100% validada neste relatorio.
+
+Backend:
+
+- Houve alteracao em `apps/api/src/services/settingsStore.ts`.
+- O push para `main` foi realizado.
+- A publicacao manual/confirmada do Render nao foi executada nesta etapa pela ferramenta; se o Render estiver com auto-deploy via GitHub, deve publicar o commit `fd76cbf`.
 
 ## Pendencias
 
-Pendente validar em producao:
+Pendente validar com sessao owner/admin real apos Render publicar o backend:
 
 - Claro + Arial + Compacto
 - Claro + Inter + Confortavel
@@ -201,7 +227,11 @@ Pendente validar em producao:
 - Verde NODERE + Montserrat + Operacao comercial
 - Alto contraste escuro + fonte grande
 - Sistema + layout padrao
+- Salvar em `/settings`.
+- Recarregar a pagina.
+- Fazer logout/login.
+- Confirmar retorno de `/api/settings` com `fontSize`, `density`, `layoutVariant`, `visualStyle`, `themeVariant` e `colorPrimary`.
 
 ## Status
 
-Status antes do deploy: APROVADO TECNICAMENTE / PENDENTE HOMOLOGACAO EM PRODUCAO.
+Status: APROVADO TECNICAMENTE / PUBLICADO FRONTEND / PENDENTE VALIDACAO FINAL DE PERSISTENCIA AUTENTICADA.
