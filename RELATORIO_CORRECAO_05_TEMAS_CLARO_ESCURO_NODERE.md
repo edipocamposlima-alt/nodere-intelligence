@@ -41,7 +41,15 @@ A entrega anterior foi considerada reprovada porque o modo Claro ainda aparecia 
 - Mobile 375x812 em modo Claro: validado localmente no Dashboard.
 
 ### Status de producao
-- Pendente ate commit, push, deploy Vercel e validacao real em `https://nodere.com.br`.
+- Publicado na Vercel em producao.
+- Deployment final validado: `dpl_89JxxrWYwDSoAuu3cViZBridhURK`.
+- URL validada: `https://nodere.com.br/dashboard`.
+- Validacao em producao apos reload: `htmlTheme=light`, `bodyTheme=light`, `htmlClass=light`, `bodyClass=light`, `theme=Claro`, `mode=light`, `themeVariant=default`.
+- Dashboard em Claro: sidebar clara, topbar branca, cards claros, textos escuros legiveis.
+- Rotas em Claro validadas em producao: `/dashboard`, `/companies`, `/crm`, `/marketing`, `/app/proposals`.
+- Mobile 375x812 em Claro validado em producao.
+- Tema Escuro preservado em producao: troca pela UI para Escuro gerou `htmlTheme=dark`, `bodyTheme=dark`, `theme=Escuro`, `mode=dark`, `themeVariant=default`.
+- Sessao foi deixada novamente em Claro ao final da validacao.
 
 ## Objetivo
 Corrigir a aplicacao dos temas Claro e Escuro em toda a plataforma NODERE, evitando mistura visual, contraste incorreto e componentes presos em cores escuras.
@@ -120,7 +128,7 @@ Corrigir a aplicacao dos temas Claro e Escuro em toda a plataforma NODERE, evita
 - Texto legivel sem igualdade de cor com fundo em elementos com texto: aprovado.
 - Overflow horizontal em desktop/mobile: 0.
 - Sidebar/topbar/cards/tabelas/campos/editor rico respeitando tokens: aprovado.
-- Preferencias rapidas: modal revisado por CSS e sincronizacao backend tentada por `/api/settings`.
+- Preferencias rapidas: modal revisado por CSS, sincronizacao backend validada e reset de variantes especiais confirmado em producao.
 - Persistencia local: validada por gravacao em `nodere_settings`, `nodere-theme`, reload e reaplicacao antes da renderizacao.
 
 ## Observacao sobre sessao
@@ -141,5 +149,6 @@ A validacao visual local autenticada usou cookie local descartavel apenas para l
 - TODAS AS TELAS REVISADAS: SIM
 - MANUAL NODERE ATUALIZADO: SIM
 - TESTES APROVADOS: SIM
+- PRODUCAO PUBLICADA: SIM
 - RELATORIO CRIADO: SIM
 - FERRAMENTA LIBERADA: SIM
