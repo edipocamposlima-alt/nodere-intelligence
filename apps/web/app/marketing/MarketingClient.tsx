@@ -36,6 +36,7 @@ export function MarketingClient() {
   const [message, setMessage] = useState("");
   const [postBody, setPostBody] = useState("");
   const [templateBody, setTemplateBody] = useState("");
+  const [campaignNotes, setCampaignNotes] = useState("");
   const [editingTemplate, setEditingTemplate] = useState<MessageTemplate | null>(null);
   const [connectionPlatform, setConnectionPlatform] = useState<Awaited<ReturnType<typeof getSocialStatus>>["platforms"][number] | null>(null);
 
@@ -109,9 +110,10 @@ export function MarketingClient() {
         endDate: String(form.get("endDate") || ""),
         status: String(form.get("status") || "draft"),
         budgetBrl: Number(form.get("budgetBrl") || 0),
-        notes: String(form.get("notes") || "")
+        notes: campaignNotes
       });
       event.currentTarget.reset();
+      setCampaignNotes("");
       await refresh();
       setMessage("Campanha salva.");
     } catch (error) {
@@ -229,7 +231,7 @@ export function MarketingClient() {
                 <input name="endDate" type="date" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
               </div>
               <input name="budgetBrl" type="number" min="0" placeholder="Orçamento R$" className="rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
-              <textarea name="notes" placeholder="Notas" className="min-h-20 rounded-lg border border-line bg-ink px-3 py-2 text-sm" />
+              <RichTextEditor value={campaignNotes} onChange={setCampaignNotes} minHeight={150} placeholder="Notas da campanha, briefing, público, tom de voz e próximos passos..." />
               <button className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-bold text-white">Salvar campanha</button>
             </form>
             <div className="mt-4 space-y-2">

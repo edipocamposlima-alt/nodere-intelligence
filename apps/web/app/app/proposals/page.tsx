@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Download, FileText, RefreshCw, Save } from "lucide-react";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import {
   CatalogItem,
   createProposal,
@@ -280,11 +281,11 @@ export default function AppProposalsPage() {
           </label>
           <label>
             Observações comerciais para o cliente
-            <textarea value={customerNotes} onChange={(event) => setCustomerNotes(event.target.value)} placeholder="Texto opcional que aparecerá no PDF. Produtos, descrições, condições, forma de pagamento e prazos vêm do catálogo." />
+            <RichTextEditor value={customerNotes} onChange={setCustomerNotes} minHeight={170} placeholder="Texto opcional que aparecerá no PDF. Produtos, descrições, condições, forma de pagamento e prazos vêm do catálogo." />
           </label>
           <label>
             Observações internas da negociação
-            <textarea value={internalNotes} onChange={(event) => setInternalNotes(event.target.value)} placeholder="Histórico interno. Não aparece no PDF do cliente." />
+            <RichTextEditor value={internalNotes} onChange={setInternalNotes} minHeight={170} placeholder="Histórico interno. Não aparece no PDF do cliente." />
           </label>
 
           <div className="proposal-items">

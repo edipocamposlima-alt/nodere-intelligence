@@ -102,6 +102,42 @@ Na ficha do cliente, gere ou escreva uma mensagem, edite o texto e use **Salvar 
 - Pós-reunião
 - Fechamento
 
+## Editor de texto padronizado
+Campos de observação, histórico, agenda, contatos, negociações, propostas, contratos, WhatsApp, marketing, calendário de conteúdo, posts, campanhas, templates, Admin/CMS, blog, páginas institucionais, e-mails, relatórios com notas e documentos usam o editor rico padronizado do NODERE quando permitem conteúdo formatado.
+
+### Onde localizar
+O editor aparece dentro das telas e abas que aceitam criação, edição ou registro de texto. Exemplos principais:
+- Ficha do Cliente: observações, histórico, negociações, IA/Editor, propostas e contratos.
+- Propostas: observações comerciais e observações internas.
+- Marketing: posts, campanhas e templates.
+- Caixa de Entrada: registros manuais e mensagens.
+- Admin/CMS: conteúdos públicos, manual, blog e páginas institucionais.
+
+### Quem pode utilizar
+Owner, Administrador e Operador podem editar conforme permissões de cada módulo. Visualizador deve acessar em modo somente leitura quando a tela permitir consulta sem edição.
+
+### Como usar
+1. Abra a tela ou aba desejada.
+2. Clique no campo de texto.
+3. Use a barra do editor para escolher fonte, tamanho, negrito, itálico, sublinhado, tachado, listas, alinhamento, cor, destaque, links, imagens ou limpar formatação.
+4. Revise o conteúdo.
+5. Clique no botão de salvar, gerar documento ou publicar da própria tela.
+
+### Boas práticas
+- Use títulos e listas para textos longos.
+- Evite colar HTML bruto de sites externos.
+- Revise observações internas antes de gerar PDFs para clientes.
+- Use links apenas quando forem necessários e confiáveis.
+- No mobile, role a barra do editor ou deixe que ela quebre em linhas; os botões não devem ficar cortados.
+
+### PDFs e exportações
+Propostas, contratos e documentos usam o conteúdo salvo como origem. O sistema preserva formatação útil, limpa tags HTML indevidas no PDF e não deve expor observações internas ao cliente.
+
+### Problemas comuns
+- **Texto sem formatação após salvar**: confirme se clicou no botão de salvar da tela e se a sessão continua autenticada.
+- **Botão indisponível**: confira seu perfil de acesso ou se o registro está em modo somente leitura.
+- **PDF com conteúdo diferente**: gere novamente o documento após salvar as alterações no editor.
+
 ## IA
 A IA usa o backend `/api/openai/analyze`. Se a OpenAI retornar quota/billing insuficiente, configure créditos na OpenAI Platform. O texto gerado pode ser editado antes de salvar, copiar ou transformar em documento.
 
@@ -109,9 +145,9 @@ A IA usa o backend `/api/openai/analyze`. Se a OpenAI retornar quota/billing ins
 Configure `GOOGLE_PAGESPEED_API_KEY` no Render para ativar análise de performance, SEO, acessibilidade e boas práticas.
 
 ## Propostas, contratos e PDFs
-Na aba **IA / Editor**, escolha o tipo, gere ou escreva o conteúdo e clique em **Salvar proposta PDF** ou **Salvar contrato PDF**. O documento fica disponível na aba **Propostas e contratos** para baixar.
+Na aba **IA / Editor** ou **Propostas e contratos**, use a composição controlada por produtos/serviços quando disponível e revise as observações no editor rico. O documento fica disponível na aba **Propostas e contratos** para baixar.
 
-Os PDFs gerados pelo frontend usam cabeçalho visual NODERE com marca, nome NODERE e conteúdo editado pelo operador. O relatório exportado pela ficha também exibe o logo NODERE no topo.
+Os PDFs usam cabeçalho visual NODERE com marca, nome NODERE e conteúdo revisado pelo operador. O relatório exportado pela ficha também exibe o logo NODERE no topo. Observações internas da negociação não devem aparecer no PDF do cliente.
 
 ## Anexos e conversas
 Como mínimo operacional, cole conversas na Caixa de Entrada ou salve conteúdos como documentos vinculados ao lead. Para upload real de arquivos, configure storage dedicado.
@@ -150,7 +186,32 @@ Em **Configurações**, ajuste:
 - densidade compacta/expandida;
 - visual em cards/listas.
 
-As preferências são salvas em `nodere_settings`, aplicadas antes da renderização visual da página e sincronizadas com o backend quando disponível. O sistema mantém compatibilidade com chaves antigas, mas a fonte local oficial do tema é única. O modo claro/escuro deve permanecer estável ao trocar páginas, atualizar o navegador, fazer logout/login, reabrir o navegador, usar mobile ou PWA.
+As preferências são salvas em `nodere_settings`, aplicadas antes da renderização visual da página e sincronizadas com o backend quando disponível. O sistema mantém compatibilidade com chaves antigas, mas a fonte local oficial do tema é única. O NODERE mostra os rótulos **Claro** e **Escuro** para o usuário, enquanto usa internamente os valores técnicos `light` e `dark`. Ao carregar a plataforma, o tema é reaplicado no `html` e no `body` para evitar que a interface fique presa no modo escuro. O modo claro/escuro deve permanecer estável ao trocar páginas, atualizar o navegador, fazer logout/login, reabrir o navegador, usar mobile ou PWA.
+
+### Preferências rápidas
+No topo do sistema, clique no botão do usuário para abrir **Preferências rápidas**. Esse painel permite alternar rapidamente:
+- Tema Claro, Escuro ou Sistema.
+- Tamanho da fonte.
+- Densidade da interface.
+- Foto do usuário.
+- Nome exibido.
+
+As preferências rápidas são aplicadas imediatamente no navegador e tentam sincronizar com o backend quando existe sessão/API disponível. Para ajustes completos, como cor principal, layout e visual, use **Configurações**.
+
+### Como validar ou restaurar o tema
+1. Abra **Preferências rápidas** ou **Configurações**.
+2. Selecione **Claro**, **Escuro** ou **Sistema**.
+3. Clique em **Salvar**.
+4. Atualize a página.
+5. Confirme que sidebar, cards, campos, modais, editores e textos assumiram o tema escolhido.
+6. Se a API indicar sessão expirada, faça login novamente e salve a preferência outra vez para sincronizar com a conta.
+
+### Boas práticas de tema
+- Use **Claro** para ambientes com muita luz ou apresentações.
+- Use **Escuro** para operação contínua, baixa luminosidade ou dashboards em monitor.
+- Após alterar o tema, recarregue a página se algum navegador antigo mantiver cache visual.
+- Se a interface parecer misturar claro e escuro, salve novamente em **Configurações** ou **Preferências rápidas** e atualize a página.
+- Se o tema continuar diferente do selecionado após atualizar, faça logout/login para renovar a sessão e tente salvar novamente.
 
 ## Mobile e app instalado
 No celular, o menu inferior é rolável para permitir acesso a:

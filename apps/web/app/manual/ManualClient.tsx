@@ -131,7 +131,7 @@ export function ManualClient({ sections }: { sections: string[][] }) {
   }
 
   return (
-    <div className={fullscreen ? "fixed inset-0 z-50 overflow-y-auto bg-ink p-4 md:p-8" : "space-y-6 p-4 md:p-8"}>
+    <div className={fullscreen ? "nodere-manual-page fixed inset-0 z-50 overflow-y-auto bg-ink p-4 md:p-8" : "nodere-manual-page space-y-6 p-4 md:p-8"}>
       <nav className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-secondary)]">
           <button

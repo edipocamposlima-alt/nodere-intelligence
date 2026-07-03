@@ -1509,28 +1509,30 @@ export function LeadOperations({ company }: { company: Company }) {
             )}
 
             <div className="mt-4 grid gap-3 lg:grid-cols-2">
-              <label className="text-xs font-semibold text-slate-400">
+              <div className="text-xs font-semibold text-slate-400">
                 Observações comerciais para o cliente
-                <textarea
+                <div className="mt-2">
+                  <RichTextEditor
                   value={proposalCustomerNotes}
-                  onChange={(event) => setProposalCustomerNotes(event.target.value)}
+                  onChange={setProposalCustomerNotes}
                   disabled={!canEdit}
-                  rows={4}
-                  className={`${inputClass} min-h-[120px]`}
+                  minHeight={150}
                   placeholder="Mensagem comercial visível no PDF. Ex.: condições combinadas, validade, escopo de atendimento."
                 />
-              </label>
-              <label className="text-xs font-semibold text-slate-400">
+                </div>
+              </div>
+              <div className="text-xs font-semibold text-slate-400">
                 Observações internas da negociação
-                <textarea
+                <div className="mt-2">
+                  <RichTextEditor
                   value={proposalInternalNotes}
-                  onChange={(event) => setProposalInternalNotes(event.target.value)}
+                  onChange={setProposalInternalNotes}
                   disabled={!canEdit}
-                  rows={4}
-                  className={`${inputClass} min-h-[120px]`}
+                  minHeight={150}
                   placeholder="Obrigatório quando houver desconto ou alteração de preço. Não aparece no PDF."
                 />
-              </label>
+                </div>
+              </div>
             </div>
 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
@@ -1797,28 +1799,30 @@ export function LeadOperations({ company }: { company: Company }) {
             )}
 
             <div className="mt-4 grid gap-3 lg:grid-cols-2">
-              <label className="text-xs font-semibold text-slate-400">
+              <div className="text-xs font-semibold text-slate-400">
                 Observações comerciais para o cliente
-                <textarea
+                <div className="mt-2">
+                  <RichTextEditor
                   value={proposalCustomerNotes}
-                  onChange={(event) => setProposalCustomerNotes(event.target.value)}
+                  onChange={setProposalCustomerNotes}
                   disabled={!canEdit}
-                  rows={4}
-                  className={`${inputClass} min-h-[120px]`}
+                  minHeight={150}
                   placeholder="Texto permitido no PDF: validade, combinados comerciais, escopo complementar e observações para o cliente."
                 />
-              </label>
-              <label className="text-xs font-semibold text-slate-400">
+                </div>
+              </div>
+              <div className="text-xs font-semibold text-slate-400">
                 Observações internas da negociação
-                <textarea
+                <div className="mt-2">
+                  <RichTextEditor
                   value={proposalInternalNotes}
-                  onChange={(event) => setProposalInternalNotes(event.target.value)}
+                  onChange={setProposalInternalNotes}
                   disabled={!canEdit}
-                  rows={4}
-                  className={`${inputClass} min-h-[120px]`}
+                  minHeight={150}
                   placeholder="Uso interno. Obrigatório para justificar desconto ou alteração de preço. Não aparece no PDF."
                 />
-              </label>
+                </div>
+              </div>
             </div>
 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">

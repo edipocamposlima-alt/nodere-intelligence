@@ -4276,9 +4276,9 @@ textarea {
    Camada oficial de identidade visual preservando compatibilidade
    com classes legadas já usadas na plataforma.
    ================================================================ */
-:root,
+:root:not([data-theme="light"]),
 :root[data-theme="dark"],
-.dark {
+.dark:not(.light) {
   --brand-primary: #03624C;
   --brand-primary-hover: #0A7A5F;
   --brand-primary-dark: #02483A;
@@ -4633,6 +4633,10 @@ body {
   box-shadow: 0 1px 2px rgba(4, 25, 21, 0.08);
 }
 
+.nodere-rich-editor--readonly {
+  background: color-mix(in srgb, var(--bg-input) 78%, var(--bg-card));
+}
+
 .nodere-editor-toolbar {
   display: flex;
   max-width: 100%;
@@ -4643,6 +4647,10 @@ body {
   border-bottom: 1px solid var(--border-soft);
   background: var(--bg-card);
   padding: 8px;
+}
+
+.nodere-rich-editor--readonly .nodere-editor-toolbar {
+  opacity: 0.78;
 }
 
 .nodere-editor-toolbar select,
@@ -4696,6 +4704,12 @@ body {
   opacity: 0.38;
 }
 
+.nodere-editor-toolbar select:disabled,
+.nodere-editor-color input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .nodere-editor-color {
   position: relative;
   display: inline-flex;
@@ -4731,12 +4745,14 @@ body {
 
 .nodere-editor-content {
   overflow-x: hidden;
+  width: 100%;
   padding: 14px;
   outline: none;
 }
 
 .nodere-editor-content .ProseMirror,
 .nodere-editor-preview .ProseMirror {
+  width: 100%;
   max-width: 100%;
   min-width: 0;
   overflow-wrap: anywhere;
@@ -4786,6 +4802,24 @@ body {
 
 .nodere-editor-preview {
   min-width: 0;
+}
+
+.nodere-app-content textarea,
+.nodere-app-content input,
+.nodere-app-content select,
+.nodere-app-content .nodere-rich-editor,
+.nodere-app-content .nodere-editor-content,
+.nodere-app-content .nodere-editor-preview {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.nodere-app-content textarea {
+  overflow-x: hidden;
+  resize: vertical;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .nodere-editor-loading {
@@ -6316,4 +6350,150 @@ textarea,
 :root[data-theme="light"] :where(.sidebar-logo, aside, header, .topbar),
 .light :where(.sidebar-logo, aside, header, .topbar) {
   color: var(--text-primary);
+}
+
+/* CORRECAO 05 - camada final de compatibilidade para tema claro/escuro.
+   Mantem classes legadas escuras funcionando sem deixar a interface misturada. */
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) {
+  background: var(--bg-main) !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-main, .nodere-app-content) {
+  background: var(--bg-main) !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-sidebar, .nodere-topbar, .nodere-manual-page aside, .nodere-manual-page section, .nodere-manual-page article, .nodere-manual-page footer),
+.light :where(.nodere-sidebar, .nodere-topbar, .nodere-manual-page aside, .nodere-manual-page section, .nodere-manual-page article, .nodere-manual-page footer) {
+  background-color: color-mix(in srgb, var(--bg-card) 94%, transparent) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.07);
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(
+  .bg-panel,
+  .bg-panel\/60,
+  .bg-panel\/70,
+  .bg-panel\/80,
+  .bg-panel\/90,
+  .bg-panel\/95,
+  .bg-white\/5,
+  .bg-white\/10,
+  .bg-white\/\[0\.02\],
+  .bg-white\/\[0\.03\],
+  .bg-white\/\[0\.06\],
+  .bg-white\/\[0\.08\]
+),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(
+  .bg-panel,
+  .bg-panel\/60,
+  .bg-panel\/70,
+  .bg-panel\/80,
+  .bg-panel\/90,
+  .bg-panel\/95,
+  .bg-white\/5,
+  .bg-white\/10,
+  .bg-white\/\[0\.02\],
+  .bg-white\/\[0\.03\],
+  .bg-white\/\[0\.06\],
+  .bg-white\/\[0\.08\]
+) {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page, .site-auth) :where(.bg-ink, .bg-ink\/20, .bg-ink\/40, .bg-ink\/60, .bg-ink\/70, .bg-ink\/80, .bg-ink\/90, .bg-gray-950, .bg-slate-950, .bg-slate-900, .bg-black),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page, .site-auth) :where(.bg-ink, .bg-ink\/20, .bg-ink\/40, .bg-ink\/60, .bg-ink\/70, .bg-ink\/80, .bg-ink\/90, .bg-gray-950, .bg-slate-950, .bg-slate-900, .bg-black) {
+  background-color: var(--bg-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(
+  .text-white,
+  .text-slate-100,
+  .text-slate-200,
+  .text-slate-300
+),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(
+  .text-white,
+  .text-slate-100,
+  .text-slate-200,
+  .text-slate-300
+) {
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.text-slate-400, .text-slate-500, .text-slate-600),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.text-slate-400, .text-slate-500, .text-slate-600) {
+  color: var(--text-muted) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.border-line, .border-slate-700, .border-slate-800, .rounded-lg.border, .rounded-xl.border, .rounded-2xl.border),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.border-line, .border-slate-700, .border-slate-800, .rounded-lg.border, .rounded-xl.border, .rounded-2xl.border) {
+  border-color: var(--border-soft) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page, .nodere-rich-editor) :where(input, select, textarea),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page, .nodere-rich-editor) :where(input, select, textarea) {
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-soft) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page, .nodere-rich-editor) input::placeholder,
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page, .nodere-rich-editor) textarea::placeholder,
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page, .nodere-rich-editor) input::placeholder,
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page, .nodere-rich-editor) textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(table, thead, tbody, tr, td, th),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(table, thead, tbody, tr, td, th) {
+  color: var(--text-primary) !important;
+  border-color: var(--border-soft) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) thead,
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) thead {
+  background-color: var(--bg-hover) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-editor-toolbar, .nodere-editor-content, .nodere-editor-preview, .nodere-editor-content .ProseMirror),
+.light :where(.nodere-editor-toolbar, .nodere-editor-content, .nodere-editor-preview, .nodere-editor-content .ProseMirror) {
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-soft) !important;
+}
+
+:root[data-theme="light"] .nodere-editor-toolbar button,
+.light .nodere-editor-toolbar button {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-soft) !important;
+}
+
+:root[data-theme="light"] .nodere-editor-toolbar button:hover,
+:root[data-theme="light"] .nodere-editor-toolbar button.is-active,
+.light .nodere-editor-toolbar button:hover,
+.light .nodere-editor-toolbar button.is-active {
+  background-color: color-mix(in srgb, var(--brand-primary) 12%, #ffffff) !important;
+  border-color: color-mix(in srgb, var(--brand-primary) 42%, var(--border-soft)) !important;
+  color: color-mix(in srgb, var(--brand-primary) 70%, #0f172a) !important;
+}
+
+:root[data-theme="light"] :where(.shadow-glow, .shadow-card),
+.light :where(.shadow-glow, .shadow-card) {
+  box-shadow: var(--shadow-card) !important;
+}
+
+:root[data-theme="light"] :where(.bg-gradient-to-r, .bg-electric, .bg-cyan, .bg-emerald-500, .bg-blue-500, .bg-purple-500, .bg-rose-500, .bg-violet-500),
+.light :where(.bg-gradient-to-r, .bg-electric, .bg-cyan, .bg-emerald-500, .bg-blue-500, .bg-purple-500, .bg-rose-500, .bg-violet-500) {
+  color: #ffffff !important;
+}
+
+:root[data-theme="light"] :where(.bg-warning, .bg-amber-300, .bg-amber-400),
+.light :where(.bg-warning, .bg-amber-300, .bg-amber-400) {
+  color: #1f2937 !important;
 }

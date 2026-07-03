@@ -37,7 +37,7 @@ Se a alteracao nao impactar relatórios, registrar explicitamente no relatorio f
 
 ## Como atualizar Ajuda / Manual NODERE
 
-Ao alterar uma funcionalidade, validar se a aba `Ajuda / Manual NODERE` precisa refletir a mudanca em:
+Ao alterar uma funcionalidade, a aba `Ajuda / Manual NODERE` deve ser tratada como documentacao oficial da plataforma e precisa refletir a mudanca em:
 
 - Instrucoes e passo a passo.
 - Nome de botoes, telas, abas, filtros e acoes.
@@ -47,7 +47,29 @@ Ao alterar uma funcionalidade, validar se a aba `Ajuda / Manual NODERE` precisa 
 - Mobile/PWA, tema claro/escuro e navegacao.
 - Perguntas frequentes e erros comuns.
 
-Se a alteracao nao impactar o manual, registrar explicitamente no relatorio final: `Manual NODERE revisado; sem alteracao necessaria`.
+Cada funcionalidade documentada deve conter, quando aplicavel:
+
+- Nome da funcionalidade.
+- Objetivo.
+- Onde localizar.
+- Quem pode utilizar.
+- Perfis autorizados.
+- Pre-requisitos.
+- Passo a passo completo.
+- Exemplos praticos.
+- Boas praticas.
+- Observacoes.
+- Limitacoes.
+- Dicas.
+- Problemas comuns.
+- Solucoes.
+- Historico de alteracoes.
+- Data da ultima atualizacao.
+- Versao da plataforma.
+
+Sempre que uma funcionalidade for criada ou alterada, revisar tambem capturas de tela, regras de funcionamento, permissoes por perfil, limitacoes, boas praticas, fluxos de trabalho e FAQ. Se a alteracao nao impactar o manual, registrar explicitamente no relatorio final: `Manual NODERE revisado; sem alteracao necessaria`.
+
+Tambem deve ser atualizado o arquivo `RELATORIO_ATUALIZACAO_MANUAL_NODERE.md`, informando funcionalidades adicionadas, funcionalidades alteradas, paginas do manual atualizadas, novos topicos criados, topicos revisados, data da atualizacao e versao da plataforma.
 
 ## Quem pode atualizar
 
@@ -66,6 +88,9 @@ Se a alteracao nao impactar o manual, registrar explicitamente no relatorio fina
 - [ ] Relatorios Executivos precisaram de ajuste? Se sim, quais?
 - [ ] Manual NODERE foi revisado?
 - [ ] A navegacao do manual foi revisada?
+- [ ] Pesquisa da documentacao continua funcionando?
+- [ ] FAQ, passo a passo, permissoes e limitacoes foram atualizados quando aplicavel?
+- [ ] `RELATORIO_ATUALIZACAO_MANUAL_NODERE.md` foi atualizado?
 - [ ] Prints, instrucoes e nomes de botoes continuam corretos?
 - [ ] Relatorios continuam exibindo dados coerentes?
 - [ ] O relatorio final contem a secao obrigatoria abaixo?
@@ -92,6 +117,7 @@ A entrega deve ser classificada como reprovada ou bloqueada quando:
 - Manual NODERE estiver desatualizado em relacao ao comportamento real.
 - O relatorio final nao declarar a revisao das duas abas.
 - A alteracao quebrar permissao, responsividade, tema claro/escuro, mobile ou navegacao existente.
+- `RELATORIO_ATUALIZACAO_MANUAL_NODERE.md` nao for atualizado em tarefas que alterem funcionalidades documentaveis.
 
 ## Modulos afetados
 

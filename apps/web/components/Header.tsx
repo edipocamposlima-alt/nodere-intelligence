@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { Bell, CreditCard, Download, Search, X } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
-import { getInboxUnreadCount } from "@/lib/api";
+import { getInboxUnreadCount, savePublicSettings } from "@/lib/api";
 import { getPageTitle } from "@/lib/page-titles";
 import { applyThemeSettings, persistAndApplyThemeSettings, readThemeSettings, type NodereDensity, type NodereFontSize } from "@/lib/theme";
 import { useAuth } from "@/context/AuthProvider";
@@ -45,8 +45,9 @@ function readPrefs(): UserPrefs {
 
 function applyPrefs(prefs: UserPrefs) {
   if (typeof window === "undefined") return;
-  persistAndApplyThemeSettings({ mode: prefs.theme, fontSize: prefs.fontSize, density: prefs.density, layoutDensity: prefs.density });
+  const { settings } = persistAndApplyThemeSettings({ mode: prefs.theme, fontSize: prefs.fontSize, density: prefs.density, layoutDensity: prefs.density });
   localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+  void savePublicSettings(settings as unknown as Record<string, unknown>).catch(() => undefined);
 }
 
 export function Header() {
@@ -307,7 +308,7 @@ export function Header() {
             <div className="flex items-center justify-between gap-3">
               <div>
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">Preferências rápidas</h2>
-                <p className="text-sm text-[var(--text-secondary)]">Tema, leitura, densidade e foto ficam salvos neste navegador.</p>
+                <p className="text-sm text-[var(--text-secondary)]">Tema, leitura, densidade e foto ficam salvos no navegador e sincronizados com sua conta quando a API estiver disponível.</p>
               </div>
               <button type="button" onClick={() => setShowPrefsModal(false)} className="rounded-lg border border-line p-2 text-[var(--text-primary)]" aria-label="Fechar preferências">
                 <X className="h-4 w-4" />

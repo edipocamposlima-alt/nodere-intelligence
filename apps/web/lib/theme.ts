@@ -185,6 +185,55 @@ function applyPalette(root: HTMLElement, resolvedMode: "dark" | "light", setting
   root.style.setProperty("--brand-primary-dark", `color-mix(in srgb, ${primary} 72%, #020617)`);
   root.style.setProperty("--brand-primary-active", `color-mix(in srgb, ${primary} 78%, #020617)`);
   root.style.setProperty("--color-cyan", resolvedMode === "light" ? primary : "#00DF82");
+  root.style.setProperty("--brand-glow", resolvedMode === "light" ? primary : "#00DF82");
+  root.style.setProperty("--brand-glow-soft", resolvedMode === "light" ? primary : "#00DF82");
+  root.style.setProperty("--brand-glow-dim", `color-mix(in srgb, ${primary} ${resolvedMode === "light" ? "12%" : "18%"}, transparent)`);
+
+  if (resolvedMode === "light") {
+    root.style.setProperty("--bg-root", "#eef2f7");
+    root.style.setProperty("--bg-main", "#f8fafc");
+    root.style.setProperty("--bg-sidebar", "#ffffff");
+    root.style.setProperty("--bg-card", "#ffffff");
+    root.style.setProperty("--bg-card-hover", "#f8fafc");
+    root.style.setProperty("--bg-modal", "#ffffff");
+    root.style.setProperty("--bg-hover", "#f1f5f9");
+    root.style.setProperty("--bg-input", "#ffffff");
+    root.style.setProperty("--border-default", "#e2e8f0");
+    root.style.setProperty("--border", "#e2e8f0");
+    root.style.setProperty("--border-soft", "#cbd5e1");
+    root.style.setProperty("--border-strong", "rgba(15, 23, 42, 0.16)");
+    root.style.setProperty("--border-brand", `color-mix(in srgb, ${primary} 32%, #e2e8f0)`);
+    root.style.setProperty("--border-glow", `color-mix(in srgb, ${primary} 42%, transparent)`);
+    root.style.setProperty("--text-primary", "#0f172a");
+    root.style.setProperty("--text-secondary", "#334155");
+    root.style.setProperty("--text-muted", "#64748b");
+    root.style.setProperty("--text-disabled", "#94a3b8");
+    root.style.setProperty("--shadow-card", "0 10px 32px rgba(15, 23, 42, 0.08), 0 1px 4px rgba(15, 23, 42, 0.06)");
+    root.style.setProperty("--shadow-modal", "0 24px 80px rgba(15, 23, 42, 0.18)");
+    root.style.setProperty("--shadow-glow", `0 16px 46px color-mix(in srgb, ${primary} 12%, transparent)`);
+  } else {
+    root.style.setProperty("--bg-root", "#050d14");
+    root.style.setProperty("--bg-main", "#081018");
+    root.style.setProperty("--bg-sidebar", "#0b1220");
+    root.style.setProperty("--bg-card", "#111827");
+    root.style.setProperty("--bg-card-hover", "#141f30");
+    root.style.setProperty("--bg-modal", "#172033");
+    root.style.setProperty("--bg-hover", "#1f2937");
+    root.style.setProperty("--bg-input", "#0d1828");
+    root.style.setProperty("--border-default", "#243244");
+    root.style.setProperty("--border", "#243244");
+    root.style.setProperty("--border-soft", "#1e293b");
+    root.style.setProperty("--border-strong", "rgba(255, 255, 255, 0.15)");
+    root.style.setProperty("--border-brand", "rgba(3, 98, 76, 0.40)");
+    root.style.setProperty("--border-glow", "rgba(0, 223, 130, 0.30)");
+    root.style.setProperty("--text-primary", "#ffffff");
+    root.style.setProperty("--text-secondary", "#cbd5e1");
+    root.style.setProperty("--text-muted", "#9ca3af");
+    root.style.setProperty("--text-disabled", "#6b7280");
+    root.style.setProperty("--shadow-card", "0 4px 24px rgba(0, 0, 0, 0.35), 0 1px 4px rgba(0, 0, 0, 0.25)");
+    root.style.setProperty("--shadow-modal", "0 8px 48px rgba(0, 0, 0, 0.50), 0 2px 8px rgba(0, 0, 0, 0.35)");
+    root.style.setProperty("--shadow-glow", "0 0 24px rgba(0, 223, 130, 0.20)");
+  }
 
   if (settings.themeVariant === "highContrastDark") {
     root.style.setProperty("--bg-main", "#000000");
@@ -238,7 +287,13 @@ export function applyThemeSettings(settings: unknown) {
   root.style.setProperty("--nodere-font-family", fontStack);
   applyPalette(root, resolvedMode, normalized);
 
-  if (document.body) document.body.style.fontFamily = "var(--nodere-font-family)";
+  if (document.body) {
+    document.body.dataset.theme = resolvedMode;
+    document.body.dataset.themeMode = normalized.mode;
+    document.body.classList.toggle("light", resolvedMode === "light");
+    document.body.classList.toggle("dark", resolvedMode === "dark");
+    document.body.style.fontFamily = "var(--nodere-font-family)";
+  }
 
   return resolvedMode;
 }

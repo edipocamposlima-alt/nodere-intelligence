@@ -720,8 +720,8 @@ async function renderProposalPdf(proposal: any, lead: any, documentType: "propos
     doc.fillColor("#374151").fontSize(9).text(`Versão: ${proposal.version || proposal.metadata?.version || 1}`);
     doc.fillColor("#374151").fontSize(9).text(`Responsável: ${proposal.created_by || proposal.metadata?.created_by || "NODERE"}`);
     doc.moveDown();
-    const proposalContent = String(proposal.content || "").trim();
-    const customerNotes = String(proposal.metadata?.customer_notes || "").trim();
+    const proposalContent = cleanPdfText(proposal.content || "");
+    const customerNotes = cleanPdfText(proposal.metadata?.customer_notes || "");
     if (proposalContent) {
       doc.fontSize(11).fillColor("#1F2937").text(proposalContent, { align: "left" });
     }
@@ -740,13 +740,13 @@ async function renderProposalPdf(proposal: any, lead: any, documentType: "propos
         const description = item.snapshot_description || "";
         const guidance = item.snapshot_commercial_guidance || "";
         doc.fillColor("#111827").fontSize(10).text(name, { continued: false });
-        if (description) doc.fillColor("#374151").fontSize(9).text(description);
-        if (guidance) doc.fillColor("#374151").fontSize(9).text(`Orientação: ${guidance}`);
+        if (description) doc.fillColor("#374151").fontSize(9).text(cleanPdfText(description));
+        if (guidance) doc.fillColor("#374151").fontSize(9).text(`Orientação: ${cleanPdfText(guidance)}`);
         doc.fillColor("#111827").fontSize(9).text(`Qtd./horas: ${item.quantity} ${item.snapshot_billing_unit || ""} | Unitário: ${formatMoney(item.snapshot_unit_price || item.unit_price || 0)} | Bruto: ${formatMoney(item.gross_total ?? item.total ?? 0)} | Desconto: ${formatMoney(item.discount_amount || 0)} | Final: ${formatMoney(item.final_total ?? item.total ?? 0)}`);
-        if (item.customer_item_note) doc.fillColor("#374151").fontSize(9).text(`Observação: ${item.customer_item_note}`);
-        if (item.snapshot_payment_terms) doc.fillColor("#374151").fontSize(9).text(`Condições: ${item.snapshot_payment_terms}`);
-        if (item.snapshot_payment_method) doc.fillColor("#374151").fontSize(9).text(`Forma de pagamento: ${item.snapshot_payment_method}`);
-        if (item.snapshot_execution_deadline) doc.fillColor("#374151").fontSize(9).text(`Prazo: ${item.snapshot_execution_deadline}`);
+        if (item.customer_item_note) doc.fillColor("#374151").fontSize(9).text(`Observação: ${cleanPdfText(item.customer_item_note)}`);
+        if (item.snapshot_payment_terms) doc.fillColor("#374151").fontSize(9).text(`Condições: ${cleanPdfText(item.snapshot_payment_terms)}`);
+        if (item.snapshot_payment_method) doc.fillColor("#374151").fontSize(9).text(`Forma de pagamento: ${cleanPdfText(item.snapshot_payment_method)}`);
+        if (item.snapshot_execution_deadline) doc.fillColor("#374151").fontSize(9).text(`Prazo: ${cleanPdfText(item.snapshot_execution_deadline)}`);
         doc.moveDown(0.4);
       });
     }
@@ -771,6 +771,33 @@ async function renderProposalPdf(proposal: any, lead: any, documentType: "propos
 
 function formatMoney(value: number) {
   return Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function cleanPdfText(value: unknown) {
+  return decodeHtmlEntities(String(value ?? ""))
+    .replace(/<\s*br\s*\/?>/gi, "\n")
+    .replace(/<\/\s*p\s*>/gi, "\n")
+    .replace(/<\s*li[^>]*>/gi, "\n- ")
+    .replace(/<\/\s*li\s*>/gi, "")
+    .replace(/<\/\s*(ul|ol|div|section|article|h[1-6]|blockquote)\s*>/gi, "\n")
+    .replace(/<\s*(p|ul|ol|div|section|article|h[1-6]|blockquote|span|strong|b|em|i|u|s|a|font)[^>]*>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\r/g, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
+function decodeHtmlEntities(value: string) {
+  return value
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, "\"")
+    .replace(/&#39;/gi, "'")
+    .replace(/&apos;/gi, "'");
 }
 
 export default router;
