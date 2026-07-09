@@ -77,7 +77,50 @@ Verificacao inicial Vercel:
 
 ## Validacoes em producao
 
-Pendente atualizar apos deploy.
+- Commit publicado: `600f8a5 fix: ocultar interface publica e padronizar icones`.
+- Deploy Vercel de producao: `dpl_HTa7MfxHwrRYhrMVPuUFbD7npRyB`.
+- URL do deployment: `https://web-dk95z9r1y-edipo-lima-s-projects.vercel.app`.
+- Aliases de producao confirmados: `https://nodere.com.br` e `https://www.nodere.com.br`.
+- Backend Render: sem alteracao de API nesta rodada; `/api/health` respondeu `200`.
+
+### Redirecionamento em producao sem sessao
+
+- `/` => `307 /login`
+- `/blog` => `307 /login?next=%2Fblog`
+- `/manual` => `307 /login?next=%2Fmanual`
+- `/register` => `307 /login?next=%2Fregister`
+- `/dashboard` => `307 /login?next=%2Fdashboard`
+- `/login` => `200`
+- `/termos` => `200`
+- `/privacidade` => `200`
+
+### Smoke autenticado em producao
+
+Validacao executada com sessao real ativa no Chrome, sem persistir credenciais em arquivo ou log.
+
+- `/` redirecionou para `/dashboard` com sessao autenticada.
+- `/dashboard` carregou o shell privado NODERE, menu lateral e dados reais do workspace.
+- `/app/dashboard` carregou o mesmo shell privado.
+- `/searches` e `/app/discovery` carregaram a area de prospeccao.
+- `/companies` carregou a area de empresas.
+- `/crm` carregou a area CRM/Funil.
+- `/app/leads` carregou a area de leads.
+- `/calendario` carregou agenda.
+- `/app/proposals` carregou propostas e contratos.
+- `/catalog` carregou produtos/servicos.
+- `/inbox` carregou caixa de entrada.
+- `/automations` carregou automacoes.
+- `/intelligence` carregou IA/Inteligencia.
+- `/reports` carregou relatorios.
+- `/operators` carregou operadores.
+- `/marketing` carregou marketing.
+- `/billing` carregou faturamento.
+- `/settings` e `/app/settings` carregaram configuracoes.
+- `/integrations` carregou integracoes.
+- `/admin` carregou Administrador/CMS para perfil autorizado.
+- `/manual` carregou Manual NODERE autenticado.
+
+Observacao: algumas rotas alternativas com prefixo `/app/*` que nao sao rotas canonicas do menu, como `/app/crm` e `/app/catalog`, continuam inexistentes. As rotas oficiais usadas pela navegacao foram validadas.
 
 ## Correcoes realizadas durante a varredura
 
@@ -88,8 +131,9 @@ Pendente atualizar apos deploy.
 
 ## Pendencias
 
-- Validacao em producao pendente apos commit, push e deploy.
+- Sem pendencia tecnica bloqueante identificada nesta rodada.
+- Validacao funcional profunda de integracoes externas que dependem de acao operacional real (envio efetivo de WhatsApp/e-mail, cobranca, criacao de dados reais) deve continuar sendo feita como homologacao operacional controlada, sem dados de clientes reais.
 
 ## Status final
 
-EM VALIDACAO.
+PUBLICADO E VALIDADO.
