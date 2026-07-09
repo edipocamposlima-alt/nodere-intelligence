@@ -32,7 +32,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       ref={ref}
       disabled={disabled || loading}
       className={cn(
-        "inline-flex items-center justify-center gap-2 font-medium transition-all duration-150",
+        "nodere-action inline-flex items-center justify-center gap-2 font-medium transition-all duration-150",
         "focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],
         sizes[size],
@@ -40,7 +40,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       )}
       {...props}
     >
-      {loading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : icon ? <span className="h-4 w-4">{icon}</span> : null}
+      {loading ? <span className="nodere-icon nodere-icon-spin animate-spin rounded-full border-2 border-current border-t-transparent" /> : icon ? <span className="nodere-icon-slot">{icon}</span> : null}
       {children}
     </button>
   )

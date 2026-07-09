@@ -46,6 +46,72 @@ Versao da plataforma: NODERE Sprint atual
 
 ---
 
+## Atualizacao - Interface publica oculta e login como entrada
+
+Data da atualizacao: 2026-07-09
+Versao da plataforma: NODERE/Noderi Sprint atual
+
+### Funcionalidades alteradas
+- Middleware de acesso publico.
+- Rota raiz do dominio.
+- Páginas institucionais, blog, cadastro e manual para usuarios sem sessao.
+- Fluxo de login e redirecionamento.
+
+### Paginas do manual atualizadas
+- Aba Ajuda / Manual NODERE: topico "16. Login, sessao e usuarios".
+- Documento `docs/manual-nodere.md`: secao "Acesso e interface publica oculta".
+
+### Topicos revisados
+- Raiz do dominio redireciona para `/login` quando nao ha sessao.
+- Interface publica/institucional fica preservada no codigo, mas oculta do acesso publico direto.
+- Rotas internas sem sessao redirecionam para login.
+- Termos e privacidade continuam acessiveis por suporte legal.
+
+### Status
+- DOCUMENTACAO ATUALIZADA: SIM
+- MANUAL SINCRONIZADO: SIM
+- NOVAS FUNCIONALIDADES DOCUMENTADAS: NAO SE APLICA
+- FUNCIONALIDADES ALTERADAS DOCUMENTADAS: SIM
+- FAQ ATUALIZADO: SIM
+- PASSO A PASSO ATUALIZADO: SIM
+- RELATORIO ATUALIZADO: SIM
+
+---
+
+## Atualizacao - Padronizacao global de icones, botoes e acoes visuais
+
+Data da atualizacao: 2026-07-09
+Versao da plataforma: NODERE Sprint atual
+
+### Funcionalidades alteradas
+- Icones globais da interface.
+- Botoes de acao com e sem texto.
+- Navegacao lateral e menu mobile.
+- Inputs com icones.
+- Toolbars, editores, tabelas, listas, cards e areas administrativas.
+
+### Paginas do manual atualizadas
+- Aba Ajuda / Manual NODERE: topico "38. Icones, botoes e acoes visuais".
+- Documento `docs/manual-nodere.md`: secao "Icones, botoes e acoes visuais".
+
+### Topicos revisados
+- Escala global de icones.
+- Centralizacao e area clicavel minima.
+- Responsividade e zoom 100%.
+- Proibicao de ajustes inline arbitrarios em width, height, strokeWidth, fontSize e transform.
+- Acessibilidade para botoes somente com icone.
+
+### Status
+- DOCUMENTACAO ATUALIZADA: SIM
+- MANUAL SINCRONIZADO: SIM
+- NOVAS FUNCIONALIDADES DOCUMENTADAS: NAO SE APLICA
+- FUNCIONALIDADES ALTERADAS DOCUMENTADAS: SIM
+- FAQ ATUALIZADO: SIM
+- PASSO A PASSO ATUALIZADO: SIM
+- RELATORIO ATUALIZADO: SIM
+
+---
+
 ## Atualizacao adicional - Correcao 05 Temas Claro/Escuro
 
 Data da atualizacao: 2026-07-03

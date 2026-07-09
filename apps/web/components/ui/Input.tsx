@@ -18,7 +18,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         </label>
       )}
       <div className="relative">
-        {icon && <span className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted">{icon}</span>}
+        {icon && <span className="nodere-icon-slot absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">{icon}</span>}
         <input
           ref={ref}
           className={cn(

@@ -256,6 +256,35 @@ No celular, o menu inferior é rolável para permitir acesso a:
 - Manual;
 - Admin.
 
+## Acesso e interface pública oculta
+A plataforma NODERE/Noderi usa a tela de login como única porta pública operacional. Ao acessar a raiz do domínio sem sessão, o navegador é redirecionado automaticamente para **/login**. Páginas institucionais, marketing, blog, cadastro e manual permanecem no repositório, mas não ficam expostas como interface pública direta para usuários sem autenticação.
+
+Regras do fluxo:
+- sem sessão, a raiz do domínio redireciona para login;
+- rotas internas sem sessão redirecionam para login com o destino original;
+- após login válido, o usuário segue para dashboard ou para a rota solicitada;
+- após logout, a sessão é encerrada e novas tentativas de acesso interno voltam para login;
+- termos e privacidade continuam acessíveis para suporte legal ao login.
+
+## Ícones, botões e ações visuais
+Os ícones da plataforma seguem uma escala global NODERE para manter consistência em menus, cabeçalhos, cards, tabelas, formulários, modais, editores, ações rápidas e componentes administrativos.
+
+Padrões aplicados:
+- ícones de ação usam tamanho base uniforme;
+- ícones de navegação usam o mesmo tamanho visual em sidebar e menu mobile;
+- botões apenas com ícone mantêm área mínima clicável e centralização;
+- ícones dentro de botões com texto mantêm espaçamento padrão;
+- SVGs não devem ser deformados por zoom, escala, wrappers ou containers;
+- imagens usadas como ícone devem preservar proporção 1:1;
+- toolbars e editores usam a mesma lógica de alinhamento para evitar corte ou sobreposição.
+
+Boas práticas:
+1. Use os componentes compartilhados (`Button`, `Input`, navegação e editor) sempre que possível.
+2. Evite `style` inline para `width`, `height`, `fontSize`, `transform` ou `strokeWidth` em ícones.
+3. Para ações sem texto, informe `aria-label` ou `title` para manter acessibilidade.
+4. Valide em desktop, notebook, mobile e zoom 100%; se houver quebra visual, revise o wrapper antes de criar uma regra local.
+5. Não substitua o significado do ícone sem revisar o rótulo, tooltip e ação vinculada.
+
 ## Automações
 A área Automações lista sequências comerciais e pode ativar fluxos por empresa. Integrações oficiais de e-mail/WhatsApp exigem chaves específicas; sem elas, use modelos e tarefas manuais.
 

@@ -3,24 +3,14 @@ import type { NextRequest } from "next/server";
 
 const PUBLIC_PATHS = [
   "/login",
-  "/register",
   "/reset-password",
   "/forgot-password",
-  "/planos",
-  "/precos",
-  "/plans",
-  "/solucoes",
-  "/blog",
-  "/contato",
   "/terms",
   "/privacy",
   "/termos",
   "/privacidade",
-  "/pagina",
-  "/manual",
   "/index.html",
   "/app/login",
-  "/app/register",
   "/api/admin",
   "/api/content",
   "/api/auth",
@@ -59,7 +49,7 @@ export async function middleware(request: NextRequest) {
 
   if (pathname === "/") {
     if (session) return NextResponse.redirect(new URL("/dashboard", request.url));
-    return NextResponse.next();
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path));

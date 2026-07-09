@@ -102,7 +102,7 @@ export function MobileNav() {
                 className="flex min-h-14 items-center gap-3 rounded-xl border border-electric/35 bg-electric/10 px-3 py-2 text-sm font-semibold text-slate-100"
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-electric/15 text-cyan shadow-[0_0_18px_rgba(0,223,130,0.18)] ring-1 ring-electric/30">
-                  <Download className="h-4 w-4" style={{ strokeWidth: 2.9 }} />
+                  <Download className="nodere-icon" />
                 </span>
                 Instalar app
               </button>
@@ -114,7 +114,7 @@ export function MobileNav() {
                   className="flex min-h-14 items-center gap-3 rounded-xl border border-line bg-panel/80 px-3 py-2 text-sm font-semibold text-slate-200"
                 >
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-electric/15 text-cyan shadow-[0_0_18px_rgba(0,223,130,0.18)] ring-1 ring-electric/30">
-                    <item.icon className="h-4 w-4" style={{ strokeWidth: 2.9 }} />
+                    <item.icon className="nodere-icon" />
                   </span>
                   {item.label}
                 </Link>
@@ -128,7 +128,7 @@ export function MobileNav() {
                 className="flex min-h-14 items-center gap-3 rounded-xl border border-danger/35 bg-danger/10 px-3 py-2 text-sm font-semibold text-rose-100"
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-danger/15 text-rose-200 ring-1 ring-danger/30">
-                  <LogOut className="h-4 w-4" style={{ strokeWidth: 2.9 }} />
+                  <LogOut className="nodere-icon" />
                 </span>
                 Sair
               </button>
@@ -150,7 +150,7 @@ function MobileLink({ item, isApp, activePathname, onClick }: { item: (typeof pr
       className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold transition ${active ? "bg-white/10 text-white" : "text-slate-300"}`}
     >
       <span className={`flex h-8 w-8 items-center justify-center rounded-lg shadow-[0_0_18px_rgba(0,223,130,0.18)] ring-1 ${active ? "bg-electric text-white ring-electric/50" : "bg-electric/12 text-cyan ring-electric/25"}`}>
-        <item.icon className="h-4 w-4" style={{ strokeWidth: 2.9 }} />
+        <item.icon className="nodere-icon" />
       </span>
       {item.label}
     </Link>

@@ -6892,3 +6892,172 @@ textarea,
 .light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.bg-danger\/10, .bg-red-500\/10) {
   background-color: rgba(239, 68, 68, 0.12) !important;
 }
+
+/* PADRONIZACAO GLOBAL NODERE - icones, botoes e areas clicaveis.
+   Mantem SVGs proporcionais em zoom, resolucao e responsividade sem alterar significado. */
+:root {
+  --nodere-icon-xs: 0.875rem;
+  --nodere-icon-sm: 1rem;
+  --nodere-icon-md: 1.125rem;
+  --nodere-icon-lg: 1.25rem;
+  --nodere-icon-xl: 1.5rem;
+  --nodere-icon-action: 1rem;
+  --nodere-icon-nav: 1rem;
+  --nodere-icon-stroke: 2.35;
+  --nodere-icon-hit-sm: 2rem;
+  --nodere-icon-hit-md: 2.25rem;
+  --nodere-icon-gap: 0.5rem;
+}
+
+:where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page, .nodere-editor, .nodere-app-content) :where(svg) {
+  display: inline-block;
+  flex: 0 0 auto;
+  vertical-align: middle;
+  shape-rendering: geometricPrecision;
+  vector-effect: non-scaling-stroke;
+}
+
+:where(.nodere-icon, .nav-icon, .lock-badge, .nodere-icon-slot > svg) {
+  width: var(--nodere-icon-action) !important;
+  height: var(--nodere-icon-action) !important;
+  min-width: var(--nodere-icon-action);
+  min-height: var(--nodere-icon-action);
+  max-width: var(--nodere-icon-action);
+  max-height: var(--nodere-icon-action);
+  stroke-width: var(--nodere-icon-stroke);
+}
+
+.nodere-icon-slot,
+.nodere-icon-spin {
+  width: var(--nodere-icon-action);
+  height: var(--nodere-icon-action);
+  min-width: var(--nodere-icon-action);
+  min-height: var(--nodere-icon-action);
+  display: inline-flex;
+  flex: 0 0 var(--nodere-icon-action);
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.nav-icon {
+  width: var(--nodere-icon-nav) !important;
+  height: var(--nodere-icon-nav) !important;
+}
+
+.lock-badge {
+  width: var(--nodere-icon-xs) !important;
+  height: var(--nodere-icon-xs) !important;
+  opacity: 0.82;
+}
+
+:where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page, .nodere-editor, .nodere-app-content) :where(
+  button,
+  a.inline-flex,
+  a.flex,
+  .btn-primary,
+  .btn-secondary,
+  .btn-action,
+  .btn-secondary-action,
+  .btn-ghost,
+  .nav-item,
+  .nodere-action,
+  .nodere-editor-button
+) {
+  align-items: center;
+  gap: var(--nodere-icon-gap);
+  line-height: 1.2;
+}
+
+:where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page, .nodere-editor, .nodere-app-content) :where(
+  button,
+  a.inline-flex,
+  a.flex,
+  .btn-primary,
+  .btn-secondary,
+  .btn-action,
+  .btn-secondary-action,
+  .btn-ghost,
+  .nav-item,
+  .nodere-action,
+  .nodere-editor-button
+) > :where(svg, span > svg) {
+  width: var(--nodere-icon-action) !important;
+  height: var(--nodere-icon-action) !important;
+  min-width: var(--nodere-icon-action);
+  min-height: var(--nodere-icon-action);
+  max-width: var(--nodere-icon-action);
+  max-height: var(--nodere-icon-action);
+  flex: 0 0 var(--nodere-icon-action);
+  stroke-width: var(--nodere-icon-stroke);
+}
+
+:where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page, .nodere-editor, .nodere-app-content) :where(
+  button[aria-label],
+  button[title]:not(:has(span:not(.sr-only))),
+  a[aria-label],
+  .nodere-icon-button,
+  .nodere-editor-button,
+  .topbar-theme
+) {
+  min-width: var(--nodere-icon-hit-md);
+  min-height: var(--nodere-icon-hit-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+:where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(td, th, li, .nodere-list-row, .nodere-table-row) :where(button, a.inline-flex) {
+  flex-shrink: 0;
+}
+
+:where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.h-8.w-8, .h-9.w-9, .h-10.w-10, .h-11.w-11, .h-12.w-12) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+:where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.h-8.w-8, .h-9.w-9, .h-10.w-10, .h-11.w-11, .h-12.w-12) > svg {
+  width: var(--nodere-icon-action) !important;
+  height: var(--nodere-icon-action) !important;
+}
+
+:where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.h-10.w-10, .h-11.w-11, .h-12.w-12) > svg {
+  width: var(--nodere-icon-md) !important;
+  height: var(--nodere-icon-md) !important;
+}
+
+:where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.h-14.w-14, .h-16.w-16) > svg {
+  width: var(--nodere-icon-lg) !important;
+  height: var(--nodere-icon-lg) !important;
+}
+
+:where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(img[class*="icon"], .icon img, .nodere-icon-img) {
+  object-fit: contain;
+  aspect-ratio: 1 / 1;
+  flex: 0 0 auto;
+}
+
+:where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.animate-spin) {
+  transform-origin: 50% 50%;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --nodere-icon-hit-sm: 2.125rem;
+    --nodere-icon-hit-md: 2.5rem;
+    --nodere-icon-gap: 0.45rem;
+  }
+
+  :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page, .nodere-editor, .nodere-app-content) :where(
+    button[aria-label],
+    a[aria-label],
+    .nodere-icon-button,
+    .nodere-editor-button
+  ) {
+    min-width: var(--nodere-icon-hit-md);
+    min-height: var(--nodere-icon-hit-md);
+  }
+}
