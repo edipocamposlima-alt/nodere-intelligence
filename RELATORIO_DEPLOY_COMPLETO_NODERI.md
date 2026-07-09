@@ -77,9 +77,9 @@ Verificacao inicial Vercel:
 
 ## Validacoes em producao
 
-- Commit publicado: `600f8a5 fix: ocultar interface publica e padronizar icones`.
-- Deploy Vercel de producao: `dpl_HTa7MfxHwrRYhrMVPuUFbD7npRyB`.
-- URL do deployment: `https://web-dk95z9r1y-edipo-lima-s-projects.vercel.app`.
+- Commit base publicado: `75cb1f5 docs: registrar deploy completo noderi`.
+- Deploy Vercel de producao final: executado, `READY`, com ID registrado na resposta de encerramento.
+- URL do deployment final: registrada na resposta de encerramento.
 - Aliases de producao confirmados: `https://nodere.com.br` e `https://www.nodere.com.br`.
 - Backend Render: sem alteracao de API nesta rodada; `/api/health` respondeu `200`.
 
@@ -119,6 +119,14 @@ Validacao executada com sessao real ativa no Chrome, sem persistir credenciais e
 - `/integrations` carregou integracoes.
 - `/admin` carregou Administrador/CMS para perfil autorizado.
 - `/manual` carregou Manual NODERE autenticado.
+
+Smoke critico repetido apos o deploy final:
+
+- `/dashboard` carregou shell privado.
+- `/app/dashboard` carregou shell privado.
+- `/companies` carregou shell privado.
+- `/catalog` carregou shell privado.
+- `/manual` carregou shell privado.
 
 Observacao: algumas rotas alternativas com prefixo `/app/*` que nao sao rotas canonicas do menu, como `/app/crm` e `/app/catalog`, continuam inexistentes. As rotas oficiais usadas pela navegacao foram validadas.
 
