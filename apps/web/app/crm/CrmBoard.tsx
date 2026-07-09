@@ -429,23 +429,23 @@ export function CrmBoard({ companies, onLeadClick }: { companies: Company[]; onL
                       className="min-w-0 flex-1 rounded-md border border-line bg-ink px-2 py-1 text-xs text-[var(--text-primary)] outline-none focus:border-electric"
                       autoFocus
                     />
-                    <button onClick={() => void renameStage(column)} className="rounded-md bg-success p-1 text-ink" aria-label="Salvar nome da etapa">
-                      <Check className="h-3.5 w-3.5" />
+                    <button onClick={() => void renameStage(column)} className="crm-stage-action border border-white/35 bg-success text-ink hover:bg-white/20" aria-label="Salvar nome da etapa">
+                      <Check />
                     </button>
-                    <button onClick={() => setEditingStage(null)} className="rounded-md border border-line p-1 text-slate-300" aria-label="Cancelar edição">
-                      <X className="h-3.5 w-3.5" />
+                    <button onClick={() => setEditingStage(null)} className="crm-stage-action border border-white/35 bg-black/10 text-slate-100 hover:bg-white/20" aria-label="Cancelar edição">
+                      <X />
                     </button>
                   </div>
                 ) : (
                   <h3 className="min-w-0 truncate text-sm font-black" style={{ color: stageTextColor }}>{column}</h3>
                 )}
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-1">
                   <span className="rounded-md bg-white/18 px-2 py-1 text-xs font-black" style={{ color: stageTextColor }}>{leads.length}</span>
                   <input
                     type="color"
                     value={stageColor}
                     onChange={(event) => persistStageColors({ ...stageColors, [column]: event.target.value })}
-                    className="h-7 w-7 cursor-pointer rounded-md border border-white/35 bg-transparent p-0"
+                    className="crm-stage-color-input cursor-pointer rounded-md border border-white/35 bg-transparent p-0"
                     title={`Alterar cor da etapa ${column}`}
                     aria-label={`Alterar cor da etapa ${column}`}
                   />
@@ -455,15 +455,15 @@ export function CrmBoard({ companies, onLeadClick }: { companies: Company[]; onL
                         setEditingStage(column);
                         setEditingValue(column);
                       }}
-                      className="rounded-md border border-white/35 bg-black/10 p-1 hover:bg-white/20"
+                      className="crm-stage-action border border-white/35 bg-black/10 hover:bg-white/20"
                       style={{ color: stageTextColor }}
                       aria-label={`Renomear etapa ${column}`}
                     >
-                      <Pencil className="h-3.5 w-3.5" />
+                      <Pencil />
                     </button>
                   )}
-                  <button onClick={() => removeStage(column)} className="rounded-md border border-white/35 bg-black/10 p-1 hover:bg-white/20" style={{ color: stageTextColor }} aria-label={`Remover etapa ${column}`}>
-                    <Trash2 className="h-3.5 w-3.5" />
+                  <button onClick={() => removeStage(column)} className="crm-stage-action-danger border border-white/35 bg-black/10 hover:bg-white/20" style={{ color: stageTextColor }} aria-label={`Remover etapa ${column}`}>
+                    <Trash2 />
                   </button>
                 </div>
               </div>

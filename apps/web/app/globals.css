@@ -6896,17 +6896,20 @@ textarea,
 /* PADRONIZACAO GLOBAL NODERE - icones, botoes e areas clicaveis.
    Mantem SVGs proporcionais em zoom, resolucao e responsividade sem alterar significado. */
 :root {
-  --nodere-icon-xs: 0.875rem;
-  --nodere-icon-sm: 1rem;
-  --nodere-icon-md: 1.125rem;
-  --nodere-icon-lg: 1.25rem;
-  --nodere-icon-xl: 1.5rem;
-  --nodere-icon-action: 1rem;
-  --nodere-icon-nav: 1rem;
+  --nodere-icon-xs: 14px;
+  --nodere-icon-sm: 16px;
+  --nodere-icon-md: 18px;
+  --nodere-icon-lg: 20px;
+  --nodere-icon-xl: 24px;
+  --nodere-icon-action: 16px;
+  --nodere-icon-action-compact: 14px;
+  --nodere-icon-hit-kanban: 24px;
+  --nodere-icon-nav: 16px;
   --nodere-icon-stroke: 2.35;
-  --nodere-icon-hit-sm: 2rem;
-  --nodere-icon-hit-md: 2.25rem;
-  --nodere-icon-gap: 0.5rem;
+  --nodere-icon-hit-xs: 28px;
+  --nodere-icon-hit-sm: 32px;
+  --nodere-icon-hit-md: 36px;
+  --nodere-icon-gap: 8px;
 }
 
 :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page, .nodere-editor, .nodere-app-content) :where(svg) {
@@ -6915,6 +6918,16 @@ textarea,
   vertical-align: middle;
   shape-rendering: geometricPrecision;
   vector-effect: non-scaling-stroke;
+}
+
+:where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page, .nodere-editor, .nodere-app-content) :where(svg.lucide) {
+  width: var(--nodere-icon-action) !important;
+  height: var(--nodere-icon-action) !important;
+  min-width: var(--nodere-icon-action);
+  min-height: var(--nodere-icon-action);
+  max-width: var(--nodere-icon-action);
+  max-height: var(--nodere-icon-action);
+  stroke-width: var(--nodere-icon-stroke);
 }
 
 :where(.nodere-icon, .nav-icon, .lock-badge, .nodere-icon-slot > svg) {
@@ -7044,11 +7057,54 @@ textarea,
   transform-origin: 50% 50%;
 }
 
+.crm-stage-action,
+.crm-stage-action-danger {
+  width: var(--nodere-icon-hit-kanban) !important;
+  height: var(--nodere-icon-hit-kanban) !important;
+  min-width: var(--nodere-icon-hit-kanban) !important;
+  min-height: var(--nodere-icon-hit-kanban) !important;
+  max-width: var(--nodere-icon-hit-kanban);
+  max-height: var(--nodere-icon-hit-kanban);
+  flex: 0 0 var(--nodere-icon-hit-kanban);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  border-radius: 8px;
+  line-height: 1;
+  color: inherit;
+  overflow: hidden;
+}
+
+.crm-stage-action > svg,
+.crm-stage-action-danger > svg {
+  width: var(--nodere-icon-action-compact) !important;
+  height: var(--nodere-icon-action-compact) !important;
+  min-width: var(--nodere-icon-action-compact);
+  min-height: var(--nodere-icon-action-compact);
+  max-width: var(--nodere-icon-action-compact);
+  max-height: var(--nodere-icon-action-compact);
+  flex: 0 0 var(--nodere-icon-action-compact);
+  stroke-width: 2.5;
+}
+
+.crm-stage-action-danger:hover {
+  color: #fecaca !important;
+}
+
+.crm-stage-color-input {
+  width: var(--nodere-icon-hit-kanban) !important;
+  height: var(--nodere-icon-hit-kanban) !important;
+  min-width: var(--nodere-icon-hit-kanban);
+  min-height: var(--nodere-icon-hit-kanban);
+  flex: 0 0 var(--nodere-icon-hit-kanban);
+}
+
 @media (max-width: 640px) {
   :root {
-    --nodere-icon-hit-sm: 2.125rem;
-    --nodere-icon-hit-md: 2.5rem;
-    --nodere-icon-gap: 0.45rem;
+    --nodere-icon-hit-sm: 34px;
+    --nodere-icon-hit-md: 40px;
+    --nodere-icon-gap: 7px;
   }
 
   :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page, .nodere-editor, .nodere-app-content) :where(

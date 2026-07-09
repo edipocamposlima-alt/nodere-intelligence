@@ -46,6 +46,39 @@ Versao da plataforma: NODERE Sprint atual
 
 ---
 
+## Atualizacao - Varredura visual de icones, Kanban e zoom
+
+Data da atualizacao: 2026-07-09
+Versao da plataforma: NODERE/Noderi Sprint atual
+
+### Funcionalidades alteradas
+- Escala global de icones.
+- Botoes de acao compactos.
+- Cabecalhos das etapas do CRM/Kanban.
+- Icones de lapis, lixeira, salvar e cancelar no Kanban.
+- Manual de boas praticas para icones em zoom e responsividade.
+
+### Paginas do manual atualizadas
+- Aba Ajuda / Manual NODERE: topico "38. Icones, botoes e acoes visuais".
+- Documento `docs/manual-nodere.md`: secao "Icones, botoes e acoes visuais".
+
+### Topicos revisados
+- Escala oficial de icones em pixels.
+- Regra compacta para acoes no cabecalho do Kanban.
+- Validacao recomendada em zoom 33%, 50%, 67%, 75%, 80%, 90%, 100%, 110%, 125% e 150%.
+- Uso obrigatorio de `aria-label` ou `title` em botoes sem texto.
+
+### Status
+- DOCUMENTACAO ATUALIZADA: SIM
+- MANUAL SINCRONIZADO: SIM
+- NOVAS FUNCIONALIDADES DOCUMENTADAS: NAO SE APLICA
+- FUNCIONALIDADES ALTERADAS DOCUMENTADAS: SIM
+- FAQ ATUALIZADO: SIM
+- PASSO A PASSO ATUALIZADO: SIM
+- RELATORIO ATUALIZADO: SIM
+
+---
+
 ## Atualizacao - Interface publica oculta e login como entrada
 
 Data da atualizacao: 2026-07-09

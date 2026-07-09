@@ -270,7 +270,7 @@ Regras do fluxo:
 Os ícones da plataforma seguem uma escala global NODERE para manter consistência em menus, cabeçalhos, cards, tabelas, formulários, modais, editores, ações rápidas e componentes administrativos.
 
 Padrões aplicados:
-- ícones de ação usam tamanho base uniforme;
+- ícones pequenos usam 14px, ícones de ação usam 16px, ícones médios usam 18px, ícones grandes usam 20px e destaques usam 24px;
 - ícones de navegação usam o mesmo tamanho visual em sidebar e menu mobile;
 - botões apenas com ícone mantêm área mínima clicável e centralização;
 - ícones dentro de botões com texto mantêm espaçamento padrão;
@@ -278,11 +278,13 @@ Padrões aplicados:
 - imagens usadas como ícone devem preservar proporção 1:1;
 - toolbars e editores usam a mesma lógica de alinhamento para evitar corte ou sobreposição.
 
+No CRM/Kanban, os ícones de lápis, lixeira, salvar e cancelar nos cabeçalhos de etapa usam ação compacta própria. Eles permanecem centralizados, coloridos e dentro do cabeçalho da coluna mesmo com títulos longos, zoom reduzido ou zoom ampliado.
+
 Boas práticas:
 1. Use os componentes compartilhados (`Button`, `Input`, navegação e editor) sempre que possível.
 2. Evite `style` inline para `width`, `height`, `fontSize`, `transform` ou `strokeWidth` em ícones.
 3. Para ações sem texto, informe `aria-label` ou `title` para manter acessibilidade.
-4. Valide em desktop, notebook, mobile e zoom 100%; se houver quebra visual, revise o wrapper antes de criar uma regra local.
+4. Valide em desktop, notebook, mobile e zoom 33%, 50%, 67%, 75%, 80%, 90%, 100%, 110%, 125% e 150% quando a ação estiver em área compacta.
 5. Não substitua o significado do ícone sem revisar o rótulo, tooltip e ação vinculada.
 
 ## Automações
