@@ -91,4 +91,29 @@ A validacao tecnica local confirmou compilacao, tipos e schema. A validacao visu
 - CORRECOES IMPLEMENTADAS: SIM
 - MANUAL ATUALIZADO: SIM
 - TESTES TECNICOS: APROVADOS
-- PUBLICACAO: PENDENTE NESTA ETAPA DO RELATORIO
+- PUBLICACAO FRONTEND: APROVADA
+- PUBLICACAO BACKEND: PUSH REALIZADO; REDEPLOY RENDER NAO CONFIRMADO POR AUSENCIA DE TOKEN/CLI RENDER NA SESSAO
+
+## Publicacao
+
+- Commit: `3dff9d3` - `fix: padronizar icones e reforcar ficha 360`.
+- Push: `main` enviado para `origin/main`.
+- Vercel frontend: `dpl_6KtKACUxK9Zp7EgcKM8ugo3W9BXj`.
+- URL do deployment: `https://web-7r2bycaj4-edipo-lima-s-projects.vercel.app`.
+- Alias de producao confirmado: `https://nodere.com.br`.
+- Alias `www` confirmado no inspect: `https://www.nodere.com.br`.
+- API Render: `GET /health`, `GET /api/health` e `GET /api/health/supabase` responderam 200.
+
+## Smoke publico pos-deploy
+
+- `https://nodere.com.br/login` - 200.
+- `https://nodere.com.br/termos` - 200.
+- `https://nodere.com.br/privacidade` - 200.
+- `https://nodere.com.br/dashboard` - 307 para `/login?next=%2Fdashboard`, esperado sem sessao.
+- `https://nodere.com.br/app/dashboard` - 307 para `/login?next=%2Fapp%2Fdashboard`, esperado sem sessao.
+- `https://nodere.com.br/manual` - 307 para `/login?next=%2Fmanual`, esperado sem sessao.
+- Logs Vercel dos ultimos minutos sem erros; apenas requisicoes 200/307 esperadas.
+
+## Pendencia operacional
+
+O backend foi alterado e o commit foi enviado para `main`, mas esta sessao nao possui `RENDER_API_KEY`, `RENDER_TOKEN`, CLI Render ou `gh` para confirmar visualmente a execucao do workflow/deploy hook do Render. Como a API atual esta saudavel, a pendencia e confirmar no painel Render se o servico `nodere-api` ja publicou o commit `3dff9d3` ou posterior.
