@@ -78,10 +78,24 @@ Como resultado, a biblioteca preservava superficies claras dentro de telas escur
   - Semana: `rbc-time-view`, horarios e cabecalhos escuros no modo escuro.
   - Dia: `rbc-time-view`, horarios e cabecalhos escuros no modo escuro.
   - Agenda: `rbc-agenda-view` escuro no modo escuro.
+- Smoke test em producao:
+  - `https://nodere.com.br/login`: HTTP 200.
+  - `https://www.nodere.com.br/login`: redireciona/serve o mesmo deployment.
+  - Login real owner/admin: aprovado.
+  - `/calendario`: calendario carregado.
+  - `/calendar`: alias historico carregado.
+  - Tema escuro: `calendar-shell`, `rbc-calendar`, `rbc-header`, celula/slot e toolbar com fundo escuro.
+  - Tema claro: `calendar-shell`, `rbc-calendar`, `rbc-header`, celula/slot e toolbar com fundo claro.
+  - Mobile 390x844: calendario escuro validado.
+  - Zoom 33%, 50%, 67%, 75%, 80%, 90%, 100%, 125% e 150%: aprovado.
 
 ## Publicacao
 
-- A validar apos commit, push e deploy.
+- Commit de codigo: `93b1c83c6e2f0f2a18002db62631dcb1fd54cd76`.
+- Deploy Vercel: `dpl_EeLG3azTTPjNj7Pb6fTaDkG1531C`.
+- URL do deployment: `https://web-gipxrfh0d-edipo-lima-s-projects.vercel.app`.
+- Alias de producao: `https://nodere.com.br` e `https://www.nodere.com.br`.
+- Backend Render confirmado por `/api/health/version`: commit `93b1c83`.
 
 ## Status final
 
@@ -92,6 +106,6 @@ Como resultado, a biblioteca preservava superficies claras dentro de telas escur
 - ZOOM/RESPONSIVIDADE VALIDADO: SIM
 - MANUAL NODERE ATUALIZADO: SIM
 - TESTES TECNICOS APROVADOS: SIM
-- FRONTEND PUBLICADO: A VALIDAR
-- PRODUCAO VALIDADA: A VALIDAR
-- FUNCIONALIDADE LIBERADA: A VALIDAR
+- FRONTEND PUBLICADO: SIM
+- PRODUCAO VALIDADA: SIM
+- FUNCIONALIDADE LIBERADA: SIM
