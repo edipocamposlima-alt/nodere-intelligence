@@ -1,5 +1,42 @@
 # RELATORIO_ATUALIZACAO_MANUAL_NODERE
 
+# Atualizacao 2026-07-12 - Agenda/Calendario e temas
+
+Data da atualizacao: 2026-07-12
+Versao da plataforma: NODERE producao atual
+
+## Funcionalidades alteradas documentadas
+
+- Agenda global.
+- Calendario comercial.
+- Mini agenda da Ficha 360.
+- Calendario de conteudo do Marketing.
+- Alternancia entre tema claro e tema escuro em componentes `react-big-calendar`.
+
+## Paginas do manual atualizadas
+
+- Aba Ajuda / Manual NODERE: topicos "8. Agenda e notificacoes" e "22. Calendario".
+- Documento `docs/manual-nodere.md`: secoes "Agenda, lembretes e sininho" e "Boas praticas de tema".
+
+## Topicos revisados
+
+- O calendario deve permanecer escuro de verdade no tema escuro.
+- Celulas, cabecalhos, botoes, grade, lista agenda, hover, dia atual e eventos usam tokens de tema.
+- A mesma validacao vale para Agenda global, Ficha 360 e Marketing.
+- Como validar alternancia Claro/Escuro sem blocos brancos indevidos.
+
+## Status
+
+- DOCUMENTACAO ATUALIZADA: SIM
+- MANUAL SINCRONIZADO: SIM
+- NOVAS FUNCIONALIDADES DOCUMENTADAS: NAO SE APLICA
+- FUNCIONALIDADES ALTERADAS DOCUMENTADAS: SIM
+- FAQ ATUALIZADO: SIM
+- PASSO A PASSO ATUALIZADO: SIM
+- RELATORIO ATUALIZADO: SIM
+
+---
+
 ## Atualizacao 2026-07-12 - Agenda, icones por tema e Ficha 360 v5
 
 ### Funcionalidades adicionadas

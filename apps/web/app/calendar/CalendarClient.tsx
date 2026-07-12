@@ -426,7 +426,7 @@ export function CalendarClient({
           {loading && <span className="text-sm text-slate-400">Carregando...</span>}
           {readOnly && <span className="rounded-full border border-line px-3 py-1 text-xs font-bold text-slate-300">Somente leitura</span>}
         </div>
-        <div className="calendar-shell overflow-hidden rounded-xl border border-line bg-white p-2 text-slate-950">
+        <div className="calendar-shell overflow-hidden rounded-xl border border-line p-2">
           <Calendar<CalendarItem>
             localizer={localizer}
             events={events}

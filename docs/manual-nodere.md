@@ -86,6 +86,8 @@ Na ficha do cliente, abra **Agenda** e cadastre:
 
 O sininho no topo do sistema lista tarefas vencidas ou programadas para o dia. Ao criar um follow-up, o navegador pode solicitar permissão para notificação local.
 
+O calendário usa o tema oficial NODERE em todas as visualizações. No modo escuro, cabeçalhos, botões, células, linhas da grade, eventos, agenda/lista, hover, dia atual e seleção permanecem em superfície escura com texto legível. No modo claro, os mesmos elementos usam superfície clara, bordas suaves e contraste adequado. A mesma base visual é usada na Agenda global, na agenda da Ficha 360 e no calendário de conteúdo do Marketing.
+
 ## WhatsApp
 Sem WhatsApp Cloud API, o NODERE abre `wa.me` e permite registrar respostas manualmente na Caixa de Entrada. Respostas enviadas diretamente pelo WhatsApp não voltam automaticamente sem webhook oficial.
 
@@ -242,6 +244,7 @@ As preferências rápidas são aplicadas imediatamente no navegador e tentam sin
 - Após alterar o tema, recarregue a página se algum navegador antigo mantiver cache visual.
 - Se a interface parecer misturar claro e escuro, salve novamente em **Configurações** ou **Preferências rápidas** e atualize a página.
 - Se o tema continuar diferente do selecionado após atualizar, faça logout/login para renovar a sessão e tente salvar novamente.
+- Ao validar a Agenda/Calendário, alterne entre claro e escuro e confirme que nenhuma célula ou bloco branco aparece indevidamente dentro do modo escuro.
 
 ## Mobile e app instalado
 No celular, o menu inferior é rolável para permitir acesso a:
