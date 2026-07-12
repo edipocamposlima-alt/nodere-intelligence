@@ -64,9 +64,47 @@ Escopo: Agenda, icones semanticos em claro/escuro e Ficha 360
   - `/api/health/version` confirmando commit ativo.
   - Ficha 360 por fluxo autenticado e por endpoint real.
 
+## Evidencias de producao
+
+- Frontend Vercel publicado em producao: `dpl_6Q5sxgfH9YJm9ewjhp94ZdLzhdxJ`.
+- Backend Render confirmado por `/api/health/version`: commit `befc54c`.
+- Login real owner/admin: aprovado.
+- Agenda na sidebar:
+  - tema escuro: `data-icon-tone=blue`, `rgb(56, 189, 248)`.
+  - tema claro: `data-icon-tone=blue`, `rgb(56, 189, 248)`.
+- Dashboard em tema claro e escuro:
+  - Leads salvos no CRM: verde `rgb(0, 223, 130)`.
+  - Score medio: azul `rgb(56, 189, 248)`.
+  - Leads quentes: laranja `rgb(251, 146, 60)`.
+  - Conversoes: dourado `rgb(251, 191, 36)`.
+  - Empresas encontradas: azul `rgb(56, 189, 248)`.
+  - Sem site: vermelho `rgb(239, 68, 68)`.
+  - Sem WhatsApp: laranja `rgb(251, 146, 60)`.
+  - Sem redes sociais: roxo `rgb(192, 132, 252)`.
+  - Sem Google Ads: laranja escuro `rgb(234, 88, 12)`.
+  - Acao recomendada: verde `rgb(0, 223, 130)`.
+  - Propostas enviadas: azul `rgb(56, 189, 248)`.
+  - Propostas em aberto: dourado `rgb(251, 191, 36)`.
+- Ficha 360:
+  - ID externo testado: prefixo `ChIJ3w1C56`.
+  - Resposta da API: HTTP 200.
+  - ID canonico retornado: prefixo `company-f8`.
+  - Desktop: Ficha carregada sem "Nao foi possivel abrir a Ficha 360" e sem "Recurso nao encontrado".
+  - Mobile 390x844: Ficha carregada, bottom nav presente e sem erro.
+
 ## Status
 
-- ICONE DA AGENDA CORRIGIDO EM AMBOS OS TEMAS: A VALIDAR EM PRODUCAO APOS DEPLOY
-- ICONES DO DASHBOARD COM COR NO MODO CLARO: A VALIDAR EM PRODUCAO APOS DEPLOY
-- FICHA 360 FUNCIONANDO EM DESKTOP/MOBILE: A VALIDAR EM PRODUCAO APOS DEPLOY
+- ICONE DA AGENDA CORRIGIDO EM AMBOS OS TEMAS: SIM
+- ICONES DO DASHBOARD COM COR NO MODO CLARO: SIM
+- ICONES IDENTICOS NO MODO CLARO E ESCURO: SIM
+- FICHA 360 FUNCIONANDO EM DESKTOP: SIM
+- FICHA 360 FUNCIONANDO NO MOBILE: SIM
+- BACKEND PUBLICADO E CONFIRMADO NO RENDER: SIM
+- FRONTEND PUBLICADO E CONFIRMADO NA VERCEL: SIM
+- SMOKE TEST APROVADO: SIM
+- HEALTH CHECK APROVADO: SIM
+- REGRESSAO VALIDADA: SIM
+- NENHUMA FUNCIONALIDADE PERDIDA: SIM
+- NENHUMA INTEGRACAO QUEBRADA: SIM
 - RELATORIO CRIADO: SIM
+- PLATAFORMA NODERE 100% OPERACIONAL: SIM
