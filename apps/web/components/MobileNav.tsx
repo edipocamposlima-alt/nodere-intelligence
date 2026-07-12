@@ -7,28 +7,28 @@ import { BarChart3, Building2, CalendarDays, CircleHelp, CreditCard, Download, I
 import { useAuth } from "@/context/AuthProvider";
 
 const primaryItems = [
-  { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: BarChart3 },
-  { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search },
-  { href: "/companies", label: "Empresas", icon: Building2 },
-  { href: "/crm", label: "CRM", icon: KanbanSquare }
+  { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: BarChart3, tone: "blue" },
+  { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search, tone: "green" },
+  { href: "/companies", label: "Empresas", icon: Building2, tone: "cyan" },
+  { href: "/crm", label: "CRM", icon: KanbanSquare, tone: "lime" }
 ];
 
 const drawerItems = [
-  { href: "/calendario", label: "Agenda", icon: CalendarDays },
-  { href: "/app/leads", label: "Leads", icon: Users },
-  { href: "/app/proposals", label: "Propostas e Contratos", icon: PackageOpen },
-  { href: "/catalog", label: "Produtos / Serviços", icon: PackageOpen },
-  { href: "/inbox", label: "Caixa de Entrada", icon: Inbox },
-  { href: "/automations", label: "Automações", icon: Workflow },
-  { href: "/intelligence", label: "IA / Inteligência", icon: Zap },
-  { href: "/reports", label: "Relatórios", icon: LineChart },
-  { href: "/operators", label: "Operadores", icon: Users, adminOnly: true },
-  { href: "/marketing", label: "Marketing", icon: Megaphone },
-  { href: "/billing", label: "Faturamento", icon: CreditCard },
-  { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: Settings },
-  { href: "/integrations", label: "Integrações", icon: Plug, adminOnly: true },
-  { href: "/admin", label: "Administrador / CMS", icon: ShieldCheck, adminOnly: true },
-  { href: "/manual", label: "Manual NODERE", icon: CircleHelp }
+  { href: "/calendario", label: "Agenda", icon: CalendarDays, tone: "gold" },
+  { href: "/app/leads", label: "Leads", icon: Users, tone: "green" },
+  { href: "/app/proposals", label: "Propostas e Contratos", icon: PackageOpen, tone: "orange" },
+  { href: "/catalog", label: "Produtos / Serviços", icon: PackageOpen, tone: "blue" },
+  { href: "/inbox", label: "Caixa de Entrada", icon: Inbox, tone: "cyan" },
+  { href: "/automations", label: "Automações", icon: Workflow, tone: "orange" },
+  { href: "/intelligence", label: "IA / Inteligência", icon: Zap, tone: "gold" },
+  { href: "/reports", label: "Relatórios", icon: LineChart, tone: "blue" },
+  { href: "/operators", label: "Operadores", icon: Users, tone: "green", adminOnly: true },
+  { href: "/marketing", label: "Marketing", icon: Megaphone, tone: "orange" },
+  { href: "/billing", label: "Faturamento", icon: CreditCard, tone: "gold" },
+  { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: Settings, tone: "neutral" },
+  { href: "/integrations", label: "Integrações", icon: Plug, tone: "cyan", adminOnly: true },
+  { href: "/admin", label: "Administrador / CMS", icon: ShieldCheck, tone: "red", adminOnly: true },
+  { href: "/manual", label: "Manual NODERE", icon: CircleHelp, tone: "blue" }
 ];
 
 export function MobileNav() {
@@ -73,8 +73,8 @@ export function MobileNav() {
           className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold text-slate-200"
           aria-label="Abrir menu"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-electric/15 ring-1 ring-electric/30">
-            <Menu className="h-4 w-4 text-cyan" />
+          <span className="nodere-nav-icon-tone flex h-8 w-8 items-center justify-center rounded-lg" data-icon-tone="green">
+            <Menu className="h-4 w-4" />
           </span>
           Menu
         </button>
@@ -101,7 +101,7 @@ export function MobileNav() {
                 onClick={() => void installApp()}
                 className="flex min-h-14 items-center gap-3 rounded-xl border border-electric/35 bg-electric/10 px-3 py-2 text-sm font-semibold text-slate-100"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-electric/15 text-cyan shadow-[0_0_18px_rgba(0,223,130,0.18)] ring-1 ring-electric/30">
+                <span className="nodere-nav-icon-tone flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" data-icon-tone="green">
                   <Download className="nodere-icon" />
                 </span>
                 Instalar app
@@ -113,7 +113,7 @@ export function MobileNav() {
                   onClick={() => setOpen(false)}
                   className="flex min-h-14 items-center gap-3 rounded-xl border border-line bg-panel/80 px-3 py-2 text-sm font-semibold text-slate-200"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-electric/15 text-cyan shadow-[0_0_18px_rgba(0,223,130,0.18)] ring-1 ring-electric/30">
+                  <span className="nodere-nav-icon-tone flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" data-icon-tone={item.tone}>
                     <item.icon className="nodere-icon" />
                   </span>
                   {item.label}
@@ -127,7 +127,7 @@ export function MobileNav() {
                 }}
                 className="flex min-h-14 items-center gap-3 rounded-xl border border-danger/35 bg-danger/10 px-3 py-2 text-sm font-semibold text-rose-100"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-danger/15 text-rose-200 ring-1 ring-danger/30">
+                <span className="nodere-nav-icon-tone flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" data-icon-tone="red">
                   <LogOut className="nodere-icon" />
                 </span>
                 Sair
@@ -149,7 +149,7 @@ function MobileLink({ item, isApp, activePathname, onClick }: { item: (typeof pr
       onClick={onClick}
       className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold transition ${active ? "bg-white/10 text-white" : "text-slate-300"}`}
     >
-      <span className={`flex h-8 w-8 items-center justify-center rounded-lg shadow-[0_0_18px_rgba(0,223,130,0.18)] ring-1 ${active ? "bg-electric text-white ring-electric/50" : "bg-electric/12 text-cyan ring-electric/25"}`}>
+      <span className="nodere-nav-icon-tone flex h-8 w-8 items-center justify-center rounded-lg" data-icon-tone={item.tone}>
         <item.icon className="nodere-icon" />
       </span>
       {item.label}

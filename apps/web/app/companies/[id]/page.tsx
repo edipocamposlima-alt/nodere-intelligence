@@ -1,5 +1,6 @@
 import { ExternalLink, Facebook, Globe2, Instagram, Linkedin, MessageCircle, Phone, ShieldCheck, Star, Users, Youtube, Zap } from "lucide-react";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getCompany, getCompanyAudit, getCompanyIntelligence } from "@/lib/api";
 import { EnrichTrigger } from "./EnrichTrigger";
@@ -113,6 +114,10 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
   }
 
   if (!company) return <CompanyLoadError id={id} message="Empresa não localizada no CRM." />;
+  const requestedId = decodeURIComponent(id || "");
+  if (company.id && requestedId && company.id !== requestedId) {
+    redirect(`/companies/${encodeURIComponent(company.id)}`);
+  }
 
   const detectedOpportunities = Array.isArray(company.detectedOpportunities) ? company.detectedOpportunities : [];
   const suggestions = Array.isArray(company.suggestions) ? company.suggestions : [];

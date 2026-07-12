@@ -298,7 +298,7 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
 
   function shouldResolveBeforeFicha(company: Company) {
     if (embedded) return true;
-    return /^(ChIJ|search-|apollo-company-|econodata-)/i.test(String(company.id || ""));
+    return /^(ChIJ|search-|apollo-company-|econodata-|discovery-)/i.test(String(company.id || ""));
   }
 
   async function openFicha(company: Company) {

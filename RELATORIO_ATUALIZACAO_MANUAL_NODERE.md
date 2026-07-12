@@ -1,5 +1,52 @@
 # RELATORIO_ATUALIZACAO_MANUAL_NODERE
 
+## Atualizacao 2026-07-12 - Icones por tema e Ficha 360 v4
+
+### Funcionalidades adicionadas
+- Nenhuma nova funcionalidade de produto foi adicionada.
+- Foi documentado o padrao semantico de cores dos icones independente do tema.
+
+### Funcionalidades alteradas
+- Icones do Dashboard, sidebar, menu mobile e CRM/Kanban passam a manter cor semantica em tema claro e escuro.
+- Ficha 360: documentado reforco para IDs externos Google Places/Discovery e redirecionamento para ID interno canonico quando o registro persistido existe.
+
+### Paginas do manual atualizadas
+- Aba Ajuda / Manual NODERE: topicos "6. Ficha do cliente" e "38. Icones, botoes e acoes visuais".
+- Documento `docs/manual-nodere.md`: secoes "Ficha do cliente", "Ficha 360° do cliente" e "Icones, botoes e acoes visuais".
+
+### Novos topicos criados
+- Nenhum topico novo; os topicos existentes foram sincronizados com a correcao atual.
+
+### Topicos revisados
+- Abertura da Ficha 360 por resultados de busca.
+- Resolucao de identificadores externos Google Places/Discovery.
+- Paleta visual de icones por significado.
+- Icones de acao compactos no CRM/Kanban.
+
+### FAQ atualizado
+- Orientacao de Ficha 360 com URL antiga/ID externo atualizada.
+
+### Passo a passo atualizado
+- Abrir ficha pela busca: clicar em Ficha, aguardar salvar/resolver duplicidade e navegar para o registro persistido/canonico.
+- Validar tema: alternar claro/escuro e confirmar que os icones preservam as cores semanticas.
+
+### Data da atualizacao
+- 2026-07-12.
+
+### Versao da plataforma
+- Branch `main`, commit base antes da correcao `3821310`.
+
+### Status
+- DOCUMENTACAO ATUALIZADA: SIM
+- MANUAL SINCRONIZADO: SIM
+- NOVAS FUNCIONALIDADES DOCUMENTADAS: NAO APLICAVEL
+- FUNCIONALIDADES ALTERADAS DOCUMENTADAS: SIM
+- FAQ ATUALIZADO: SIM
+- PASSO A PASSO ATUALIZADO: SIM
+- RELATORIO ATUALIZADO: SIM
+
+---
+
 ## Atualizacao 2026-07-12 - Ficha 360 e resolucao de leads da busca
 
 ### Funcionalidades adicionadas

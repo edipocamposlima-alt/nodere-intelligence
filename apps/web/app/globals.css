@@ -6910,6 +6910,14 @@ textarea,
   --nodere-icon-hit-sm: 32px;
   --nodere-icon-hit-md: 36px;
   --nodere-icon-gap: 8px;
+  --nodere-icon-green: #00DF82;
+  --nodere-icon-blue: #38BDF8;
+  --nodere-icon-cyan: #22D3EE;
+  --nodere-icon-lime: #84CC16;
+  --nodere-icon-gold: #FBBF24;
+  --nodere-icon-orange: #FB923C;
+  --nodere-icon-red: #EF4444;
+  --nodere-icon-neutral: #94A3B8;
 }
 
 :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page, .nodere-editor, .nodere-app-content) :where(svg) {
@@ -6928,6 +6936,44 @@ textarea,
   max-width: var(--nodere-icon-action);
   max-height: var(--nodere-icon-action);
   stroke-width: var(--nodere-icon-stroke);
+}
+
+.nodere-icon-tone,
+.nodere-nav-icon-tone,
+.nodere-action-icon-tone {
+  --nodere-current-icon: var(--nodere-icon-cyan);
+  --nodere-current-icon-bg: color-mix(in srgb, var(--nodere-current-icon) 16%, transparent);
+  --nodere-current-icon-border: color-mix(in srgb, var(--nodere-current-icon) 36%, transparent);
+  background-color: var(--nodere-current-icon-bg) !important;
+  border-color: var(--nodere-current-icon-border) !important;
+  color: var(--nodere-current-icon) !important;
+  box-shadow: 0 0 20px color-mix(in srgb, var(--nodere-current-icon) 16%, transparent);
+}
+
+:where(.nodere-icon-tone, .nodere-nav-icon-tone, .nodere-action-icon-tone) :where(svg, .nodere-icon, .nav-icon) {
+  color: var(--nodere-current-icon) !important;
+  stroke: currentColor;
+}
+
+[data-icon-tone="green"] { --nodere-current-icon: var(--nodere-icon-green); }
+[data-icon-tone="blue"] { --nodere-current-icon: var(--nodere-icon-blue); }
+[data-icon-tone="cyan"] { --nodere-current-icon: var(--nodere-icon-cyan); }
+[data-icon-tone="lime"] { --nodere-current-icon: var(--nodere-icon-lime); }
+[data-icon-tone="gold"] { --nodere-current-icon: var(--nodere-icon-gold); }
+[data-icon-tone="orange"] { --nodere-current-icon: var(--nodere-icon-orange); }
+[data-icon-tone="red"] { --nodere-current-icon: var(--nodere-icon-red); }
+[data-icon-tone="neutral"] { --nodere-current-icon: var(--nodere-icon-neutral); }
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.nodere-icon-tone, .nodere-nav-icon-tone, .nodere-action-icon-tone),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.nodere-icon-tone, .nodere-nav-icon-tone, .nodere-action-icon-tone) {
+  background-color: color-mix(in srgb, var(--nodere-current-icon) 15%, #ffffff) !important;
+  border-color: color-mix(in srgb, var(--nodere-current-icon) 42%, #dbe7e1) !important;
+  color: var(--nodere-current-icon) !important;
+}
+
+:root[data-theme="light"] :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.text-cyan, .text-electric, .text-success, .text-warning, .text-danger, .text-emerald-100, .text-emerald-200, .text-emerald-300, .text-blue-100, .text-blue-200, .text-blue-300, .text-amber-100, .text-amber-200, .text-amber-300, .text-orange-100, .text-orange-200, .text-orange-300, .text-red-100, .text-red-200, .text-red-300, .text-rose-100, .text-rose-200, .text-rose-300),
+.light :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.text-cyan, .text-electric, .text-success, .text-warning, .text-danger, .text-emerald-100, .text-emerald-200, .text-emerald-300, .text-blue-100, .text-blue-200, .text-blue-300, .text-amber-100, .text-amber-200, .text-amber-300, .text-orange-100, .text-orange-200, .text-orange-300, .text-red-100, .text-red-200, .text-red-300, .text-rose-100, .text-rose-200, .text-rose-300) {
+  color: currentColor;
 }
 
 :where(.nodere-icon, .nav-icon, .lock-badge, .nodere-icon-slot > svg) {
@@ -7074,6 +7120,18 @@ textarea,
   line-height: 1;
   color: inherit;
   overflow: hidden;
+}
+
+.crm-stage-action,
+.crm-stage-action-danger {
+  background-color: rgba(0, 0, 0, 0.14) !important;
+  border-color: rgba(255, 255, 255, 0.46) !important;
+  color: inherit !important;
+}
+
+.crm-stage-action:hover,
+.crm-stage-action-danger:hover {
+  background-color: rgba(255, 255, 255, 0.22) !important;
 }
 
 .crm-stage-action > svg,

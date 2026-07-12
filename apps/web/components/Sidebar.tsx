@@ -11,50 +11,50 @@ const groups = [
   {
     label: "Principal",
     items: [
-      { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: BarChart3 },
-      { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search },
-      { href: "/companies", label: "Empresas", icon: Building2 },
-      { href: "/crm", label: "CRM / Funil", icon: KanbanSquare }
+      { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: BarChart3, tone: "blue" },
+      { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search, tone: "green" },
+      { href: "/companies", label: "Empresas", icon: Building2, tone: "cyan" },
+      { href: "/crm", label: "CRM / Funil", icon: KanbanSquare, tone: "lime" }
     ]
   },
   {
     label: "Comercial",
     items: [
-      { href: "/app/leads", label: "Leads", icon: Users },
-      { href: "/calendario", label: "Agenda", icon: CalendarDays },
-      { href: "/app/proposals", label: "Propostas e Contratos", icon: PackageOpen },
-      { href: "/catalog", label: "Produtos / Serviços", icon: PackageOpen }
+      { href: "/app/leads", label: "Leads", icon: Users, tone: "green" },
+      { href: "/calendario", label: "Agenda", icon: CalendarDays, tone: "gold" },
+      { href: "/app/proposals", label: "Propostas e Contratos", icon: PackageOpen, tone: "orange" },
+      { href: "/catalog", label: "Produtos / Serviços", icon: PackageOpen, tone: "blue" }
     ]
   },
   {
     label: "Comunicação",
     items: [
-      { href: "/inbox", label: "Caixa de Entrada", icon: Inbox },
-      { href: "/automations", label: "Automações", icon: Workflow }
+      { href: "/inbox", label: "Caixa de Entrada", icon: Inbox, tone: "cyan" },
+      { href: "/automations", label: "Automações", icon: Workflow, tone: "orange" }
     ]
   },
   {
     label: "Inteligência",
     items: [
-      { href: "/intelligence", label: "IA / Inteligência", icon: Zap },
-      { href: "/reports", label: "Relatórios", icon: LineChart }
+      { href: "/intelligence", label: "IA / Inteligência", icon: Zap, tone: "gold" },
+      { href: "/reports", label: "Relatórios", icon: LineChart, tone: "blue" }
     ]
   },
   {
     label: "Gestão",
     items: [
-      { href: "/operators", label: "Operadores", icon: Users, adminOnly: true },
-      { href: "/marketing", label: "Marketing", icon: Megaphone },
-      { href: "/billing", label: "Faturamento", icon: CreditCard },
-      { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: Settings }
+      { href: "/operators", label: "Operadores", icon: Users, tone: "green", adminOnly: true },
+      { href: "/marketing", label: "Marketing", icon: Megaphone, tone: "orange" },
+      { href: "/billing", label: "Faturamento", icon: CreditCard, tone: "gold" },
+      { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: Settings, tone: "neutral" }
     ]
   },
   {
     label: "Administração",
     items: [
-      { href: "/integrations", label: "Integrações", icon: Plug, adminOnly: true },
-      { href: "/admin", label: "Administrador / CMS", icon: ShieldCheck, adminOnly: true },
-      { href: "/manual", label: "Manual NODERE", icon: CircleHelp }
+      { href: "/integrations", label: "Integrações", icon: Plug, tone: "cyan", adminOnly: true },
+      { href: "/admin", label: "Administrador / CMS", icon: ShieldCheck, tone: "red", adminOnly: true },
+      { href: "/manual", label: "Manual NODERE", icon: CircleHelp, tone: "blue" }
     ]
   }
 ];
@@ -90,7 +90,7 @@ export function Sidebar() {
                   href={href}
                   className={`group flex min-w-0 items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm transition hover:border-[var(--brand-primary)] hover:bg-[var(--nav-active-bg)] hover:text-[var(--text-primary)] ${active ? "border-[var(--brand-primary)] bg-[var(--nav-active-bg)] text-[var(--text-primary)]" : "border-transparent text-[var(--text-secondary)]"}`}
                 >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] text-[var(--text-muted)] transition group-hover:border-[var(--brand-primary)] group-hover:text-[var(--brand-glow)]">
+                  <span className="nodere-nav-icon-tone flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition group-hover:scale-[1.02]" data-icon-tone={item.tone}>
                     <item.icon className="nav-icon" />
                   </span>
                   <span className="min-w-0 truncate">{item.label}</span>

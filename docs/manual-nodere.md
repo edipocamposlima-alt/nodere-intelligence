@@ -71,6 +71,8 @@ Clique no nome do lead para abrir a ficha. Use:
 - **Propostas e contratos** para PDFs/documentos.
 - **WhatsApp** para mensagem pronta e wa.me.
 
+Ao abrir a ficha a partir da Busca de empresas, o NODERE salva o lead ou resolve duplicidade antes de navegar. Se uma URL antiga usar identificador externo do Google Places/Discovery, a API resolve o registro persistido e a página redireciona para o ID interno canônico quando o lead já existe no CRM.
+
 ## Observações
 Escreva uma observação, escolha o tipo e salve. Ela fica vinculada ao cliente e persiste no banco/Supabase quando configurado.
 
@@ -267,7 +269,7 @@ Regras do fluxo:
 - termos e privacidade continuam acessíveis para suporte legal ao login.
 
 ## Ficha 360° do cliente
-A Ficha 360° deve ser aberta sempre a partir de um registro persistido no CRM. Quando o usuário clica em **Ficha** em um resultado novo da Busca de empresas, o NODERE salva o lead ou resolve o duplicado existente antes de navegar. Assim, a ficha usa o `id` real salvo em `nodere_companies` e não um identificador externo temporário do Google Places, Apollo ou Econodata.
+A Ficha 360° deve ser aberta sempre a partir de um registro persistido no CRM. Quando o usuário clica em **Ficha** em um resultado novo da Busca de empresas, o NODERE salva o lead ou resolve o duplicado existente antes de navegar. Assim, a ficha usa o `id` real salvo em `nodere_companies` e não um identificador externo temporário do Google Places, Discovery, Apollo ou Econodata. Se uma URL antiga com ID externo resolver uma empresa salva, a página redireciona automaticamente para o ID interno canônico.
 
 Se a ficha não abrir:
 1. Confirme se a empresa foi salva no CRM.
@@ -282,6 +284,8 @@ Os ícones da plataforma seguem uma escala global NODERE para manter consistênc
 Padrões aplicados:
 - ícones pequenos usam 14px, ícones de ação usam 16px, ícones médios usam 18px, ícones grandes usam 20px e destaques usam 24px;
 - ícones de navegação usam o mesmo tamanho visual em sidebar e menu mobile;
+- cores de ícones são semânticas e independentes do tema, portanto o modo claro não transforma ícones coloridos em cinza;
+- verde identifica CRM, leads salvos e ações recomendadas; azul identifica score, relatórios e propostas enviadas; verde-limão identifica leads quentes; dourado identifica conversões e atenção moderada; laranja identifica aguardando, WhatsApp e propostas abertas; vermelho identifica falhas críticas e ações destrutivas;
 - botões apenas com ícone mantêm área mínima clicável e centralização;
 - ícones dentro de botões com texto mantêm espaçamento padrão;
 - SVGs não devem ser deformados por zoom, escala, wrappers ou containers;

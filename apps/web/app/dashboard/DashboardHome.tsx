@@ -11,14 +11,15 @@ export const dynamic = "force-dynamic";
 
 type FunnelStage = { stage: string; count: number; conversion_from_prev: number };
 type Tone = "success" | "info" | "warning" | "orange" | "danger" | "neutral";
+type IconTone = "green" | "blue" | "lime" | "gold" | "red" | "orange" | "cyan" | "neutral";
 
-const toneStyle: Record<Tone, { text: string; bg: string; border: string; bar: string }> = {
-  success: { text: "text-[var(--status-high)]", bg: "bg-[var(--status-high-bg)]", border: "border-[var(--status-high-border)]", bar: "bg-[var(--status-high)]" },
-  info: { text: "text-[var(--status-progress)]", bg: "bg-[var(--status-progress-bg)]", border: "border-[var(--status-progress-border)]", bar: "bg-[var(--status-progress)]" },
-  warning: { text: "text-[var(--status-moderate)]", bg: "bg-[var(--status-moderate-bg)]", border: "border-[var(--status-moderate-border)]", bar: "bg-[var(--status-moderate)]" },
-  orange: { text: "text-[var(--status-waiting)]", bg: "bg-[var(--status-waiting-bg)]", border: "border-[var(--status-waiting-border)]", bar: "bg-[var(--status-waiting)]" },
-  danger: { text: "text-[var(--status-critical)]", bg: "bg-[var(--status-critical-bg)]", border: "border-[var(--status-critical-border)]", bar: "bg-[var(--status-critical)]" },
-  neutral: { text: "text-[var(--status-low)]", bg: "bg-[var(--status-low-bg)]", border: "border-[var(--status-low-border)]", bar: "bg-[var(--status-low)]" }
+const toneStyle: Record<Tone, { text: string; bg: string; border: string; bar: string; iconTone: IconTone }> = {
+  success: { text: "text-[var(--status-high)]", bg: "bg-[var(--status-high-bg)]", border: "border-[var(--status-high-border)]", bar: "bg-[var(--status-high)]", iconTone: "green" },
+  info: { text: "text-[var(--status-progress)]", bg: "bg-[var(--status-progress-bg)]", border: "border-[var(--status-progress-border)]", bar: "bg-[var(--status-progress)]", iconTone: "blue" },
+  warning: { text: "text-[var(--status-moderate)]", bg: "bg-[var(--status-moderate-bg)]", border: "border-[var(--status-moderate-border)]", bar: "bg-[var(--status-moderate)]", iconTone: "gold" },
+  orange: { text: "text-[var(--status-waiting)]", bg: "bg-[var(--status-waiting-bg)]", border: "border-[var(--status-waiting-border)]", bar: "bg-[var(--status-waiting)]", iconTone: "orange" },
+  danger: { text: "text-[var(--status-critical)]", bg: "bg-[var(--status-critical-bg)]", border: "border-[var(--status-critical-border)]", bar: "bg-[var(--status-critical)]", iconTone: "red" },
+  neutral: { text: "text-[var(--status-low)]", bg: "bg-[var(--status-low-bg)]", border: "border-[var(--status-low-border)]", bar: "bg-[var(--status-low)]", iconTone: "neutral" }
 };
 
 const stageTones: Record<string, Tone> = {
@@ -81,21 +82,21 @@ export default async function DashboardPage() {
     .slice(0, 8);
 
   const primaryKpis = [
-    { label: "Leads salvos no CRM", value: totalSavedLeads, hint: "Somente registros persistidos", icon: Users, tone: "success" as Tone },
-    { label: "Score médio", value: `${metrics.averageScore || reportSummary?.avg_score || 0}`, hint: "Oportunidade comercial", icon: Target, tone: "info" as Tone },
-    { label: "Leads quentes", value: hotLeads, hint: "Alta prioridade", icon: Flame, tone: "success" as Tone },
-    { label: "Conversões", value: convertedClients || acceptedProposals, hint: `${reportSummary?.conversion_rate ?? 0}% no período`, icon: CheckCircle2, tone: "warning" as Tone }
+    { label: "Leads salvos no CRM", value: totalSavedLeads, hint: "Somente registros persistidos", icon: Users, tone: "success" as Tone, iconTone: "green" as IconTone },
+    { label: "Score médio", value: `${metrics.averageScore || reportSummary?.avg_score || 0}`, hint: "Oportunidade comercial", icon: Target, tone: "info" as Tone, iconTone: "blue" as IconTone },
+    { label: "Leads quentes", value: hotLeads, hint: "Alta prioridade", icon: Flame, tone: "success" as Tone, iconTone: "lime" as IconTone },
+    { label: "Conversões", value: convertedClients || acceptedProposals, hint: `${reportSummary?.conversion_rate ?? 0}% no período`, icon: CheckCircle2, tone: "warning" as Tone, iconTone: "gold" as IconTone }
   ];
 
   const diagnosticKpis = [
-    { label: "Empresas encontradas", value: metrics.totalCompanies, icon: Building2, tone: "info" as Tone, href: "/companies" },
-    { label: "Sem site", value: metrics.withoutWebsite, icon: Globe2, tone: "danger" as Tone, href: "/companies?filter=without-site" },
-    { label: "Sem WhatsApp", value: metrics.withoutWhatsapp, icon: MessageCircle, tone: "orange" as Tone, href: "/companies?filter=without-whatsapp" },
-    { label: "Sem redes sociais", value: withoutSocial, icon: RadioTower, tone: "warning" as Tone, href: "/companies?filter=without-social" },
-    { label: "Sem Google Ads", value: metrics.withoutGoogleAds, icon: MousePointerClick, tone: "warning" as Tone, href: "/companies?filter=without-google-ads" },
-    { label: "Ação recomendada", value: recommendedActionLeads, icon: Sparkles, tone: "success" as Tone, href: "/crm" },
-    { label: "Propostas enviadas", value: sentProposals, icon: CircleDollarSign, tone: "info" as Tone, href: "/app/proposals" },
-    { label: "Propostas em aberto", value: openProposals, icon: AlertTriangle, tone: "orange" as Tone, href: "/app/proposals" }
+    { label: "Empresas encontradas", value: metrics.totalCompanies, icon: Building2, tone: "info" as Tone, iconTone: "blue" as IconTone, href: "/companies" },
+    { label: "Sem site", value: metrics.withoutWebsite, icon: Globe2, tone: "danger" as Tone, iconTone: "red" as IconTone, href: "/companies?filter=without-site" },
+    { label: "Sem WhatsApp", value: metrics.withoutWhatsapp, icon: MessageCircle, tone: "orange" as Tone, iconTone: "orange" as IconTone, href: "/companies?filter=without-whatsapp" },
+    { label: "Sem redes sociais", value: withoutSocial, icon: RadioTower, tone: "warning" as Tone, iconTone: "gold" as IconTone, href: "/companies?filter=without-social" },
+    { label: "Sem Google Ads", value: metrics.withoutGoogleAds, icon: MousePointerClick, tone: "warning" as Tone, iconTone: "gold" as IconTone, href: "/companies?filter=without-google-ads" },
+    { label: "Ação recomendada", value: recommendedActionLeads, icon: Sparkles, tone: "success" as Tone, iconTone: "green" as IconTone, href: "/crm" },
+    { label: "Propostas enviadas", value: sentProposals, icon: CircleDollarSign, tone: "info" as Tone, iconTone: "blue" as IconTone, href: "/app/proposals" },
+    { label: "Propostas em aberto", value: openProposals, icon: AlertTriangle, tone: "orange" as Tone, iconTone: "orange" as IconTone, href: "/app/proposals" }
   ];
 
   const recommendedActions = [
@@ -173,7 +174,7 @@ export default async function DashboardPage() {
   );
 }
 
-function KpiCard({ label, value, hint, icon: Icon, tone }: { label: string; value: string | number; hint: string; icon: typeof Users; tone: Tone }) {
+function KpiCard({ label, value, hint, icon: Icon, tone, iconTone }: { label: string; value: string | number; hint: string; icon: typeof Users; tone: Tone; iconTone?: IconTone }) {
   const style = toneStyle[tone];
   return (
     <div className={`rounded-lg border ${style.border} ${style.bg} p-4`}>
@@ -182,7 +183,7 @@ function KpiCard({ label, value, hint, icon: Icon, tone }: { label: string; valu
           <p className="text-sm text-[var(--text-secondary)]">{label}</p>
           <p className="mt-2 text-3xl font-black text-[var(--text-primary)]">{value}</p>
         </div>
-        <span className={`flex h-10 w-10 items-center justify-center rounded-lg border ${style.border} ${style.text}`}>
+        <span className={`nodere-icon-tone flex h-10 w-10 items-center justify-center rounded-lg border ${style.border}`} data-icon-tone={iconTone || style.iconTone}>
           <Icon className="h-5 w-5" />
         </span>
       </div>
@@ -191,13 +192,13 @@ function KpiCard({ label, value, hint, icon: Icon, tone }: { label: string; valu
   );
 }
 
-function CompactMetric({ label, value, icon: Icon, tone, href }: { label: string; value: number; icon: typeof Users; tone: Tone; href: string }) {
+function CompactMetric({ label, value, icon: Icon, tone, iconTone, href }: { label: string; value: number; icon: typeof Users; tone: Tone; iconTone?: IconTone; href: string }) {
   const style = toneStyle[tone];
   return (
     <Link href={href} className="rounded-lg border border-line bg-panel/90 p-4 transition hover:-translate-y-0.5 hover:border-cyan/50">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-[var(--text-secondary)]">{label}</p>
-        <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${style.bg} ${style.text}`}>
+        <span className="nodere-icon-tone flex h-9 w-9 items-center justify-center rounded-lg" data-icon-tone={iconTone || style.iconTone}>
           <Icon className="h-4 w-4" />
         </span>
       </div>

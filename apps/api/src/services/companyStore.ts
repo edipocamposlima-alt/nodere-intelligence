@@ -344,29 +344,33 @@ async function dbGet(id: string, workspaceId = "default"): Promise<Company | und
 
 async function dbGetByExternalId(externalId: string, workspaceId = "default"): Promise<Company | undefined> {
   const sb = getSupabase()!;
-  let query = sb
-    .from("nodere_companies")
-    .select("*, nodere_company_notes(id, company_id, body, created_at)")
-    .or(`place_id.eq.${externalId},google_place_id.eq.${externalId}`);
-  if (workspaceColumnAvailable) query = query.eq("workspace_id", workspaceId);
-  let { data, error } = await query.maybeSingle();
-  if (error && markWorkspaceColumnMissing(error)) {
-    const retry = await sb
+  for (const column of ["place_id", "google_place_id"] as const) {
+    let query = sb
       .from("nodere_companies")
       .select("*, nodere_company_notes(id, company_id, body, created_at)")
-      .or(`place_id.eq.${externalId},google_place_id.eq.${externalId}`)
-      .maybeSingle();
-    data = retry.data;
-    error = retry.error;
+      .eq(column, externalId);
+    if (workspaceColumnAvailable) query = query.eq("workspace_id", workspaceId);
+    let { data, error } = await query.maybeSingle();
+    if (error && markWorkspaceColumnMissing(error)) {
+      const retry = await sb
+        .from("nodere_companies")
+        .select("*, nodere_company_notes(id, company_id, body, created_at)")
+        .eq(column, externalId)
+        .maybeSingle();
+      data = retry.data;
+      error = retry.error;
+    }
+    if (error) {
+      if (markMissingCompanyColumn(error)) return undefined;
+      throw error;
+    }
+    if (data) {
+      const c = fromRow(data);
+      c.notes = mapPublicNotes((data.nodere_company_notes as Record<string, unknown>[]) ?? []);
+      return c;
+    }
   }
-  if (error) {
-    if (markMissingCompanyColumn(error)) return undefined;
-    throw error;
-  }
-  if (!data) return undefined;
-  const c = fromRow(data);
-  c.notes = mapPublicNotes((data.nodere_company_notes as Record<string, unknown>[]) ?? []);
-  return c;
+  return undefined;
 }
 
 async function dbUpsert(items: Company[], workspaceId = "default"): Promise<void> {

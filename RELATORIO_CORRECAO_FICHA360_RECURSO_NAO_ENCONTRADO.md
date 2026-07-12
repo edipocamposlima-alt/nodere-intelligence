@@ -3,6 +3,32 @@
 Data: 2026-07-12
 Branch: main
 
+## Retrabalho v4 - reforco de ID externo e URL canonica
+
+### Motivo da reabertura
+
+Foi identificado novo cenario em que a interface ainda podia receber identificadores externos (`ChIJ...` ou `discovery-*`) e manter a rota `/companies/{id_externo}` em desktop/mobile. Mesmo com o backend capaz de resolver registros ja salvos, a URL nao era canonizada para o ID interno e alguns caminhos ainda nao tratavam `discovery-*` como ID temporario.
+
+### Causa complementar encontrada
+
+- A regra de persistencia previa da Ficha cobria `ChIJ`, `search-*`, `apollo-company-*` e `econodata-*`, mas nao cobria `discovery-*`.
+- A pagina da Ficha 360 carregava o registro retornado pela API, mas nao redirecionava para `/companies/{id_interno}` quando o backend resolvia um ID externo para uma empresa ja persistida.
+- O lookup por `place_id/google_place_id` usava filtro `.or(...)`, menos robusto para IDs externos especiais. Foi trocado por consultas `eq` sequenciais.
+
+### Correcoes adicionais implementadas
+
+- `apps/web/components/CompanyTable.tsx`: `discovery-*` agora tambem obriga salvar/resolver antes de navegar para Ficha.
+- `apps/web/app/companies/[id]/page.tsx`: se a API retornar empresa com `company.id` diferente do ID solicitado, a pagina redireciona para o ID interno canonico.
+- `apps/api/src/services/companyStore.ts`: lookup por identificador externo reforcado com consultas sequenciais em `place_id` e `google_place_id`, evitando fragilidade de parsing no `.or(...)`.
+
+### Resultado esperado
+
+- Ficha aberta por busca, listagem, desktop, mobile ou URL antiga passa a usar registro persistido.
+- Registros validos deixam de exibir "Recurso nao encontrado" por uso indevido de ID externo.
+- URLs antigas continuam compatíveis, mas sao normalizadas para o registro interno quando houver correspondencia.
+
+---
+
 ## Problema
 
 Ao abrir a Ficha 360 a partir de uma empresa/cliente, a interface exibida no mobile mostrava:
