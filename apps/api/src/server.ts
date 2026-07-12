@@ -55,6 +55,24 @@ import { isMissingSupabaseSchema } from "./utils/supabaseErrors.js";
 const app = express();
 configureWebPush();
 
+function deploymentMetadata() {
+  const commit =
+    process.env.RENDER_GIT_COMMIT ||
+    process.env.SOURCE_VERSION ||
+    process.env.VERCEL_GIT_COMMIT_SHA ||
+    process.env.GIT_COMMIT ||
+    process.env.COMMIT_SHA ||
+    "unknown";
+  return {
+    version: "1.0.1",
+    commit,
+    commitShort: commit === "unknown" ? "unknown" : commit.slice(0, 7),
+    environment: process.env.NODE_ENV ?? "development",
+    service: process.env.RENDER_SERVICE_NAME || "nodere-api",
+    deployedAt: process.env.RENDER_EXTERNAL_URL ? "render" : "runtime"
+  };
+}
+
 const allowedOrigins = new Set([
   config.webOrigin,
   config.frontendUrl,
@@ -100,7 +118,7 @@ app.use(express.json());
 app.use(attachSession);
 
 app.get("/health", (_req, res) => {
-  res.json({ ok: true, name: "NODERE API" });
+  res.json({ ok: true, name: "NODERE API", ...deploymentMetadata() });
 });
 
 app.get("/api/health", (_req, res) => {
@@ -108,13 +126,22 @@ app.get("/api/health", (_req, res) => {
     ok: true,
     status: "ok",
     timestamp: new Date().toISOString(),
-    version: "1.0.0",
     name: "NODERE API",
+    ...deploymentMetadata(),
     googlePlacesConfigured: Boolean(config.google.placesKey),
     pageSpeedConfigured: Boolean(config.google.pageSpeedKey),
     openaiConfigured: Boolean(config.openai.apiKey),
     supabaseConfigured: Boolean(config.supabase.url && config.supabase.serviceRoleKey),
     databaseUrlConfigured: Boolean(config.databaseUrl)
+  });
+});
+
+app.get("/api/health/version", (_req, res) => {
+  res.json({
+    ok: true,
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    ...deploymentMetadata()
   });
 });
 

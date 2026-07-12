@@ -7,18 +7,18 @@ import { BarChart3, Building2, CalendarDays, CircleHelp, CreditCard, Download, I
 import { useAuth } from "@/context/AuthProvider";
 
 const primaryItems = [
-  { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: BarChart3, tone: "blue" },
-  { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search, tone: "green" },
-  { href: "/companies", label: "Empresas", icon: Building2, tone: "cyan" },
-  { href: "/crm", label: "CRM", icon: KanbanSquare, tone: "lime" }
+  { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: BarChart3, tone: "neutral" },
+  { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search, tone: "cyan" },
+  { href: "/companies", label: "Empresas", icon: Building2, tone: "blue" },
+  { href: "/crm", label: "CRM", icon: KanbanSquare, tone: "green" }
 ];
 
 const drawerItems = [
-  { href: "/calendario", label: "Agenda", icon: CalendarDays, tone: "gold" },
+  { href: "/calendario", label: "Agenda", icon: CalendarDays, tone: "blue" },
   { href: "/app/leads", label: "Leads", icon: Users, tone: "green" },
-  { href: "/app/proposals", label: "Propostas e Contratos", icon: PackageOpen, tone: "orange" },
-  { href: "/catalog", label: "Produtos / Serviços", icon: PackageOpen, tone: "blue" },
-  { href: "/inbox", label: "Caixa de Entrada", icon: Inbox, tone: "cyan" },
+  { href: "/app/proposals", label: "Propostas e Contratos", icon: PackageOpen, tone: "purple" },
+  { href: "/catalog", label: "Produtos / Serviços", icon: PackageOpen, tone: "orange" },
+  { href: "/inbox", label: "Caixa de Entrada", icon: Inbox, tone: "blue" },
   { href: "/automations", label: "Automações", icon: Workflow, tone: "orange" },
   { href: "/intelligence", label: "IA / Inteligência", icon: Zap, tone: "gold" },
   { href: "/reports", label: "Relatórios", icon: LineChart, tone: "blue" },

@@ -18,16 +18,16 @@ O tema claro possui overrides globais para classes Tailwind de fundo, borda e te
 - Dashboard executivo passou a declarar explicitamente a cor de cada icone critico:
   - Leads salvos no CRM: verde.
   - Score medio: azul.
-  - Leads quentes: verde-limao.
+  - Leads quentes: laranja.
   - Conversoes: dourado.
   - Empresas encontradas: azul.
   - Sem site: vermelho.
   - Sem WhatsApp: laranja.
-  - Sem redes sociais: dourado.
-  - Sem Google Ads: dourado.
+  - Sem redes sociais: roxo/magenta.
+  - Sem Google Ads: laranja escuro.
   - Acao recomendada: verde.
   - Propostas enviadas: azul.
-  - Propostas em aberto: laranja.
+  - Propostas em aberto: dourado.
 - Sidebar e menu mobile receberam tons por modulo.
 - CRM/Kanban teve botoes de acao compactos protegidos contra overrides do tema claro, preservando cor, centralizacao e contraste.
 
@@ -54,6 +54,7 @@ A correcao anterior salvava/resolvia resultados embutidos da busca, mas ainda ha
 - `apps/web/app/companies/[id]/page.tsx`
 - `apps/web/components/CompanyTable.tsx`
 - `apps/api/src/services/companyStore.ts`
+- `apps/api/src/server.ts`
 - `apps/web/app/manual/page.tsx`
 - `docs/manual-nodere.md`
 - `RELATORIO_ATUALIZACAO_MANUAL_NODERE.md`
@@ -92,7 +93,7 @@ A validacao tecnica local confirmou compilacao, tipos e schema. A validacao visu
 - MANUAL ATUALIZADO: SIM
 - TESTES TECNICOS: APROVADOS
 - PUBLICACAO FRONTEND: APROVADA
-- PUBLICACAO BACKEND: PUSH REALIZADO; REDEPLOY RENDER NAO CONFIRMADO POR AUSENCIA DE TOKEN/CLI RENDER NA SESSAO
+- PUBLICACAO BACKEND: EM EXECUCAO; NOVO ENDPOINT `/api/health/version` CRIADO PARA CONFIRMACAO OBJETIVA DO COMMIT EM PRODUCAO
 
 ## Publicacao
 
@@ -116,4 +117,4 @@ A validacao tecnica local confirmou compilacao, tipos e schema. A validacao visu
 
 ## Pendencia operacional
 
-O backend foi alterado e o commit foi enviado para `main`, mas esta sessao nao possui `RENDER_API_KEY`, `RENDER_TOKEN`, CLI Render ou `gh` para confirmar visualmente a execucao do workflow/deploy hook do Render. Como a API atual esta saudavel, a pendencia e confirmar no painel Render se o servico `nodere-api` ja publicou o commit `3dff9d3` ou posterior.
+O backend passou a expor `/api/health/version` com `commit`, `commitShort`, `version` e metadados seguros de ambiente. A confirmacao final do Render deve comparar esse endpoint com o HEAD publicado nesta sessao.

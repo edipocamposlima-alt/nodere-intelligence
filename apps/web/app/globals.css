@@ -6916,6 +6916,8 @@ textarea,
   --nodere-icon-lime: #84CC16;
   --nodere-icon-gold: #FBBF24;
   --nodere-icon-orange: #FB923C;
+  --nodere-icon-dark-orange: #EA580C;
+  --nodere-icon-purple: #C084FC;
   --nodere-icon-red: #EF4444;
   --nodere-icon-neutral: #94A3B8;
 }
@@ -6961,6 +6963,8 @@ textarea,
 [data-icon-tone="lime"] { --nodere-current-icon: var(--nodere-icon-lime); }
 [data-icon-tone="gold"] { --nodere-current-icon: var(--nodere-icon-gold); }
 [data-icon-tone="orange"] { --nodere-current-icon: var(--nodere-icon-orange); }
+[data-icon-tone="dark-orange"] { --nodere-current-icon: var(--nodere-icon-dark-orange); }
+[data-icon-tone="purple"] { --nodere-current-icon: var(--nodere-icon-purple); }
 [data-icon-tone="red"] { --nodere-current-icon: var(--nodere-icon-red); }
 [data-icon-tone="neutral"] { --nodere-current-icon: var(--nodere-icon-neutral); }
 

@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 type FunnelStage = { stage: string; count: number; conversion_from_prev: number };
 type Tone = "success" | "info" | "warning" | "orange" | "danger" | "neutral";
-type IconTone = "green" | "blue" | "lime" | "gold" | "red" | "orange" | "cyan" | "neutral";
+type IconTone = "green" | "blue" | "lime" | "gold" | "red" | "orange" | "dark-orange" | "purple" | "cyan" | "neutral";
 
 const toneStyle: Record<Tone, { text: string; bg: string; border: string; bar: string; iconTone: IconTone }> = {
   success: { text: "text-[var(--status-high)]", bg: "bg-[var(--status-high-bg)]", border: "border-[var(--status-high-border)]", bar: "bg-[var(--status-high)]", iconTone: "green" },
@@ -84,7 +84,7 @@ export default async function DashboardPage() {
   const primaryKpis = [
     { label: "Leads salvos no CRM", value: totalSavedLeads, hint: "Somente registros persistidos", icon: Users, tone: "success" as Tone, iconTone: "green" as IconTone },
     { label: "Score médio", value: `${metrics.averageScore || reportSummary?.avg_score || 0}`, hint: "Oportunidade comercial", icon: Target, tone: "info" as Tone, iconTone: "blue" as IconTone },
-    { label: "Leads quentes", value: hotLeads, hint: "Alta prioridade", icon: Flame, tone: "success" as Tone, iconTone: "lime" as IconTone },
+    { label: "Leads quentes", value: hotLeads, hint: "Alta prioridade", icon: Flame, tone: "success" as Tone, iconTone: "orange" as IconTone },
     { label: "Conversões", value: convertedClients || acceptedProposals, hint: `${reportSummary?.conversion_rate ?? 0}% no período`, icon: CheckCircle2, tone: "warning" as Tone, iconTone: "gold" as IconTone }
   ];
 
@@ -92,11 +92,11 @@ export default async function DashboardPage() {
     { label: "Empresas encontradas", value: metrics.totalCompanies, icon: Building2, tone: "info" as Tone, iconTone: "blue" as IconTone, href: "/companies" },
     { label: "Sem site", value: metrics.withoutWebsite, icon: Globe2, tone: "danger" as Tone, iconTone: "red" as IconTone, href: "/companies?filter=without-site" },
     { label: "Sem WhatsApp", value: metrics.withoutWhatsapp, icon: MessageCircle, tone: "orange" as Tone, iconTone: "orange" as IconTone, href: "/companies?filter=without-whatsapp" },
-    { label: "Sem redes sociais", value: withoutSocial, icon: RadioTower, tone: "warning" as Tone, iconTone: "gold" as IconTone, href: "/companies?filter=without-social" },
-    { label: "Sem Google Ads", value: metrics.withoutGoogleAds, icon: MousePointerClick, tone: "warning" as Tone, iconTone: "gold" as IconTone, href: "/companies?filter=without-google-ads" },
+    { label: "Sem redes sociais", value: withoutSocial, icon: RadioTower, tone: "warning" as Tone, iconTone: "purple" as IconTone, href: "/companies?filter=without-social" },
+    { label: "Sem Google Ads", value: metrics.withoutGoogleAds, icon: MousePointerClick, tone: "warning" as Tone, iconTone: "dark-orange" as IconTone, href: "/companies?filter=without-google-ads" },
     { label: "Ação recomendada", value: recommendedActionLeads, icon: Sparkles, tone: "success" as Tone, iconTone: "green" as IconTone, href: "/crm" },
     { label: "Propostas enviadas", value: sentProposals, icon: CircleDollarSign, tone: "info" as Tone, iconTone: "blue" as IconTone, href: "/app/proposals" },
-    { label: "Propostas em aberto", value: openProposals, icon: AlertTriangle, tone: "orange" as Tone, iconTone: "orange" as IconTone, href: "/app/proposals" }
+    { label: "Propostas em aberto", value: openProposals, icon: AlertTriangle, tone: "orange" as Tone, iconTone: "gold" as IconTone, href: "/app/proposals" }
   ];
 
   const recommendedActions = [

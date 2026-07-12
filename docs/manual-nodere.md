@@ -285,7 +285,7 @@ Padrões aplicados:
 - ícones pequenos usam 14px, ícones de ação usam 16px, ícones médios usam 18px, ícones grandes usam 20px e destaques usam 24px;
 - ícones de navegação usam o mesmo tamanho visual em sidebar e menu mobile;
 - cores de ícones são semânticas e independentes do tema, portanto o modo claro não transforma ícones coloridos em cinza;
-- verde identifica CRM, leads salvos e ações recomendadas; azul identifica score, relatórios e propostas enviadas; verde-limão identifica leads quentes; dourado identifica conversões e atenção moderada; laranja identifica aguardando, WhatsApp e propostas abertas; vermelho identifica falhas críticas e ações destrutivas;
+- verde identifica CRM, leads salvos e ações recomendadas; azul identifica score, relatórios e propostas enviadas; laranja identifica leads quentes, WhatsApp e follow-up; dourado identifica conversões, atenção moderada e propostas em aberto; roxo/magenta identifica ausência de redes sociais; laranja escuro identifica ausência de Google Ads; vermelho identifica falhas críticas e ações destrutivas;
 - botões apenas com ícone mantêm área mínima clicável e centralização;
 - ícones dentro de botões com texto mantêm espaçamento padrão;
 - SVGs não devem ser deformados por zoom, escala, wrappers ou containers;

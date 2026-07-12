@@ -1,5 +1,49 @@
 # RELATORIO_ATUALIZACAO_MANUAL_NODERE
 
+## Atualizacao 2026-07-12 - Publicacao forcada, versionamento backend e paleta final de icones
+
+### Funcionalidades adicionadas
+- Endpoint tecnico seguro `/api/health/version` para confirmar commit/versionamento do backend em producao.
+
+### Funcionalidades alteradas
+- Paleta dos icones foi alinhada ao comando final: leads quentes laranja, redes sociais roxo/magenta, Google Ads laranja escuro e propostas abertas dourado.
+- Documentacao da Ficha 360 e dos icones foi revisada para refletir a regra definitiva de cores independentes do tema.
+
+### Paginas do manual atualizadas
+- Aba Ajuda / Manual NODERE: topico "38. Icones, botoes e acoes visuais".
+- Documento `docs/manual-nodere.md`: secao "Icones, botoes e acoes visuais".
+
+### Novos topicos criados
+- Nenhum topico novo no manual; foi criado endpoint tecnico de saude/versionamento.
+
+### Topicos revisados
+- Cores semanticas de icones.
+- Confirmacao operacional de publicacao backend.
+
+### FAQ atualizado
+- Nao aplicavel.
+
+### Passo a passo atualizado
+- Validar backend: acessar `/api/health/version` e comparar `commitShort` com o commit publicado.
+- Validar tema: alternar claro/escuro e confirmar que as cores dos icones permanecem identicas.
+
+### Data da atualizacao
+- 2026-07-12.
+
+### Versao da plataforma
+- Branch `main`, commit base antes desta etapa `cdadf18`.
+
+### Status
+- DOCUMENTACAO ATUALIZADA: SIM
+- MANUAL SINCRONIZADO: SIM
+- NOVAS FUNCIONALIDADES DOCUMENTADAS: SIM
+- FUNCIONALIDADES ALTERADAS DOCUMENTADAS: SIM
+- FAQ ATUALIZADO: NAO APLICAVEL
+- PASSO A PASSO ATUALIZADO: SIM
+- RELATORIO ATUALIZADO: SIM
+
+---
+
 ## Atualizacao 2026-07-12 - Icones por tema e Ficha 360 v4
 
 ### Funcionalidades adicionadas
