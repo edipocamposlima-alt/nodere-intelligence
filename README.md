@@ -1,226 +1,193 @@
 # NODERE
 
-Sistema de prospeccao comercial para localizar empresas no Google, salvar leads em CRM, auditar presenca digital e gerar diagnosticos comerciais com OpenAI.
+NODERE e uma plataforma comercial com prospeccao, CRM, funil, catalogo de produtos/servicos, propostas, contratos, relatorios, IA, agenda, inbox, marketing, billing e integracoes.
 
-## Versao SaaS segura
+Este README descreve a arquitetura oficial atual. O codigo legado ainda existe na raiz por historico/compatibilidade, mas nao e a fonte oficial do produto publicado.
 
-A versao publicada no GitHub Pages funciona como interface estatica. Para uso comercial real, publique o backend e configure a URL da API em `Configuracoes`.
+## Fonte Oficial
 
-- CRM operacional deve persistir no Supabase/PostgreSQL em producao. `localStorage` e apenas cache/fallback local.
-- Configuracoes de tema/layout e etapas/cores do funil persistem no backend em `nodere_app_settings`; `localStorage` e apenas cache do navegador.
-- Busca Google Places usa somente o backend seguro.
-- PageSpeed usa somente o backend seguro.
-- WhatsApp abre `wa.me` com mensagem pronta.
-- IA chama `/api/openai` no backend Node/Express para nao expor `OPENAI_API_KEY`.
-- Sem endpoint IA, o sistema usa fallback operacional local identificado para manter agenda, priorizacao e proximos passos funcionando.
+- Frontend oficial: `apps/web`
+- Backend oficial: `apps/api`
+- Banco oficial: Supabase PostgreSQL
+- Branch oficial: `main`
+- Backend Render oficial: `nodere-api`
+- URL da API: `https://nodere-api.onrender.com`
+- Projeto Vercel oficial: `web`
+- Root Directory obrigatorio na Vercel: `apps/web`
+- Dominios oficiais: `https://nodere.com.br` e `https://www.nodere.com.br`
 
-Aviso: nenhuma chave Google, OpenAI ou WhatsApp deve ser salva no navegador. Em producao, use somente o backend e variaveis `.env`.
+Consulte tambem `FONTE_OFICIAL_DO_PROJETO.txt`.
 
-## Arquitetura Real
+## Estrutura
 
-O projeto usa duas camadas:
+```text
+apps/
+  web/      Next.js 15 + React 19 + TypeScript
+  api/      Express + TypeScript + Supabase/PostgreSQL
+packages/
+  database/ migrations e SQLs de apoio
+scripts/   validacoes, homologacoes e utilitarios
+docs/      documentacao operacional e historica
+```
 
-- `index.html`, `styles.css`, `app.js`: frontend estatico publicado no GitHub Pages.
-- `backend/`: API Node.js/Express segura para Google, OpenAI, WhatsApp e CRM persistido no Supabase/PostgreSQL.
+Itens legados mantidos na raiz:
 
-GitHub Pages nao executa backend e nao pode guardar segredos. Portanto, chaves Google/OpenAI/WhatsApp ficam somente no backend, via variaveis de ambiente.
+- `app.js`
+- `index.html`
+- `styles.css`
+- `dist/`
+- `backend/`
+- `serve-nodere.mjs`
 
-## Funcionalidades Operacionais
+Esses itens nao devem ser usados para deploy de producao.
 
-- Busca de empresas via Google Places, com prevencao de duplicidade e filtro para ocultar empresas ja salvas no CRM.
-- Dados retornados: nome, telefone, site, endereco, categoria, avaliacao, total de avaliacoes e link Google Maps.
-- CRM persistido no Supabase/PostgreSQL, com bloqueio de fallback temporario em memoria quando o banco falha em producao.
-- Pipeline profissional com drag and drop.
-- Observacoes longas por lead, com tipo, responsavel, data e historico.
-- Timeline operacional por lead com observacoes, status, tarefas, PageSpeed e IA.
-- Agenda comercial com follow-up, canal, prioridade, conclusao e alertas.
-- Inicio com leads quentes, atrasados, contatos do dia, sem follow-up e propostas.
-- Relatorios de conversao, ganhos, perdas, propostas e valor potencial.
-- Chat IA global com contexto da carteira.
-- Chat IA flutuante com modo compacto, expandido e tela cheia.
-- Painel IA dentro da ficha do lead com acoes comerciais: WhatsApp, email, follow-up, diagnostico, proposta, objecoes, script de ligacao e estrategia Google Ads.
-- PageSpeed pelo backend com performance, SEO, acessibilidade, boas praticas, diagnostico e recomendacoes.
-- Modulos iniciais de Servicos, Contratos e Templates para operacao comercial.
-- Diagnostico comercial com OpenAI.
-- Validacao de Google Places, Maps, PageSpeed, Business Profile OAuth, OpenAI, WhatsApp e Supabase.
-- WhatsApp Cloud API preparado para envio real quando tokens estiverem configurados.
+## Deploy
 
-## Variaveis de Ambiente
+### Frontend
 
-Copie `.env.example` para `.env` na raiz ou configure essas variaveis no Render/Railway:
+Use Vercel no projeto `web` com:
+
+- Root Directory: `apps/web`
+- Framework: Next.js
+- Build command: `npm run build`
+- Output: padrao do Next.js
+
+Variaveis publicas esperadas:
 
 ```env
-PORT=3333
-FRONTEND_ORIGIN=http://localhost:4173
-PRODUCTION_FRONTEND_ORIGIN=https://edipocamposlima-alt.github.io
-MVP_OWNER_TOKEN=
-REQUIRE_OWNER_TOKEN=false
+NEXT_PUBLIC_API_URL=https://nodere-api.onrender.com/api
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_API_KEY=
+```
 
+O `vercel.json` da raiz bloqueia builds pela raiz para evitar publicacao acidental da versao legada em `dist/index.html`.
+
+### Backend
+
+Use Render no servico oficial:
+
+- Service: `nodere-api`
+- Root Directory: `apps/api`
+- Build command: `npm install --include=dev`
+- Start command: `npm start`
+- Health check: `/health`
+
+Variaveis privadas esperadas no Render:
+
+```env
+NODE_ENV=production
+WEB_ORIGIN=https://nodere.com.br
+CORS_ORIGINS=https://nodere.com.br,https://www.nodere.com.br
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
-
+DATABASE_URL=
+API_KEY=
+OPENAI_API_KEY=
 GOOGLE_PLACES_API_KEY=
 GOOGLE_MAPS_API_KEY=
 GOOGLE_PAGESPEED_API_KEY=
-GOOGLE_BUSINESS_PROFILE_CLIENT_ID=
-GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET=
-GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN=
-GOOGLE_WORKSPACE_CLIENT_ID=
-GOOGLE_WORKSPACE_CLIENT_SECRET=
-GOOGLE_WORKSPACE_REFRESH_TOKEN=
-GOOGLE_WORKSPACE_SCOPES=https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/drive.file
-
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4.1-mini
-
 WHATSAPP_CLOUD_TOKEN=
 WHATSAPP_PHONE_NUMBER_ID=
-WHATSAPP_DEFAULT_COUNTRY_CODE=55
+WHATSAPP_WEBHOOK_SECRET=
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASS=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
 ```
 
-Nunca coloque chaves no frontend, no GitHub Pages, na Vercel ou no codigo. Se quiser exigir token operacional nas chamadas do frontend, defina `REQUIRE_OWNER_TOKEN=true` no backend e informe o token manualmente em `Configuracoes`.
-
-## Banco de Dados
-
-Use Supabase ou outro PostgreSQL compativel e execute:
-
-```sql
-mvp-supabase-schema.sql
-```
-
-Tabelas principais:
-
-- `mvp_leads`
-- `mvp_site_scans`
-- `mvp_diagnoses`
-- `mvp_crm_events`
-- `mvp_tasks`
-- `mvp_searches`
-- `mvp_notes`
-- `mvp_ai_memory`
-- `mvp_notifications`
+Quando o ambiente nao suportar conexao IPv6 direta ao Supabase, use a `DATABASE_URL` do Supabase Transaction Pooler IPv4.
 
 ## Rodar Localmente
 
 Frontend:
 
 ```bash
-npm run serve
-```
-
-ou no Windows:
-
-```text
-INICIAR_NODERE.bat
+cd apps/web
+npm install
+npm run dev
 ```
 
 API:
 
 ```bash
-cd backend
+cd apps/api
 npm install
-npm start
+npm run dev
 ```
 
-Abra:
+Raiz:
 
-```text
-http://localhost:4173/#configuracoes
+```bash
+npm run build
 ```
 
-Na tela `Configuracoes`, configure a URL da API:
+Observacao: o script da raiz ainda valida o legado por compatibilidade. Para o produto atual, priorize os comandos em `apps/web` e `apps/api`.
 
-```text
-http://localhost:3333
-```
-
-## Deploy
-
-Frontend:
-
-- GitHub Pages pode publicar a branch `gh-pages`.
-- Vercel deve usar o projeto raiz, framework preset `Other`, build command `npm run build` e output directory `dist`.
-- O frontend usa por padrao o backend `https://nodere-api.onrender.com` e tambem permite trocar a URL em `Configuracoes`.
-- Configure `VITE_API_BASE_URL=https://nodere-api.onrender.com` na Vercel apenas como referencia operacional; segredos Google/OpenAI ficam somente no Render.
-- URLs: `https://edipocamposlima-alt.github.io/nodere-intelligence/` ou a URL publicada pela Vercel.
-- Guia completo: `DEPLOY.md`
+## Validacao Recomendada
 
 Backend:
 
-- Render/Railway.
-- Render Blueprint disponivel em `render.yaml` na raiz.
-- Root directory: `backend`.
-- Build command: `npm install`.
-- Start command: `npm start`.
-- Configure todas as variaveis de ambiente no painel da plataforma.
-
-Deploy forçado:
-
-- Workflow: `.github/workflows/production-deploy.yml`.
-- GitHub Secrets para frontend: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
-- GitHub Secret para backend: `RENDER_DEPLOY_HOOK_URL`.
-- Variavel publica na Vercel: `NEXT_PUBLIC_API_URL=https://nodere-api.onrender.com`.
-- Variaveis privadas no Render: `DATABASE_URL`, `GOOGLE_PLACES_API_KEY`, `GOOGLE_MAPS_API_KEY`, `GOOGLE_PAGESPEED_API_KEY`, `OPENAI_API_KEY`, `CORS_ORIGINS=https://nodere.com.br,https://www.nodere.com.br,http://localhost:3000`, `NODE_ENV=production`.
-- `GET /api/settings` deve retornar apenas configuracoes publicas seguras e nunca secrets.
-
-Admin:
-
-- Login: `https://nodere.com.br/login`.
-- Painel: `https://nodere.com.br/admin`.
-- Variaveis privadas no Render: `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`.
-- O painel admin mascara chaves e nao retorna valores completos ao frontend.
-- Para persistencia definitiva entre deploys, mantenha `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` no Render e execute o schema atualizado.
-- Regra de persistencia: `docs/DATA_PERSISTENCE_RULE.md`.
-
-Depois do deploy:
-
-1. Abra a URL publicada (`GitHub Pages` ou `Vercel`) em `#configuracoes`.
-2. Informe a URL publica do backend.
-3. Informe o token operacional, se `MVP_OWNER_TOKEN` estiver ativo no backend.
-4. Clique em `Salvar configuracoes`.
-5. Valide em `Integracoes`.
-
-## Seguranca do Repositorio
-
-Este projeto nao deve permanecer publico quando houver operacao comercial, clientes ou segredos nos ambientes de deploy.
-
-Chaves ja compartilhadas em conversa, prints, arquivos temporarios ou repositorio devem ser revogadas e regeradas no painel do provedor antes de qualquer uso real.
-
-No GitHub:
-
-1. Abra `Settings > General > Danger Zone`.
-2. Use `Change repository visibility`.
-3. Marque `Private`.
-4. Revise `Settings > Collaborators`, `Actions secrets`, `Deploy keys` e tokens.
-
-O Codex nao deve versionar `.env`, tokens, dumps de banco ou arquivos com credenciais.
-
-Guias detalhados:
-
-- `docs/PRIVATE_REPO.md`
-- `docs/DEPLOY_BACKEND.md`
-- `docs/ENV_SETUP.md`
-
-## Testes de Integração
-
-Rode sem expor chaves:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\check-google-apis.ps1
+```bash
+cd apps/api
+npm run typecheck
+npm run build
+npm run test:phase1
+npm run test:calendar
+npm run test:reports
+npm run test:crm
+npm run test:whatsapp
+npm run test:ai-discovery
 ```
 
-O script testa:
+Frontend:
 
-- Google Places
-- Google Maps
-- PageSpeed
-- OpenAI
-- Google Business Profile OAuth
+```bash
+cd apps/web
+npm run lint
+npm run typecheck
+npm run build
+```
 
-## Status Conhecido
+Schema comercial:
 
-- Google Places, Maps e PageSpeed dependem das chaves habilitadas no Google Cloud.
-- OpenAI exige chave valida e quota/billing ativo.
-- Google Business Profile exige `client_secret` e `refresh_token` gerado por OAuth com escopo `business.manage`.
-- Google Calendar, Gmail e Drive exigem OAuth offline com refresh token do backend.
-- Em producao, CRM e configuracoes criticas nao devem depender de `localStorage`. Se o Supabase estiver configurado e falhar, o backend retorna `PERSISTENCE_UNAVAILABLE` em vez de salvar em memoria temporaria.
+```bash
+node scripts/validate-commercial-schema.mjs
+```
+
+## Regras de Seguranca
+
+- Nunca versionar `.env`, `.env.local`, secrets, dumps de banco ou tokens.
+- Chaves Google, OpenAI, WhatsApp, Stripe e Supabase service role ficam somente no backend/ambiente seguro.
+- O frontend recebe apenas variaveis `NEXT_PUBLIC_*` inevitavelmente publicas.
+- GitHub Pages nao e canal oficial de producao.
+- Nao publicar pela raiz do repositorio.
+- Nao remover codigo legado sem autorizacao explicita.
+
+## Funcionalidades Principais
+
+- Autenticacao e sessao com Supabase/Auth e compatibilidade operacional existente.
+- Dashboard comercial com metricas reais, funil, score, onboarding e atalhos.
+- Discovery/Busca de empresas com Google Places, deduplicacao, CSV e PDF.
+- CRM Kanban/lista, ficha 360, historico, agenda, contatos e negociacoes.
+- Catalogo de produtos/servicos com permissoes por perfil.
+- Propostas e contratos com itens do catalogo, snapshot, descontos, auditoria e PDF.
+- Relatorios executivos com exportacoes.
+- IA comercial e diagnosticos via backend.
+- WhatsApp/inbox, automacoes, marketing, billing, operadores e admin/CMS.
+- Tema claro/escuro, PWA, mobile e manual integrado.
+
+## Documentacao
+
+- Manual do usuario: `docs/manual-nodere.md`
+- Rota da plataforma: `/manual`
+- Regra permanente: toda alteracao relevante deve atualizar Ajuda / Manual NODERE e `RELATORIO_ATUALIZACAO_MANUAL_NODERE.md`.
+
+## Pendencias de Governanca
+
+- Confirmar no painel Render se `nodere-ts-api` ainda e usado ou se pode ser desativado.
+- Consolidar relatorios historicos em `docs/reports` e `docs/archive`.
+- Criar suite E2E automatizada cobrindo login, dashboard, CRM, catalogo, proposta, PDF e logout.
+- Homologar periodicamente todas as integracoes externas com credenciais reais.

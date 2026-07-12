@@ -32,6 +32,8 @@ export interface Company {
   rating?: number;
   reviewCount?: number;
   mapsUrl?: string;
+  placeId?: string;
+  googlePlaceId?: string;
   cnpj?: string;
   legalName?: string;
   email?: string;

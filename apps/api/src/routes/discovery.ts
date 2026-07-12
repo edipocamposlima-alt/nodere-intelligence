@@ -212,8 +212,8 @@ function placeToCompany(place: Record<string, any>): Company {
   return {
     ...base,
     ...calculateOpportunityScore(base),
-    placeId: place.id,
-    googlePlaceId: place.id,
+    placeId: String(place.id || ""),
+    googlePlaceId: String(place.id || ""),
     openingHours: place.regularOpeningHours ?? {},
     businessStatus: place.businessStatus
   } as Company;
@@ -250,8 +250,8 @@ function normalizeIncomingCompany(raw: Record<string, unknown>): Company {
     source: "google_places",
     createdAt: now,
     updatedAt: now,
-    placeId: raw.placeId || raw.googlePlaceId || id,
-    googlePlaceId: raw.googlePlaceId || raw.placeId || id
+    placeId: String(raw.placeId || raw.googlePlaceId || id),
+    googlePlaceId: String(raw.googlePlaceId || raw.placeId || id)
   } as Company;
   return { ...company, ...calculateOpportunityScore(company) };
 }

@@ -73,7 +73,7 @@ function CompanyLoadError({ id, message }: { id: string; message: string }) {
       <section className="rounded-lg border border-danger/30 bg-danger/10 p-6">
         <h2 className="text-xl font-semibold text-white">Não foi possível abrir a Ficha 360º</h2>
         <p className="mt-2 text-sm leading-6 text-red-100">
-          A empresa foi encontrada, mas a ficha não carregou todos os dados neste momento. O sistema registrou o erro técnico e manteve a página estável.
+          A ficha não carregou todos os dados neste momento. O sistema registrou o erro técnico e manteve a página estável.
         </p>
         <div className="mt-4 rounded-md border border-danger/20 bg-ink px-3 py-2 text-xs text-red-100">
           <p>ID: {decodeURIComponent(id || "")}</p>

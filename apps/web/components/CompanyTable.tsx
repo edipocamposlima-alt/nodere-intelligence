@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Bot, CheckCircle2, Download, ExternalLink, FileText, MessageCircle, PhoneCall, Save, Search, Trash2, X } from "lucide-react";
@@ -110,6 +109,7 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [aiMessages, setAiMessages] = useState<Record<string, string>>({});
   const [aiLoading, setAiLoading] = useState<Record<string, string>>({});
+  const [openingFicha, setOpeningFicha] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [invalidWhatsappOnly, setInvalidWhatsappOnly] = useState(false);
   const [editingWhatsapp, setEditingWhatsapp] = useState<Record<string, boolean>>({});
@@ -289,6 +289,57 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
     }
   }
 
+  function resolveCompanyFromDuplicate(error: unknown) {
+    if (error instanceof ApiRequestError && error.status === 409 && error.payload && typeof error.payload === "object" && "company" in error.payload) {
+      return (error.payload as { company?: Company }).company;
+    }
+    return undefined;
+  }
+
+  function shouldResolveBeforeFicha(company: Company) {
+    if (embedded) return true;
+    return /^(ChIJ|search-|apollo-company-|econodata-)/i.test(String(company.id || ""));
+  }
+
+  async function openFicha(company: Company) {
+    if (!shouldResolveBeforeFicha(company)) {
+      router.push(`/companies/${encodeURIComponent(company.id)}`);
+      return;
+    }
+
+    setOpeningFicha((current) => ({ ...current, [company.id]: true }));
+    setMessages((current) => ({ ...current, [company.id]: "Preparando Ficha 360°..." }));
+    try {
+      const savedLead = await saveSearchResultAsLead(company);
+      const targetId = savedLead.company?.id || company.id;
+      try {
+        const stored = JSON.parse(localStorage.getItem("nodere_saved_leads") || "[]") as string[];
+        localStorage.setItem("nodere_saved_leads", JSON.stringify(Array.from(new Set([...stored, company.id, targetId]))));
+      } catch {
+        // Cache local invalido nao deve bloquear abertura da ficha persistida.
+      }
+      setSaved((current) => ({ ...current, [company.id]: "saved" }));
+      router.push(`/companies/${encodeURIComponent(targetId)}`);
+    } catch (error) {
+      const duplicate = resolveCompanyFromDuplicate(error);
+      if (duplicate?.id) {
+        router.push(`/companies/${encodeURIComponent(duplicate.id)}`);
+        return;
+      }
+      setSaved((current) => ({ ...current, [company.id]: "error" }));
+      setMessages((current) => ({
+        ...current,
+        [company.id]: error instanceof Error ? error.message : "Não foi possível preparar a Ficha 360°."
+      }));
+    } finally {
+      setOpeningFicha((current) => {
+        const next = { ...current };
+        delete next[company.id];
+        return next;
+      });
+    }
+  }
+
   function renderCompanyActions(company: Company, compact = false) {
     const iconButtonClass = "nodere-company-action-icon";
     return (
@@ -302,10 +353,10 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
             {saved[company.id] === "saved" ? <CheckCircle2 className="h-4 w-4" /> : <Save className="h-4 w-4" />}
             {saved[company.id] === "saving" ? "Salvando" : saved[company.id] === "saved" ? "Salvo" : "Salvar lead"}
           </button>
-          <Link href={`/companies/${encodeURIComponent(company.id)}`} className="nodere-company-action-primary">
+          <button type="button" onClick={() => void openFicha(company)} disabled={openingFicha[company.id]} className="nodere-company-action-primary disabled:cursor-not-allowed disabled:opacity-60">
             <FileText className="h-4 w-4" />
-            Ficha
-          </Link>
+            {openingFicha[company.id] ? "Abrindo..." : "Ficha"}
+          </button>
         </div>
 
         <div className="nodere-company-action-strip">
@@ -486,9 +537,9 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
                         aria-label={`Selecionar ${company.name}`}
                       />
                       <div className="min-w-0">
-                        <Link href={`/companies/${encodeURIComponent(company.id)}`} className="line-clamp-2 text-base font-black text-white hover:text-cyan" title={company.name}>
+                        <button type="button" onClick={() => void openFicha(company)} className="line-clamp-2 text-left text-base font-black text-white hover:text-cyan disabled:cursor-not-allowed disabled:opacity-60" title={company.name} disabled={openingFicha[company.id]}>
                           {company.name}
-                        </Link>
+                        </button>
                         <p className="mt-1 line-clamp-2 text-xs text-slate-400" title={valueOrNotLocated(company.category)}>
                           {valueOrNotLocated(company.category)}
                         </p>

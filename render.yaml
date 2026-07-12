@@ -1,4 +1,6 @@
 services:
+  # Servico oficial de API do NODERE atual.
+  # Mantido como backend canonico em FONTE_OFICIAL_DO_PROJETO.txt e docs/PRODUCTION_REDEPLOY.md.
   - type: web
     name: nodere-api
     runtime: node
@@ -41,6 +43,9 @@ services:
       - key: REQUIRE_OWNER_TOKEN
         value: "false"
 
+  # LEGACY / A CONFIRMAR:
+  # Este servico tambem aponta para apps/api, mas nao e tratado como backend canonico.
+  # Nao remover automaticamente: confirmar no painel Render antes de desativar ou unificar.
   - type: web
     name: nodere-ts-api
     runtime: node

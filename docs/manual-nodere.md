@@ -266,6 +266,16 @@ Regras do fluxo:
 - após logout, a sessão é encerrada e novas tentativas de acesso interno voltam para login;
 - termos e privacidade continuam acessíveis para suporte legal ao login.
 
+## Ficha 360° do cliente
+A Ficha 360° deve ser aberta sempre a partir de um registro persistido no CRM. Quando o usuário clica em **Ficha** em um resultado novo da Busca de empresas, o NODERE salva o lead ou resolve o duplicado existente antes de navegar. Assim, a ficha usa o `id` real salvo em `nodere_companies` e não um identificador externo temporário do Google Places, Apollo ou Econodata.
+
+Se a ficha não abrir:
+1. Confirme se a empresa foi salva no CRM.
+2. Se veio da busca, clique novamente em **Ficha** para o sistema resolver o lead persistido.
+3. Se aparecer sessão expirada, faça login novamente.
+4. Se houver permissão negada, solicite revisão do perfil no workspace.
+5. Se o registro tiver dados parciais, a ficha deve abrir com estados vazios claros em vez de travar.
+
 ## Ícones, botões e ações visuais
 Os ícones da plataforma seguem uma escala global NODERE para manter consistência em menus, cabeçalhos, cards, tabelas, formulários, modais, editores, ações rápidas e componentes administrativos.
 
@@ -286,6 +296,24 @@ Boas práticas:
 3. Para ações sem texto, informe `aria-label` ou `title` para manter acessibilidade.
 4. Valide em desktop, notebook, mobile e zoom 33%, 50%, 67%, 75%, 80%, 90%, 100%, 110%, 125% e 150% quando a ação estiver em área compacta.
 5. Não substitua o significado do ícone sem revisar o rótulo, tooltip e ação vinculada.
+
+## Arquitetura e deploy seguro
+A fonte oficial do NODERE atual é:
+- Frontend: `apps/web`.
+- Backend: `apps/api`.
+- Banco: Supabase PostgreSQL.
+- Frontend em produção: Vercel, projeto `web`, com Root Directory `apps/web`.
+- Backend em produção: Render, serviço `nodere-api`.
+- Domínios oficiais: `nodere.com.br` e `www.nodere.com.br`.
+
+O deploy pela raiz do repositório é bloqueado para evitar publicação acidental da versão legada em `dist/index.html`. GitHub Pages não é canal oficial de produção do NODERE atual.
+
+Regras práticas:
+1. Para publicar frontend, use sempre o projeto Vercel configurado em `apps/web`.
+2. Para publicar backend, use o serviço Render `nodere-api`.
+3. Não use `app.js`, `index.html`, `styles.css`, `dist/`, `backend/` ou `serve-nodere.mjs` como fonte oficial do produto atual.
+4. Links novos devem seguir a matriz de rotas canônicas em `docs/ROTAS_CANONICAS_NODERE.md`.
+5. O serviço Render `nodere-ts-api` precisa de decisão humana antes de qualquer remoção ou unificação.
 
 ## Automações
 A área Automações lista sequências comerciais e pode ativar fluxos por empresa. Integrações oficiais de e-mail/WhatsApp exigem chaves específicas; sem elas, use modelos e tarefas manuais.

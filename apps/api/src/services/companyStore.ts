@@ -137,6 +137,7 @@ export interface CrmStageUpdateInput {
 // ─── Supabase helpers ────────────────────────────────────────────────────────
 
 function toRow(c: Company, workspaceId = "default", includeWorkspace = workspaceColumnAvailable): Record<string, unknown> {
+  const rawCompany = c as unknown as Record<string, unknown>;
   const { id, name, category, city, state, address, phone, whatsapp, website, logoUrl,
     instagram, facebook, linkedin, youtube, rating, reviewCount, mapsUrl, cnpj, legalName,
     latitude, longitude, status, score, opportunityLevel, enrichmentStatus,
@@ -163,6 +164,8 @@ function toRow(c: Company, workspaceId = "default", includeWorkspace = workspace
     next_action: nextAction ?? null,
     owner_id: ownerId ?? null,
     source,
+    place_id: rawCompany.placeId || rawCompany.place_id || rawCompany.googlePlaceId || rawCompany.google_place_id || (source === "google_places" ? id : null),
+    google_place_id: rawCompany.googlePlaceId || rawCompany.google_place_id || rawCompany.placeId || rawCompany.place_id || (source === "google_places" ? id : null),
     detected_opportunities: detectedOpportunities,
     suggestions,
     digital_signals: rest,
@@ -271,6 +274,8 @@ function fromRow(row: Record<string, unknown>): Company {
     nextAction: row.next_action as string | undefined,
     ownerId: row.owner_id as string | undefined,
     source: row.source as Company["source"] | undefined,
+    placeId: (row.place_id as string | undefined) ?? (signals?.placeId as string | undefined) ?? (signals?.googlePlaceId as string | undefined),
+    googlePlaceId: (row.google_place_id as string | undefined) ?? (signals?.googlePlaceId as string | undefined) ?? (signals?.placeId as string | undefined),
     detectedOpportunities: (row.detected_opportunities as string[]) ?? [],
     suggestions: (row.suggestions as string[]) ?? [],
     notes: [],
@@ -305,22 +310,59 @@ async function dbList(workspaceId = "default"): Promise<Company[]> {
 
 async function dbGet(id: string, workspaceId = "default"): Promise<Company | undefined> {
   const sb = getSupabase()!;
+  const externalId = String(id || "").trim();
   let query = sb
     .from("nodere_companies")
     .select("*, nodere_company_notes(id, company_id, body, created_at)")
-    .eq("id", id);
+    .eq("id", externalId);
   if (workspaceColumnAvailable) query = query.eq("workspace_id", workspaceId);
   let { data, error } = await query.maybeSingle();
   if (error && markWorkspaceColumnMissing(error)) {
     const retry = await sb
       .from("nodere_companies")
       .select("*, nodere_company_notes(id, company_id, body, created_at)")
-      .eq("id", id)
+      .eq("id", externalId)
       .maybeSingle();
     data = retry.data;
     error = retry.error;
   }
   if (error) throw error;
+  if (!data) {
+    if (/^(ChIJ|search-|apollo-company-|econodata-)/i.test(externalId)) {
+      const externalMatch = await dbGetByExternalId(externalId, workspaceId).catch(() => undefined);
+      if (externalMatch) return externalMatch;
+      const existing = await dbList(workspaceId);
+      const match = findDuplicateInList({ id: externalId, source: "google_places" as Company["source"] }, existing)?.company;
+      if (match) return match;
+    }
+    return undefined;
+  }
+  const c = fromRow(data);
+  c.notes = mapPublicNotes((data.nodere_company_notes as Record<string, unknown>[]) ?? []);
+  return c;
+}
+
+async function dbGetByExternalId(externalId: string, workspaceId = "default"): Promise<Company | undefined> {
+  const sb = getSupabase()!;
+  let query = sb
+    .from("nodere_companies")
+    .select("*, nodere_company_notes(id, company_id, body, created_at)")
+    .or(`place_id.eq.${externalId},google_place_id.eq.${externalId}`);
+  if (workspaceColumnAvailable) query = query.eq("workspace_id", workspaceId);
+  let { data, error } = await query.maybeSingle();
+  if (error && markWorkspaceColumnMissing(error)) {
+    const retry = await sb
+      .from("nodere_companies")
+      .select("*, nodere_company_notes(id, company_id, body, created_at)")
+      .or(`place_id.eq.${externalId},google_place_id.eq.${externalId}`)
+      .maybeSingle();
+    data = retry.data;
+    error = retry.error;
+  }
+  if (error) {
+    if (markMissingCompanyColumn(error)) return undefined;
+    throw error;
+  }
   if (!data) return undefined;
   const c = fromRow(data);
   c.notes = mapPublicNotes((data.nodere_company_notes as Record<string, unknown>[]) ?? []);

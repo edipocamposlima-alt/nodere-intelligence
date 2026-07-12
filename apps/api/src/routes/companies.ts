@@ -186,8 +186,11 @@ router.post("/save-from-search", async (req, res, next) => {
     if (!workspaceId) return res.status(400).json({ error: "workspace_id não identificado na sessão." });
     const body = z.record(z.unknown()).parse(req.body ?? {}) as Record<string, any>;
     const now = new Date().toISOString();
+    const externalId = String((body as any).placeId || (body as any).googlePlaceId || (body as any).google_place_id || (body as any).id || "").trim();
+    const incomingId = String((body as any).id || "").trim();
+    const isExternalId = /^(ChIJ|search-|apollo-company-|econodata-|discovery-)/i.test(incomingId);
     const company = {
-      id: String((body as any).id || (body as any).placeId || (body as any).googlePlaceId || `search-${randomUUID()}`),
+      id: incomingId && !isExternalId ? incomingId : `company-${randomUUID()}`,
       name: String(body.name || "Empresa sem nome"),
       legalName: body.legalName,
       cnpj: cleanDigits(String(body.cnpj || "")),
@@ -220,8 +223,8 @@ router.post("/save-from-search", async (req, res, next) => {
       createdAt: (body as any).createdAt || now,
       updatedAt: now,
       source: (body as any).source || "google_places",
-      placeId: (body as any).placeId || (body as any).googlePlaceId || (body as any).google_place_id || (body as any).id,
-      googlePlaceId: (body as any).googlePlaceId || (body as any).placeId || (body as any).google_place_id || (body as any).id,
+      placeId: externalId || undefined,
+      googlePlaceId: externalId || undefined,
       crmSaved: true,
       isCrmLead: true
     } as any;

@@ -1,0 +1,97 @@
+FONTE OFICIAL DO PROJETO NODERE
+Data: 2026-07-10
+Branch oficial: main
+
+1. Arquitetura oficial
+
+Frontend oficial:
+- apps/web
+- Next.js 15, React 19, TypeScript
+- Deploy oficial: Vercel, projeto web
+- Root Directory obrigatorio na Vercel: apps/web
+
+Backend oficial:
+- apps/api
+- Express, TypeScript, Supabase, PostgreSQL, PDFKit e integracoes comerciais
+- Servico Render operacional oficial: nodere-api
+- URL operacional: https://nodere-api.onrender.com
+
+Banco oficial:
+- Supabase PostgreSQL
+- Projeto Supabase autorizado nas homologacoes anteriores: qhopjggnbzewuuktqntp.supabase.co
+- DATABASE_URL deve usar o Transaction Pooler IPv4 quando o ambiente nao suportar IPv6 direto.
+
+Dominios oficiais:
+- nodere.com.br
+- www.nodere.com.br
+
+2. Canais que nao sao oficiais
+
+GitHub Pages:
+- Nao e canal oficial de producao do NODERE atual.
+- O workflow legado foi mantido apenas como registro manual desabilitado.
+- Nao deve publicar a raiz do repositorio.
+
+Deploy Vercel pela raiz:
+- Nao e permitido para producao.
+- O arquivo vercel.json da raiz bloqueia builds pela raiz para impedir publicacao acidental do legado dist/index.html.
+- Sempre publicar pelo projeto Vercel com Root Directory apps/web.
+
+Codigo legado na raiz:
+- app.js
+- index.html
+- styles.css
+- dist/
+- backend/
+- serve-nodere.mjs
+
+Esses itens permanecem no repositorio por compatibilidade/historico, mas nao sao a fonte oficial do produto publicado.
+
+3. Render
+
+Servico oficial atual:
+- nodere-api
+
+Servico a revisar:
+- nodere-ts-api
+
+O servico nodere-ts-api tambem aponta para apps/api no render.yaml e deve ser confirmado no painel Render. Ate decisao humana, ele nao deve ser removido por automacao, mas tambem nao deve ser tratado como backend canonico nas documentacoes e publicacoes.
+
+4. Rotas canonicas principais
+
+Entrada publica operacional:
+- /login
+
+Dashboard:
+- Canonica privada: /app/dashboard
+- Alias historico preservado: /dashboard
+
+Configuracoes:
+- Canonica privada: /app/settings
+- Alias historico preservado: /settings
+
+Discovery / Busca de empresas:
+- Canonica privada: /app/discovery
+- Alias historico preservado: /searches
+
+CRM:
+- Canonica: /crm e rotas internas de cliente em /app/crm/clientes/[id], conforme fluxo existente
+
+Catalogo:
+- Canonica: /catalog
+
+Propostas:
+- Canonica: /proposals e /app/proposals conforme telas existentes
+
+Termos e privacidade:
+- /termos e /privacidade
+- /terms e /privacy podem existir como aliases legais.
+
+5. Regras de manutencao
+
+- Nao publicar frontend pela raiz.
+- Nao usar GitHub Pages como canal de producao.
+- Nao gravar credenciais em arquivos do repositorio.
+- Nao remover codigo legado sem autorizacao explicita; isolar e documentar primeiro.
+- Atualizar Ajuda / Manual NODERE e RELATORIO_ATUALIZACAO_MANUAL_NODERE.md em toda alteracao relevante.
+- Validar builds e schema antes de publicacao.

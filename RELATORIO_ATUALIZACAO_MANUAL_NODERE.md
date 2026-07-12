@@ -1,5 +1,101 @@
 # RELATORIO_ATUALIZACAO_MANUAL_NODERE
 
+## Atualizacao 2026-07-12 - Ficha 360 e resolucao de leads da busca
+
+### Funcionalidades adicionadas
+- Nenhuma nova funcionalidade de produto foi adicionada.
+- Foi documentado o fluxo correto de abertura da Ficha 360 a partir da Busca de empresas.
+
+### Funcionalidades alteradas
+- Ficha 360: abertura a partir da busca agora precisa resolver/salvar o lead persistido antes da navegacao.
+- Fallback de erro da Ficha 360 documentado para cenarios de dados parciais, sessao e permissao.
+
+### Paginas do manual atualizadas
+- Aba Ajuda / Manual NODERE: topico "6. Ficha do cliente".
+- Documento `docs/manual-nodere.md`: secao "Ficha 360° do cliente".
+
+### Novos topicos criados
+- Secao "Ficha 360° do cliente" em `docs/manual-nodere.md`.
+
+### Topicos revisados
+- Busca de empresas para CRM.
+- Abertura da ficha do cliente.
+- Resolucao de identificadores externos Google Places/Apollo/Econodata.
+
+### FAQ atualizado
+- Incluida orientacao para ficha que nao abre por lead ainda nao salvo, sessao expirada ou permissao.
+
+### Passo a passo atualizado
+- Abrir ficha a partir da busca: clicar em Ficha, aguardar salvar/resolver duplicidade e navegar para o registro persistido.
+
+### Data da atualizacao
+- 2026-07-12.
+
+### Versao da plataforma
+- Branch `main`, commit base antes da correcao `d40ea08`.
+
+### Status
+- DOCUMENTACAO ATUALIZADA: SIM
+- MANUAL SINCRONIZADO: SIM
+- NOVAS FUNCIONALIDADES DOCUMENTADAS: NAO APLICAVEL
+- FUNCIONALIDADES ALTERADAS DOCUMENTADAS: SIM
+- FAQ ATUALIZADO: SIM
+- PASSO A PASSO ATUALIZADO: SIM
+- RELATORIO ATUALIZADO: SIM
+
+---
+
+## Atualizacao 2026-07-10 - Governanca de arquitetura, deploy e rotas
+
+### Funcionalidades adicionadas
+- Nenhuma funcionalidade de produto foi adicionada.
+- Foi adicionada documentacao operacional sobre fonte oficial do projeto, deploy seguro e matriz de rotas canonicas.
+
+### Funcionalidades alteradas
+- Governanca de deploy: deploy pela raiz documentado como bloqueado.
+- GitHub Pages documentado como canal legado, nao oficial.
+- Render `nodere-api` documentado como backend canonico; `nodere-ts-api` ficou como servico a confirmar.
+- Rotas canonicas e aliases historicos passaram a ter documento dedicado.
+
+### Paginas do manual atualizadas
+- Aba Ajuda / Manual NODERE: topico "39. Arquitetura e deploy seguro".
+- Documento `docs/manual-nodere.md`: secao "Arquitetura e deploy seguro".
+
+### Novos topicos criados
+- `FONTE_OFICIAL_DO_PROJETO.txt`.
+- `docs/ROTAS_CANONICAS_NODERE.md`.
+
+### Topicos revisados
+- Deploy seguro.
+- Rotas canonicas.
+- Uso de GitHub Pages.
+- Uso de Vercel com Root Directory `apps/web`.
+- Uso de Render `nodere-api`.
+
+### FAQ atualizado
+- Nao aplicavel; a alteracao foi de governanca tecnica e nao criou novo fluxo de uso final.
+
+### Passo a passo atualizado
+- Incluida orientacao para publicar sempre pelo projeto Vercel `web` com Root Directory `apps/web`.
+- Incluida orientacao para tratar `nodere-api` como servico Render oficial.
+
+### Data da atualizacao
+- 2026-07-10.
+
+### Versao da plataforma
+- Branch `main`, commit base `d40ea08`.
+
+### Status
+- DOCUMENTACAO ATUALIZADA: SIM
+- MANUAL SINCRONIZADO: SIM
+- NOVAS FUNCIONALIDADES DOCUMENTADAS: NAO APLICAVEL
+- FUNCIONALIDADES ALTERADAS DOCUMENTADAS: SIM
+- FAQ ATUALIZADO: NAO APLICAVEL
+- PASSO A PASSO ATUALIZADO: SIM
+- RELATORIO ATUALIZADO: SIM
+
+---
+
 Data da atualizacao: 2026-07-03
 Versao da plataforma: NODERE Sprint atual
 

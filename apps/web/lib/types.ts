@@ -37,6 +37,8 @@ export interface Company {
   rating?: number;
   reviewCount?: number;
   mapsUrl?: string;
+  placeId?: string;
+  googlePlaceId?: string;
   latitude?: number;
   longitude?: number;
   distanceKm?: number;
