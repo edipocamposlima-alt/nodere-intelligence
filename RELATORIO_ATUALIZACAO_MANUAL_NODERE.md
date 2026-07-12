@@ -1,5 +1,51 @@
 # RELATORIO_ATUALIZACAO_MANUAL_NODERE
 
+## Atualizacao 2026-07-12 - Agenda, icones por tema e Ficha 360 v5
+
+### Funcionalidades adicionadas
+- Nenhuma funcionalidade de produto foi adicionada.
+
+### Funcionalidades alteradas
+- Ficha 360: reforcada a resolucao de IDs externos `ChIJ`, `search-*`, `apollo-company-*`, `econodata-*`, `discovery-*`, `google-*` e `place-*` antes da navegacao ou no fallback do backend.
+- Icones: reforcada a regra global para que SVGs internos mantenham `stroke` semantico em modo claro e escuro.
+- Agenda: documentada como item de navegacao com cor azul visivel na sidebar e no menu mobile.
+
+### Paginas do manual atualizadas
+- Aba Ajuda / Manual NODERE: topicos "6. Ficha do cliente" e "38. Icones, botoes e acoes visuais".
+- Documento `docs/manual-nodere.md`: secoes "Ficha do cliente", "Ficha 360° do cliente" e "Icones, botoes e acoes visuais".
+
+### Novos topicos criados
+- Nenhum topico novo; topicos existentes foram revisados.
+
+### Topicos revisados
+- Resolucao de identificadores externos antes da abertura da Ficha 360.
+- Paleta fixa dos icones por modulo e por card do Dashboard.
+- Agenda com cor propria em tema claro e escuro.
+
+### FAQ atualizado
+- Orientacao de Ficha 360 com URL antiga/ID externo revisada.
+
+### Passo a passo atualizado
+- Abrir ficha pela busca: clicar em Ficha, aguardar o NODERE salvar/resolver o lead e navegar somente para o registro persistido.
+- Validar icones: alternar claro/escuro e confirmar que Agenda, Dashboard, Sidebar e MobileNav preservam cor semantica.
+
+### Data da atualizacao
+- 2026-07-12.
+
+### Versao da plataforma
+- Branch `main`, commit base antes desta etapa `54ea445`.
+
+### Status
+- DOCUMENTACAO ATUALIZADA: SIM
+- MANUAL SINCRONIZADO: SIM
+- NOVAS FUNCIONALIDADES DOCUMENTADAS: NAO APLICAVEL
+- FUNCIONALIDADES ALTERADAS DOCUMENTADAS: SIM
+- FAQ ATUALIZADO: SIM
+- PASSO A PASSO ATUALIZADO: SIM
+- RELATORIO ATUALIZADO: SIM
+
+---
+
 ## Atualizacao 2026-07-12 - Publicacao forcada, versionamento backend e paleta final de icones
 
 ### Funcionalidades adicionadas

@@ -70,6 +70,18 @@ function normalizeSearch(value: unknown) {
     .trim();
 }
 
+function isExternalCompanyId(value: unknown) {
+  return /^(ChIJ|search-|apollo-company-|econodata-|discovery-|google-|places?[-_])/i.test(String(value || "").trim());
+}
+
+function shouldPersistBeforeFicha(company: Company, embedded: boolean) {
+  const raw = company as unknown as Record<string, unknown>;
+  if (embedded) return true;
+  if (isExternalCompanyId(company.id)) return true;
+  if (company.source === "google_places" && raw.crmSaved !== true && raw.isCrmLead !== true) return true;
+  return Boolean(raw.placeId || raw.googlePlaceId || raw.google_place_id) && !String(company.id || "").startsWith("company-");
+}
+
 function companyMatchesQuery(company: Company, query: string) {
   if (!query) return true;
   const haystack = [
@@ -296,13 +308,8 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
     return undefined;
   }
 
-  function shouldResolveBeforeFicha(company: Company) {
-    if (embedded) return true;
-    return /^(ChIJ|search-|apollo-company-|econodata-|discovery-)/i.test(String(company.id || ""));
-  }
-
   async function openFicha(company: Company) {
-    if (!shouldResolveBeforeFicha(company)) {
+    if (!shouldPersistBeforeFicha(company, embedded)) {
       router.push(`/companies/${encodeURIComponent(company.id)}`);
       return;
     }

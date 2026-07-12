@@ -328,12 +328,13 @@ async function dbGet(id: string, workspaceId = "default"): Promise<Company | und
   }
   if (error) throw error;
   if (!data) {
-    if (/^(ChIJ|search-|apollo-company-|econodata-)/i.test(externalId)) {
+    if (isExternalCompanyId(externalId)) {
       const externalMatch = await dbGetByExternalId(externalId, workspaceId).catch(() => undefined);
       if (externalMatch) return externalMatch;
       const existing = await dbList(workspaceId);
       const match = findDuplicateInList({ id: externalId, source: "google_places" as Company["source"] }, existing)?.company;
       if (match) return match;
+      console.warn("[companyStore] external company id could not be resolved", { externalId, workspaceId });
     }
     return undefined;
   }
@@ -985,6 +986,10 @@ function getDedupeKeys(company: Partial<Company>) {
   if (domain) add("domain", domain);
 
   return keys;
+}
+
+function isExternalCompanyId(value: unknown) {
+  return /^(ChIJ|search-|apollo-company-|econodata-|discovery-|google-|places?[-_])/i.test(String(value || "").trim());
 }
 
 function normalizePhoneKey(value: unknown) {

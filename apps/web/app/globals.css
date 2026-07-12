@@ -6954,7 +6954,12 @@ textarea,
 
 :where(.nodere-icon-tone, .nodere-nav-icon-tone, .nodere-action-icon-tone) :where(svg, .nodere-icon, .nav-icon) {
   color: var(--nodere-current-icon) !important;
-  stroke: currentColor;
+  stroke: var(--nodere-current-icon) !important;
+  fill: none;
+}
+
+:where(.nodere-icon-tone, .nodere-nav-icon-tone, .nodere-action-icon-tone) :where(svg *, .nodere-icon *, .nav-icon *) {
+  stroke: var(--nodere-current-icon) !important;
 }
 
 [data-icon-tone="green"] { --nodere-current-icon: var(--nodere-icon-green); }
