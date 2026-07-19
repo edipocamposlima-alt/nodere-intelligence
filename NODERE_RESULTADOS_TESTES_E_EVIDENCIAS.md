@@ -70,7 +70,7 @@ O validador registrou 21/21. Entre as condições verificadas:
 - navegação usa rede e fallback offline;
 - precache não contém Dashboard;
 - cache runtime limitado a recursos públicos/estáticos;
-- caches antigos removidos na ativação.
+- caches antigos removidos na ativação;
 - chamadas privadas direcionadas ao proxy same-origin;
 - token de acesso não persistido no `localStorage`.
 
@@ -87,4 +87,14 @@ Depois da remoção de `xlsx`, atualização de Nodemailer e overrides corretivo
 
 A API Render respondeu 200 em `/health`, `/api/health` e `/api/health/version`. Reportou versão 1.0.1, ambiente de produção, Supabase conectado, OpenAI saudável, Anthropic indisponível e o commit de baseline `66db603ae9e4463e7c25e9ede83ab59f176f31d0`.
 
-A evidência pós-deploy será registrada em `NODERE_DEPLOY_E_VALIDACAO_PRODUCAO.md`.
+## Produção após a publicação
+
+- Vercel deployment `dpl_ERWSnVGRUD43CCVk8AsMxyWkTHa2`: READY e aliado aos dois domínios oficiais.
+- Render: `/health`, `/api/health` e `/api/health/version` em 200; commit `ff6cee5201f9447369e771d580335859b31d6271`.
+- Raiz sem sessão: 307 para `/login`; login: 200.
+- Proxy sem cookie: 401.
+- Manifest: `id=/`, orientação `any`; service worker `nodere-public-shell-v5` sem Dashboard no precache.
+- E2E de produção: 2 aprovados + 1 autenticado ignorado em desktop; 2 aprovados + 1 autenticado ignorado em mobile.
+- Chrome com sessão real, inspeção read-only: Dashboard e CRM carregaram sem aviso de sessão expirada; CRM limitado a 100%; nenhum erro novo de aplicação após o reload final.
+
+Detalhes e rollback estão em `NODERE_DEPLOY_E_VALIDACAO_PRODUCAO.md`.

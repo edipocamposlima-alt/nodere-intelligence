@@ -58,7 +58,9 @@ Os scripts `packages/database/audit_final_security_hardening.sql` e `packages/da
 
 ## Decisão de liberação
 
-Status: **APTO PARA DEPLOY DA APLICAÇÃO COM RESSALVAS**.
+Status: **APLICAÇÃO PUBLICADA E VALIDADA COM RESSALVAS**.
+
+O código da aplicação validado corresponde ao commit `ff6cee5201f9447369e771d580335859b31d6271`. Vercel e Render concluíram a publicação; os domínios oficiais, health, sessão pública/inválida, PWA e a sessão real read-only no Dashboard/CRM foram verificados.
 
 Ressalvas obrigatórias:
 

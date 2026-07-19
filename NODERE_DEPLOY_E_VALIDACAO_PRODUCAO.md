@@ -1,7 +1,7 @@
 # NODERE — Deploy e Validação de Produção
 
 Data: 2026-07-18
-Estado deste registro: pronto para receber a evidência pós-publicação
+Estado deste registro: publicação e validação concluídas
 
 ## Topologia oficial
 
@@ -43,15 +43,20 @@ Estado deste registro: pronto para receber a evidência pós-publicação
 
 | Checagem | Resultado |
 |---|---|
-| Push do commit final | Pendente |
-| Vercel produção READY | Pendente |
-| `https://nodere.com.br` sem sessão -> `/login` | Pendente |
-| token inválido não exibe área privada | Pendente |
-| manifest e service worker v5 publicados | Pendente |
-| Render health 200 | Pendente |
-| Render commit atualizado | Pendente |
-| Supabase permaneceu sem mudança de schema | Pendente |
-| logs sem regressão crítica imediata | Pendente |
+| Push do commit de código | Aprovado: `ff6cee5201f9447369e771d580335859b31d6271` em `main` |
+| Vercel produção READY | Aprovado: `dpl_ERWSnVGRUD43CCVk8AsMxyWkTHa2` |
+| URL imutável do deployment | `https://web-n46tm5rf5-edipo-lima-s-projects.vercel.app` |
+| Aliases oficiais | Aprovado: `nodere.com.br` e `www.nodere.com.br` |
+| `https://nodere.com.br` sem sessão -> `/login` | Aprovado: 307 para `/login`, que responde 200 |
+| proxy sem cookie | Aprovado: `/api/backend/workspace/me` responde 401 |
+| token/cookie inválido não exibe área privada | Aprovado em Chromium desktop e mobile |
+| sessão real existente no Dashboard/CRM | Aprovado no Chrome: sem aviso de sessão expirada |
+| CRM | Aprovado: sem 47.400%, progressão máxima 100%, personalização recolhida |
+| manifest e service worker v5 publicados | Aprovado: `id=/`, orientação `any`, cache `nodere-public-shell-v5`, sem Dashboard |
+| Render health | Aprovado: três endpoints 200, versão 1.0.1 |
+| Render commit atualizado | Aprovado: `ff6cee5201f9447369e771d580335859b31d6271` |
+| Supabase permaneceu sem mudança de schema | Aprovado: nenhum SQL/migration foi executado nesta publicação |
+| logs sem regressão crítica imediata | Aprovado: nenhum erro novo de aplicação após o reload final |
 
 ## Rollback da aplicação
 
@@ -78,4 +83,8 @@ Não há rollback necessário nesta publicação porque a migração SQL não fa
 
 ## Registro pós-publicação
 
-Esta seção será atualizada com horário, commit, URL de deployment, resultados e eventuais ressalvas após a execução.
+Publicação finalizada em 2026-07-18 às 23:02 (UTC-03). O frontend foi construído remotamente pela Vercel com Next.js 15.5.19 e 53 páginas estáticas/dinâmicas geradas no build. O Render concluiu o auto-deploy sem indisponibilidade observada e passou a reportar o commit de código acima.
+
+Foram executados novamente os smokes de produção em Chromium desktop e mobile: quatro cenários públicos/de segurança passaram e dois cenários autenticados automatizados permaneceram ignorados por ausência de credenciais exclusivas de E2E. A sessão real já existente foi usada somente para inspeção visual read-only do Dashboard e CRM; não houve criação, edição ou remoção de dado comercial.
+
+Ressalvas mantidas: SQL de hardening não aplicado; conta E2E dedicada ainda necessária; integrações externas não certificadas continuam com o estado descrito em `NODERE_INTEGRACOES_STATUS_FINAL.md`.
