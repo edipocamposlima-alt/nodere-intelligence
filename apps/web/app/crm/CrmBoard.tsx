@@ -345,9 +345,9 @@ export function CrmBoard({ companies, onLeadClick }: { companies: Company[]; onL
 
   return (
     <div className="min-w-0 space-y-4">
-      <div className="flex flex-col gap-3 rounded-lg border border-line bg-panel/90 p-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-3 rounded-2xl border border-line bg-panel/90 p-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-white">CRM</h2>
+          <h2 className="text-xl font-black text-white">Quadro do pipeline</h2>
           <p className="mt-1 text-sm text-slate-400">Arraste os leads entre etapas para atualizar o funil comercial.</p>
         </div>
         <label className="flex min-w-0 items-center gap-2 rounded-lg border border-line bg-ink px-3 py-2 text-sm text-slate-300 md:min-w-[260px]">
@@ -356,7 +356,9 @@ export function CrmBoard({ companies, onLeadClick }: { companies: Company[]; onL
         </label>
       </div>
 
-      <div className="flex flex-col gap-2 rounded-lg border border-line bg-panel/90 p-3 sm:flex-row sm:items-center">
+      <details className="rounded-2xl border border-line bg-panel/90 p-3">
+        <summary className="cursor-pointer text-sm font-bold text-slate-200">Personalizar etapas do funil</summary>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <input
           value={newStage}
           onChange={(event) => setNewStage(event.target.value)}
@@ -383,11 +385,12 @@ export function CrmBoard({ companies, onLeadClick }: { companies: Company[]; onL
           <Plus className="h-4 w-4" />
           Criar etapa
         </button>
-      </div>
+        </div>
+      </details>
 
       {message && <p className="rounded-lg border border-electric/30 bg-electric/10 px-3 py-2 text-sm text-[var(--text-primary)]">{message}</p>}
 
-      <div className="nodere-kanban-scroll grid auto-cols-[minmax(16rem,18rem)] grid-flow-col gap-4 pb-3">
+      <div className="nodere-kanban-scroll grid auto-cols-[minmax(17rem,19rem)] grid-flow-col gap-4 pb-3">
         {columns.map((column, index) => {
           const leads = filtered.filter((company) => company.status === column);
           const stageColor = colorForStage(column, index);

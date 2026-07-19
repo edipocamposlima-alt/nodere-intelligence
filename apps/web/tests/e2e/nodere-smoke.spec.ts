@@ -19,6 +19,14 @@ test.describe("NODERE smoke minimo", () => {
     await expect(page).toHaveURL(/login/);
   });
 
+  test("sessao invalida não mantém conteúdo privado visível", async ({ page }) => {
+    await page.goto("/login");
+    await page.context().addCookies([{ name: "nodere_session", value: "sessao-invalida", url: page.url(), httpOnly: true, sameSite: "Lax" }]);
+    await page.goto("/crm");
+    await expect(page).toHaveURL(/login/);
+    await expect(page.getByText("Pipeline, contatos e oportunidades")).toHaveCount(0);
+  });
+
   test("login, dashboard, CRM, catalogo, propostas e logout", async ({ page }) => {
     await login(page);
 

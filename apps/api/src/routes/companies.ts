@@ -45,7 +45,7 @@ import { markOnboardingStep } from "../services/onboardingStore.js";
 import { logRequestMetric } from "../services/metricsStore.js";
 import { randomUUID } from "node:crypto";
 import { parse as parseCsvSync } from "csv-parse/sync";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import nodemailer from "nodemailer";
 import multer from "multer";
 import PDFDocument from "pdfkit";
@@ -477,7 +477,8 @@ router.post("/:id/analyze", async (req, res, next) => {
 router.post("/import", async (req, res, next) => {
   try {
     const workspaceId = getRequestWorkspaceId(req);
-    const parsed = parseImportPayload(req);
+    const parsed = await parseImportPayload(req);
+    validateImportRows(parsed.rows);
     const map = parsed.columnMap;
     if (parsed.rows.length === 0) return res.status(400).json({ message: "Envie arquivo CSV/XLSX, CSV bruto ou campo csv." });
     const rows = parsed.rows;
@@ -1648,7 +1649,7 @@ function parseCsv(csv: string) {
     });
 }
 
-function parseImportPayload(req: any): { rows: string[][]; columnMap: Record<string, string>; fileName?: string; source: string } {
+async function parseImportPayload(req: any): Promise<{ rows: string[][]; columnMap: Record<string, string>; fileName?: string; source: string }> {
   const contentType = String(req.headers["content-type"] || "");
   if (Buffer.isBuffer(req.body)) {
     if (contentType.includes("multipart/form-data")) {
@@ -1656,14 +1657,14 @@ function parseImportPayload(req: any): { rows: string[][]; columnMap: Record<str
       const columnMap = parseColumnMap(multipart.fields.column_map || multipart.fields.columnMap);
       if (!multipart.file?.buffer?.length) return { rows: [], columnMap, source: "multipart" };
       return {
-        rows: parseImportFile(multipart.file.buffer, multipart.file.filename || "", multipart.file.contentType || ""),
+        rows: await parseImportFile(multipart.file.buffer, multipart.file.filename || "", multipart.file.contentType || ""),
         columnMap,
         fileName: multipart.file.filename,
         source: "multipart"
       };
     }
     return {
-      rows: parseImportFile(req.body, String(req.headers["x-file-name"] || ""), contentType),
+      rows: await parseImportFile(req.body, String(req.headers["x-file-name"] || ""), contentType),
       columnMap: {},
       fileName: String(req.headers["x-file-name"] || ""),
       source: contentType.includes("sheet") || contentType.includes("excel") ? "xlsx" : "csv"
@@ -1671,6 +1672,9 @@ function parseImportPayload(req: any): { rows: string[][]; columnMap: Record<str
   }
 
   const csv = typeof req.body === "string" ? req.body : String(req.body?.csv || "");
+  if (Buffer.byteLength(csv, "utf8") > 8 * 1024 * 1024) {
+    throw Object.assign(new Error("Arquivo excede o limite seguro de 8 MB."), { status: 413 });
+  }
   return {
     rows: csv.trim() ? parseCsv(csv) : [],
     columnMap: typeof req.body?.column_map === "object" ? req.body.column_map : parseColumnMap(req.body?.column_map),
@@ -1678,23 +1682,47 @@ function parseImportPayload(req: any): { rows: string[][]; columnMap: Record<str
   };
 }
 
-function parseImportFile(buffer: Buffer, filename: string, contentType: string) {
+export async function parseImportFile(buffer: Buffer, filename: string, contentType: string) {
   const lowerName = filename.toLowerCase();
-  if (lowerName.endsWith(".xlsx") || lowerName.endsWith(".xls") || contentType.includes("spreadsheet") || contentType.includes("excel")) {
-    const workbook = XLSX.read(buffer, { type: "buffer" });
-    const firstSheet = workbook.SheetNames[0];
-    if (!firstSheet) return [];
-    return (XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], { header: 1, defval: "" }) as unknown[][])
-      .map((row) => row.map((cell) => String(cell ?? "").trim()))
-      .filter((row) => row.some((cell) => cell));
+  if (buffer.length > 8 * 1024 * 1024) {
+    throw Object.assign(new Error("Arquivo excede o limite seguro de 8 MB."), { status: 413 });
   }
-  return parseCsvSync(buffer.toString("utf8"), {
+  const hasCsvExtension = lowerName.endsWith(".csv");
+  const hasLegacyOleHeader = buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]));
+  const isSpreadsheet = !hasCsvExtension && (lowerName.endsWith(".xlsx") || lowerName.endsWith(".xls") || contentType.includes("spreadsheet") || contentType.includes("excel"));
+  if (isSpreadsheet) {
+    if ((lowerName.endsWith(".xls") && !lowerName.endsWith(".xlsx")) || hasLegacyOleHeader || (!filename && contentType.includes("application/vnd.ms-excel"))) {
+      throw Object.assign(new Error("Formato .xls legado não é aceito. Salve como .xlsx ou CSV."), { status: 415 });
+    }
+    const workbook = new ExcelJS.Workbook();
+    const workbookBytes = new Uint8Array(buffer.byteLength);
+    workbookBytes.set(buffer);
+    await workbook.xlsx.load(workbookBytes.buffer);
+    const firstSheet = workbook.worksheets[0];
+    if (!firstSheet) return [];
+    const rows: string[][] = [];
+    firstSheet.eachRow({ includeEmpty: false }, (row) => {
+      const values = Array.from({ length: Math.max(1, row.cellCount) }, (_, index) => row.getCell(index + 1).text.trim());
+      if (values.some(Boolean)) rows.push(values);
+    });
+    validateImportRows(rows);
+    return rows;
+  }
+  const rows = parseCsvSync(buffer.toString("utf8"), {
     bom: true,
     delimiter: [",", ";"],
     relaxColumnCount: true,
     skipEmptyLines: true,
     trim: true
   }) as string[][];
+  validateImportRows(rows);
+  return rows;
+}
+
+function validateImportRows(rows: string[][]) {
+  if (rows.length > 5001 || rows.some((row) => row.length > 100)) {
+    throw Object.assign(new Error("Arquivo excede o limite de 5.000 registros ou 100 colunas."), { status: 413 });
+  }
 }
 
 function parseMultipart(buffer: Buffer, contentType: string) {

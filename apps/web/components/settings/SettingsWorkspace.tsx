@@ -1,16 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { getApiBaseUrl } from "@/lib/apiBase";
 
 const API_URL = getApiBaseUrl();
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://qhopjggnbzewuuktqntp.supabase.co",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "missing-anon-key"
-);
 
 export default function SettingsWorkspace() {
   const { workspace, refresh } = useWorkspace();
@@ -34,9 +28,8 @@ export default function SettingsWorkspace() {
   useEffect(() => {
     async function loadPreferences() {
       try {
-        const { data } = await supabase.auth.getSession();
-        const token = data.session?.access_token || localStorage.getItem("nodere_admin_token") || "";
-        const res = await fetch(`${API_URL}/api/settings`, {
+        const token = localStorage.getItem("nodere_admin_token") || "";
+        const res = await fetch(`${API_URL}/settings`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const payload = await res.json().catch(() => ({}));
@@ -60,9 +53,8 @@ export default function SettingsWorkspace() {
     setSaving(true);
     setMsg("");
     try {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token || localStorage.getItem("nodere_admin_token") || "";
-      const res = await fetch(`${API_URL}/api/settings/workspace`, {
+      const token = localStorage.getItem("nodere_admin_token") || "";
+      const res = await fetch(`${API_URL}/settings/workspace`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(form)

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { getApiBaseUrl } from "@/lib/apiBase";
 
 const API_URL = getApiBaseUrl();
@@ -17,11 +16,6 @@ const INTEGRATIONS = [
   { key: "smtp_from", label: "E-mail Remetente", hint: "NODERE <noreply@nodere.com.br>" }
 ];
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://qhopjggnbzewuuktqntp.supabase.co",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "missing-anon-key"
-);
-
 export default function SettingsIntegrations() {
   const [values, setValues] = useState<Record<string, string>>({});
   const [testing, setTesting] = useState<Record<string, boolean>>({});
@@ -30,13 +24,12 @@ export default function SettingsIntegrations() {
   const [msg, setMsg] = useState("");
 
   async function getToken() {
-    const { data } = await supabase.auth.getSession();
-    return data.session?.access_token || localStorage.getItem("nodere_admin_token") || "";
+    return localStorage.getItem("nodere_admin_token") || "";
   }
 
   useEffect(() => {
     getToken().then((token) =>
-      fetch(`${API_URL}/api/settings/integrations`, {
+      fetch(`${API_URL}/settings/integrations`, {
         headers: { Authorization: `Bearer ${token}` }
       }).then((response) => response.json()).then((data) => setValues(data || {})).catch(() => setValues({}))
     );
@@ -63,7 +56,7 @@ export default function SettingsIntegrations() {
     setSaving(true);
     try {
       const token = await getToken();
-      const res = await fetch(`${API_URL}/api/settings/integrations`, {
+      const res = await fetch(`${API_URL}/settings/integrations`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(values)

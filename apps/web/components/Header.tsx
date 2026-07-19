@@ -27,7 +27,7 @@ const PREFS_KEY = "nodere_user_preferences";
 const defaultPrefs: UserPrefs = {
   theme: "dark",
   fontSize: "normal",
-  density: "compact",
+  density: "comfortable",
   avatarUrl: "",
   displayName: ""
 };

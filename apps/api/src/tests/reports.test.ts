@@ -55,7 +55,8 @@ describe("reports filters and exports", () => {
         source: "google_places",
         status: "Ganho",
         companyId: "company-1"
-      }
+      },
+      { now: new Date("2026-06-22T12:00:00.000Z") }
     );
 
     assert.equal(result.length, 1);

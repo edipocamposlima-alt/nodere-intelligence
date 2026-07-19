@@ -14,6 +14,7 @@ router.get("/me", requireWorkspaceSession, async (req, res, next) => {
     const workspaceId = getRequestWorkspaceId(req);
     const sb = getSupabase();
     const workspace = sb ? await loadWorkspace(sb, workspaceId) : null;
+    const modules = sb ? await loadWorkspaceModules(sb, workspaceId) : [];
     const members = await listWorkspaceUsers(workspaceId);
     const member = members.find((item) => item.email === session.email);
 
@@ -30,6 +31,7 @@ router.get("/me", requireWorkspaceSession, async (req, res, next) => {
         name: "Workspace NODERE",
         plan: "trial"
       },
+      modules,
       credits: isPrivilegedSession(req)
         ? {
             total: 999999,
@@ -190,6 +192,19 @@ async function loadWorkspace(sb: NonNullable<ReturnType<typeof getSupabase>>, wo
     .maybeSingle();
   if (workspace.error) throw workspace.error;
   return workspace.data;
+}
+
+async function loadWorkspaceModules(sb: NonNullable<ReturnType<typeof getSupabase>>, workspaceId: string) {
+  const modules = await sb
+    .from("nodere_workspace_modules")
+    .select("module_code")
+    .eq("workspace_id", workspaceId)
+    .eq("active", true);
+  if (modules.error) {
+    if (["42P01", "PGRST205"].includes(String(modules.error.code || ""))) return [];
+    throw modules.error;
+  }
+  return (modules.data || []).map((item) => String(item.module_code || "")).filter(Boolean);
 }
 
 export default router;

@@ -454,11 +454,15 @@ export function escapeCsvCell(value: string | number) {
   return `"${safe.replace(/"/g, '""')}"`;
 }
 
-export function filterCompaniesForReport(companies: Company[], input: ReportFilters, options: { includePeriod?: boolean; includeFieldFilters?: boolean } = {}) {
+export function filterCompaniesForReport(
+  companies: Company[],
+  input: ReportFilters,
+  options: { includePeriod?: boolean; includeFieldFilters?: boolean; now?: Date | number } = {}
+) {
   const filters = normalizeReportFilters(input);
   const includePeriod = options.includePeriod !== false;
   const includeFieldFilters = options.includeFieldFilters !== false;
-  const since = getPeriodStart(filters.period).getTime();
+  const since = getPeriodStart(filters.period, options.now).getTime();
   return companies.filter((company) => {
     if (filters.role === "operator" && filters.userId && !companyBelongsToOperator(company, filters.userId)) return false;
     if (includePeriod && new Date(company.createdAt || 0).getTime() < since) return false;
@@ -531,9 +535,10 @@ function getEstimatedValue(company: Company) {
   return Math.round(meta.avgValue * meta.probability);
 }
 
-function getPeriodStart(period: string) {
+function getPeriodStart(period: string, now: Date | number = Date.now()) {
   const days = period === "7d" ? 7 : period === "90d" ? 90 : period === "12m" ? 365 : 30;
-  return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const referenceTime = now instanceof Date ? now.getTime() : now;
+  return new Date(referenceTime - days * 24 * 60 * 60 * 1000);
 }
 
 function groupBy<T>(items: T[], getKey: (item: T) => string) {

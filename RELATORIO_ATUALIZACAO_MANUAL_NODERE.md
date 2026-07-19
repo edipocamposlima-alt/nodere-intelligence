@@ -1,5 +1,33 @@
 # RELATORIO_ATUALIZACAO_MANUAL_NODERE
 
+# Atualizacao 2026-07-18 - Auditoria final, seguranca e operacao
+
+Data da atualizacao: 2026-07-18
+Versao da plataforma: NODERE auditada antes do deploy final
+
+## Funcionalidades alteradas documentadas
+
+- Validacao de sessao antes da renderizacao de qualquer area privada.
+- Cookie criado somente apos confirmacao do backend e workspace.
+- Calculo acumulado e limitado a 100% no funil do CRM.
+- Personalizacao do funil recolhida e colunas com encaixe horizontal.
+- PWA sem cache de navegacoes ou respostas autenticadas.
+- Importacao CSV/XLSX com limites de 8 MB, 5.000 registros e 100 colunas; XLS legado bloqueado.
+- Densidade confortavel e nova hierarquia visual do Dashboard/CRM.
+- Blog administrativo redirecionado ao fluxo canonico do CMS.
+- Migracao e rollback de seguranca do Supabase preparados, mas condicionados a backup e staging.
+
+## Paginas do manual atualizadas
+
+- Ajuda / Manual NODERE: topicos 5, 14, 15, 16, 26, 35, 40 e novo topico 41.
+- `docs/manual-nodere.md`: acesso, PWA, CRM, importacao, tema, erros, backup e auditoria final.
+
+## Status
+
+- DOCUMENTACAO ATUALIZADA: SIM
+- RELATORIOS EXECUTIVOS REVISADOS: SIM; o calculo de progressao do CRM foi corrigido na origem visual.
+- PENDENCIA: migracao estrutural do Supabase aguarda backup e staging; testes E2E autenticados aguardam credenciais exclusivas de teste.
+
 # Atualizacao 2026-07-12 - Agenda/Calendario e temas
 
 Data da atualizacao: 2026-07-12

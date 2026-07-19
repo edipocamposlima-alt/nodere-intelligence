@@ -5189,6 +5189,94 @@ body {
   .nodere-editor-content { min-height: 150px !important; padding: 12px; }
 }
 
+/* Auditoria final 2026: camada de design da aplicação autenticada. */
+:root {
+  --nodere-content-max: 1680px;
+  --nodere-surface-radius: 18px;
+  --nodere-focus: #5ee9b5;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+}
+
+.nodere-grid {
+  background-color: var(--bg-main);
+  background-image:
+    radial-gradient(circle at 18% -10%, color-mix(in srgb, var(--brand-primary) 16%, transparent), transparent 34%),
+    linear-gradient(rgba(148, 163, 184, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.025) 1px, transparent 1px);
+  background-size: auto, 56px 56px, 56px 56px;
+}
+
+.nodere-sidebar {
+  width: 15.5rem !important;
+  padding: 1rem !important;
+  box-shadow: 12px 0 42px rgba(0, 0, 0, 0.14);
+}
+
+.nodere-topbar {
+  min-height: 72px;
+  background-color: color-mix(in srgb, var(--bg-sidebar) 90%, transparent) !important;
+}
+
+.nodere-app-content > :where(div, section, main) {
+  width: min(100%, var(--nodere-content-max));
+  margin-inline: auto;
+}
+
+.nodere-app-shell :where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--nodere-focus) 78%, white);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--nodere-focus) 18%, transparent);
+}
+
+.nodere-dashboard > section,
+.nodere-dashboard > div {
+  scroll-margin-top: 92px;
+}
+
+.nodere-kanban-scroll {
+  scroll-snap-type: inline proximity;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--brand-primary) 72%, white) transparent;
+}
+
+.nodere-kanban-scroll > .crm-stage {
+  scroll-snap-align: start;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.16) !important;
+}
+
+.crm-lead-card {
+  padding: 0.75rem !important;
+}
+
+@media (max-width: 1024px) {
+  .nodere-topbar {
+    min-height: 64px;
+  }
+
+  .nodere-kanban-scroll {
+    grid-auto-columns: minmax(17rem, 82vw) !important;
+  }
+
+  .crm-stage {
+    height: min(640px, calc(100dvh - 210px)) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 .nodere-brand-surface {
   background:
     radial-gradient(circle at 17% 18%, rgba(0, 223, 130, 0.24), transparent 32%),

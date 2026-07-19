@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Download, LayoutGrid, ListFilter, Plus, Search, SlidersHorizontal } from "lucide-react";
 import type { Company } from "@/lib/types";
+import { CRM_STAGES } from "@/lib/crm-stages";
 import { CrmBoard } from "./CrmBoard";
 import { LeadDrawer } from "@/components/crm/LeadDrawer";
 
@@ -46,16 +47,7 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
   const avgScore = items.length ? Math.round(items.reduce((sum, company) => sum + Number(company.score || 0), 0) / items.length) : 0;
   const pipelineTotal = items.reduce((sum, company) => sum + leadValue(company), 0);
   const forecastTotal = items.reduce((sum, company) => sum + leadValue(company) * (leadProbability(company) / 100), 0);
-  const stageMetrics = useMemo(() => stages.map((item, index) => {
-    const stageLeads = items.filter((company) => company.status === item);
-    const previous = index > 0 ? items.filter((company) => company.status === stages[index - 1]).length : stageLeads.length;
-    return {
-      stage: item,
-      count: stageLeads.length,
-      value: stageLeads.reduce((sum, company) => sum + leadValue(company), 0),
-      conversion: previous ? Math.round((stageLeads.length / previous) * 100) : 0
-    };
-  }), [items, stages]);
+  const stageMetrics = useMemo(() => buildStageMetrics(items), [items]);
 
   function openNewLead() {
     setSelectedLead(null);
@@ -70,8 +62,8 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
   }
 
   return (
-    <section className="min-w-0 space-y-5">
-      <div className="rounded-2xl border border-line bg-panel/90 p-5 shadow-card">
+    <section className="min-w-0 space-y-6">
+      <div className="rounded-3xl border border-line bg-panel/90 p-5 shadow-card md:p-6">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.16em] text-cyan">CRM comercial</p>
@@ -79,6 +71,11 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
             <p className="mt-1 max-w-2xl text-sm text-slate-400">
               Operação inspirada em quadros modernos de CRM: Kanban para ação diária, lista para auditoria e filtros rápidos para priorização.
             </p>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-slate-300">
+              <span className="rounded-full border border-line bg-white/5 px-3 py-1.5">{stages.length} etapas ativas</span>
+              <span className="rounded-full border border-line bg-white/5 px-3 py-1.5">{won} ganhos</span>
+              <span className="rounded-full border border-line bg-white/5 px-3 py-1.5">Score médio {avgScore}/100</span>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={openNewLead} className="inline-flex items-center gap-2 rounded-lg bg-electric px-4 py-2 text-sm font-black text-white transition hover:bg-brand-hover">
@@ -91,40 +88,30 @@ export function CrmSwitcher({ companies }: { companies: Company[] }) {
             </Link>
           </div>
         </div>
-        <div className="mt-5 grid gap-3 md:grid-cols-5">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {[
             ["Leads totais", items.length.toLocaleString("pt-BR")],
-            ["Etapas ativas", stages.length.toLocaleString("pt-BR")],
-            ["Ganhos", won.toLocaleString("pt-BR")],
-            ["Score médio", `${avgScore}/100`],
+            ["Pipeline", formatBRL(pipelineTotal)],
+            ["Forecast", formatBRL(forecastTotal)],
             ["Sem follow-up", stale.toLocaleString("pt-BR")]
           ].map(([label, value], index) => (
-            <div key={label} className="rounded-xl border border-line bg-ink/70 p-4">
-              <p className="text-xs text-slate-500">{label}</p>
-              <p className={`mt-2 text-2xl font-black ${index === 4 && stale > 0 ? "text-amber-200" : "text-white"}`}>{value}</p>
+            <div key={label} className="rounded-2xl border border-line bg-ink/70 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+              <p className={`mt-2 text-2xl font-black ${index === 3 && stale > 0 ? "text-amber-200" : "text-white"}`}>{value}</p>
             </div>
           ))}
         </div>
-        <div className="mt-3 grid gap-3 lg:grid-cols-[0.8fr_0.8fr_1.4fr]">
-          <div className="rounded-xl border border-line bg-ink/70 p-4">
-            <p className="text-xs text-slate-500">Valor total do pipeline</p>
-            <p className="mt-2 text-2xl font-black text-white">{formatBRL(pipelineTotal)}</p>
-          </div>
-          <div className="rounded-xl border border-line bg-ink/70 p-4">
-            <p className="text-xs text-slate-500">Previsão de fechamento</p>
-            <p className="mt-2 text-2xl font-black text-cyan">{formatBRL(forecastTotal)}</p>
-          </div>
-          <div className="rounded-xl border border-line bg-ink/70 p-4">
-            <p className="text-xs text-slate-500">Negócios por etapa e conversão</p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-              {stageMetrics.slice(0, 6).map((metric) => (
+        <div className="mt-6 border-t border-line pt-5">
+            <p className="text-sm font-black text-white">Avanço entre etapas</p>
+            <p className="mt-1 text-xs text-slate-400">Conversão cumulativa pela ordem canônica do funil, limitada a 100%.</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
+              {stageMetrics.filter((metric) => metric.count > 0).slice(0, 6).map((metric) => (
                 <div key={metric.stage} className="rounded-lg border border-line bg-bg-card px-3 py-2">
                   <p className="truncate text-xs font-bold text-white">{metric.stage}</p>
-                  <p className="mt-1 text-[11px] text-slate-400">{metric.count} lead(s) · {metric.conversion}% conversão</p>
+                  <p className="mt-1 text-[11px] text-slate-400">{metric.count} lead(s) · {metric.conversion}% avançaram</p>
                 </div>
               ))}
             </div>
-          </div>
         </div>
       </div>
 
@@ -220,4 +207,43 @@ function leadProbability(company: Company) {
 
 function formatBRL(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+}
+
+function normalizeStageId(status?: string) {
+  const normalized = String(status || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+  const aliases: Record<string, string> = {
+    "qualificacao": "Qualificado",
+    "diagnostico": "Diagnóstico enviado",
+    "proposta": "Proposta enviada",
+    "reuniao": "Reunião marcada",
+    "cliente": "Fechado",
+    "ganho": "Fechado",
+    "ganho(a)": "Fechado"
+  };
+  return aliases[normalized] || CRM_STAGES.find((stage) => stage.id.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === normalized)?.id || status || "Novo Lead";
+}
+
+function buildStageMetrics(companies: Company[]) {
+  const orderedStages = CRM_STAGES.filter((stage) => stage.id !== "Perdido");
+  const normalizedCompanies = companies.map((company) => ({ company, stage: normalizeStageId(company.status) }));
+  let previousReached = normalizedCompanies.filter((item) => item.stage !== "Perdido").length;
+
+  return orderedStages.map((stage, index) => {
+    const stageIndex = orderedStages.findIndex((candidate) => candidate.id === stage.id);
+    const current = normalizedCompanies.filter((item) => item.stage === stage.id);
+    const reached = normalizedCompanies.filter((item) => {
+      const itemIndex = orderedStages.findIndex((candidate) => candidate.id === item.stage);
+      return itemIndex >= stageIndex;
+    }).length;
+    const conversion = index === 0
+      ? (reached > 0 ? 100 : 0)
+      : previousReached > 0 ? Math.min(100, Math.round((reached / previousReached) * 100)) : 0;
+    previousReached = reached;
+    return {
+      stage: stage.label,
+      count: current.length,
+      value: current.reduce((sum, item) => sum + leadValue(item.company), 0),
+      conversion
+    };
+  });
 }

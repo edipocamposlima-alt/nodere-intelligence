@@ -3,7 +3,6 @@ import { getApiBaseUrl } from "./apiBase";
 import { getErrorMessage } from "./errors";
 
 const API_URL = getApiBaseUrl();
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 const USER_TOKEN_KEY = "nodere_admin_token";
 
 function authHeaders(token?: string | null): Record<string, string> {
@@ -14,7 +13,7 @@ function clientAuthHeaders(includeJson = false): Record<string, string> {
   const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
   return {
     ...(includeJson ? { "Content-Type": "application/json" } : {}),
-    ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {})
+    ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {})
   };
 }
 
@@ -331,6 +330,14 @@ export function getWorkspaceSegments() {
   return api<{ segments: string[]; predefined: string[]; custom: string[] }>("/workspace/segments");
 }
 
+export function getWorkspaceMe() {
+  return api<{
+    user?: { id?: string; workspace_id?: string; workspaceId?: string; name?: string; email?: string; role?: string };
+    workspace?: Record<string, unknown> & { id?: string; name?: string; plan?: string };
+    modules?: string[];
+  }>("/workspace/me");
+}
+
 export function saveWorkspaceSegment(segment: string) {
   return api<{ segments: string[]; predefined: string[]; custom: string[] }>("/workspace/segments", {
     method: "POST",
@@ -561,7 +568,7 @@ export async function importCompaniesFile(file: File, column_map?: Record<string
   const response = await fetch(`${API_URL}/companies/import`, {
     method: "POST",
     headers: {
-      ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {})
+      ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {})
     },
     body: form,
     cache: "no-store"
@@ -923,7 +930,7 @@ export async function downloadReportCsv(filters: ReportFilters = { period: "30d"
   const response = await fetch(`${API_URL}/reports/export.csv${query ? `?${query}` : ""}`, {
     method: "GET",
     headers: {
-      ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {})
+      ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {})
     },
     cache: "no-store"
   });

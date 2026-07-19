@@ -6,8 +6,12 @@ O NODERE é uma ferramenta de prospecção e CRM para encontrar empresas no Goog
 ## Acesso e login
 Use `https://nodere.com.br`. A área administrativa fica em `/admin` e usa as credenciais configuradas no backend Render. Chaves de API nunca devem ser colocadas no frontend.
 
+Antes de exibir o workspace, o navegador valida o token no backend. Token inválido ou expirado é removido e leva o usuário a `/login`; indisponibilidade temporária mostra uma tela de nova tentativa sem renderizar dados privados. O cookie de sessão só é criado depois que o backend confirma usuário e workspace.
+
 ## Instalação como app
 No Android/Chrome, abra o menu do navegador e toque em **Instalar app**. No iPhone/Safari, use **Compartilhar > Adicionar à Tela de Início**. O app usa o mesmo sistema web e mantém as configurações visíveis em telas pequenas.
+
+O PWA guarda somente a estrutura pública e recursos estáticos. Páginas autenticadas, navegações internas e respostas contendo dados do workspace não entram no cache do service worker. Sem conexão, use a tela offline e reconecte para acessar dados privados.
 
 ## Configuração de APIs
 As chaves sensíveis ficam no Render/backend:
@@ -54,14 +58,19 @@ Abra **CRM**. Arraste o card do lead entre as etapas:
 
 Cada alteração é salva no backend e refletida no dashboard.
 
+O resumo do funil usa a ordem canônica acima. A conversão é calculada por progressão acumulada e fica limitada a 100%, evitando percentuais artificiais quando etapas estão vazias ou foram criadas em ordem diferente.
+
 ### Criar e remover etapas
-No topo do CRM, use o campo **Nova etapa do funil** para criar etapas como:
+Abra **Personalizar funil** no topo do CRM e use o campo de nova etapa para criar opções como:
 - Retomar futuramente
 - Aguardando orçamento
 - Contrato enviado
 - Sem interesse
 
 Etapas personalizadas são salvas no navegador do operador. Uma etapa só pode ser removida quando estiver vazia, para evitar perda operacional.
+
+## Importação segura de empresas
+Na Busca de empresas, envie arquivos CSV ou XLSX moderno. Arquivos XLS legados devem ser convertidos para XLSX ou CSV. O backend limita cada envio a 8 MB, 5.000 registros e 100 colunas, valida o conteúdo, normaliza CNPJ/telefone e evita duplicidade por CNPJ ou nome+cidade. O modelo CSV está em `/api/companies/import/template`.
 
 ## Ficha do cliente
 Clique no nome do lead para abrir a ficha. Use:
@@ -216,6 +225,8 @@ Em **Configurações**, ajuste:
 - densidade compacta/expandida;
 - visual em cards/listas.
 
+A densidade **Confortável** é o padrão. Ela preserva uma barra superior de 72px, conteúdo central com largura máxima, títulos mais legíveis e áreas clicáveis com foco visível. Use Compacta apenas quando precisar exibir mais registros por tela.
+
 As preferências são salvas em `nodere_settings`, aplicadas antes da renderização visual da página e sincronizadas com o backend quando disponível. O sistema mantém compatibilidade com chaves antigas, mas a fonte local oficial do tema é única. O NODERE mostra os rótulos **Claro** e **Escuro** para o usuário, enquanto usa internamente os valores técnicos `light` e `dark`. Ao carregar a plataforma, o tema é reaplicado no `html` e no `body` para evitar que a interface fique presa no modo escuro. O modo claro/escuro deve permanecer estável ao trocar páginas, atualizar o navegador, fazer logout/login, reabrir o navegador, usar mobile ou PWA.
 
 O tema claro mantém a mesma hierarquia visual do tema escuro: fundo com identidade NODERE, cards com bordas verdes suaves, badges coloridos, barras de progresso, sidebar, topbar, tabelas, abas, indicadores e editores com contraste adequado. O objetivo é clarear a interface sem transformar o sistema em uma tela genérica ou sem marca.
@@ -267,6 +278,8 @@ A plataforma NODERE/Noderi usa a tela de login como única porta pública operac
 Regras do fluxo:
 - sem sessão, a raiz do domínio redireciona para login;
 - rotas internas sem sessão redirecionam para login com o destino original;
+- nenhuma área privada é renderizada enquanto a validação assíncrona estiver pendente;
+- token inválido não cria cookie e limpa a sessão local;
 - após login válido, o usuário segue para dashboard ou para a rota solicitada;
 - após logout, a sessão é encerrada e novas tentativas de acesso interno voltam para login;
 - termos e privacidade continuam acessíveis para suporte legal ao login.
@@ -328,6 +341,9 @@ A área Automações lista sequências comerciais e pode ativar fluxos por empre
 
 ## Erros comuns
 - **Unauthorized**: rota protegida ou token ausente.
+- **Sessão expirada**: o token não foi aceito; faça login novamente. Os dados internos não permanecem visíveis.
+- **Serviço temporariamente indisponível**: a validação não pôde terminar; use **Nova tentativa** quando a API voltar.
+- **XLS não suportado**: converta o arquivo para XLSX ou CSV e respeite 8 MB, 5.000 registros e 100 colunas.
 - **OpenAI insufficient_quota**: falta crédito/billing na OpenAI.
 - **PageSpeed not_configured**: falta `GOOGLE_PAGESPEED_API_KEY`.
 - **Apollo API_INACCESSIBLE**: plano/token sem acesso à People API ou enrichment.
@@ -337,3 +353,8 @@ A área Automações lista sequências comerciais e pode ativar fluxos por empre
 
 ## Backup e persistência
 Com Supabase configurado, leads, notas e histórico persistem fora do navegador. localStorage é usado apenas como preferência/cache local.
+
+Mudanças de schema, funções, políticas RLS ou vínculos de usuários exigem backup verificável e teste em staging antes de produção. A auditoria final preparou uma migração transacional e um rollback correspondente, mas eles não devem ser executados sem essas duas condições.
+
+## Auditoria final de julho de 2026
+Foram revisados autenticação, workspace, CRM, dashboard, importação, dependências, PWA, responsividade, integrações e banco. A entrega remove credencial pública do cliente, impede a renderização de dados com sessão expirada, usa o backend para dados de workspace, corrige a conversão do funil, limita importações e restringe o cache offline a recursos públicos. Os testes e bloqueios remanescentes estão registrados nos documentos `NODERE_MATRIZ_DE_TESTES.md`, `NODERE_RESULTADOS_TESTES_E_EVIDENCIAS.md` e `NODERE_PENDENCIAS_E_BLOQUEIOS_REAIS.md`.

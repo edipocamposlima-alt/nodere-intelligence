@@ -107,7 +107,7 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-5 p-4 md:p-6">
+    <div className="nodere-dashboard space-y-7 p-4 md:p-7 xl:p-8">
       {onboardingStatus && <OnboardingBanner initialSteps={onboardingStatus} />}
       {companiesResult.error && (
         <div className="rounded-lg border border-amber-400/40 bg-amber-500/10 p-4 text-sm leading-6 text-amber-100">
@@ -115,11 +115,11 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <section className="rounded-lg border border-line bg-panel/90 p-4 shadow-glow md:p-5">
+      <section className="rounded-3xl border border-line bg-panel/90 p-5 shadow-card md:p-6">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="dashboard-brand-logo nodere-brand-surface inline-flex w-fit rounded-2xl border border-electric/30 p-4 shadow-[0_0_34px_rgba(0,223,130,0.18)]">
-              <Logo variant="full" height={64} />
+            <div className="dashboard-brand-logo nodere-brand-surface inline-flex w-fit rounded-2xl border border-electric/30 p-3">
+              <Logo variant="full" height={46} />
             </div>
             <div className="min-w-0">
               <h1 className="text-xl font-black text-[var(--text-primary)] md:text-2xl">Dashboard executivo</h1>
@@ -139,25 +139,29 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Indicadores principais">
         {primaryKpis.map((item) => <KpiCard key={item.label} {...item} />)}
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <SectionHeading title="Qualidade e prontidão da base" description="Sinais que pedem correção, enriquecimento ou ação comercial." />
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Qualidade da base">
         {diagnosticKpis.map((item) => <CompactMetric key={item.label} {...item} />)}
       </section>
 
+      <SectionHeading title="Execução comercial" description="Avanço do pipeline e qualidade média das oportunidades." />
       <section className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
         <ConversionFunnel stages={funnelStages} />
         <ScorePanel score={metrics.averageScore || reportSummary?.avg_score || 0} pipeline={metrics.pipeline} />
       </section>
 
+      <SectionHeading title="Distribuição da carteira" description="Como os leads estão organizados por etapa, segmento e origem." />
       <section className="grid gap-5 xl:grid-cols-3">
         <DashboardBarPanel title="Leads por status" rows={pipelineRows} tone="info" />
         <DashboardBarPanel title="Leads por segmento" rows={segmentCounts} tone="success" />
         <DashboardBarPanel title="Origem dos leads" rows={originCounts} tone="warning" />
       </section>
 
+      <SectionHeading title="Prioridades da operação" description="Oportunidades com maior potencial e próximas ações recomendadas." />
       <section className="grid gap-5 xl:grid-cols-[1fr_0.9fr]">
         <OpportunityRanking companies={topOpportunities} />
         <div className="space-y-5">
@@ -177,7 +181,7 @@ export default async function DashboardPage() {
 function KpiCard({ label, value, hint, icon: Icon, tone, iconTone }: { label: string; value: string | number; hint: string; icon: typeof Users; tone: Tone; iconTone?: IconTone }) {
   const style = toneStyle[tone];
   return (
-    <div className={`rounded-lg border ${style.border} ${style.bg} p-4`}>
+    <div className={`rounded-2xl border ${style.border} ${style.bg} p-5 shadow-card`}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm text-[var(--text-secondary)]">{label}</p>
@@ -195,7 +199,7 @@ function KpiCard({ label, value, hint, icon: Icon, tone, iconTone }: { label: st
 function CompactMetric({ label, value, icon: Icon, tone, iconTone, href }: { label: string; value: number; icon: typeof Users; tone: Tone; iconTone?: IconTone; href: string }) {
   const style = toneStyle[tone];
   return (
-    <Link href={href} className="rounded-lg border border-line bg-panel/90 p-4 transition hover:-translate-y-0.5 hover:border-cyan/50">
+    <Link href={href} className="rounded-2xl border border-line bg-panel/90 p-4 shadow-card transition hover:border-cyan/50">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-[var(--text-secondary)]">{label}</p>
         <span className="nodere-icon-tone flex h-9 w-9 items-center justify-center rounded-lg" data-icon-tone={iconTone || style.iconTone}>
@@ -204,6 +208,15 @@ function CompactMetric({ label, value, icon: Icon, tone, iconTone, href }: { lab
       </div>
       <p className="mt-2 text-2xl font-black text-[var(--text-primary)]">{value}</p>
     </Link>
+  );
+}
+
+function SectionHeading({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="flex flex-col gap-1 border-l-2 border-electric pl-4">
+      <h2 className="text-lg font-black text-[var(--text-primary)] md:text-xl">{title}</h2>
+      <p className="text-sm leading-6 text-[var(--text-secondary)]">{description}</p>
+    </div>
   );
 }
 

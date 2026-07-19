@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { getWorkspaceMe } from "@/lib/api";
 
 type Workspace = {
   id?: string;
@@ -23,6 +23,7 @@ type Workspace = {
 type WorkspaceUser = {
   id?: string;
   workspace_id?: string;
+  workspaceId?: string;
   name?: string;
   email?: string;
   role?: "owner" | "admin" | "operator" | "viewer" | string;
@@ -38,11 +39,6 @@ type WorkspaceContextValue = {
 };
 
 const TRIAL_MODULES = ["DISC-01", "CRM-01", "CRM-02", "CRM-03", "ENG-01", "ENG-04", "AI-01", "ANA-01", "ANA-02"];
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://qhopjggnbzewuuktqntp.supabase.co",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "missing-anon-key"
-);
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
 
@@ -62,42 +58,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [modules, setModules] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const sessionResponse = await fetch("/api/auth/me", { cache: "no-store" });
-      if (!sessionResponse.ok) {
-        setUser(null);
-        setWorkspace(null);
-        setModules([]);
-        return;
-      }
-      const session = await sessionResponse.json();
+      const session = await getWorkspaceMe();
       const sessionUser = session.user as WorkspaceUser | undefined;
-      const workspaceId = session.workspace?.id || sessionUser?.workspace_id;
+      const workspaceId = session.workspace?.id || sessionUser?.workspace_id || sessionUser?.workspaceId;
       const normalizedUser = { ...sessionUser, workspace_id: workspaceId };
-
-      let workspaceRow = normalizeWorkspace(session.workspace ?? null);
-      if (workspaceId) {
-        const { data } = await supabase
-          .from("nodere_workspaces")
-          .select("*")
-          .eq("id", workspaceId)
-          .maybeSingle();
-        workspaceRow = normalizeWorkspace((data as Workspace | null) || workspaceRow);
-      }
-
-      let activeModules: string[] = [];
-      if (workspaceId) {
-        const { data } = await supabase
-          .from("nodere_workspace_modules")
-          .select("module_code")
-          .eq("workspace_id", workspaceId)
-          .eq("active", true);
-        activeModules = (data || [])
-          .map((item: { module_code?: string }) => item.module_code)
-          .filter((code): code is string => Boolean(code));
-      }
+      const workspaceRow = normalizeWorkspace((session.workspace as Workspace | null) ?? null);
+      const activeModules = Array.isArray(session.modules) ? session.modules.filter((code): code is string => typeof code === "string" && Boolean(code)) : [];
 
       setUser(normalizedUser ?? null);
       setWorkspace(workspaceRow);
@@ -108,11 +77,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     void refresh();
-  }, []);
+  }, [refresh]);
 
   const value = useMemo<WorkspaceContextValue>(() => ({
     workspace,
@@ -121,7 +90,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     loading,
     hasModule: (code: string) => user?.role === "owner" || user?.role === "admin" || modules.includes(code),
     refresh
-  }), [workspace, user, modules, loading]);
+  }), [workspace, user, modules, loading, refresh]);
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }
