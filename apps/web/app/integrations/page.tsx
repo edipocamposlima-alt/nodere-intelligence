@@ -22,7 +22,7 @@ export default async function IntegrationsPage() {
       key: item.id,
       configured: remote?.configured ?? false,
       status: remote?.status ?? ("unknown" as const),
-      required: item.requiredPlan === "starter",
+      required: remote?.required ?? item.requiredPlan === "starter",
       capability: remote?.capability ?? item.description,
       message: remote?.message ?? ("error" in status ? "Não configurado. O card segue disponível para conexão." : "Aguardando configuração."),
       missingEnv: remote?.configured ? [] : [item.credentialLabel]
