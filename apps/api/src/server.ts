@@ -91,7 +91,10 @@ app.use(
       if (allowedOrigins.has(origin)) {
         return callback(null, true);
       }
-      return callback(new Error(`Origin not allowed: ${origin}`));
+      const denied = new Error("Origem não permitida pelo CORS.") as Error & { status?: number; code?: string };
+      denied.status = 403;
+      denied.code = "CORS_ORIGIN_DENIED";
+      return callback(denied);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
