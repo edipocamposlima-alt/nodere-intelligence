@@ -3,8 +3,6 @@
 import { useEffect } from "react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 
-const USER_TOKEN_KEY = "nodere_admin_token";
-
 export function PwaRegister() {
   useEffect(() => {
     if (!("serviceWorker" in navigator) || process.env.NODE_ENV !== "production") return;
@@ -23,12 +21,10 @@ export function PwaRegister() {
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey)
       });
-      const token = localStorage.getItem(USER_TOKEN_KEY);
       await fetch(`${apiUrl}/push/subscribe`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
+          "Content-Type": "application/json"
         },
         body: JSON.stringify(subscription)
       }).catch(() => undefined);

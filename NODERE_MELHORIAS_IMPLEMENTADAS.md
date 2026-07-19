@@ -9,6 +9,8 @@ Data: 2026-07-18
 - tela de nova tentativa para falha transitória da API;
 - validação do token antes de criar cookie httpOnly;
 - remoção do fallback de chave pública nas chamadas do cliente;
+- proxy same-origin para todas as chamadas privadas, com retry após renovação de sessão;
+- remoção do token de acesso do `localStorage`;
 - remoção das leituras diretas do Supabase no frontend;
 - módulos do workspace retornados pela API autenticada.
 
@@ -44,7 +46,7 @@ Data: 2026-07-18
 
 - `xlsx` removido e ExcelJS adotado;
 - XLS legado rejeitado com status de formato não suportado;
-- limites de 8 MB, 5.000 registros e 100 colunas;
+- limites de 4 MB, 5.000 registros e 100 colunas;
 - teste dedicado para CSV/XLSX/XLS;
 - Nodemailer atualizado;
 - PostCSS e UUID transitivos corrigidos por override;
@@ -62,7 +64,7 @@ Data: 2026-07-18
 
 - manuais técnico e embutido atualizados;
 - 15 documentos finais de auditoria criados;
-- 33 testes de API, 4 E2E públicos/de segurança e 19 checks PWA aprovados;
+- 33 testes de API, 4 E2E públicos/de segurança e 21 checks PWA/cliente aprovados;
 - builds e typechecks aprovados;
 - bloqueios de banco, integrações e credenciais de teste explicitados.
 

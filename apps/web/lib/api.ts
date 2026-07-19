@@ -3,17 +3,14 @@ import { getApiBaseUrl } from "./apiBase";
 import { getErrorMessage } from "./errors";
 
 const API_URL = getApiBaseUrl();
-const USER_TOKEN_KEY = "nodere_admin_token";
 
 function authHeaders(token?: string | null): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 function clientAuthHeaders(includeJson = false): Record<string, string> {
-  const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
   return {
-    ...(includeJson ? { "Content-Type": "application/json" } : {}),
-    ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {})
+    ...(includeJson ? { "Content-Type": "application/json" } : {})
   };
 }
 
@@ -561,15 +558,11 @@ export function importCompaniesCsv(csv: string, column_map?: Record<string, stri
 }
 
 export async function importCompaniesFile(file: File, column_map?: Record<string, string>) {
-  const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
   const form = new FormData();
   form.append("file", file);
   if (column_map) form.append("column_map", JSON.stringify(column_map));
   const response = await fetch(`${API_URL}/companies/import`, {
     method: "POST",
-    headers: {
-      ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {})
-    },
     body: form,
     cache: "no-store"
   });
@@ -925,13 +918,9 @@ export async function downloadReportPdf(filters: ReportFilters = { period: "30d"
 }
 
 export async function downloadReportCsv(filters: ReportFilters = { period: "30d", groupBy: "day" }) {
-  const sessionToken = typeof window !== "undefined" ? localStorage.getItem(USER_TOKEN_KEY) : "";
   const query = reportQuery(filters);
   const response = await fetch(`${API_URL}/reports/export.csv${query ? `?${query}` : ""}`, {
     method: "GET",
-    headers: {
-      ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {})
-    },
     cache: "no-store"
   });
   if (!response.ok) {

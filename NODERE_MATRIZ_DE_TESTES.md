@@ -23,7 +23,7 @@ Data: 2026-07-18
 | API-08 | API | importação segura | 4 testes | CSV/XLSX válido, limites e XLS rejeitado | Aprovado |
 | DEP-01 | Dependências | auditoria frontend | `npm audit` | 0 vulnerabilidades | Aprovado |
 | DEP-02 | Dependências | auditoria backend | `npm audit` | 0 vulnerabilidades | Aprovado |
-| PWA-01 | PWA | manifest/viewport/mobile | validador local | todos os checks passam | Aprovado, 19/19 |
+| PWA-01 | PWA/cliente | manifest/viewport/mobile/sessão | validador local | todos os checks passam | Aprovado, 21/21 |
 | PWA-02 | PWA | cache privado | inspeção service worker | navegação não é armazenada | Aprovado |
 | AUTH-01 | Browser | raiz sem sessão | Playwright desktop/Pixel 5 | redireciona a `/login` | Aprovado, 2 cenários |
 | AUTH-02 | Browser | token inválido | Playwright desktop/Pixel 5 | sem dados privados, volta ao login | Aprovado, 2 cenários |

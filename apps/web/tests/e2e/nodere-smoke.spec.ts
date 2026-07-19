@@ -21,10 +21,12 @@ test.describe("NODERE smoke minimo", () => {
 
   test("sessao invalida não mantém conteúdo privado visível", async ({ page }) => {
     await page.goto("/login");
+    await page.evaluate(() => localStorage.setItem("nodere_admin_token", "token-local-obsoleto"));
     await page.context().addCookies([{ name: "nodere_session", value: "sessao-invalida", url: page.url(), httpOnly: true, sameSite: "Lax" }]);
     await page.goto("/crm");
     await expect(page).toHaveURL(/login/);
     await expect(page.getByText("Pipeline, contatos e oportunidades")).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("nodere_admin_token"))).toBeNull();
   });
 
   test("login, dashboard, CRM, catalogo, propostas e logout", async ({ page }) => {

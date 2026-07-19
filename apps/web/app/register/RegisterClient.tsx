@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
-import { getApiBaseUrl } from "@/lib/apiBase";
+import { getDirectApiBaseUrl } from "@/lib/apiBase";
 import { setAdminToken } from "@/lib/adminAuth";
 import { hasSupabaseAuthConfig, signUpWithPassword } from "@/lib/supabaseAuthRest";
 import { Logo } from "@/components/brand/Logo";
@@ -46,7 +46,7 @@ export function RegisterClient() {
         return;
       }
 
-      const exchangeResponse = await fetch(`${getApiBaseUrl()}/admin/supabase-session`, {
+      const exchangeResponse = await fetch(`${getDirectApiBaseUrl()}/admin/supabase-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ accessToken: auth.access_token })
@@ -62,7 +62,7 @@ export function RegisterClient() {
         body: JSON.stringify({ access_token: exchange.token })
       });
       if (!sessionResponse.ok) throw new Error("Não foi possível persistir a sessão no navegador.");
-      await fetch(`${getApiBaseUrl()}/workspace`, {
+      await fetch(`${getDirectApiBaseUrl()}/workspace`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${exchange.token}` },
         body: JSON.stringify({ name: form.company || "Workspace NODERE" })

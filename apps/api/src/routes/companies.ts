@@ -1672,8 +1672,8 @@ async function parseImportPayload(req: any): Promise<{ rows: string[][]; columnM
   }
 
   const csv = typeof req.body === "string" ? req.body : String(req.body?.csv || "");
-  if (Buffer.byteLength(csv, "utf8") > 8 * 1024 * 1024) {
-    throw Object.assign(new Error("Arquivo excede o limite seguro de 8 MB."), { status: 413 });
+  if (Buffer.byteLength(csv, "utf8") > 4 * 1024 * 1024) {
+    throw Object.assign(new Error("Arquivo excede o limite seguro de 4 MB."), { status: 413 });
   }
   return {
     rows: csv.trim() ? parseCsv(csv) : [],
@@ -1684,8 +1684,8 @@ async function parseImportPayload(req: any): Promise<{ rows: string[][]; columnM
 
 export async function parseImportFile(buffer: Buffer, filename: string, contentType: string) {
   const lowerName = filename.toLowerCase();
-  if (buffer.length > 8 * 1024 * 1024) {
-    throw Object.assign(new Error("Arquivo excede o limite seguro de 8 MB."), { status: 413 });
+  if (buffer.length > 4 * 1024 * 1024) {
+    throw Object.assign(new Error("Arquivo excede o limite seguro de 4 MB."), { status: 413 });
   }
   const hasCsvExtension = lowerName.endsWith(".csv");
   const hasLegacyOleHeader = buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]));

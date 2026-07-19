@@ -28,10 +28,7 @@ export default function SettingsWorkspace() {
   useEffect(() => {
     async function loadPreferences() {
       try {
-        const token = localStorage.getItem("nodere_admin_token") || "";
-        const res = await fetch(`${API_URL}/settings`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await fetch(`${API_URL}/settings`);
         const payload = await res.json().catch(() => ({}));
         const preferences = payload.preferences || {};
         setForm((current) => ({
@@ -53,10 +50,9 @@ export default function SettingsWorkspace() {
     setSaving(true);
     setMsg("");
     try {
-      const token = localStorage.getItem("nodere_admin_token") || "";
       const res = await fetch(`${API_URL}/settings/workspace`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form)
       });
       const payload = await res.json().catch(() => ({}));

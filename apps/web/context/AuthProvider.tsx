@@ -63,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       const payload = await response.json();
+      if (typeof window !== "undefined") localStorage.removeItem("nodere_admin_token");
       setUser(payload.user ?? null);
       setWorkspace(payload.workspace ?? null);
     } catch {

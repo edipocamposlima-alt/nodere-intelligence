@@ -42,6 +42,12 @@ Aplicação: foco global reforçado, hierarquia tipográfica, contraste escuro e
 
 Aplicação: remoção de `xlsx`, adoção do ExcelJS com limites de entrada, atualização de Nodemailer e overrides corretivos de UUID/PostCSS. As auditorias npm ficaram sem alertas conhecidos.
 
+## Operação Vercel
+
+- [Vercel Functions — limites](https://vercel.com/docs/functions/limitations): documenta o limite de 4,5 MB para payload de request/response de Functions.
+
+Aplicação: o importador foi limitado a 4 MB para acomodar o envelope multipart no proxy autenticado sem atingir o limite da plataforma.
+
 ## Limites da pesquisa
 
 Não foi adotado padrão externo que contradiga a regra de negócio observada. Integrações pagas ou com OAuth não foram declaradas funcionais apenas com base em documentação: exigem teste no tenant real ou sandbox.

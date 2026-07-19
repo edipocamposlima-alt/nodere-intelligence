@@ -67,9 +67,7 @@ function parseDecimalInput(value: string | number | null | undefined) {
 }
 
 function authHeaders(): Record<string, string> {
-  if (typeof window === "undefined") return {};
-  const token = localStorage.getItem("nodere_admin_token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  return {};
 }
 
 function linkedinSearchUrl(name: string) {

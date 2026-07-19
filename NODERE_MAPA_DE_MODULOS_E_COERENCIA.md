@@ -7,7 +7,7 @@ Data: 2026-07-18
 ```text
 Navegador / PWA
   -> Next.js em apps/web (Vercel)
-      -> rotas server-side e /api/auth/session
+      -> rotas server-side, /api/auth/session e /api/backend
       -> API_URL
           -> Express em apps/api (Render)
               -> Supabase PostgreSQL/Auth
@@ -42,7 +42,7 @@ Código legado na raiz, `backend/`, `dist/`, `index.html` e `serve-nodere.mjs` n
 
 ## Regras de coerência
 
-1. `workspaceId`, usuário, papel e módulos vêm do backend autenticado, nunca de consulta anônima no cliente.
+1. `workspaceId`, usuário, papel e módulos vêm do backend autenticado; chamadas privadas usam proxy same-origin e cookie httpOnly, nunca token persistente ou consulta anônima no cliente.
 2. Empresa aberta na Ficha deve ter ID persistido; IDs de provedores externos são resolvidos antes da navegação.
 3. Dashboard e Relatórios usam a mesma semântica de etapas canônicas do CRM.
 4. CMS usa `/admin/content`; `/admin/blog` é apenas alias de compatibilidade.

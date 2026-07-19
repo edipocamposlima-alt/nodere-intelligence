@@ -4,7 +4,8 @@ import { FormEvent, useEffect, useState } from "react";
 import { Bell, CheckCircle2, Code2, Download, FileText, Mail, Palette, Save, Server, ShieldCheck, Smartphone, Stamp, UsersRound } from "lucide-react";
 import { getBackendRootUrl } from "@/lib/apiBase";
 import { getPublicSettings, savePublicSettings } from "@/lib/api";
-import { AdminFetchError, adminFetch, getAdminToken } from "@/lib/adminAuth";
+import { AdminFetchError, adminFetch } from "@/lib/adminAuth";
+import { useAuth } from "@/context/AuthProvider";
 import { applyThemeSettings, defaultThemeSettings, normalizeThemeSettings, persistAndApplyThemeSettings, readThemeSettings, type NodereDensity, type NodereFontSize, type NodereLayoutVariant, type NodereThemeMode, type NodereVisualStyle } from "@/lib/theme";
 
 const BACKEND_ROOT_URL = getBackendRootUrl();
@@ -86,6 +87,7 @@ function normalizeDownloadLog(row: Record<string, unknown>): DownloadLog {
 }
 
 export function SettingsClient() {
+  const { user } = useAuth();
   const [settings, setSettings] = useState<Settings>(defaults);
   const [status, setStatus] = useState<string>("Preferências carregadas localmente.");
   const [health, setHealth] = useState<string>("Não testado");
@@ -203,9 +205,9 @@ export function SettingsClient() {
           applicationServerKey: urlBase64ToUint8Array(publicKey)
         });
       }
-      const response = await fetch(`${settings.backendUrl.replace(/\/$/, "")}/api/push/subscribe`, {
+      const response = await fetch("/api/backend/push/subscribe", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAdminToken()}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(subscription)
       });
       const payload = await response.json();
@@ -232,9 +234,9 @@ export function SettingsClient() {
     const name = window.prompt("Nome da chave de API");
     if (!name) return;
     try {
-      const response = await fetch(`${settings.backendUrl.replace(/\/$/, "")}/api/developer/keys`, {
+      const response = await fetch("/api/backend/developer/keys", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAdminToken()}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, scopes: ["leads:read", "search:write"] })
       });
       const payload = await response.json();
@@ -249,9 +251,9 @@ export function SettingsClient() {
   async function testSmtp() {
     setSmtpStatus("Testando SMTP...");
     try {
-      const response = await fetch(`${settings.backendUrl.replace(/\/$/, "")}/api/settings/test-smtp`, {
+      const response = await fetch("/api/backend/settings/test-smtp", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAdminToken()}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           host: smtpSettings.host,
           port: smtpSettings.port,
@@ -377,7 +379,7 @@ export function SettingsClient() {
         </div>
       </section>
 
-      {getAdminToken() && (
+      {["owner", "admin"].includes(user?.role || "") && (
         <section className="grid gap-4 xl:grid-cols-2">
           <div className="rounded-lg border border-line bg-panel/90 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">

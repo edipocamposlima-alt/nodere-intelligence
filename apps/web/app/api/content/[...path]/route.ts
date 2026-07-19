@@ -6,9 +6,8 @@ type RouteContext = { params: Promise<{ path?: string[] }> };
 
 async function proxyContent(request: NextRequest, context: RouteContext) {
   const { path = [] } = await context.params;
-  const tokenFromHeader = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
   const tokenFromCookie = COOKIE_NAMES.map((name) => request.cookies.get(name)?.value).find(Boolean);
-  const token = tokenFromCookie || tokenFromHeader;
+  const token = tokenFromCookie;
 
   if (!token) return NextResponse.json({ message: "Sessão ausente. Faça login para continuar." }, { status: 401 });
   if (path[0] !== "admin") return NextResponse.json({ message: "Rota não permitida neste proxy." }, { status: 404 });

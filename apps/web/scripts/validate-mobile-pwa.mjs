@@ -21,6 +21,8 @@ const legacyManifest = JSON.parse(read("public/manifest.json"));
 const sw = read("public/sw.js");
 const css = read("app/globals.css");
 const mobileNav = read("components/MobileNav.tsx");
+const apiBase = read("lib/apiBase.ts");
+const adminAuth = read("lib/adminAuth.ts");
 
 check("manifest principal existe", exists("public/manifest.webmanifest"));
 check("manifest legado existe", exists("public/manifest.json"));
@@ -42,6 +44,8 @@ check("CSS tem breakpoint 1024", css.includes("@media (max-width: 1024px)"));
 check("CSS tem breakpoint mobile 760", css.includes("@media (max-width: 760px)"));
 check("CSS tem safe-area mobile", css.includes("env(safe-area-inset-bottom)"));
 check("CSS ajusta calendario mobile", css.includes(".rbc-toolbar") && css.includes(".rbc-calendar"));
+check("chamadas privadas usam proxy same-origin", apiBase.includes('return typeof window === "undefined" ? getDirectApiBaseUrl() : "/api/backend"'));
+check("token de acesso não é persistido no localStorage", !adminAuth.includes("localStorage.setItem(TOKEN_KEY"));
 
 const failed = checks.filter((item) => !item.ok);
 for (const item of checks) {

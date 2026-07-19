@@ -6,9 +6,9 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 const API_URL = getApiBaseUrl();
 
 const INTEGRATIONS = [
-  { key: "openai_key", label: "OpenAI API Key", hint: "sk-...", testEndpoint: "/api/settings/test/openai" },
-  { key: "google_places_key", label: "Google Places API Key", hint: "AIza...", testEndpoint: "/api/settings/test/google" },
-  { key: "apollo_key", label: "Apollo.io API Key", hint: "Encontre em app.apollo.io > Settings > API", testEndpoint: "/api/settings/test/apollo" },
+  { key: "openai_key", label: "OpenAI API Key", hint: "sk-...", testEndpoint: "/settings/test/openai" },
+  { key: "google_places_key", label: "Google Places API Key", hint: "AIza...", testEndpoint: "/settings/test/google" },
+  { key: "apollo_key", label: "Apollo.io API Key", hint: "Encontre em app.apollo.io > Settings > API", testEndpoint: "/settings/test/apollo" },
   { key: "smtp_host", label: "SMTP Host", hint: "smtp.seudominio.com" },
   { key: "smtp_port", label: "SMTP Porta", hint: "587" },
   { key: "smtp_user", label: "SMTP Usuário", hint: "email@dominio.com" },
@@ -23,26 +23,16 @@ export default function SettingsIntegrations() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
 
-  async function getToken() {
-    return localStorage.getItem("nodere_admin_token") || "";
-  }
-
   useEffect(() => {
-    getToken().then((token) =>
-      fetch(`${API_URL}/settings/integrations`, {
-        headers: { Authorization: `Bearer ${token}` }
-      }).then((response) => response.json()).then((data) => setValues(data || {})).catch(() => setValues({}))
-    );
+    fetch(`${API_URL}/settings/integrations`)
+      .then((response) => response.json()).then((data) => setValues(data || {})).catch(() => setValues({}));
   }, []);
 
   async function testConnection(key: string, endpoint?: string) {
     if (!endpoint) return;
     setTesting((current) => ({ ...current, [key]: true }));
     try {
-      const token = await getToken();
-      const res = await fetch(`${API_URL}${endpoint}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await fetch(`${API_URL}${endpoint}`);
       const data = await res.json().catch(() => ({}));
       setTestResults((current) => ({ ...current, [key]: res.ok ? "✓ Conexão OK" : `✗ ${data.error || "Falha no teste"}` }));
     } catch {
@@ -55,10 +45,9 @@ export default function SettingsIntegrations() {
   async function save() {
     setSaving(true);
     try {
-      const token = await getToken();
       const res = await fetch(`${API_URL}/settings/integrations`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values)
       });
       const data = await res.json().catch(() => ({}));

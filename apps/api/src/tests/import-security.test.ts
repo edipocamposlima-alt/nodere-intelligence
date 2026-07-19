@@ -27,7 +27,7 @@ describe("importação segura de planilhas", () => {
   });
 
   it("recusa planilhas compactadas acima do limite seguro", async () => {
-    const oversized = Buffer.alloc(8 * 1024 * 1024 + 1);
+    const oversized = Buffer.alloc(4 * 1024 * 1024 + 1);
     await assert.rejects(
       () => parseImportFile(oversized, "leads.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
       (error: Error & { status?: number }) => error.status === 413

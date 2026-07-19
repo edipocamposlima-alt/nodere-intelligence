@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { getApiBaseUrl } from "@/lib/apiBase";
+import { getDirectApiBaseUrl } from "@/lib/apiBase";
 
 export default function ContactForm() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", plan_interest: "", message: "" });
@@ -13,7 +13,7 @@ export default function ContactForm() {
     setStatus("sending");
     setNotice("");
     try {
-      const response = await fetch(`${getApiBaseUrl()}/api/contact`, {
+      const response = await fetch(`${getDirectApiBaseUrl()}/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form)

@@ -16,7 +16,7 @@ A publicação da aplicação pode seguir. A migração estrutural de segurança
 |---|---|---|
 | Frontend | Next.js 15.5.19, 62 páginas App Router, build de produção e typecheck | Aprovado |
 | Backend | 34 arquivos de rotas, typecheck, build e 33 testes | Aprovado |
-| PWA | 19 verificações de manifest, viewport, navegação e cache | Aprovado |
+| PWA/cliente | 21 verificações de manifest, viewport, navegação, cache e sessão | Aprovado |
 | Navegador | 4 cenários públicos/de segurança em Chromium desktop e Pixel 5 | Aprovado |
 | Sessão | token inválido retorna 401, não cria sessão e não expõe área privada | Aprovado |
 | Dependências | `npm audit` em `apps/web` e `apps/api` | 0 vulnerabilidades |
@@ -29,10 +29,10 @@ Dois cenários E2E autenticados foram ignorados porque não há conta/credenciai
 
 1. A interface podia renderizar filhos antes de concluir a validação assíncrona da sessão. Agora nenhum workspace é exibido antes da confirmação do backend; 401/403 limpa a sessão e redireciona.
 2. A rota que criava cookie aceitava token sem confirmar usuário/workspace. Agora a confirmação ocorre antes da gravação do cookie.
-3. O cliente tinha fallback para uma chave pública de API e componentes consultavam Supabase diretamente. O fallback e as leituras diretas foram removidos; workspace e módulos passam pelo backend.
+3. O cliente tinha fallback para chave pública, token persistente no `localStorage` e componentes consultando Supabase diretamente. As chamadas privadas agora passam por proxy same-origin autenticado por cookie httpOnly, com renovação no servidor; fallback, token local e leituras diretas foram removidos.
 4. A conversão do CRM podia atingir 47.400% devido a ordenação dinâmica e divisão de contagens exclusivas. A progressão agora usa ordem canônica, contagem acumulada e limite de 100%.
 5. O service worker podia guardar navegações autenticadas. O cache agora aceita apenas recursos públicos/estáticos; páginas internas usam rede e fallback offline sem dados privados.
-6. A importação dependia de `xlsx`, pacote com alertas sem correção disponível. Foi substituído por ExcelJS, com limites de 8 MB, 5.000 registros e 100 colunas; XLS legado é rejeitado.
+6. A importação dependia de `xlsx`, pacote com alertas sem correção disponível. Foi substituído por ExcelJS, com limites de 4 MB, 5.000 registros e 100 colunas; XLS legado é rejeitado.
 7. Teste de relatório dependia do relógio corrente. O relógio foi injetado e o teste ficou determinístico.
 
 ## Banco e identidade

@@ -5,12 +5,11 @@ import { getApiBaseUrl } from "./apiBase";
 const TOKEN_KEY = "nodere_admin_token";
 
 export function getAdminToken() {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem(TOKEN_KEY) || "";
+  return "";
 }
 
-export function setAdminToken(token: string) {
-  localStorage.setItem(TOKEN_KEY, token);
+export function setAdminToken(_token: string) {
+  localStorage.removeItem(TOKEN_KEY);
 }
 
 export function clearAdminToken() {
@@ -28,17 +27,14 @@ export class AdminFetchError extends Error {
 }
 
 export async function adminFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getAdminToken();
-  const useLocalProxy = path.startsWith("/admin/") || path.startsWith("/content/admin");
-  const response = await fetch(useLocalProxy ? `/api${path}` : `${getApiBaseUrl()}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(!useLocalProxy && token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {})
     },
     cache: "no-store",
-    credentials: useLocalProxy ? "include" : options.credentials
+    credentials: "include"
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {

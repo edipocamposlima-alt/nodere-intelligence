@@ -11,8 +11,9 @@ Prioridade P0 significa risco de exposição, sessão ou perda de dados; P1 afet
 | AUTH-01 | P0 | Área privada renderizada antes de validar sessão | `AuthProvider` bloqueia filhos até `/workspace/me` confirmar o token | E2E de sessão inválida em desktop/mobile | Concluído |
 | AUTH-02 | P0 | Cookie criado para token não validado | rota `/api/auth/session` valida no backend antes do `Set-Cookie` | POST inválido retorna 401 | Concluído |
 | SEC-01 | P0 | Chave de API pública enviada pelo cliente | fallback `NEXT_PUBLIC_API_KEY` removido das chamadas do navegador | busca estática e typecheck | Concluído |
+| SEC-02 | P0 | Cookie renovado e token local divergiam, exibindo sessão expirada no CRM | proxy `/api/backend` usa cookie httpOnly, renova no servidor e remove token do `localStorage` | browser autenticado + E2E | Concluído |
 | DATA-01 | P0 | Leituras diretas do Supabase em workspace/configurações | leitura movida para API autenticada; pacote Supabase removido do web | build e busca por cliente direto | Concluído |
-| PWA-01 | P0 | Risco de cache de navegação privada | rede obrigatória para navegações; cache só público/estático | 19/19 no validador PWA | Concluído |
+| PWA-01 | P0 | Risco de cache de navegação privada | rede obrigatória para navegações; cache só público/estático | 21/21 no validador PWA/cliente | Concluído |
 | IMP-01 | P0 | Parser XLSX vulnerável e sem limites | ExcelJS, limites e rejeição de XLS legado | 4/4 testes de importação | Concluído |
 | CRM-01 | P1 | Conversão de 47.400% | ordem canônica, alcance acumulado e teto de 100% | teste visual/código e build | Concluído |
 | CRM-02 | P1 | Kanban denso e controles competindo com operação | customização recolhida, colunas maiores e scroll-snap | inspeção responsiva | Concluído |

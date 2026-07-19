@@ -9,7 +9,7 @@ Ambiente local: Windows, Node.js 24.16, npm 11.13, Chromium Playwright
 |---|---:|---:|---:|
 | Testes API | 33 | 0 | 0 |
 | Testes E2E públicos/de segurança | 4 | 0 | 2 autenticados |
-| Validador PWA | 19 | 0 | 0 |
+| Validador PWA/cliente | 21 | 0 | 0 |
 | Typechecks/builds | 4 grupos | 0 | 0 |
 | Auditorias npm | 2 workspaces com 0 alertas | 0 | 0 |
 
@@ -62,7 +62,7 @@ Os cenários autenticados foram marcados como ignorados porque `NODERE_E2E_EMAIL
 
 ## PWA
 
-O validador registrou 19/19. Entre as condições verificadas:
+O validador registrou 21/21. Entre as condições verificadas:
 
 - manifest válido com `id` e orientação apropriados;
 - viewport e regras mobile presentes;
@@ -71,6 +71,8 @@ O validador registrou 19/19. Entre as condições verificadas:
 - precache não contém Dashboard;
 - cache runtime limitado a recursos públicos/estáticos;
 - caches antigos removidos na ativação.
+- chamadas privadas direcionadas ao proxy same-origin;
+- token de acesso não persistido no `localStorage`.
 
 ## Dependências
 

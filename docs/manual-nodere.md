@@ -6,7 +6,7 @@ O NODERE é uma ferramenta de prospecção e CRM para encontrar empresas no Goog
 ## Acesso e login
 Use `https://nodere.com.br`. A área administrativa fica em `/admin` e usa as credenciais configuradas no backend Render. Chaves de API nunca devem ser colocadas no frontend.
 
-Antes de exibir o workspace, o navegador valida o token no backend. Token inválido ou expirado é removido e leva o usuário a `/login`; indisponibilidade temporária mostra uma tela de nova tentativa sem renderizar dados privados. O cookie de sessão só é criado depois que o backend confirma usuário e workspace.
+Antes de exibir o workspace, o navegador valida a sessão no backend. Token inválido ou expirado leva o usuário a `/login`; indisponibilidade temporária mostra uma tela de nova tentativa sem renderizar dados privados. O cookie httpOnly só é criado depois que o backend confirma usuário e workspace. Depois do login, chamadas internas usam `/api/backend` no mesmo domínio e o proxy injeta/renova a credencial no servidor; o token de acesso não fica no `localStorage`.
 
 ## Instalação como app
 No Android/Chrome, abra o menu do navegador e toque em **Instalar app**. No iPhone/Safari, use **Compartilhar > Adicionar à Tela de Início**. O app usa o mesmo sistema web e mantém as configurações visíveis em telas pequenas.
@@ -70,7 +70,7 @@ Abra **Personalizar funil** no topo do CRM e use o campo de nova etapa para cria
 Etapas personalizadas são salvas no navegador do operador. Uma etapa só pode ser removida quando estiver vazia, para evitar perda operacional.
 
 ## Importação segura de empresas
-Na Busca de empresas, envie arquivos CSV ou XLSX moderno. Arquivos XLS legados devem ser convertidos para XLSX ou CSV. O backend limita cada envio a 8 MB, 5.000 registros e 100 colunas, valida o conteúdo, normaliza CNPJ/telefone e evita duplicidade por CNPJ ou nome+cidade. O modelo CSV está em `/api/companies/import/template`.
+Na Busca de empresas, envie arquivos CSV ou XLSX moderno. Arquivos XLS legados devem ser convertidos para XLSX ou CSV. O backend limita cada envio a 4 MB, 5.000 registros e 100 colunas, compatível com o proxy autenticado na Vercel; valida o conteúdo, normaliza CNPJ/telefone e evita duplicidade por CNPJ ou nome+cidade. O modelo CSV está em `/api/companies/import/template`.
 
 ## Ficha do cliente
 Clique no nome do lead para abrir a ficha. Use:
@@ -273,7 +273,7 @@ No celular, o menu inferior é rolável para permitir acesso a:
 - Admin.
 
 ## Acesso e interface pública oculta
-A plataforma NODERE/Noderi usa a tela de login como única porta pública operacional. Ao acessar a raiz do domínio sem sessão, o navegador é redirecionado automaticamente para **/login**. Páginas institucionais, marketing, blog, cadastro e manual permanecem no repositório, mas não ficam expostas como interface pública direta para usuários sem autenticação.
+A plataforma NODERE/Noderi usa a tela de login como única porta pública operacional. Ao acessar a raiz do domínio sem sessão, o navegador é redirecionado automaticamente para **/login**. As chamadas privadas seguem pelo proxy same-origin autenticado por cookie httpOnly, evitando divergência entre cookie renovado e token local. Páginas institucionais, marketing, blog, cadastro e manual permanecem no repositório, mas não ficam expostas como interface pública direta para usuários sem autenticação.
 
 Regras do fluxo:
 - sem sessão, a raiz do domínio redireciona para login;
@@ -343,7 +343,7 @@ A área Automações lista sequências comerciais e pode ativar fluxos por empre
 - **Unauthorized**: rota protegida ou token ausente.
 - **Sessão expirada**: o token não foi aceito; faça login novamente. Os dados internos não permanecem visíveis.
 - **Serviço temporariamente indisponível**: a validação não pôde terminar; use **Nova tentativa** quando a API voltar.
-- **XLS não suportado**: converta o arquivo para XLSX ou CSV e respeite 8 MB, 5.000 registros e 100 colunas.
+- **XLS não suportado**: converta o arquivo para XLSX ou CSV e respeite 4 MB, 5.000 registros e 100 colunas.
 - **OpenAI insufficient_quota**: falta crédito/billing na OpenAI.
 - **PageSpeed not_configured**: falta `GOOGLE_PAGESPEED_API_KEY`.
 - **Apollo API_INACCESSIBLE**: plano/token sem acesso à People API ou enrichment.
@@ -352,9 +352,9 @@ A área Automações lista sequências comerciais e pode ativar fluxos por empre
 - **Respostas WhatsApp não aparecem**: wa.me não possui retorno automático; configure WhatsApp Cloud API/webhook ou registre manualmente.
 
 ## Backup e persistência
-Com Supabase configurado, leads, notas e histórico persistem fora do navegador. localStorage é usado apenas como preferência/cache local.
+Com Supabase configurado, leads, notas e histórico persistem fora do navegador. `localStorage` é usado apenas para preferências/cache de interface, não para o token de acesso.
 
 Mudanças de schema, funções, políticas RLS ou vínculos de usuários exigem backup verificável e teste em staging antes de produção. A auditoria final preparou uma migração transacional e um rollback correspondente, mas eles não devem ser executados sem essas duas condições.
 
 ## Auditoria final de julho de 2026
-Foram revisados autenticação, workspace, CRM, dashboard, importação, dependências, PWA, responsividade, integrações e banco. A entrega remove credencial pública do cliente, impede a renderização de dados com sessão expirada, usa o backend para dados de workspace, corrige a conversão do funil, limita importações e restringe o cache offline a recursos públicos. Os testes e bloqueios remanescentes estão registrados nos documentos `NODERE_MATRIZ_DE_TESTES.md`, `NODERE_RESULTADOS_TESTES_E_EVIDENCIAS.md` e `NODERE_PENDENCIAS_E_BLOQUEIOS_REAIS.md`.
+Foram revisados autenticação, workspace, CRM, dashboard, importação, dependências, PWA, responsividade, integrações e banco. A entrega remove credencial pública e token persistente do cliente, impede a renderização de dados com sessão inválida, usa proxy same-origin/backend para dados privados, corrige a conversão do funil, limita importações e restringe o cache offline a recursos públicos. Os testes e bloqueios remanescentes estão registrados nos documentos `NODERE_MATRIZ_DE_TESTES.md`, `NODERE_RESULTADOS_TESTES_E_EVIDENCIAS.md` e `NODERE_PENDENCIAS_E_BLOQUEIOS_REAIS.md`.

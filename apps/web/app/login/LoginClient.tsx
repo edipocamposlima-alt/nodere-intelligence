@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { getApiBaseUrl } from "@/lib/apiBase";
+import { getDirectApiBaseUrl } from "@/lib/apiBase";
 import { setAdminToken } from "@/lib/adminAuth";
 import { hasSupabaseAuthConfig, sendPasswordRecovery, signInWithPassword } from "@/lib/supabaseAuthRest";
 import { Logo } from "@/components/brand/Logo";
@@ -33,7 +33,7 @@ export function LoginClient() {
       if (hasSupabaseAuthConfig()) {
         const auth = await signInWithPassword(email, password);
         if (!auth.access_token) throw new Error("Supabase não retornou token de sessão.");
-        const exchangeResponse = await fetch(`${getApiBaseUrl()}/admin/supabase-session`, {
+        const exchangeResponse = await fetch(`${getDirectApiBaseUrl()}/admin/supabase-session`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ accessToken: auth.access_token })
@@ -59,7 +59,7 @@ export function LoginClient() {
         return;
       }
 
-      const response = await fetch(`${getApiBaseUrl()}/admin/login`, {
+      const response = await fetch(`${getDirectApiBaseUrl()}/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })

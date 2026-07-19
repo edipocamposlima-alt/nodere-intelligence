@@ -12,7 +12,7 @@ O manual embutido em `apps/web/app/manual/page.tsx`, o manual técnico `docs/man
 | Tema/layout | densidade confortável, topbar, largura e hierarquia |
 | PWA | cache apenas público; dados privados exigem rede |
 | Login | validação antes de renderizar, cookie após confirmação e estados 401/503 |
-| Importação | CSV/XLSX, bloqueio de XLS, 8 MB, 5.000 registros e 100 colunas |
+| Importação | CSV/XLSX, bloqueio de XLS, 4 MB, 5.000 registros e 100 colunas |
 | CMS | `/admin/blog` redireciona ao conteúdo canônico e depende do schema oficial |
 | Erros | sessão expirada, serviço indisponível e formato de planilha |
 | Banco | migração depende de backup e staging |

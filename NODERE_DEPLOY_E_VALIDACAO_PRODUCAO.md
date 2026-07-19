@@ -23,7 +23,7 @@ Estado deste registro: pronto para receber a evidência pós-publicação
 - API typecheck e build;
 - 33 testes API;
 - 4 E2E públicos/de segurança;
-- 19 verificações PWA;
+- 21 verificações PWA/cliente;
 - `npm audit` 0 em frontend e backend;
 - documentação/manual atualizados;
 - scripts SQL separados do deploy automático.

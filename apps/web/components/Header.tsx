@@ -106,12 +106,10 @@ export function Header() {
     let cancelled = false;
     async function loadTasks() {
       try {
-        const token = localStorage.getItem("nodere_admin_token") || "";
-        const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-        const companies = (await fetch(`${API_URL}/companies`, { cache: "no-store", headers }).then((res) => res.ok ? res.json() : [])) as CompanyListItem[];
+        const companies = (await fetch(`${API_URL}/companies`, { cache: "no-store" }).then((res) => res.ok ? res.json() : [])) as CompanyListItem[];
         const taskGroups = await Promise.all(
           companies.slice(0, 80).map(async (company) => {
-            const companyTasks = await fetch(`${API_URL}/companies/${company.id}/tasks`, { cache: "no-store", headers }).then((res) => res.ok ? res.json() : []);
+            const companyTasks = await fetch(`${API_URL}/companies/${company.id}/tasks`, { cache: "no-store" }).then((res) => res.ok ? res.json() : []);
             return (companyTasks as TaskItem[]).map((task) => ({ ...task, companyName: company.name }));
           })
         );

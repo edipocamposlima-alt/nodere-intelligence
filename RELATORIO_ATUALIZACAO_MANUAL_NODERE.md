@@ -9,10 +9,11 @@ Versao da plataforma: NODERE auditada antes do deploy final
 
 - Validacao de sessao antes da renderizacao de qualquer area privada.
 - Cookie criado somente apos confirmacao do backend e workspace.
+- Chamadas privadas pelo proxy same-origin com cookie httpOnly; token removido do localStorage.
 - Calculo acumulado e limitado a 100% no funil do CRM.
 - Personalizacao do funil recolhida e colunas com encaixe horizontal.
 - PWA sem cache de navegacoes ou respostas autenticadas.
-- Importacao CSV/XLSX com limites de 8 MB, 5.000 registros e 100 colunas; XLS legado bloqueado.
+- Importacao CSV/XLSX com limites de 4 MB, 5.000 registros e 100 colunas; XLS legado bloqueado.
 - Densidade confortavel e nova hierarquia visual do Dashboard/CRM.
 - Blog administrativo redirecionado ao fluxo canonico do CMS.
 - Migracao e rollback de seguranca do Supabase preparados, mas condicionados a backup e staging.

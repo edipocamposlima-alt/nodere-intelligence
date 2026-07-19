@@ -46,7 +46,7 @@ O logout deve continuar limpando a sessão; a ativação do novo service worker 
 
 ## Resultado automatizado
 
-`apps/web/scripts/validate-mobile-pwa.mjs`: **19/19 aprovado**.
+`apps/web/scripts/validate-mobile-pwa.mjs`: **21/21 aprovado**, incluindo proxy same-origin e ausência de token persistente.
 
 ## Pendências
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getApiBaseUrl } from "@/lib/apiBase";
+import { getDirectApiBaseUrl } from "@/lib/apiBase";
 import type { CmsNavigation } from "@/lib/publicContent";
 
 const columns = [
@@ -16,7 +16,7 @@ export default function SiteFooter() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${getApiBaseUrl()}/content/navigation?location=footer`, { signal: controller.signal })
+    fetch(`${getDirectApiBaseUrl()}/content/navigation?location=footer`, { signal: controller.signal })
       .then((response) => response.ok ? response.json() : { items: [] })
       .then((payload: { items?: CmsNavigation[] }) => setNavigation(payload.items || []))
       .catch(() => setNavigation([]));
