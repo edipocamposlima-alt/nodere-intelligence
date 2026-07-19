@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { config } from "../config.js";
 import { getIntegrationStatus } from "../services/integrationStatus.js";
+import { getAiProviderHealth } from "../services/ai.js";
+import { getSupabase } from "../db/supabase.js";
 
 const router = Router();
 
@@ -8,8 +10,35 @@ router.get("/", (_req, res) => {
   res.json(getIntegrationStatus());
 });
 
-router.get("/health", (_req, res) => {
-  const integrations = getIntegrationStatus();
+router.get("/health", async (_req, res) => {
+  const configured = getIntegrationStatus();
+  const ai = await getAiProviderHealth();
+  const sb = getSupabase();
+  const supabaseProbe = sb
+    ? await sb.from("nodere_workspaces").select("id", { count: "exact", head: true }).limit(1)
+    : { error: new Error("Supabase não configurado") };
+  const integrations = configured.map((item) => {
+    if (item.key === "openai" || item.key === "anthropic") {
+      const providerStatus = ai[item.key];
+      return {
+        ...item,
+        status: providerStatus === "ok" ? "ok" as const : "error" as const,
+        message: providerStatus === "ok"
+          ? `${item.name}: credencial validada por chamada autenticada ao provedor.`
+          : `${item.name}: chamada autenticada falhou (${providerStatus}).`
+      };
+    }
+    if (item.key === "supabase") {
+      return {
+        ...item,
+        status: supabaseProbe.error ? "error" as const : "ok" as const,
+        message: supabaseProbe.error
+          ? "Supabase: leitura autenticada de saúde falhou."
+          : "Supabase: leitura autenticada de saúde concluída."
+      };
+    }
+    return item;
+  });
   res.json({
     readyForRealSearch: integrations.filter((item) => item.required).every((item) => item.configured),
     configured: integrations.filter((item) => item.configured).length,

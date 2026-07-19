@@ -178,6 +178,12 @@ export interface WebsiteScan {
   hasStructuredData: boolean;
   hasSitemap: boolean;
   pageSpeed: number;
+  pageSpeedDesktop?: number;
+  pageSpeedStatus?: "not_configured" | "ok" | "partial" | "error";
+  pageSpeedError?: string;
+  seoScore?: number;
+  accessibilityScore?: number;
+  bestPracticesScore?: number;
   lcp?: number;
   cls?: number;
   fcp?: number;

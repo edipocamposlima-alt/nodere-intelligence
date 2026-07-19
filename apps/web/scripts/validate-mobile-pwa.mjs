@@ -19,6 +19,7 @@ function check(name, condition) {
 const manifest = JSON.parse(read("public/manifest.webmanifest"));
 const legacyManifest = JSON.parse(read("public/manifest.json"));
 const sw = read("public/sw.js");
+const middleware = read("middleware.ts");
 const css = read("app/globals.css");
 const mobileNav = read("components/MobileNav.tsx");
 const apiBase = read("lib/apiBase.ts");
@@ -32,6 +33,7 @@ check("manifest usa display standalone", manifest.display === "standalone");
 check("manifest tem icone 192", manifest.icons?.some((icon) => icon.sizes === "192x192"));
 check("manifest tem icone 512 maskable", manifest.icons?.some((icon) => icon.sizes === "512x512" && String(icon.purpose || "").includes("maskable")));
 check("offline fallback existe", exists("public/offline.html"));
+check("offline fallback é público no middleware", middleware.includes('"/offline.html"'));
 check("service worker cacheia offline", sw.includes("/offline.html"));
 check("service worker ignora APIs", sw.includes('url.pathname.startsWith("/api/")'));
 check("service worker trata navegacao", sw.includes('request.mode === "navigate"'));

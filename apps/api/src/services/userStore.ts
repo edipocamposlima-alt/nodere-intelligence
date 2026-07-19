@@ -379,6 +379,67 @@ export async function createWorkspaceUser(workspaceId: string, input: { name: st
   return toPublic(row);
 }
 
+export async function inviteWorkspaceUser(workspaceId: string, input: { name: string; email: string; role: SessionRole; customRoleId?: string | null; visibilityLevel?: string; modulePermissions?: Record<string, unknown> }) {
+  if (!hasSupabase() || !userSchemaAvailable) {
+    const unavailable = new Error("Convites exigem Supabase Auth e o schema de usuários disponível.") as Error & { status?: number; code?: string };
+    unavailable.status = 503;
+    unavailable.code = "AUTH_INVITE_UNAVAILABLE";
+    throw unavailable;
+  }
+
+  const sb = getSupabase()!;
+  const email = normalizeEmail(input.email);
+  const { data: existingProfiles, error: existingError } = await sb
+    .from("nodere_platform_users")
+    .select("id")
+    .ilike("email", email)
+    .limit(2);
+  if (existingError) throw existingError;
+  if (existingProfiles?.length) {
+    const conflict = new Error("Já existe um perfil NODERE com este e-mail.") as Error & { status?: number; code?: string };
+    conflict.status = 409;
+    conflict.code = "USER_EMAIL_EXISTS";
+    throw conflict;
+  }
+
+  const redirectTo = `${config.frontendUrl.replace(/\/+$/, "")}/reset-password`;
+  const invited = await sb.auth.admin.inviteUserByEmail(email, {
+    redirectTo,
+    data: { name: input.name.trim() }
+  });
+  if (invited.error || !invited.data.user?.id) {
+    const inviteError = new Error(invited.error?.message || "O Supabase Auth não confirmou o envio do convite.") as Error & { status?: number; code?: string };
+    inviteError.status = invited.error?.status || 502;
+    inviteError.code = "AUTH_INVITE_FAILED";
+    throw inviteError;
+  }
+
+  const now = new Date().toISOString();
+  const row: PlatformUserRow = {
+    id: randomUUID(),
+    workspace_id: workspaceId,
+    name: input.name.trim(),
+    email,
+    role: normalizeRole(input.role),
+    active: true,
+    custom_role_id: input.customRoleId || null,
+    status: "invited",
+    visibility_level: input.visibilityLevel || "read_edit",
+    module_permissions: input.modulePermissions || {},
+    password_hash: hashPassword(randomUUID()),
+    auth_user_id: invited.data.user.id,
+    created_at: now,
+    updated_at: now
+  };
+  const { error: profileError } = await sb.from("nodere_platform_users").insert(row);
+  if (profileError) {
+    await sb.auth.admin.deleteUser(invited.data.user.id).catch(() => undefined);
+    throw profileError;
+  }
+
+  return toPublic(row);
+}
+
 export async function updateWorkspaceUser(workspaceId: string, userId: string, input: { name?: string; role?: SessionRole; active?: boolean; password?: string; customRoleId?: string | null; status?: string; visibilityLevel?: string; modulePermissions?: Record<string, unknown> }) {
   const fields: Partial<PlatformUserRow> = { updated_at: new Date().toISOString() };
   if (input.name !== undefined) fields.name = input.name.trim();

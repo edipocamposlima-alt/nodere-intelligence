@@ -33,6 +33,7 @@ const PUBLIC_PATHS = [
   "/manifest.json",
   "/manifest.webmanifest",
   "/sw.js",
+  "/offline.html",
   "/icons"
 ];
 

@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { getOperators, getOperatorRanking, getGoals, setGoals, addOperator } from "../services/operators.js";
 import { getRequestWorkspaceId, requireWorkspaceMutation, requireWorkspaceRole } from "../middleware/session.js";
-import { createWorkspaceUser, updateWorkspaceUser } from "../services/userStore.js";
+import { inviteWorkspaceUser, updateWorkspaceUser } from "../services/userStore.js";
 
 const router = Router();
 router.use(requireWorkspaceMutation("owner", "admin"));
@@ -26,19 +26,16 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
 
 router.post("/invite", requireWorkspaceRole("owner", "admin"), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, name, password } = req.body;
+    const { email, name } = req.body;
     if (!email) return res.status(400).json({ message: "email obrigatório" });
-    const generatedPassword = password || `Nodere@${Math.random().toString(36).slice(2, 8)}`;
-    const user = await createWorkspaceUser(getRequestWorkspaceId(req), {
+    const user = await inviteWorkspaceUser(getRequestWorkspaceId(req), {
       name: name || String(email).split("@")[0],
       email,
-      password: generatedPassword,
       role: "operator"
     });
     res.status(201).json({
       user,
-      temporaryPassword: password ? undefined : generatedPassword,
-      message: "Operador criado. Envie a senha temporária por canal seguro; convite por e-mail exige SMTP/Supabase Auth configurado."
+      message: "Convite enviado pelo Supabase Auth. O operador definirá a própria senha pelo link recebido."
     });
   } catch (err) {
     next(err);

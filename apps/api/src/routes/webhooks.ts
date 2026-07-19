@@ -2,6 +2,7 @@ import { Router } from "express";
 import { config } from "../config.js";
 import { getSupabase } from "../db/supabase.js";
 import { addInboundMessage, buildInboxRow, parseStatusUpdate, parseWebhookPayload, updateMessageStatus } from "../services/inbox.js";
+import { requireMetaWebhookSignature } from "../middleware/metaWebhook.js";
 
 const router = Router();
 
@@ -9,11 +10,11 @@ router.get("/whatsapp", (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
-  if (mode === "subscribe" && token === config.webhookSecret) return res.status(200).send(challenge);
+  if (mode === "subscribe" && config.webhookSecret && token === config.webhookSecret) return res.status(200).send(challenge);
   return res.sendStatus(403);
 });
 
-router.post("/whatsapp", async (req, res) => {
+router.post("/whatsapp", requireMetaWebhookSignature, async (req, res) => {
   const sb = getSupabase();
   for (const { phone, messageId, text } of parseWebhookPayload(req.body)) {
     addInboundMessage(phone, text, messageId);

@@ -30,11 +30,29 @@ as $$
      or id = auth.uid()::text
 $$;
 
+grant execute on function public.nodere_current_user_role() to public, anon, authenticated, service_role;
+grant execute on function public.nodere_current_user_workspace_ids() to public, anon, authenticated, service_role;
+
+create or replace function public.nodere_current_workspace_id()
+returns text
+language sql
+stable
+as $$
+  select coalesce(
+    nullif(auth.jwt() ->> 'workspace_id', ''),
+    nullif((auth.jwt() -> 'app_metadata') ->> 'workspace_id', ''),
+    nullif((auth.jwt() -> 'user_metadata') ->> 'workspace_id', '')
+  )
+$$;
+
 drop policy if exists nodere_catalog_read_workspace on public.nodere_commercial_catalog_items;
 create policy nodere_catalog_read_workspace on public.nodere_commercial_catalog_items
 for select using (workspace_id = any(public.nodere_current_user_workspace_ids()));
 
 drop policy if exists nodere_catalog_write_admin_owner on public.nodere_commercial_catalog_items;
+drop policy if exists nodere_catalog_insert_admin_owner on public.nodere_commercial_catalog_items;
+drop policy if exists nodere_catalog_update_admin_owner on public.nodere_commercial_catalog_items;
+drop policy if exists nodere_catalog_delete_admin_owner on public.nodere_commercial_catalog_items;
 create policy nodere_catalog_write_admin_owner on public.nodere_commercial_catalog_items
 for all
 using (
@@ -60,6 +78,9 @@ for select using (
 );
 
 drop policy if exists nodere_proposal_items_write_workspace on public.nodere_proposal_items;
+drop policy if exists nodere_proposal_items_insert_workspace on public.nodere_proposal_items;
+drop policy if exists nodere_proposal_items_update_workspace on public.nodere_proposal_items;
+drop policy if exists nodere_proposal_items_delete_workspace on public.nodere_proposal_items;
 create policy nodere_proposal_items_write_workspace on public.nodere_proposal_items
 for all
 using (
@@ -81,7 +102,15 @@ drop policy if exists nodere_proposals_read_workspace on public.nodere_proposals
 create policy nodere_proposals_read_workspace on public.nodere_proposals
 for select using (workspace_id = any(public.nodere_current_user_workspace_ids()));
 
+drop policy if exists nodere_proposals_workspace_select on public.nodere_proposals;
+create policy nodere_proposals_workspace_select on public.nodere_proposals
+for select to authenticated
+using (workspace_id = public.nodere_current_workspace_id());
+
 drop policy if exists nodere_proposals_write_workspace on public.nodere_proposals;
+drop policy if exists nodere_proposals_insert_workspace on public.nodere_proposals;
+drop policy if exists nodere_proposals_update_workspace on public.nodere_proposals;
+drop policy if exists nodere_proposals_delete_workspace on public.nodere_proposals;
 create policy nodere_proposals_write_workspace on public.nodere_proposals
 for all
 using (
@@ -93,7 +122,28 @@ with check (
   and public.nodere_current_user_role() = any(array['operator'::text, 'manager'::text, 'admin'::text, 'owner'::text])
 );
 
-alter function public.nodere_current_workspace_id() reset search_path;
+drop policy if exists nodere_proposals_workspace_insert on public.nodere_proposals;
+create policy nodere_proposals_workspace_insert on public.nodere_proposals
+for insert to authenticated
+with check (workspace_id = public.nodere_current_workspace_id());
+
+drop policy if exists nodere_proposals_workspace_update on public.nodere_proposals;
+create policy nodere_proposals_workspace_update on public.nodere_proposals
+for update to authenticated
+using (workspace_id = public.nodere_current_workspace_id())
+with check (workspace_id = public.nodere_current_workspace_id());
+
+drop policy if exists nodere_proposals_workspace_delete on public.nodere_proposals;
+create policy nodere_proposals_workspace_delete on public.nodere_proposals
+for delete to authenticated
+using (workspace_id = public.nodere_current_workspace_id());
+
+drop policy if exists nodere_discovery_runs_service_role_all on public.nodere_discovery_runs;
+create policy nodere_discovery_runs_service_role_all on public.nodere_discovery_runs
+for all to public
+using (auth.role() = 'service_role'::text)
+with check (auth.role() = 'service_role'::text);
+
 alter function public.nodere_touch_updated_at() reset search_path;
 alter function public.nodere_validate_proposal_item() reset search_path;
 alter function public.nodere_recalculate_proposal_totals() reset search_path;

@@ -1,11 +1,12 @@
 import { AlertTriangle, CheckCircle2, CircleDashed, XCircle } from "lucide-react";
-import { getBackendRootUrl } from "@/lib/apiBase";
 import { getIntegrationsStatus } from "@/lib/api";
 import { AVAILABLE_INTEGRATIONS } from "@/lib/integrations-config";
 import { getErrorMessage } from "@/lib/errors";
+import { getServerSessionToken } from "@/lib/serverSession";
 
 export default async function IntegrationsPage() {
-  const status = await withTimeout(getIntegrationsStatus(), 5000).catch((error) => ({
+  const sessionToken = await getServerSessionToken();
+  const status = await withTimeout(getIntegrationsStatus(sessionToken), 15000).catch((error) => ({
     readyForRealSearch: false,
     configured: 0,
     total: AVAILABLE_INTEGRATIONS.length,
@@ -27,7 +28,6 @@ export default async function IntegrationsPage() {
       missingEnv: remote?.configured ? [] : [item.credentialLabel]
     };
   });
-  const backendRoot = getBackendRootUrl();
 
   return (
     <div className="space-y-5 p-4 md:p-8">
@@ -47,7 +47,7 @@ export default async function IntegrationsPage() {
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {integrations.map((integration) => {
-          const status = integration.status ?? (integration.configured ? "ok" : "not_configured");
+          const status = integration.status ?? (integration.configured ? "configured" : "not_configured");
           const statusMeta = getStatusMeta(status, integration.required);
           const StatusIcon = statusMeta.icon;
           return (
@@ -72,7 +72,7 @@ export default async function IntegrationsPage() {
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 <a
-                  href={`${backendRoot}/api/integrations/health`}
+                  href="/api/backend/integrations/health"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="rounded-lg border border-line bg-ink px-3 py-2 text-xs font-semibold text-white hover:border-electric"
@@ -101,7 +101,7 @@ export default async function IntegrationsPage() {
 async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   let timeout: ReturnType<typeof setTimeout>;
   const timeoutPromise = new Promise<never>((_, reject) => {
-    timeout = setTimeout(() => reject(new Error("Backend demorou mais de 5s para retornar o status das integrações.")), ms);
+    timeout = setTimeout(() => reject(new Error("Backend demorou mais de 15s para retornar o status das integrações.")), ms);
   });
   try {
     return await Promise.race([promise, timeoutPromise]);
@@ -118,6 +118,15 @@ function getStatusMeta(status: string, required: boolean) {
       iconClass: "text-success",
       border: "border-emerald-500/25",
       tone: "done"
+    };
+  }
+  if (status === "configured") {
+    return {
+      label: "Configurado · teste pendente",
+      icon: CircleDashed,
+      iconClass: "text-amber-300",
+      border: "border-amber-500/25",
+      tone: "waiting"
     };
   }
   if (status === "error" || status === "timeout") {

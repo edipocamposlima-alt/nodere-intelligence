@@ -64,7 +64,7 @@ function deploymentMetadata() {
     process.env.COMMIT_SHA ||
     "unknown";
   return {
-    version: "1.0.1",
+    version: "1.1.0",
     commit,
     commitShort: commit === "unknown" ? "unknown" : commit.slice(0, 7),
     environment: process.env.NODE_ENV ?? "development",
@@ -76,6 +76,7 @@ function deploymentMetadata() {
 const allowedOrigins = new Set([
   config.webOrigin,
   config.frontendUrl,
+  ...config.corsOrigins,
   "https://nodere.com.br",
   "https://www.nodere.com.br",
   "http://localhost:3000",
@@ -87,7 +88,7 @@ app.use(
   cors({
     origin(origin, callback) {
       if (!origin) return callback(null, true);
-      if (allowedOrigins.has(origin) || origin.endsWith(".vercel.app")) {
+      if (allowedOrigins.has(origin)) {
         return callback(null, true);
       }
       return callback(new Error(`Origin not allowed: ${origin}`));
@@ -114,7 +115,14 @@ app.use(
   })
 );
 
-app.use(express.json());
+app.use(express.json({
+  limit: "1mb",
+  verify(req, _res, buffer) {
+    if (req.url?.includes("/webhook")) {
+      (req as express.Request & { rawBody?: Buffer }).rawBody = Buffer.from(buffer);
+    }
+  }
+}));
 app.use(attachSession);
 
 app.get("/health", (_req, res) => {
@@ -289,9 +297,11 @@ app.post("/api/settings/test-smtp", requireWorkspaceRole("owner", "admin"), asyn
   }
 });
 
-app.get("/api/openai/health", (_req, res) => {
+app.get("/api/openai/health", async (_req, res) => {
+  const providers = await getAiProviderHealth();
   res.json({
     openaiConfigured: Boolean(config.openai.apiKey),
+    status: providers.openai,
     model: config.openai.model,
     backendTime: new Date().toISOString()
   });
@@ -366,7 +376,7 @@ app.get("/api/pagespeed", requireWorkspaceSession, async (req, res, next) => {
     }
     let scan;
     try {
-      scan = await scanWebsite(url);
+      scan = await scanWebsite(url, { pageSpeedStrategies: ["mobile", "desktop"] });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Falha ao executar PageSpeed.";
       return res.status(502).json({
@@ -377,16 +387,27 @@ app.get("/api/pagespeed", requireWorkspaceSession, async (req, res, next) => {
         pageSpeedConfigured: true
       });
     }
+    if (scan.pageSpeedStatus !== "ok" && scan.pageSpeedStatus !== "partial") {
+      return res.status(502).json({
+        score: null,
+        error: "PageSpeed indisponível",
+        status: scan.pageSpeedStatus || "error",
+        message: scan.pageSpeedError || "A API não retornou métricas válidas.",
+        pageSpeedConfigured: true
+      });
+    }
     return res.json({
       score: scan.pageSpeed,
-      status: "connected",
+      status: scan.pageSpeedStatus,
       pageSpeedConfigured: true,
       result: {
         url: scan.url,
         performance: scan.pageSpeed,
-        seo: scan.maturityScore,
-        accessibility: scan.maturityScore,
-        bestPractices: scan.commercialScore,
+        performanceMobile: scan.pageSpeed,
+        performanceDesktop: scan.pageSpeedDesktop ?? null,
+        seo: scan.seoScore ?? null,
+        accessibility: scan.accessibilityScore ?? null,
+        bestPractices: scan.bestPracticesScore ?? null,
         diagnosis: "Analise PageSpeed executada pelo backend seguro.",
         recommendations: [
           "Otimizar carregamento, imagens e scripts de terceiros.",
@@ -467,9 +488,6 @@ app.get("/api/whatsapp/webhook", (req, res) => {
     return res.status(200).send(challenge);
   }
   return res.status(403).json({ message: "Webhook verification failed." });
-});
-app.post("/api/whatsapp/webhook", (_req, res) => {
-  return res.status(200).json({ ok: true });
 });
 app.use("/api/sequences", requireWorkspaceSession, sequencesRouter);
 app.use("/api/operators", requireWorkspaceSession, operatorsRouter);

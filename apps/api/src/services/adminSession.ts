@@ -37,6 +37,12 @@ export function normalizeAdminSession(data: AdminSession): AdminSession {
 }
 
 function sign(payload: string) {
+  if (!config.admin.sessionSecret) {
+    throw Object.assign(new Error("ADMIN_SESSION_SECRET não configurado."), {
+      status: 503,
+      code: "ADMIN_SESSION_SECRET_MISSING"
+    });
+  }
   return createHmac("sha256", config.admin.sessionSecret).update(payload).digest("base64url");
 }
 
@@ -50,6 +56,7 @@ export function issueSessionToken(input: Omit<AdminSession, "exp">) {
 }
 
 export function verifySessionToken(token = ""): AdminSession | null {
+  if (!config.admin.sessionSecret) return null;
   const [payload, signature] = token.split(".");
   if (!payload || !signature) return null;
   const expected = sign(payload);

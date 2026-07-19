@@ -94,13 +94,11 @@ export function AdminClient() {
   const [roles, setRoles] = useState<CustomRole[]>([]);
   const [activityLogs, setActivityLogs] = useState<AuditRow[]>([]);
   const [downloadLogs, setDownloadLogs] = useState<AuditRow[]>([]);
-  const [temporaryPassword, setTemporaryPassword] = useState("");
   const [cleanupConfirm, setCleanupConfirm] = useState("");
   const [cleanupLoading, setCleanupLoading] = useState(false);
   const [userForm, setUserForm] = useState({
     name: "",
     email: "",
-    password: "",
     role: "operator" as AdminUserRole,
     customRoleId: "",
     visibilityLevel: "read_edit",
@@ -181,20 +179,17 @@ export function AdminClient() {
 
   async function inviteUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setTemporaryPassword("");
     setMessage("");
     try {
-      const payload = await adminFetch<{ user: AdminUser; temporaryPassword: string; message: string }>("/admin/users/invite", {
+      const payload = await adminFetch<{ user: AdminUser; message: string }>("/admin/users/invite", {
         method: "POST",
         body: JSON.stringify({
           ...userForm,
-          customRoleId: userForm.customRoleId || null,
-          password: userForm.password || undefined
+          customRoleId: userForm.customRoleId || null
         })
       });
       setUsers((current) => [...current, payload.user]);
-      setTemporaryPassword(payload.temporaryPassword);
-      setUserForm({ name: "", email: "", password: "", role: "operator", customRoleId: "", visibilityLevel: "read_edit", modulePermissions: defaultPermissions });
+      setUserForm({ name: "", email: "", role: "operator", customRoleId: "", visibilityLevel: "read_edit", modulePermissions: defaultPermissions });
       setMessage(payload.message);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Erro ao criar usuário.");
@@ -325,16 +320,15 @@ export function AdminClient() {
         <section className="rounded-xl border border-line bg-panel/90 p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-white">Usuários e senhas</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">Cada usuário acessa apenas a própria conta/workspace. Use senha temporária quando preferir convite rápido.</p>
+              <h2 className="text-lg font-semibold text-white">Usuários e convites</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">Cada usuário acessa apenas o próprio workspace e define sua senha em um convite enviado pelo Supabase Auth.</p>
             </div>
             <span className="rounded-full border border-cyan/30 bg-cyan/10 px-3 py-1 text-xs font-semibold text-cyan">{activeUsers.length} ativo(s)</span>
           </div>
 
-          <form onSubmit={inviteUser} className="mt-5 grid gap-3 rounded-xl border border-line bg-ink/80 p-4 xl:grid-cols-[1fr_1fr_170px_170px_180px_auto]">
+          <form onSubmit={inviteUser} className="mt-5 grid gap-3 rounded-xl border border-line bg-ink/80 p-4 xl:grid-cols-[1fr_1fr_170px_180px_auto]">
             <input required value={userForm.name} onChange={(event) => setUserForm((current) => ({ ...current, name: event.target.value }))} placeholder="Nome" className="rounded-lg border border-line bg-panel px-3 py-3 text-sm outline-none focus:border-electric" />
             <input required type="email" value={userForm.email} onChange={(event) => setUserForm((current) => ({ ...current, email: event.target.value }))} placeholder="E-mail/login" className="rounded-lg border border-line bg-panel px-3 py-3 text-sm outline-none focus:border-electric" />
-            <input minLength={8} type="password" value={userForm.password} onChange={(event) => setUserForm((current) => ({ ...current, password: event.target.value }))} placeholder="Senha opcional" className="rounded-lg border border-line bg-panel px-3 py-3 text-sm outline-none focus:border-electric" />
             <select value={userForm.role} onChange={(event) => setUserForm((current) => ({ ...current, role: event.target.value as AdminUserRole }))} className="rounded-lg border border-line bg-panel px-3 py-3 text-sm outline-none focus:border-electric">
               {Object.entries(roleLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
             </select>
@@ -344,15 +338,9 @@ export function AdminClient() {
             </select>
             <button className="inline-flex items-center justify-center gap-2 rounded-lg bg-success px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-500">
               <UserPlus className="h-4 w-4" />
-              Criar
+              Enviar convite
             </button>
           </form>
-          {temporaryPassword && (
-            <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-amber-400/30 bg-amber-400/10 p-3 text-sm text-amber-100">
-              Senha temporária: <code className="rounded bg-black/30 px-2 py-1">{temporaryPassword}</code>
-              <button onClick={() => navigator.clipboard.writeText(temporaryPassword)} className="inline-flex items-center gap-1 rounded bg-amber-300 px-2 py-1 text-xs font-bold text-slate-950"><Copy className="h-3 w-3" /> Copiar</button>
-            </div>
-          )}
 
           <div className="mt-4 overflow-x-auto rounded-xl border border-line">
             <table className="w-full min-w-[900px] text-sm">

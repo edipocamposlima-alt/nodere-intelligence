@@ -77,6 +77,16 @@ export default async function DashboardPage() {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 8);
 
+  const effectiveOnboarding = onboardingStatus ? {
+    ...onboardingStatus,
+    step_search_completed: onboardingStatus.step_search_completed || metrics.totalCompanies > 0,
+    step_crm_completed: onboardingStatus.step_crm_completed || totalSavedLeads > 0,
+    step_proposal_completed: onboardingStatus.step_proposal_completed || proposalReport.by_status.some((item) => item.count > 0) || companies.some((company) =>
+      (company.notes || []).some((note) => /documento salvo:\s*proposta/i.test(String(note.body || "")))
+    )
+  } : null;
+  const onboardingComplete = Boolean(effectiveOnboarding?.step_search_completed && effectiveOnboarding.step_crm_completed && effectiveOnboarding.step_proposal_completed);
+
   const topOpportunities = [...companies]
     .sort((a, b) => Number(b.score || 0) - Number(a.score || 0))
     .slice(0, 8);
@@ -108,7 +118,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="nodere-dashboard space-y-7 p-4 md:p-7 xl:p-8">
-      {onboardingStatus && <OnboardingBanner initialSteps={onboardingStatus} />}
+      {effectiveOnboarding && !onboardingComplete && <OnboardingBanner initialSteps={effectiveOnboarding} />}
       {companiesResult.error && (
         <div className="rounded-lg border border-amber-400/40 bg-amber-500/10 p-4 text-sm leading-6 text-amber-100">
           <strong>Persistência precisa de atenção:</strong> {companiesResult.error}

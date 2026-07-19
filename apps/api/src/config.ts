@@ -3,17 +3,26 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const _googleApiKey = process.env.GOOGLE_API_KEY;
+const isProduction = process.env.NODE_ENV === "production";
+
+function csvEnv(name: string) {
+  return String(process.env[name] || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
 
 export const config = {
   port: Number(process.env.PORT ?? process.env.API_PORT ?? 4000),
   webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:3000",
   frontendUrl: process.env.FRONTEND_URL ?? process.env.WEB_ORIGIN ?? "http://localhost:3000",
+  corsOrigins: csvEnv("CORS_ORIGINS"),
   apiKey: process.env.API_KEY,
   admin: {
     email: process.env.ADMIN_EMAIL ?? "edipo.lima@nodere.com.br",
     name: process.env.ADMIN_NAME ?? "Édipo Lima",
     password: process.env.ADMIN_PASSWORD,
-    sessionSecret: process.env.ADMIN_SESSION_SECRET ?? process.env.API_KEY ?? "nodere-local-admin-secret"
+    sessionSecret: process.env.ADMIN_SESSION_SECRET ?? process.env.API_KEY ?? (isProduction ? "" : "nodere-local-admin-secret")
   },
   databaseUrl: process.env.DATABASE_URL,
   useMockData: process.env.USE_MOCK_DATA === "true",
@@ -30,6 +39,9 @@ export const config = {
     token: process.env.WHATSAPP_CLOUD_TOKEN,
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
     defaultCountryCode: process.env.WHATSAPP_DEFAULT_COUNTRY_CODE ?? "55"
+  },
+  meta: {
+    appSecret: process.env.META_APP_SECRET
   },
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
@@ -73,7 +85,7 @@ export const config = {
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     anonKey: process.env.SUPABASE_ANON_KEY
   },
-  webhookSecret: process.env.WHATSAPP_WEBHOOK_SECRET ?? "nodere-webhook-secret",
+  webhookSecret: process.env.WHATSAPP_VERIFY_TOKEN ?? process.env.WHATSAPP_WEBHOOK_SECRET,
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY,
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,

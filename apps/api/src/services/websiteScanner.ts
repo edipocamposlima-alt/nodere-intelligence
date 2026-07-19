@@ -1,7 +1,13 @@
 import { config } from "../config.js";
 import { WebsiteScan } from "../types.js";
+import { fetchPublicText, UnsafePublicUrlError } from "../utils/publicHttp.js";
 
-export async function scanWebsite(url?: string): Promise<WebsiteScan> {
+type PageSpeedStrategy = "mobile" | "desktop";
+
+export async function scanWebsite(
+  url?: string,
+  options: { pageSpeedStrategies?: PageSpeedStrategy[] } = {}
+): Promise<WebsiteScan> {
   const scannedAt = new Date().toISOString();
 
   if (!url) return emptyScan("", scannedAt);
@@ -12,9 +18,12 @@ export async function scanWebsite(url?: string): Promise<WebsiteScan> {
 
   let html = "";
   try {
-    const res = await fetch(normalizedUrl, { signal: AbortSignal.timeout(5000) });
-    html = await res.text();
-  } catch {
+    const site = await fetchPublicText(normalizedUrl, { timeoutMs: 5_000 });
+    scan.url = site.url;
+    scan.hasSsl = site.url.startsWith("https://");
+    html = site.text;
+  } catch (error) {
+    if (error instanceof UnsafePublicUrlError) throw error;
     return scan;
   }
 
@@ -74,31 +83,37 @@ export async function scanWebsite(url?: string): Promise<WebsiteScan> {
 
   // Sitemap
   try {
-    const sitemapRes = await fetch(new URL("/sitemap.xml", normalizedUrl).toString(), {
-      signal: AbortSignal.timeout(3000)
-    });
-    scan.hasSitemap = sitemapRes.ok;
+    const sitemap = await fetchPublicText(new URL("/sitemap.xml", scan.url), { timeoutMs: 3_000, maxBytes: 512 * 1024 });
+    scan.hasSitemap = sitemap.response.ok;
   } catch {
     scan.hasSitemap = false;
   }
 
   // PageSpeed + Core Web Vitals
   if (config.google.pageSpeedKey) {
-    try {
-      const psUrl = new URL("https://www.googleapis.com/pagespeedonline/v5/runPagespeed");
-      psUrl.searchParams.set("url", normalizedUrl);
-      psUrl.searchParams.set("strategy", "mobile");
-      psUrl.searchParams.set("key", config.google.pageSpeedKey);
-      const psRes = await fetch(psUrl);
-      if (psRes.ok) {
-        const ps = await psRes.json();
-        const audits = ps.lighthouseResult?.audits ?? {};
-        scan.pageSpeed = Math.round((ps.lighthouseResult?.categories?.performance?.score ?? 0) * 100);
-        scan.lcp = audits["largest-contentful-paint"]?.numericValue;
-        scan.cls = audits["cumulative-layout-shift"]?.numericValue;
-        scan.fcp = audits["first-contentful-paint"]?.numericValue;
+    const strategies = [...new Set(options.pageSpeedStrategies?.length ? options.pageSpeedStrategies : ["mobile"] as PageSpeedStrategy[])];
+    const results = await Promise.all(strategies.map(async (strategy) => {
+      try {
+        return { strategy, data: await fetchPageSpeed(scan.url, strategy) };
+      } catch (error) {
+        return { strategy, error: error instanceof Error ? error.message : "Falha desconhecida no PageSpeed." };
       }
-    } catch { /* pageSpeed stays 0 */ }
+    }));
+    const mobile = results.find((item) => item.strategy === "mobile" && item.data)?.data;
+    const desktop = results.find((item) => item.strategy === "desktop" && item.data)?.data;
+    const failures = results.filter((item) => item.error);
+    if (mobile) {
+      scan.pageSpeed = mobile.performance;
+      scan.seoScore = mobile.seo;
+      scan.accessibilityScore = mobile.accessibility;
+      scan.bestPracticesScore = mobile.bestPractices;
+      scan.lcp = mobile.lcp;
+      scan.cls = mobile.cls;
+      scan.fcp = mobile.fcp;
+    }
+    if (desktop) scan.pageSpeedDesktop = desktop.performance;
+    scan.pageSpeedStatus = failures.length === 0 ? "ok" : (mobile || desktop) ? "partial" : "error";
+    scan.pageSpeedError = failures.length ? failures.map((item) => `${item.strategy}: ${item.error}`).join("; ") : undefined;
   }
 
   // Composite scores
@@ -178,10 +193,57 @@ function emptyScan(url: string, scannedAt: string): WebsiteScan {
     hasStructuredData: false,
     hasSitemap: false,
     pageSpeed: 0,
+    pageSpeedStatus: config.google.pageSpeedKey ? "error" : "not_configured",
     maturityScore: 0,
     commercialScore: 0,
     paidTrafficScore: 0
   };
+}
+
+async function fetchPageSpeed(url: string, strategy: PageSpeedStrategy) {
+  const psUrl = new URL("https://www.googleapis.com/pagespeedonline/v5/runPagespeed");
+  psUrl.searchParams.set("url", url);
+  psUrl.searchParams.set("strategy", strategy);
+  psUrl.searchParams.set("key", config.google.pageSpeedKey!);
+  for (const category of ["performance", "seo", "accessibility", "best-practices"]) {
+    psUrl.searchParams.append("category", category);
+  }
+
+  let lastError = "PageSpeed não respondeu.";
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const response = await fetch(psUrl, { signal: AbortSignal.timeout(30_000) });
+    const payload = await response.json().catch(() => ({}));
+    if (response.ok) {
+      const categories = payload?.lighthouseResult?.categories ?? {};
+      const audits = payload?.lighthouseResult?.audits ?? {};
+      if (typeof categories.performance?.score !== "number") throw new Error("PageSpeed não retornou score de performance.");
+      return {
+        performance: score(categories.performance?.score),
+        seo: nullableScore(categories.seo?.score),
+        accessibility: nullableScore(categories.accessibility?.score),
+        bestPractices: nullableScore(categories["best-practices"]?.score),
+        lcp: numericOrUndefined(audits["largest-contentful-paint"]?.numericValue),
+        cls: numericOrUndefined(audits["cumulative-layout-shift"]?.numericValue),
+        fcp: numericOrUndefined(audits["first-contentful-paint"]?.numericValue)
+      };
+    }
+    lastError = String(payload?.error?.message || `PageSpeed HTTP ${response.status}`);
+    if (![429, 502, 503, 504].includes(response.status) || attempt === 1) break;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error(lastError);
+}
+
+function score(value: number) {
+  return Math.max(0, Math.min(100, Math.round(value * 100)));
+}
+
+function nullableScore(value: unknown) {
+  return typeof value === "number" ? score(value) : undefined;
+}
+
+function numericOrUndefined(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
 function detectGoogleAds(html: string): boolean | null {

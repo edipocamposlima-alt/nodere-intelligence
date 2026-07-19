@@ -1,6 +1,6 @@
 {
   "name": "@nodere/api",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,6 +14,7 @@
     "test:whatsapp": "tsx --test src/tests/whatsapp-history.test.ts",
     "test:ai-discovery": "tsx --test src/tests/ai-discovery.test.ts",
     "test:import-security": "tsx --test src/tests/import-security.test.ts",
+    "test:security-hardening": "tsx --test src/tests/security-hardening.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "npm run typecheck"
   },

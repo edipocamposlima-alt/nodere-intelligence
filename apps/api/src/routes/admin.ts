@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { config } from "../config.js";
 import { getSupabase } from "../db/supabase.js";
 import { extractBearerToken, isBuiltInOwnerEmail, issueSessionToken, normalizeAdminSession, verifySessionToken } from "../services/adminSession.js";
-import { authenticateUser, createWorkspaceUser, ensureSupabaseAuthUser, listWorkspaceUsers, updateWorkspaceUser } from "../services/userStore.js";
+import { authenticateUser, createWorkspaceUser, ensureSupabaseAuthUser, inviteWorkspaceUser, listWorkspaceUsers, updateWorkspaceUser } from "../services/userStore.js";
 import { isMissingSupabaseSchema } from "../utils/supabaseErrors.js";
 
 const router = Router();
@@ -139,10 +139,6 @@ function applyRuntimeValue(field: ApiKeyField, value: string) {
       config.supabase.serviceRoleKey = value;
       break;
   }
-}
-
-function generateTemporaryPassword() {
-  return `Nd-${randomUUID().replace(/-/g, "").slice(0, 10)}!`;
 }
 
 async function listCustomRoles(workspaceId: string) {
@@ -437,18 +433,12 @@ router.post("/users/invite", requireAdmin, async (request: any, response, next) 
       customRoleId: z.string().nullable().optional(),
       status: z.string().default("active"),
       visibilityLevel: z.string().default("read_edit"),
-      modulePermissions: z.record(z.unknown()).optional(),
-      password: z.string().min(8).optional()
+      modulePermissions: z.record(z.unknown()).optional()
     }).parse(request.body);
-    const temporaryPassword = body.password || generateTemporaryPassword();
-    const user = await createWorkspaceUser(request.admin.workspaceId || "default", {
-      ...body,
-      password: temporaryPassword
-    });
+    const user = await inviteWorkspaceUser(request.admin.workspaceId || "default", body);
     response.status(201).json({
       user,
-      temporaryPassword,
-      message: "Usuário criado. Compartilhe a senha temporária por canal seguro e peça troca no primeiro acesso."
+      message: "Convite enviado pelo Supabase Auth. O usuário definirá a própria senha pelo link recebido."
     });
   } catch (error) {
     next(error);

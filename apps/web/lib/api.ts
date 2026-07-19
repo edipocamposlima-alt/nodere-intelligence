@@ -958,7 +958,7 @@ export function getIntegrations() {
   }>>("/integrations", undefined, []);
 }
 
-export function getIntegrationsStatus() {
+export function getIntegrationsStatus(token?: string | null) {
   return api<{
     readyForRealSearch: boolean;
     configured: number;
@@ -968,19 +968,13 @@ export function getIntegrationsStatus() {
       key?: string;
       name: string;
       configured: boolean;
-      status?: "ok" | "not_configured" | "error" | "timeout";
+      status?: "ok" | "configured" | "not_configured" | "error" | "timeout";
       required: boolean;
       capability?: string;
       message?: string;
       missingEnv?: string[];
     }>;
-  }>("/integrations/status", undefined, {
-    readyForRealSearch: false,
-    configured: 0,
-    total: 0,
-    checkedAt: new Date().toISOString(),
-    integrations: []
-  });
+  }>("/integrations/status", withAuthToken(token));
 }
 
 export function getPublicSettings() {

@@ -66,6 +66,18 @@ revoke all on function nodere_private.current_user_workspace_ids() from public, 
 grant execute on function nodere_private.current_user_role() to authenticated, service_role;
 grant execute on function nodere_private.current_user_workspace_ids() to authenticated, service_role;
 
+-- Compatibilidade para policies legadas: o workspace passa a vir do perfil
+-- autenticado e nunca de user_metadata, que pode ser alterado pelo próprio usuário.
+create or replace function public.nodere_current_workspace_id()
+returns text
+language sql
+stable
+set search_path = ''
+as $$
+  select min(workspace_id)
+  from unnest((select nodere_private.current_user_workspace_ids())) as workspaces(workspace_id)
+$$;
+
 drop policy if exists nodere_catalog_read_workspace on public.nodere_commercial_catalog_items;
 create policy nodere_catalog_read_workspace
 on public.nodere_commercial_catalog_items
@@ -73,14 +85,30 @@ for select to authenticated
 using (workspace_id = any((select nodere_private.current_user_workspace_ids())));
 
 drop policy if exists nodere_catalog_write_admin_owner on public.nodere_commercial_catalog_items;
-create policy nodere_catalog_write_admin_owner
-on public.nodere_commercial_catalog_items
-for all to authenticated
+drop policy if exists nodere_catalog_insert_admin_owner on public.nodere_commercial_catalog_items;
+create policy nodere_catalog_insert_admin_owner on public.nodere_commercial_catalog_items
+for insert to authenticated
+with check (
+  workspace_id = any((select nodere_private.current_user_workspace_ids()))
+  and (select nodere_private.current_user_role()) = any(array['admin'::text, 'owner'::text])
+);
+
+drop policy if exists nodere_catalog_update_admin_owner on public.nodere_commercial_catalog_items;
+create policy nodere_catalog_update_admin_owner on public.nodere_commercial_catalog_items
+for update to authenticated
 using (
   workspace_id = any((select nodere_private.current_user_workspace_ids()))
   and (select nodere_private.current_user_role()) = any(array['admin'::text, 'owner'::text])
 )
 with check (
+  workspace_id = any((select nodere_private.current_user_workspace_ids()))
+  and (select nodere_private.current_user_role()) = any(array['admin'::text, 'owner'::text])
+);
+
+drop policy if exists nodere_catalog_delete_admin_owner on public.nodere_commercial_catalog_items;
+create policy nodere_catalog_delete_admin_owner on public.nodere_commercial_catalog_items
+for delete to authenticated
+using (
   workspace_id = any((select nodere_private.current_user_workspace_ids()))
   and (select nodere_private.current_user_role()) = any(array['admin'::text, 'owner'::text])
 );
@@ -103,9 +131,20 @@ using (
 );
 
 drop policy if exists nodere_proposal_items_write_workspace on public.nodere_proposal_items;
-create policy nodere_proposal_items_write_workspace
-on public.nodere_proposal_items
-for all to authenticated
+drop policy if exists nodere_proposal_items_insert_workspace on public.nodere_proposal_items;
+create policy nodere_proposal_items_insert_workspace on public.nodere_proposal_items
+for insert to authenticated
+with check (
+  proposal_id in (
+    select id from public.nodere_proposals
+    where workspace_id = any((select nodere_private.current_user_workspace_ids()))
+  )
+  and (select nodere_private.current_user_role()) = any(array['operator'::text, 'manager'::text, 'admin'::text, 'owner'::text])
+);
+
+drop policy if exists nodere_proposal_items_update_workspace on public.nodere_proposal_items;
+create policy nodere_proposal_items_update_workspace on public.nodere_proposal_items
+for update to authenticated
 using (
   proposal_id in (
     select id from public.nodere_proposals
@@ -114,6 +153,17 @@ using (
   and (select nodere_private.current_user_role()) = any(array['operator'::text, 'manager'::text, 'admin'::text, 'owner'::text])
 )
 with check (
+  proposal_id in (
+    select id from public.nodere_proposals
+    where workspace_id = any((select nodere_private.current_user_workspace_ids()))
+  )
+  and (select nodere_private.current_user_role()) = any(array['operator'::text, 'manager'::text, 'admin'::text, 'owner'::text])
+);
+
+drop policy if exists nodere_proposal_items_delete_workspace on public.nodere_proposal_items;
+create policy nodere_proposal_items_delete_workspace on public.nodere_proposal_items
+for delete to authenticated
+using (
   proposal_id in (
     select id from public.nodere_proposals
     where workspace_id = any((select nodere_private.current_user_workspace_ids()))
@@ -122,15 +172,26 @@ with check (
 );
 
 drop policy if exists nodere_proposals_read_workspace on public.nodere_proposals;
+drop policy if exists nodere_proposals_workspace_select on public.nodere_proposals;
 create policy nodere_proposals_read_workspace
 on public.nodere_proposals
 for select to authenticated
 using (workspace_id = any((select nodere_private.current_user_workspace_ids())));
 
 drop policy if exists nodere_proposals_write_workspace on public.nodere_proposals;
-create policy nodere_proposals_write_workspace
-on public.nodere_proposals
-for all to authenticated
+drop policy if exists nodere_proposals_workspace_insert on public.nodere_proposals;
+drop policy if exists nodere_proposals_insert_workspace on public.nodere_proposals;
+create policy nodere_proposals_insert_workspace on public.nodere_proposals
+for insert to authenticated
+with check (
+  workspace_id = any((select nodere_private.current_user_workspace_ids()))
+  and (select nodere_private.current_user_role()) = any(array['operator'::text, 'manager'::text, 'admin'::text, 'owner'::text])
+);
+
+drop policy if exists nodere_proposals_workspace_update on public.nodere_proposals;
+drop policy if exists nodere_proposals_update_workspace on public.nodere_proposals;
+create policy nodere_proposals_update_workspace on public.nodere_proposals
+for update to authenticated
 using (
   workspace_id = any((select nodere_private.current_user_workspace_ids()))
   and (select nodere_private.current_user_role()) = any(array['operator'::text, 'manager'::text, 'admin'::text, 'owner'::text])
@@ -140,16 +201,27 @@ with check (
   and (select nodere_private.current_user_role()) = any(array['operator'::text, 'manager'::text, 'admin'::text, 'owner'::text])
 );
 
+drop policy if exists nodere_proposals_workspace_delete on public.nodere_proposals;
+drop policy if exists nodere_proposals_delete_workspace on public.nodere_proposals;
+create policy nodere_proposals_delete_workspace on public.nodere_proposals
+for delete to authenticated
+using (
+  workspace_id = any((select nodere_private.current_user_workspace_ids()))
+  and (select nodere_private.current_user_role()) = any(array['operator'::text, 'manager'::text, 'admin'::text, 'owner'::text])
+);
+
+-- service_role já ignora RLS; esta policy em TO public só amplia ruído e superfície.
+drop policy if exists nodere_discovery_runs_service_role_all on public.nodere_discovery_runs;
+
 drop function if exists public.nodere_current_user_role();
 drop function if exists public.nodere_current_user_workspace_ids();
 
-alter function public.nodere_current_workspace_id() set search_path = '';
 alter function public.nodere_touch_updated_at() set search_path = '';
 alter function public.nodere_validate_proposal_item() set search_path = '';
 alter function public.nodere_recalculate_proposal_totals() set search_path = '';
 alter function public.nodere_recalculate_current_proposal() set search_path = '';
 
-revoke execute on function public.rls_auto_enable() from public, anon, authenticated;
+revoke all on function public.rls_auto_enable() from public, anon, authenticated;
 
 notify pgrst, 'reload schema';
 

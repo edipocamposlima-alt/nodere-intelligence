@@ -23,6 +23,7 @@ import {
 import { sendWhatsappMessage } from "../services/whatsapp.js";
 import { getCompany } from "../services/companyStore.js";
 import { isMissingSupabaseSchema } from "../utils/supabaseErrors.js";
+import { requireMetaWebhookSignature } from "../middleware/metaWebhook.js";
 
 const router = Router();
 router.use(requireWorkspaceMutation("owner", "admin", "operator"));
@@ -339,14 +340,14 @@ router.get("/webhook", (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
-  if (mode === "subscribe" && token === config.webhookSecret) {
+  if (mode === "subscribe" && config.webhookSecret && token === config.webhookSecret) {
     return res.status(200).send(challenge);
   }
   return res.sendStatus(403);
 });
 
 // Meta webhook incoming events
-router.post("/webhook", (req, res) => {
+router.post("/webhook", requireMetaWebhookSignature, (req, res) => {
   const messages = parseWebhookPayload(req.body);
   for (const { phone, messageId, text } of messages) {
     addInboundMessage(phone, text, messageId);

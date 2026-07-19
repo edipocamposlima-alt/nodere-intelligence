@@ -1,5 +1,23 @@
 export const AVAILABLE_INTEGRATIONS = [
   {
+    id: "supabase",
+    name: "Supabase",
+    description: "Banco PostgreSQL, Auth e persistência multi-workspace.",
+    category: "Dados e autenticação",
+    credentialLabel: "Credenciais Supabase",
+    docsUrl: "https://supabase.com/dashboard",
+    requiredPlan: "starter"
+  },
+  {
+    id: "google_places",
+    name: "Google Places",
+    description: "Busca real de empresas por localização e segmento.",
+    category: "Prospecção",
+    credentialLabel: "Credencial Google Places",
+    docsUrl: "https://console.cloud.google.com",
+    requiredPlan: "starter"
+  },
+  {
     id: "google_maps",
     name: "Google Maps & Places",
     description: "Busca de empresas por localização, visualização em mapa e dados de estabelecimentos.",
@@ -15,6 +33,24 @@ export const AVAILABLE_INTEGRATIONS = [
     category: "IA",
     credentialLabel: "Credencial OpenAI",
     docsUrl: "https://platform.openai.com",
+    requiredPlan: "starter"
+  },
+  {
+    id: "anthropic",
+    name: "Anthropic",
+    description: "Provedor alternativo de IA para continuidade e fallback.",
+    category: "IA",
+    credentialLabel: "Credencial Anthropic",
+    docsUrl: "https://console.anthropic.com",
+    requiredPlan: "pro"
+  },
+  {
+    id: "pagespeed",
+    name: "Google PageSpeed Insights",
+    description: "Métricas mobile e desktop de performance, SEO, acessibilidade e boas práticas.",
+    category: "Inteligência digital",
+    credentialLabel: "Credencial PageSpeed",
+    docsUrl: "https://console.cloud.google.com",
     requiredPlan: "starter"
   },
   {
@@ -45,6 +81,15 @@ export const AVAILABLE_INTEGRATIONS = [
     requiredPlan: "pro"
   },
   {
+    id: "econodata",
+    name: "Econodata",
+    description: "Enriquecimento cadastral de empresas brasileiras.",
+    category: "Prospecção",
+    credentialLabel: "Credenciais Econodata",
+    docsUrl: null,
+    requiredPlan: "pro"
+  },
+  {
     id: "smtp",
     name: "E-mail (SMTP)",
     description: "Envio de e-mails transacionais, notificações e sequências comerciais.",
@@ -69,6 +114,24 @@ export const AVAILABLE_INTEGRATIONS = [
     category: "Marketing Intelligence",
     credentialLabel: "Credenciais Meta",
     docsUrl: "https://developers.facebook.com",
+    requiredPlan: "agency"
+  },
+  {
+    id: "bling",
+    name: "Bling ERP",
+    description: "OAuth para contatos, produtos e pedidos.",
+    category: "ERP",
+    credentialLabel: "Credenciais Bling OAuth",
+    docsUrl: "https://developer.bling.com.br",
+    requiredPlan: "agency"
+  },
+  {
+    id: "rdstation",
+    name: "RD Station",
+    description: "OAuth para leads e eventos comerciais.",
+    category: "Marketing",
+    credentialLabel: "Credenciais RD Station OAuth",
+    docsUrl: "https://developers.rdstation.com",
     requiredPlan: "agency"
   }
 ] as const;
