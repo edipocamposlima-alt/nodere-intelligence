@@ -358,3 +358,20 @@ Mudanças de schema, funções, políticas RLS ou vínculos de usuários exigem 
 
 ## Auditoria final de julho de 2026
 Foram revisados autenticação, workspace, CRM, dashboard, importação, dependências, PWA, responsividade, integrações e banco. A entrega remove credencial pública e token persistente do cliente, impede a renderização de dados com sessão inválida, usa proxy same-origin/backend para dados privados, corrige a conversão do funil, limita importações e restringe o cache offline a recursos públicos. Os testes e bloqueios remanescentes estão registrados nos documentos `NODERE_MATRIZ_DE_TESTES.md`, `NODERE_RESULTADOS_TESTES_E_EVIDENCIAS.md` e `NODERE_PENDENCIAS_E_BLOQUEIOS_REAIS.md`.
+
+### Atualização pós-publicação — versão 1.1.0
+
+A versão 1.1.0 adiciona CORS estrito, webhooks Meta/WhatsApp com assinatura, health real de IA, scanner protegido contra endereços privados, PageSpeed preparado para mobile/desktop, status honesto para 15 integrações, convites sem senha temporária e onboarding calculado por dados reais.
+
+Na tela **Integrações**, observe a diferença entre:
+
+- **OK**: houve probe real aprovado;
+- **Configurado · teste pendente**: a chave/configuração existe, mas ainda falta certificação de ida e volta;
+- **Não configurado**: falta credencial ou decisão comercial;
+- **Erro/indisponível**: o probe real falhou.
+
+No estado validado em 19/07/2026, Supabase e OpenAI estão OK por probe real. Google Places, Google Maps e Apollo estão configurados, mas aguardam teste específico. Anthropic e PageSpeed não estão configurados. Webhooks oficiais permanecem indisponíveis de forma segura enquanto os segredos Meta/WhatsApp não forem cadastrados.
+
+O administrador agora cria **convites** de usuário. A pessoa convidada define a própria senha pelo Supabase Auth; o operador não recebe nem compartilha senha temporária. Mudanças de RLS ou vínculos Auth continuam proibidas até existir backup restaurável e staging testado.
+
+Os resultados completos desta rodada estão em `NODERE_RELATORIO_FINAL_POS_PUBLICACAO.md`, `NODERE_RESULTADOS_TESTES_FINAIS_POS_PUBLICACAO.md` e `NODERE_MANUAL_VALIDACAO_FINAL.md`.

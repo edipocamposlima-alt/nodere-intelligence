@@ -1,6 +1,7 @@
 # NODERE — Pendências e Bloqueios Reais
 
-Data: 2026-07-18
+Data original: 2026-07-18
+Última atualização: 2026-07-19 — versão 1.1.0
 
 Este documento separa risco técnico, falta de ambiente e decisão de negócio. Nenhum item é escondido por um “status verde” genérico.
 
@@ -34,20 +35,20 @@ Este documento separa risco técnico, falta de ambiente e decisão de negócio. 
 
 ### INT-01 — integrações não certificadas
 
-- Anthropic: health indisponível.
-- PageSpeed: não configurado.
+- Anthropic: probe real implementado; chave ausente e estado indisponível corretamente reportado.
+- PageSpeed: implementação real mobile/desktop concluída; chave ausente e estado não configurado.
 - WhatsApp Cloud, Apollo, Econodata, calendários e redes sociais: código/preparação não comprovam operação real.
-- Render: painel administrativo exige login; saúde pública está disponível, mas variáveis/logs internos não foram inspecionados.
+- Render: painel e logs foram inspecionados; API 1.1.0 está live. As integrações sem credencial continuam pendentes.
 
 ### CMS-01 — schema de conteúdo
 
 - O fluxo canônico está em `/admin/content`; o alias antigo foi corrigido.
 - A persistência dinâmica depende de tabelas oficiais do CMS não certificadas no schema observado.
 
-### DEPLOY-01 — versão exata do frontend
+### DEPLOY-01 — versão exata do frontend — FECHADO
 
-- A Vercel mostra deployment READY e domínios verificados, porém o metadata disponível no baseline não forneceu SHA Git exato.
-- A implantação final deve registrar URL/horário/commit local revisado e, futuramente, usar integração Git/metadata de versão no app.
+- Vercel `dpl_5uE3ZH9hGskw6FFNVaNE5rydZQLN` está READY e o backend informa o commit produtivo `098ef844...`.
+- A tag `v1.1.0` foi criada e publicada. Evidências estão em `NODERE_DEPLOY_FINAL_E_EVIDENCIAS.md`.
 
 ## P2 — qualidade, dados e desempenho
 
@@ -77,3 +78,10 @@ Este documento separa risco técnico, falta de ambiente e decisão de negócio. 
 ## Critério de encerramento
 
 Um bloqueio só fecha com evidência: restore executado, usuário autenticado, transação testada, chamada externa de ida e volta, deployment versionado ou métrica capturada. Declaração verbal de configuração não substitui o teste.
+
+## Atualização de encerramento — 2026-07-19
+
+- Código, testes, Vercel e Render: concluídos na versão 1.1.0.
+- Backup/staging, migração RLS, reconciliação Auth aplicada e conta E2E: continuam bloqueados pelas pré-condições descritas acima.
+- Integrações: Supabase e OpenAI aprovadas por probe real; Places, Maps e Apollo apenas configuradas; demais ausentes/não certificadas.
+- Classificação global: **PARCIALMENTE CONCLUÍDO**.
