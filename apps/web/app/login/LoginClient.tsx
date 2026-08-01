@@ -14,8 +14,8 @@ export function LoginClient() {
   const searchParams = useSearchParams();
   const nextPath = useMemo(() => {
     const raw = searchParams.get("next");
-    if (!raw || raw === "/" || raw.startsWith("/login") || raw.startsWith("/register")) return "/dashboard";
-    return raw.startsWith("/") ? raw : "/dashboard";
+    if (!raw || raw === "/" || raw.startsWith("/login") || raw.startsWith("/register")) return "/ai";
+    return raw.startsWith("/") ? raw : "/ai";
   }, [searchParams]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

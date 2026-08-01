@@ -50,7 +50,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname === "/") {
-    if (session) return NextResponse.redirect(new URL("/dashboard", request.url));
+    if (session) return NextResponse.redirect(new URL("/ai", request.url));
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

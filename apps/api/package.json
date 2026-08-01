@@ -13,16 +13,20 @@
     "test:crm": "tsx --test src/tests/crm-advanced.test.ts",
     "test:whatsapp": "tsx --test src/tests/whatsapp-history.test.ts",
     "test:ai-discovery": "tsx --test src/tests/ai-discovery.test.ts",
+    "test:ai-first": "tsx --test src/tests/ai-first-core.test.ts",
     "test:import-security": "tsx --test src/tests/import-security.test.ts",
     "test:security-hardening": "tsx --test src/tests/security-hardening.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "npm run typecheck"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.99",
+    "@ai-sdk/openai": "^3.0.86",
     "@supabase/supabase-js": "^2.106.2",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "@types/web-push": "^3.6.4",
+    "ai": "^6.0.233",
     "cors": "^2.8.5",
     "csv-parse": "^6.2.1",
     "dotenv": "^16.4.7",
@@ -51,6 +55,7 @@
     "typescript": "^5.7.2"
   },
   "overrides": {
+    "brace-expansion@>=3.0.0": "^5.0.7",
     "exceljs": {
       "uuid": "^11.1.1"
     }

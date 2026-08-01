@@ -3,7 +3,7 @@
   "short_name": "NODERE",
   "description": "Plataforma de inteligência comercial, CRM, análise digital e prospecção com IA.",
   "id": "/",
-  "start_url": "/dashboard?source=pwa",
+  "start_url": "/ai?source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
@@ -41,6 +41,12 @@
     }
   ],
   "shortcuts": [
+    {
+      "name": "NODERE AI",
+      "short_name": "NODERE AI",
+      "url": "/ai",
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
+    },
     {
       "name": "Dashboard",
       "short_name": "Dashboard",

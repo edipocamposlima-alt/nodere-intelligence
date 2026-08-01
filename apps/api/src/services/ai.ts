@@ -1,51 +1,31 @@
 import { config } from "../config.js";
+import { generateMeteredAiText } from "./aiGateway.js";
 
 type ProviderName = "openai" | "anthropic";
 type ProviderStatus = "ok" | "degraded" | "down";
 
-export class AiUnavailableError extends Error {
-  retryAfter = 300;
-  status = 503;
-
-  constructor(message = "AI temporarily unavailable") {
-    super(message);
-    this.name = "AiUnavailableError";
-  }
-}
+type MeteredAiContext = {
+  workspaceId: string;
+  session: { userId?: string; email?: string; role?: string };
+  action: string;
+  agentId?: string;
+  modelId?: string;
+};
 
 let providerHealthCache:
   | { checkedAt: number; providers: Record<ProviderName, ProviderStatus> }
   | null = null;
 
-export async function callAI(systemPrompt: string, userPrompt: string) {
-  const providers = orderedProviders();
-  let lastError: unknown;
-  let primaryProviderError: unknown;
-
-  for (const provider of providers) {
-    const startedAt = Date.now();
-    try {
-      const content = provider === "openai"
-        ? await callOpenAI(systemPrompt, userPrompt)
-        : await callAnthropic(systemPrompt, userPrompt);
-      console.log(`[AI] provider=${provider} latency=${Date.now() - startedAt}ms`);
-      return { provider, content };
-    } catch (error) {
-      lastError = error;
-      if (!primaryProviderError && !isMissingProviderConfig(error)) primaryProviderError = error;
-      const retryable = isRetryableAiError(error);
-      console.warn(`[AI] provider=${provider} status=failed retryable=${retryable} latency=${Date.now() - startedAt}ms`);
-      if (!retryable) break;
-    }
-  }
-
-  const reportedError = primaryProviderError || lastError;
-  const message = reportedError instanceof Error && reportedError.message
-    ? `IA indisponível: ${reportedError.message}`
-    : "IA indisponível no momento.";
-  const err = new AiUnavailableError(message);
-  (err as Error & { cause?: unknown }).cause = reportedError;
-  throw err;
+export async function callAI(systemPrompt: string, userPrompt: string, context: MeteredAiContext) {
+  return generateMeteredAiText({
+    workspaceId: context.workspaceId,
+    session: context.session,
+    systemPrompt,
+    userPrompt,
+    action: context.action,
+    agentId: context.agentId,
+    modelId: context.modelId
+  });
 }
 
 export async function getAiProviderHealth() {
@@ -82,75 +62,4 @@ async function probeProvider(provider: ProviderName): Promise<ProviderStatus> {
   } catch {
     return "degraded";
   }
-}
-
-function orderedProviders(): ProviderName[] {
-  const primary = config.ai.providerPrimary === "anthropic" ? "anthropic" : "openai";
-  return primary === "openai" ? ["openai", "anthropic"] : ["anthropic", "openai"];
-}
-
-async function callOpenAI(systemPrompt: string, userPrompt: string) {
-  if (!config.openai.apiKey) throw retryable("OPENAI_API_KEY ausente.");
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${config.openai.apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: config.openai.model,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      temperature: 0.7
-    })
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw providerError(response.status, payload?.error?.message || "OpenAI falhou.");
-  return String(payload?.choices?.[0]?.message?.content ?? "{}");
-}
-
-async function callAnthropic(systemPrompt: string, userPrompt: string) {
-  if (!config.anthropic.apiKey) throw retryable("ANTHROPIC_API_KEY ausente.");
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": config.anthropic.apiKey,
-      "anthropic-version": "2023-06-01",
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: config.anthropic.model,
-      max_tokens: 1600,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userPrompt }]
-    })
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw providerError(response.status, payload?.error?.message || "Anthropic falhou.");
-  const text = payload?.content?.find?.((item: { type?: string }) => item.type === "text")?.text;
-  return String(text ?? "{}");
-}
-
-function providerError(status: number, message: string) {
-  const err = new Error(message) as Error & { status?: number; retryable?: boolean };
-  err.status = status;
-  err.retryable = status === 429 || status === 503;
-  return err;
-}
-
-function retryable(message: string) {
-  const err = new Error(message) as Error & { retryable?: boolean };
-  err.retryable = true;
-  return err;
-}
-
-function isMissingProviderConfig(error: unknown) {
-  return error instanceof Error && /API_KEY ausente/i.test(error.message);
-}
-
-function isRetryableAiError(error: unknown) {
-  return Boolean((error as { retryable?: boolean })?.retryable);
 }

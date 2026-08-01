@@ -111,7 +111,7 @@ export default async function BillingPage() {
                 )}
                 <p className="text-lg font-bold text-white">{plan.name}</p>
                 <p className="mt-1 text-sm font-medium text-cyan">{formatBRL(plan.priceMonthly)}</p>
-                <p className="mt-0.5 text-xs text-slate-400">{plan.id === "agency" ? "Créditos ilimitados" : `${plan.monthlyCredits.toLocaleString("pt-BR")} créditos/mês`}</p>
+                <p className="mt-0.5 text-xs text-slate-400">{plan.id === "enterprise" ? "Créditos definidos em contrato" : `${plan.monthlyCredits.toLocaleString("pt-BR")} créditos/mês`}</p>
 
                 <ul className="mt-4 space-y-2">
                   {plan.features.map((f) => (

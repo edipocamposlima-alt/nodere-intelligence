@@ -86,9 +86,9 @@ values
   (
     'agency',
     10,
-    999999,
+    1800,
     '["DISC-01","DISC-02","DISC-06","CRM-01","CRM-02","CRM-04","ENG-01","ENG-02","ENG-03","ANA-01","ANA-02","INTEL-01","OPS-01","ADMIN-01"]'::jsonb,
-    '{"white_label": true, "audit_log": true, "dedicated_support": true, "unlimited_credits": true}'::jsonb
+    '{"white_label": true, "audit_log": true, "dedicated_support": true, "credits_metered": true}'::jsonb
   )
 on conflict (plan) do update set
   seats_limit = excluded.seats_limit,

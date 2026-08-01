@@ -67,7 +67,7 @@ export function RegisterClient() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${exchange.token}` },
         body: JSON.stringify({ name: form.company || "Workspace NODERE" })
       });
-      router.push("/dashboard");
+      router.push("/ai");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Erro ao criar conta.");
     } finally {

@@ -22,7 +22,7 @@ const moduleLinks = [
   { href: "/searches", match: /busca de empresas|busca avan[cç]ada|discovery/i },
   { href: "/companies", match: /\bempresas\b|ficha do cliente|ficha comercial/i },
   { href: "/crm", match: /\bcrm\b|funil/i },
-  { href: "/intelligence", match: /intelig[eê]ncia|\bia\b/i },
+  { href: "/ai", match: /nodere ai|agentes|modelos|cr[eé]ditos|aprova[cç][oõ]es|intelig[eê]ncia|\bia\b/i },
   { href: "/inbox", match: /caixa de entrada|whatsapp|e-mail|email/i },
   { href: "/calendario", match: /calend[aá]rio|agenda|follow-up/i },
   { href: "/reports", match: /relat[oó]rios/i },

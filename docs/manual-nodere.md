@@ -358,3 +358,20 @@ Mudanças de schema, funções, políticas RLS ou vínculos de usuários exigem 
 
 ## Auditoria final de julho de 2026
 Foram revisados autenticação, workspace, CRM, dashboard, importação, dependências, PWA, responsividade, integrações e banco. A entrega remove credencial pública e token persistente do cliente, impede a renderização de dados com sessão inválida, usa proxy same-origin/backend para dados privados, corrige a conversão do funil, limita importações e restringe o cache offline a recursos públicos. Os testes e bloqueios remanescentes estão registrados nos documentos `NODERE_MATRIZ_DE_TESTES.md`, `NODERE_RESULTADOS_TESTES_E_EVIDENCIAS.md` e `NODERE_PENDENCIAS_E_BLOQUEIOS_REAIS.md`.
+
+## NODERE AI-first V3
+
+- Entrada autenticada: /ai; /dashboard permanece disponível como módulo.
+- Agentes iniciais: Copiloto comercial, Analista de prospecção, Coach de pipeline e Estrategista de propostas.
+- Modelos: registry no banco, filtro por provedor configurado, agente e perfil. O modelo frontier não é oferecido a viewer.
+- Ferramentas: leitura isolada por workspace_id; criação de lead e mudança de etapa exigem aprovação humana.
+- Recibos: chave idempotente por conversa + toolCallId; retry concorrente não repete a operação.
+- Créditos: carteira e ledger transacionais com reserva, captura, liberação, grant e consumo operacional.
+- Chaves: uma credencial por provedor no backend; nenhuma chave por modelo e nenhuma captura de chave no frontend.
+- PWA: manifests iniciam em /ai?source=pwa; páginas autenticadas não entram no cache offline.
+
+### Operação segura
+
+Se /ai informar que a infraestrutura ainda não está disponível, confirme a migration 20260722_nodere_ai_first.sql, a carteira do workspace e o secret do provedor no backend. Não crie tabelas manualmente nem use saldo fictício. Falha CREDITS_EXHAUSTED requer crédito/plano real. Falha LEDGER_CAPTURE_FAILED exige reconciliação do registro retido antes de qualquer ajuste.
+
+O V3 ainda não está ativo em produção: o schema não foi aplicado, não existe staging comprovado e o smoke autenticado não foi executado. Consulte 20_PLANO_E_EVIDENCIA_DE_DEPLOY.md e o rollback SQL antes da promoção.

@@ -1,5 +1,6 @@
 import { CreditAccount } from "../types.js";
 import { getSupabase, hasSupabase } from "../db/supabase.js";
+import { randomUUID } from "node:crypto";
 
 const TRIAL_CREDITS = 20;
 const TRIAL_DAYS = 14;
@@ -51,6 +52,32 @@ export function consumeCredit(type = "manual", description = "Uso operacional", 
 }
 
 async function consume(amount: number, type: string, description: string, workspaceId: string) {
+  if (hasSupabase()) {
+    const sb = getSupabase()!;
+    const { data, error } = await sb.rpc("nodere_consume_credits", {
+      p_workspace_id: workspaceId,
+      p_idempotency_key: `operation:${type}:${randomUUID()}`,
+      p_amount: amount,
+      p_metadata: { type, description }
+    });
+    if (error) {
+      const message = String(error.message || "");
+      if (message.includes("CREDITS_EXHAUSTED")) {
+        const exhausted = new Error("Créditos esgotados — faça upgrade") as Error & { status?: number; code?: string };
+        exhausted.status = 402;
+        exhausted.code = "CREDITS_EXHAUSTED";
+        throw exhausted;
+      }
+      const unavailable = new Error("Ledger de créditos indisponível. A operação não foi cobrada nem executada.") as Error & { status?: number; code?: string };
+      unavailable.status = 503;
+      unavailable.code = "CREDIT_LEDGER_UNAVAILABLE";
+      throw unavailable;
+    }
+    accounts.delete(workspaceId);
+    const row = Array.isArray(data) ? data[0] : data;
+    return Number(row?.available_credit ?? 0);
+  }
+
   const account = await ensureAccount(workspaceId);
   const trialExpired = account.plan === "trial" && Boolean(account.trialExpiresAt) && new Date(account.trialExpiresAt!).getTime() < Date.now();
   if (trialExpired || account.balance <= 0) {
@@ -99,9 +126,15 @@ async function loadPersistedAccount(workspaceId: string): Promise<WorkspaceCredi
     .eq("id", workspaceId)
     .maybeSingle();
   if (error || !data) return null;
+  const wallet = await sb
+    .from("nodere_credit_wallets")
+    .select("available_credit,held_credit,lifetime_spent_credit")
+    .eq("workspace_id", workspaceId)
+    .maybeSingle();
   const plan = String(data.plan ?? "trial");
-  const total = plan === "agency" ? 999999 : plan === "pro" ? 600 : plan === "starter" ? 200 : TRIAL_CREDITS;
-  const balance = Math.max(0, Number(data.credits ?? TRIAL_CREDITS));
+  const legacyBalance = Math.max(0, Number(data.credits ?? TRIAL_CREDITS));
+  const balance = wallet.data && !wallet.error ? Math.max(0, Number(wallet.data.available_credit || 0)) : legacyBalance;
+  const total = plan === "agency" ? 1800 : plan === "pro" ? 600 : plan === "starter" ? 200 : plan === "enterprise" ? balanceFromRow(data) : TRIAL_CREDITS;
   const used = Math.max(0, Number(data.credits_used ?? (total - balance)));
   const trialExpiresAt = String(data.trial_expires_at ?? data.expires_at ?? trialExpiryDate());
   const renewalAt = plan === "trial" ? null : String(data.plan_renews_at ?? data.expires_at ?? "");
@@ -116,6 +149,10 @@ async function loadPersistedAccount(workspaceId: string): Promise<WorkspaceCredi
     renewalAt,
     log: []
   };
+}
+
+function balanceFromRow(data: Record<string, unknown>) {
+  return Math.max(0, Number(data.credits ?? 0) + Number(data.credits_used ?? 0));
 }
 
 async function persistAccount(workspaceId: string, account: WorkspaceCredits) {

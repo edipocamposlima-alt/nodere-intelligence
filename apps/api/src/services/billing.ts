@@ -40,19 +40,19 @@ export const PLANS: Plan[] = [
   {
     id: "agency",
     name: "Agency",
-    monthlyCredits: 999999,
+    monthlyCredits: 1800,
     priceMonthly: 39700,
     priceYearly: 397000,
     stripePriceId: config.stripe.prices.agencyMonthly,
     stripePriceMonthlyId: config.stripe.prices.agencyMonthly,
     stripePriceYearlyId: config.stripe.prices.agencyYearly,
     paymentLinkUrl: config.stripe.paymentLinks.agency,
-    features: ["Créditos ilimitados", "10 operadores", "White-label", "Audit log completo", "Suporte dedicado"]
+    features: ["1.800 créditos/mês", "10 operadores", "White-label", "Audit log completo", "Suporte dedicado"]
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    monthlyCredits: 999999,
+    monthlyCredits: 0,
     priceMonthly: 0,
     priceYearly: 0,
     features: ["Créditos e operadores sob contrato", "SLA dedicado", "Implantação assistida", "Governança avançada", "Suporte executivo"]
@@ -199,7 +199,7 @@ export async function saveBillingWaitlist(input: { email: string; plan?: string;
   return data;
 }
 
-async function activateWorkspacePlan(workspaceId: string, planId: string, renewalAt?: string | null) {
+async function activateWorkspacePlan(workspaceId: string, planId: string, renewalAt?: string | null, creditGrantKey?: string) {
   const plan = PLANS.find((item) => item.id === planId && item.id !== "demo");
   if (!plan) return;
   const sb = getSupabase();
@@ -221,6 +221,17 @@ async function activateWorkspacePlan(workspaceId: string, planId: string, renewa
       expires_at: renewalAt || null,
       updated_at: new Date().toISOString()
     }).eq("id", workspaceId);
+  }
+  if (creditGrantKey && plan.monthlyCredits > 0) {
+    const grant = await sb.rpc("nodere_ai_grant_credits", {
+      p_workspace_id: workspaceId,
+      p_idempotency_key: creditGrantKey,
+      p_amount: plan.monthlyCredits,
+      p_metadata: { source: "stripe_subscription", plan: plan.id, renewal_at: renewalAt || null }
+    });
+    if (grant.error) {
+      console.error(`[BILLING_LEDGER] workspace=${workspaceId} grant_failed code=${grant.error.code || "unknown"}`);
+    }
   }
 }
 
@@ -406,7 +417,7 @@ export async function handleStripeWebhook(rawBody: Buffer, signature: string) {
         cancelAtPeriodEnd: Boolean(sub.cancel_at_period_end),
         metadata: { priceId }
       });
-      await activateWorkspacePlan(workspaceId, plan.id, billingState.resetAt);
+      await activateWorkspacePlan(workspaceId, plan.id, billingState.resetAt, `billing:${sub.id}:${periodEnd || "current"}`);
     }
     appendAuditLog("billing", `subscription_${event.type.split(".")[2]}`, `Assinatura ${plan.name} — ${sub.status}`, {
       metadata: { planId: plan.id, subscriptionId: sub.id }

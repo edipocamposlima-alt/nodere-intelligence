@@ -266,7 +266,12 @@ router.post("/generate", requireWorkspaceRole("owner", "admin", "operator"), asy
       google_rating: lead.rating ? String(lead.rating) : ""
     });
     if (body.enhance) {
-      const ai = await callAI("Você é consultor comercial NODERE. Melhore a proposta mantendo dados reais e tom profissional.", rendered);
+      const ai = await callAI("Você é consultor comercial NODERE. Melhore a proposta mantendo dados reais e tom profissional.", rendered, {
+        workspaceId,
+        session: (req as any).session ?? {},
+        action: "proposal_enhancement",
+        agentId: "proposal-strategist"
+      });
       rendered = ai.content;
     }
     logRequestMetric(req, "proposal_generated", lead.id, {

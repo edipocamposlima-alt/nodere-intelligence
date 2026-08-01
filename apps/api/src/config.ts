@@ -1,6 +1,20 @@
 import dotenv from "dotenv";
+import { existsSync } from "node:fs";
+import path from "node:path";
 
-dotenv.config();
+if (process.env.NODE_ENV !== "production") {
+  const candidates = [
+    path.resolve(process.cwd(), ".env.local"),
+    path.resolve(process.cwd(), "../../.env.local"),
+    path.resolve(process.cwd(), ".env"),
+    path.resolve(process.cwd(), "../../.env")
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) dotenv.config({ path: candidate, override: false });
+  }
+} else {
+  dotenv.config();
+}
 
 const _googleApiKey = process.env.GOOGLE_API_KEY;
 const isProduction = process.env.NODE_ENV === "production";
@@ -45,14 +59,19 @@ export const config = {
   },
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
-    model: process.env.OPENAI_MODEL ?? "gpt-4o-mini"
+    model: process.env.OPENAI_MODEL ?? "gpt-5.6-terra"
   },
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY,
     model: process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5"
   },
   ai: {
-    providerPrimary: process.env.AI_PROVIDER_PRIMARY ?? "openai"
+    providerPrimary: process.env.AI_PROVIDER_PRIMARY ?? "openai",
+    defaultAgentId: process.env.AI_DEFAULT_AGENT_ID ?? "commercial-copilot",
+    defaultModelId: process.env.AI_DEFAULT_MODEL_ID ?? "openai:gpt-5.6-terra",
+    creditsPerUsd: Number(process.env.AI_CREDITS_PER_USD ?? 100),
+    maxOutputTokens: Number(process.env.AI_MAX_OUTPUT_TOKENS ?? 2048),
+    reservationBuffer: Number(process.env.AI_RESERVATION_BUFFER ?? 1.25)
   },
   enrichment: {
     econodataApiKey: process.env.ECONODATA_API_KEY,

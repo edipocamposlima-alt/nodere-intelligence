@@ -145,8 +145,8 @@ values
   ('demo', 1, 200, '["DISC-01","CRM-01","CRM-02"]'::jsonb, '{"billing":"demo"}'::jsonb),
   ('starter', 1, 200, '["DISC-01","CRM-01","CRM-02","CRM-04"]'::jsonb, '{"proposals":true,"pdf":true}'::jsonb),
   ('pro', 3, 600, '["DISC-01","CRM-01","CRM-02","CRM-03","CRM-04","ANA-01","ANA-02"]'::jsonb, '{"proposals":true,"pdf":true,"reports":true}'::jsonb),
-  ('agency', 10, 999999, '["DISC-01","CRM-01","CRM-02","CRM-03","CRM-04","ENG-01","ENG-03","ENG-04","AI-01","ANA-01","ANA-02","OPS-01"]'::jsonb, '{"proposals":true,"pdf":true,"reports":true,"advanced_admin":true}'::jsonb),
-  ('enterprise', 999, 999999, '["DISC-01","CRM-01","CRM-02","CRM-03","CRM-04","ENG-01","ENG-03","ENG-04","AI-01","ANA-01","ANA-02","OPS-01"]'::jsonb, '{"proposals":true,"pdf":true,"reports":true,"advanced_admin":true,"sla":true}'::jsonb)
+  ('agency', 10, 1800, '["DISC-01","CRM-01","CRM-02","CRM-03","CRM-04","ENG-01","ENG-03","ENG-04","AI-01","ANA-01","ANA-02","OPS-01"]'::jsonb, '{"proposals":true,"pdf":true,"reports":true,"advanced_admin":true,"credits_metered":true}'::jsonb),
+  ('enterprise', 0, 0, '["DISC-01","CRM-01","CRM-02","CRM-03","CRM-04","ENG-01","ENG-03","ENG-04","AI-01","ANA-01","ANA-02","OPS-01"]'::jsonb, '{"proposals":true,"pdf":true,"reports":true,"advanced_admin":true,"sla":true,"limits_by_contract":true}'::jsonb)
 on conflict (plan) do update set
   seats_limit = excluded.seats_limit,
   credits_limit = excluded.credits_limit,

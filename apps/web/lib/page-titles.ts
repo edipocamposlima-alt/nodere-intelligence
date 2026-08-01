@@ -1,4 +1,5 @@
 export const PAGE_TITLES: Record<string, string> = {
+  "/ai": "NODERE AI",
   "/dashboard": "Dashboard",
   "/searches": "Busca de Empresas",
   "/busca-de-empresas": "Busca de Empresas",
@@ -6,7 +7,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/crm": "CRM",
   "/pipeline": "CRM",
   "/intelligence": "Inteligência Digital",
-  "/ia": "Inteligência Digital",
+  "/ia": "NODERE AI",
   "/inbox": "Caixa de Entrada",
   "/calendar": "Calendário",
   "/calendario": "Calendário",

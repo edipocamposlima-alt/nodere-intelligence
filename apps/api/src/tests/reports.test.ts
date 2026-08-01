@@ -6,6 +6,7 @@ import {
   filterCompaniesForReport,
   normalizeReportFilters
 } from "../services/reports.js";
+import { renderReportPdf } from "../services/reportPdf.js";
 
 const baseCompanies = [
   {
@@ -98,5 +99,38 @@ describe("reports filters and exports", () => {
     assert.match(csv, /"indicador","leads_criados","3",""/);
     assert.match(csv, /"origem","google_places","3",""/);
     assert.match(csv, /"operador","Operador","3","4"/);
+  });
+
+  it("renders a valid non-empty report PDF with at least one page", async () => {
+    const pdf = await renderReportPdf({
+      filters: { period: "30d" },
+      metrics: {
+        leads_created: 3,
+        leads_converted: 1,
+        conversion_rate: 33,
+        open_opportunities: 2,
+        deals_won: 1,
+        deals_lost: 0,
+        activities_done: 4,
+        avg_score: 70,
+        pipeline_value: 5000
+      },
+      funnel: [{ name: "Novo Lead", count: 3, pct_of_total: 100 }],
+      segments: [{ segment: "Clinica", count: 3, avg_score: 70 }],
+      timeline: [{ date: "2026-06-22", count: 3 }],
+      operators: [{
+        name: "Operador",
+        role: "operator",
+        leads_created: 3,
+        followups_done: 4,
+        leads_closed: 1
+      }]
+    }, new Date("2026-06-22T12:00:00.000Z"));
+
+    const raw = pdf.toString("latin1");
+    assert.equal(pdf.subarray(0, 5).toString("ascii"), "%PDF-");
+    assert.match(raw, /%%EOF\s*$/);
+    assert.ok((raw.match(/\/Type \/Page\b/g) || []).length >= 1);
+    assert.ok(pdf.length > 1_000);
   });
 });

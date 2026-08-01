@@ -16,6 +16,8 @@ backend/node_modules/
 dist/
 build/
 coverage/
+test-results/
+.codex_tmp/
 uploads/
 *.tsbuildinfo
 nodere-site-premium/

@@ -10,12 +10,12 @@ async function login(page: import("@playwright/test").Page) {
   await page.getByLabel(/email/i).fill(email!);
   await page.getByLabel(/senha|password/i).fill(password!);
   await page.getByRole("button", { name: /entrar|login|acessar/i }).click();
-  await expect(page).toHaveURL(/dashboard|app/);
+  await expect(page).toHaveURL(/\/ai(?:\?|$)/);
 }
 
 test.describe("NODERE smoke minimo", () => {
   test("rota privada sem sessao redireciona para login", async ({ page }) => {
-    await page.goto("/app/dashboard");
+    await page.goto("/ai");
     await expect(page).toHaveURL(/login/);
   });
 
@@ -29,8 +29,11 @@ test.describe("NODERE smoke minimo", () => {
     await expect.poll(() => page.evaluate(() => localStorage.getItem("nodere_admin_token"))).toBeNull();
   });
 
-  test("login, dashboard, CRM, catalogo, propostas e logout", async ({ page }) => {
+  test("login, NODERE AI, dashboard, CRM, catalogo, propostas e logout", async ({ page }) => {
     await login(page);
+
+    await page.goto("/ai");
+    await expect(page.getByText(/NODERE AI|assistente comercial/i).first()).toBeVisible();
 
     await page.goto("/app/dashboard");
     await expect(page.getByText(/Dashboard|NODERE|CRM/i).first()).toBeVisible();

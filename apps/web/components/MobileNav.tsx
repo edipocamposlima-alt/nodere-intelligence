@@ -3,17 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BarChart3, Building2, CalendarDays, CircleHelp, CreditCard, Download, Inbox, KanbanSquare, LineChart, LogOut, Megaphone, Menu, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, X, Zap } from "lucide-react";
+import { BarChart3, Bot, Building2, CalendarDays, CircleHelp, CreditCard, Download, Inbox, KanbanSquare, LineChart, LogOut, Megaphone, Menu, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, X, Zap } from "lucide-react";
 import { useAuth } from "@/context/AuthProvider";
 
 const primaryItems = [
+  { href: "/ai", label: "NODERE AI", icon: Bot, tone: "green" },
   { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: BarChart3, tone: "neutral" },
   { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search, tone: "cyan" },
-  { href: "/companies", label: "Empresas", icon: Building2, tone: "blue" },
   { href: "/crm", label: "CRM", icon: KanbanSquare, tone: "green" }
 ];
 
 const drawerItems = [
+  { href: "/companies", label: "Empresas", icon: Building2, tone: "blue" },
   { href: "/calendario", label: "Agenda", icon: CalendarDays, tone: "blue" },
   { href: "/app/leads", label: "Leads", icon: Users, tone: "green" },
   { href: "/app/proposals", label: "Propostas e Contratos", icon: PackageOpen, tone: "purple" },

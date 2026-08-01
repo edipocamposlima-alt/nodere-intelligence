@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Building2, CalendarDays, CircleHelp, CreditCard, Inbox, KanbanSquare, LineChart, Megaphone, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
+import { BarChart3, Bot, Building2, CalendarDays, CircleHelp, CreditCard, Inbox, KanbanSquare, LineChart, Megaphone, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
 import { useCredits } from "@/context/CreditsProvider";
 import { useAuth } from "@/context/AuthProvider";
 import { Logo } from "@/components/brand/Logo";
@@ -11,6 +11,7 @@ const groups = [
   {
     label: "Principal",
     items: [
+      { href: "/ai", label: "NODERE AI", icon: Bot, tone: "green" },
       { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: BarChart3, tone: "neutral" },
       { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search, tone: "cyan" },
       { href: "/companies", label: "Empresas", icon: Building2, tone: "blue" },
@@ -65,7 +66,7 @@ export function Sidebar() {
   const pathname = usePathname() || "/";
   const isApp = pathname.startsWith("/app");
   const isAdmin = user?.role === "owner" || user?.role === "admin";
-  const dashboardHref = isApp ? "/app/dashboard" : "/dashboard";
+  const dashboardHref = isApp ? "/app/dashboard" : "/ai";
   const total = credits?.total || 0;
   const remaining = credits?.remaining || 0;
   const used = credits?.used || 0;

@@ -41,8 +41,8 @@ const INTEGRATIONS = [
 ];
 
 const PLANS = [
-  { name: "Starter", price: 97, users: "1 usuário", highlight: false, features: ["Discovery completo", "CRM essencial", "Dashboard básico", "IA limitada", "300 créditos/mês"] },
-  { name: "Pro", price: 247, users: "Até 3 usuários", highlight: true, features: ["Tudo do Starter", "Inteligência completa", "WhatsApp + E-mail", "IA copiloto ilimitado", "1.000 créditos/mês"] },
+  { name: "Starter", price: 97, users: "1 usuário", highlight: false, features: ["Discovery completo", "CRM essencial", "Dashboard básico", "IA limitada", "200 créditos/mês"] },
+  { name: "Pro", price: 247, users: "Até 3 usuários", highlight: true, features: ["Tudo do Starter", "Inteligência completa", "WhatsApp + E-mail", "IA copiloto com ledger de uso", "600 créditos/mês"] },
   { name: "Agency", price: 497, users: "Até 10 usuários", highlight: false, features: ["Tudo do Pro", "Omnichannel completo", "Automações avançadas", "Analytics completo", "Operations + Marketplace"] },
   { name: "Enterprise", price: null, users: "Ilimitado", highlight: false, features: ["Todos os módulos", "White-label disponível", "API pública", "SLA dedicado", "Gerente de conta"] }
 ];

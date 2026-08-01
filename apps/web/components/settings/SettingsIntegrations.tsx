@@ -6,7 +6,6 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 const API_URL = getApiBaseUrl();
 
 const INTEGRATIONS = [
-  { key: "openai_key", label: "OpenAI API Key", hint: "sk-...", testEndpoint: "/settings/test/openai" },
   { key: "google_places_key", label: "Google Places API Key", hint: "AIza...", testEndpoint: "/settings/test/google" },
   { key: "apollo_key", label: "Apollo.io API Key", hint: "Encontre em app.apollo.io > Settings > API", testEndpoint: "/settings/test/apollo" },
   { key: "smtp_host", label: "SMTP Host", hint: "smtp.seudominio.com" },
@@ -62,7 +61,19 @@ export default function SettingsIntegrations() {
   return (
     <div className="settings-section">
       <h2>Integrações</h2>
-      <p className="settings-hint">As chaves são armazenadas no backend e nunca exibidas em texto puro depois de salvas.</p>
+      <p className="settings-hint">As integrações do workspace ficam no backend. As chaves de provedores de IA são gerenciadas exclusivamente como secrets do ambiente e nunca são aceitas pelo navegador.</p>
+      <div className="integration-row">
+        <div>
+          <strong>Provedores de IA</strong>
+          <p className="settings-hint">Configuração central protegida pelo NODERE AI Gateway.</p>
+        </div>
+        <div className="integration-test">
+          <button onClick={() => testConnection("openai_managed", "/settings/test/openai")} disabled={testing.openai_managed} className="btn-ghost btn-sm" type="button">
+            {testing.openai_managed ? "Verificando..." : "Verificar gateway"}
+          </button>
+          {testResults.openai_managed && <span className={testResults.openai_managed.startsWith("✓") ? "test-ok" : "test-fail"}>{testResults.openai_managed}</span>}
+        </div>
+      </div>
       {msg && <div className={`settings-msg ${msg.startsWith("✓") ? "success" : "error"}`}>{msg}</div>}
       {INTEGRATIONS.map((item) => (
         <div key={item.key} className="integration-row">

@@ -2,11 +2,11 @@ import { Router } from "express";
 import { getSupabase, hasSupabase } from "../db/supabase.js";
 import { getRequestWorkspaceId, requireWorkspaceRole } from "../middleware/session.js";
 import { savePreferences } from "../services/settingsStore.js";
+import { getAiProviderHealth } from "../services/ai.js";
 
 const router = Router();
 
 const INTEGRATION_KEYS = [
-  "openai_key",
   "google_places_key",
   "apollo_key",
   "smtp_host",
@@ -77,7 +77,8 @@ router.get("/integrations", requireWorkspaceRole("admin", "owner"), async (req, 
     const { data, error } = await sb
       .from("nodere_workspace_settings")
       .select("key, masked_value")
-      .eq("workspace_id", getRequestWorkspaceId(req));
+      .eq("workspace_id", getRequestWorkspaceId(req))
+      .in("key", INTEGRATION_KEYS);
     if (error) {
       if (isSettingsSchemaError(error)) return res.json({});
       throw error;
@@ -135,15 +136,12 @@ async function getIntegrationValue(workspaceId: string, key: string) {
 
 router.get("/test/openai", requireWorkspaceRole("admin", "owner"), async (req, res) => {
   try {
-    const value = await getIntegrationValue(getRequestWorkspaceId(req), "openai_key");
-    if (!value) return res.status(400).json({ error: "Chave OpenAI não configurada." });
-    const response = await fetch("https://api.openai.com/v1/models", {
-      headers: { Authorization: `Bearer ${value}` }
-    });
-    if (!response.ok) return res.status(400).json({ error: "Chave inválida ou sem acesso." });
-    return res.json({ ok: true });
+    const providers = await getAiProviderHealth();
+    if (providers.openai === "down") return res.status(503).json({ error: "OpenAI não está configurada no ambiente seguro do backend." });
+    if (providers.openai === "degraded") return res.status(503).json({ error: "O gateway OpenAI está temporariamente degradado." });
+    return res.json({ ok: true, managed: true, provider: "openai" });
   } catch {
-    return res.status(500).json({ error: "Erro ao testar conexão OpenAI." });
+    return res.status(500).json({ error: "Erro ao verificar o gateway OpenAI." });
   }
 });
 

@@ -46,11 +46,11 @@ async function proxyBackend(request: NextRequest, context: RouteContext) {
     }
 
     const responseHeaders = new Headers();
-    for (const name of ["content-type", "content-disposition", "cache-control"]) {
+    for (const name of ["content-type", "content-disposition", "cache-control", "x-vercel-ai-ui-message-stream"]) {
       const value = upstream.headers.get(name);
       if (value) responseHeaders.set(name, value);
     }
-    const response = new NextResponse(await upstream.arrayBuffer(), { status: upstream.status, headers: responseHeaders });
+    const response = new NextResponse(upstream.body, { status: upstream.status, headers: responseHeaders });
     if (activeToken !== token) {
       for (const name of COOKIE_NAMES) {
         response.cookies.set(name, activeToken, {

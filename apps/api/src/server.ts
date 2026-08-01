@@ -344,12 +344,16 @@ app.post("/api/openai/analyze", requireWorkspaceSession, async (req, res, next) 
       }
     });
 
-    const ai = await callAI(systemPrompt, userPrompt);
+    const ai = await callAI(systemPrompt, userPrompt, {
+      workspaceId: getRequestWorkspaceId(req),
+      session: (req as any).session ?? {},
+      action: "openai_analyze"
+    });
     const raw = ai.content;
     const analysis = JSON.parse(raw);
     return res.json({
       ...analysis,
-      model: config.openai.model,
+      model: ai.model,
       provider: ai.provider,
       generatedAt: new Date().toISOString()
     });

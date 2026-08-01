@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { requireWorkspaceRole } from "../middleware/session.js";
+import { getRequestWorkspaceId, requireWorkspaceRole } from "../middleware/session.js";
 import { getSupabase } from "../db/supabase.js";
 import { callAI } from "../services/ai.js";
 
@@ -50,7 +50,11 @@ router.post("/:id/test", requireWorkspaceRole("owner", "admin"), async (req, res
   try {
     const sample = req.body?.lead ?? { name: "Clínica Exemplo", segment: "clínica odontológica", city: "Caxias do Sul", score: 62 };
     const prompt = `Gere diagnóstico curto para lead de teste: ${JSON.stringify(sample)}`;
-    const ai = await callAI("Você é especialista NODERE em diagnósticos verticais.", prompt);
+    const ai = await callAI("Você é especialista NODERE em diagnósticos verticais.", prompt, {
+      workspaceId: getRequestWorkspaceId(req),
+      session: (req as any).session ?? {},
+      action: "vertical_prompt_test"
+    });
     res.json({ id: randomUUID(), output: ai.content, provider: ai.provider });
   } catch (error) {
     next(error);

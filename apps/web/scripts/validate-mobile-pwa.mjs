@@ -27,8 +27,9 @@ const adminAuth = read("lib/adminAuth.ts");
 
 check("manifest principal existe", exists("public/manifest.webmanifest"));
 check("manifest legado existe", exists("public/manifest.json"));
-check("manifest inicia no dashboard", manifest.start_url === "/dashboard?source=pwa");
-check("manifest legado inicia no dashboard", legacyManifest.start_url === "/dashboard?source=pwa");
+check("manifest inicia na NODERE AI", manifest.start_url === "/ai?source=pwa");
+check("manifest legado inicia na NODERE AI", legacyManifest.start_url === "/ai?source=pwa");
+check("manifest oferece atalho NODERE AI", manifest.shortcuts?.some((item) => item.url === "/ai"));
 check("manifest usa display standalone", manifest.display === "standalone");
 check("manifest tem icone 192", manifest.icons?.some((icon) => icon.sizes === "192x192"));
 check("manifest tem icone 512 maskable", manifest.icons?.some((icon) => icon.sizes === "512x512" && String(icon.purpose || "").includes("maskable")));
@@ -39,6 +40,7 @@ check("service worker ignora APIs", sw.includes('url.pathname.startsWith("/api/"
 check("service worker trata navegacao", sw.includes('request.mode === "navigate"'));
 check("service worker não cacheia páginas autenticadas", sw.includes("authenticated navigations are network-only"));
 check("service worker não pré-cacheia dashboard", !sw.includes('"/dashboard?source=pwa"'));
+check("service worker não pré-cacheia NODERE AI autenticada", !sw.includes('"/ai?source=pwa"'));
 check("manifest permite qualquer orientação", manifest.orientation === "any");
 check("menu mobile tem instalar app", mobileNav.includes("Instalar app"));
 check("menu mobile tem sair", mobileNav.includes("Sair") && mobileNav.includes("logout"));
