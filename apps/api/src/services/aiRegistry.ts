@@ -59,6 +59,28 @@ export async function getAvailableModel(modelId?: string | null, constraints?: {
   return fallback;
 }
 
+export async function selectAutomaticModel(input: {
+  role?: string | null;
+  allowedModelIds?: string[];
+  agentId?: string;
+  messagesJson: string;
+}) {
+  const models = (await listAvailableModels(input.role))
+    .filter((model) => isModelAllowedForAgent(model.id, input.allowedModelIds));
+  if (!models.length) throw serviceError("AI_PROVIDER_UNAVAILABLE", "Nenhum modelo automático está disponível para este papel e agente.", 503);
+  const complexity = estimateRoutingComplexity(input.messagesJson, input.agentId || "");
+  const preferredTiers: AiModelRecord["capabilityTier"][] = complexity === "frontier"
+    ? ["frontier", "balanced", "efficient"]
+    : complexity === "balanced"
+      ? ["balanced", "efficient", "frontier"]
+      : ["efficient", "balanced", "frontier"];
+  for (const tier of preferredTiers) {
+    const candidate = models.find((model) => model.capabilityTier === tier);
+    if (candidate) return candidate;
+  }
+  return models[0];
+}
+
 export async function listAvailableAgents(workspaceId: string) {
   const sb = requireAiDatabase();
   const { data, error } = await sb
@@ -133,6 +155,16 @@ function mapAgent(row: Record<string, unknown>): AiAgentRecord {
 
 function normalizeRole(role: string) {
   return ["owner", "admin", "operator", "viewer"].includes(role) ? role : "viewer";
+}
+
+function estimateRoutingComplexity(messagesJson: string, agentId: string) {
+  const characters = messagesJson.length;
+  const normalized = messagesJson.toLowerCase();
+  const highComplexitySignals = ["contrato", "proposta completa", "auditoria", "estratégia", "comparar versões", "briefing completo"];
+  const mediumComplexitySignals = ["diagnóstico", "pipeline", "planejamento", "relatório", "briefing", "follow-up"];
+  if (characters > 40_000 || agentId === "proposal-strategist" || highComplexitySignals.some((signal) => normalized.includes(signal))) return "frontier" as const;
+  if (characters > 8_000 || mediumComplexitySignals.some((signal) => normalized.includes(signal))) return "balanced" as const;
+  return "efficient" as const;
 }
 
 function requireAiDatabase() {

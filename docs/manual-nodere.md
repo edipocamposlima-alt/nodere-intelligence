@@ -58,6 +58,33 @@ Abra **CRM**. Arraste o card do lead entre as etapas:
 
 Cada alteração é salva no backend e refletida no dashboard.
 
+### Clientes, arquivo e lixeira
+
+Use **CRM > Clientes** para consultar os cadastros canônicos. Operadores autorizados podem arquivar e restaurar registros. A lixeira mantém retenção mínima de 30 dias. Exclusão definitiva é restrita a owner/admin, exige a frase nominal apresentada pela tela e é bloqueada quando houver legal hold ou dependências protegidas.
+
+## Briefing Comercial
+
+Abra **CRM > Briefing Comercial** para criar um briefing vinculado a uma empresa. O formulário tem 47 campos organizados por assunto; Empresa, Segmento, Nome do decisor e Próxima ação são obrigatórios para concluir.
+
+- **Salvar rascunho** preserva o trabalho e cria histórico.
+- **Concluir** compara os dados com Empresa/Contato antes de aplicar mapeamentos canônicos.
+- A data da próxima ação pode criar um compromisso na Agenda.
+- **PDF**, CSV e XLSX usam o catálogo oficial de campos.
+- Anexos ficam em armazenamento privado, limitados a 5 MiB.
+- A Ficha 360 mostra os briefings da empresa.
+
+Em caso de edição simultânea, recarregue a versão atual e reconcilie o conflito; o sistema não deve sobrescrever silenciosamente.
+
+## Comunicações Unificadas
+
+Abra **CRM > Comunicações** ou use o atalho contextual do briefing. Escolha um modelo, revise variáveis, destinatário e conteúdo, confirme a base legal/consentimento e só então crie a saída.
+
+- E-mail usa SMTP apenas quando o status estiver configurado.
+- Gmail aparece como pendente até OAuth e teste controlado estarem válidos.
+- WhatsApp assistido abre `wa.me`; isso não equivale a envio, entrega ou leitura pela API.
+- Histórico, tentativas e falhas ficam na outbox/timeline.
+- Anexos de comunicação ainda não são transmitidos pelo adaptador; não dependa deles no envio.
+
 O resumo do funil usa a ordem canônica acima. A conversão é calculada por progressão acumulada e fica limitada a 100%, evitando percentuais artificiais quando etapas estão vazias ou foram criadas em ordem diferente.
 
 ### Criar e remover etapas

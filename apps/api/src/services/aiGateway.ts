@@ -15,7 +15,7 @@ import {
   persistLatestUserMessage,
   updateAiExecution
 } from "./aiRepository.js";
-import { getAvailableAgent, getAvailableModel, resolveLanguageModel } from "./aiRegistry.js";
+import { getAvailableAgent, getAvailableModel, resolveLanguageModel, selectAutomaticModel } from "./aiRegistry.js";
 import {
   calculateActualCost,
   captureAiCredits,
@@ -34,6 +34,7 @@ export type NodereAiMessageMetadata = {
   agentId: string;
   modelId: string;
   provider: string;
+  routingMode: "automatic" | "manual";
 };
 
 export type NodereAiMessage = UIMessage<NodereAiMessageMetadata>;
@@ -44,15 +45,24 @@ export async function startAiChat(input: {
   conversationId?: string | null;
   agentId?: string | null;
   modelId?: string | null;
+  routingMode?: "automatic" | "manual";
   requestId?: string | null;
   messages: UIMessage[];
   abortSignal?: AbortSignal;
 }) {
   const agent = await getAvailableAgent(input.workspaceId, input.agentId);
-  const model = await getAvailableModel(input.modelId || agent.defaultModelId, {
-    role: input.session.role,
-    allowedModelIds: agent.allowedModelIds
-  });
+  const routingMode = input.routingMode === "manual" ? "manual" : "automatic";
+  const model = routingMode === "manual"
+    ? await getAvailableModel(input.modelId || agent.defaultModelId, {
+        role: input.session.role,
+        allowedModelIds: agent.allowedModelIds
+      })
+    : await selectAutomaticModel({
+        role: input.session.role,
+        allowedModelIds: agent.allowedModelIds,
+        agentId: agent.id,
+        messagesJson: JSON.stringify(input.messages)
+      });
   const languageModel = resolveLanguageModel(model);
   const wallet = await getCreditWallet(input.workspaceId);
   const reservation = estimateReservationCredit({
@@ -119,7 +129,8 @@ export async function startAiChat(input: {
     executionId,
     agentId: agent.id,
     modelId: model.id,
-    provider: model.provider
+    provider: model.provider,
+    routingMode
   };
   let terminal = false;
 

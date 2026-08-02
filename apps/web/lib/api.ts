@@ -4,6 +4,40 @@ import { getErrorMessage } from "./errors";
 
 const API_URL = getApiBaseUrl();
 
+export type CommercialBriefingSummary = {
+  id: string;
+  code: string;
+  company_id: string;
+  title: string;
+  status: "draft" | "completed" | "archived";
+  priority: "low" | "normal" | "high" | "urgent";
+  completion_percent: number;
+  current_version: number;
+  next_action?: string | null;
+  next_action_at?: string | null;
+  updated_at: string;
+  nodere_companies?: { id: string; name: string; category?: string; city?: string; state?: string } | null;
+};
+
+export type BriefingFieldDefinition = {
+  key: string;
+  label: string;
+  section: string;
+  type: "text" | "textarea" | "email" | "tel" | "url" | "number" | "date" | "time" | "select" | "tags";
+  required?: boolean;
+  options?: string[];
+};
+
+export type CommercialBriefingDetail = CommercialBriefingSummary & {
+  primary_contact_id?: string | null;
+  answers: Record<string, unknown>;
+  completed_at?: string | null;
+  created_at: string;
+  versions: Array<{ id: string; version: number; change_type: string; change_reason?: string; created_by: string; created_at: string }>;
+  attachments: Array<{ id: string; original_name: string; mime_type: string; size_bytes: number; sha256?: string; created_at: string }>;
+  fields: BriefingFieldDefinition[];
+};
+
 function authHeaders(token?: string | null): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
@@ -147,6 +181,18 @@ export function getDashboard(token?: string | null) {
 
 export function getCompanies(token?: string | null) {
   return api<Company[]>("/companies", withAuthToken(token));
+}
+
+export function getCommercialBriefings(token?: string | null, filters: { status?: string; companyId?: string; search?: string } = {}) {
+  const query = new URLSearchParams();
+  if (filters.status) query.set("status", filters.status);
+  if (filters.companyId) query.set("companyId", filters.companyId);
+  if (filters.search) query.set("search", filters.search);
+  return api<CommercialBriefingSummary[]>(`/briefings${query.size ? `?${query}` : ""}`, withAuthToken(token));
+}
+
+export function getCommercialBriefing(id: string, token?: string | null) {
+  return api<CommercialBriefingDetail>(`/briefings/${encodeURIComponent(id)}`, withAuthToken(token));
 }
 
 export function searchCompanyOptions(q: string, limit = 10) {
@@ -577,6 +623,42 @@ export function updateCompanyStatus(id: string, status: string, details?: CrmSta
 
 export function updateCompany(id: string, updates: Partial<Company>) {
   return api<Company>(companyPath(id), { method: "PATCH", body: JSON.stringify(updates) });
+}
+
+export type CompanyLifecycleRecord = Pick<Company, "id" | "name" | "category" | "city" | "state" | "status"> & {
+  record_state: "active" | "archived" | "trash";
+  archived_at?: string | null;
+  archived_by?: string | null;
+  trashed_at?: string | null;
+  trashed_by?: string | null;
+  purge_after?: string | null;
+  delete_reason?: string | null;
+  legal_hold?: boolean;
+  updated_at?: string;
+};
+
+export function archiveCompany(id: string, reason: string) {
+  return api<Company>(companyPath(id, "/archive"), { method: "POST", body: JSON.stringify({ reason }) });
+}
+
+export function trashCompany(id: string, reason: string) {
+  return api<{ ok: boolean; company: Company; message: string }>(companyPath(id), { method: "DELETE", body: JSON.stringify({ reason }) });
+}
+
+export function restoreCompany(id: string, reason: string) {
+  return api<Company>(companyPath(id, "/restore"), { method: "POST", body: JSON.stringify({ reason }) });
+}
+
+export function getCompanyLifecycle(state: "active" | "archived" | "trash") {
+  return api<CompanyLifecycleRecord[]>(`/companies/lifecycle?state=${encodeURIComponent(state)}`, undefined, []);
+}
+
+export function getCompanyDependencies(id: string) {
+  return api<{ companyId: string; dependencies: Record<string, number>; total: number }>(companyPath(id, "/dependencies"));
+}
+
+export function purgeCompany(id: string, confirmation: string, reason: string) {
+  return api<{ ok: boolean; recoverable: false }>(companyPath(id, "/purge"), { method: "POST", body: JSON.stringify({ confirmation, reason }) });
 }
 
 export function addCompanyNote(id: string, body: string) {

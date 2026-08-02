@@ -57,13 +57,24 @@ export async function middleware(request: NextRequest) {
   const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
   if (isPublic) return NextResponse.next();
 
-  if (!session) {
+  if (!session || !hasPlausibleSessionShape(session)) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
+    const response = NextResponse.redirect(loginUrl);
+    response.cookies.delete("nodere_session");
+    response.cookies.delete("nodere-session");
+    return response;
   }
 
   return NextResponse.next();
+}
+
+function hasPlausibleSessionShape(value: string) {
+  if (value.length < 40 || value.length > 8_192 || !/^[A-Za-z0-9._-]+$/.test(value)) return false;
+  const parts = value.split(".");
+  if (parts.length === 2) return parts[0].length >= 16 && parts[1].length >= 32;
+  if (parts.length === 3) return parts.every((part) => part.length >= 8);
+  return false;
 }
 
 export const config = {

@@ -2,6 +2,7 @@ import { CompanyTable } from "@/components/CompanyTable";
 import { getCompanies } from "@/lib/api";
 import { getServerSessionToken } from "@/lib/serverSession";
 import { ManualCompanyForm } from "./ManualCompanyForm";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -23,9 +24,9 @@ export default async function CompaniesPage({ searchParams }: { searchParams?: P
           <strong>Persistência precisa de atenção:</strong> {error}
         </div>
       )}
-      <div>
-        <h2 className="text-2xl font-semibold text-white">Empresas</h2>
-        <p className="mt-1 text-sm text-slate-400">Leads encontrados, enriquecidos e priorizados por oportunidade comercial.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div><h2 className="font-heading text-2xl font-semibold text-white">Clientes salvos</h2><p className="mt-1 text-sm text-slate-400">Empresas e leads ativos, enriquecidos e priorizados por oportunidade comercial.</p></div>
+        <Link href="/crm/lifecycle" className="briefing-action">Arquivo e Lixeira</Link>
       </div>
       <ManualCompanyForm />
       <CompanyTable companies={companies} initialQuery={query} />

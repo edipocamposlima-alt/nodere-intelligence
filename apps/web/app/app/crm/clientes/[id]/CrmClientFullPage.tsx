@@ -3,17 +3,19 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Bot, BriefcaseBusiness, CalendarDays, CheckCircle2, Copy, Download, FileText, FolderOpen, Globe2, Linkedin, Mail, MapPin, MessageCircle, PackageCheck, Pencil, Phone, Plus, Send, Sparkles, Trash2, Users, XCircle } from "lucide-react";
+import { ArrowLeft, Bot, BriefcaseBusiness, CalendarDays, CheckCircle2, ClipboardList, Copy, Download, FileText, FolderOpen, Globe2, Linkedin, Mail, MapPin, MessageCircle, PackageCheck, Pencil, Phone, Plus, Send, Sparkles, Trash2, Users, XCircle } from "lucide-react";
 import type { Company } from "@/lib/types";
 import { CalendarEvent, CatalogItem, InboxMessage, NodereProposal, ProposalItemPayload, addLeadDeal, createProposal, deleteProposal, downloadContractPdf, downloadProposalPdf, getCalendarEvents, getCatalogItems, getInboxMessagesByCompany, getLeadActivities, getLeadContacts, getLeadDeals, getProposals, updateLeadDeal } from "@/lib/api";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
+import { CompanyBriefingsSection } from "@/components/crm/CompanyBriefingsSection";
 
-type TabId = "overview" | "history" | "contacts" | "deals" | "products" | "proposals" | "whatsapp" | "email" | "agenda" | "ai" | "apollo" | "files";
+type TabId = "overview" | "history" | "contacts" | "briefing" | "deals" | "products" | "proposals" | "whatsapp" | "email" | "agenda" | "ai" | "apollo" | "files";
 
 const tabs: Array<{ id: TabId; label: string; icon: typeof Sparkles }> = [
   { id: "overview", label: "Visão Geral", icon: Sparkles },
   { id: "history", label: "Histórico", icon: CalendarDays },
   { id: "contacts", label: "Contatos", icon: Users },
+  { id: "briefing", label: "Briefing Comercial", icon: ClipboardList },
   { id: "deals", label: "Negociações", icon: BriefcaseBusiness },
   { id: "products", label: "Produtos/Serviços", icon: PackageCheck },
   { id: "proposals", label: "Propostas e Contratos", icon: FileText },
@@ -390,6 +392,7 @@ export function CrmClientFullPage({ company }: { company: Company }) {
           {activeTab === "overview" && <Overview company={company} loaded={loaded} summary={summary} />}
           {activeTab === "history" && <ListSection title="Histórico comercial" empty="Nenhuma atividade registrada." items={loaded.activities} fields={["summary", "type", "responsible", "occurred_at", "created_at"]} />}
           {activeTab === "contacts" && <ListSection title="Contatos" empty="Nenhum contato vinculado." items={loaded.contacts} fields={["name", "role", "phone", "email", "linkedin_url"]} />}
+          {activeTab === "briefing" && <CompanyBriefingsSection companyId={company.id} canEdit={canEdit} />}
           {activeTab === "deals" && <ListSection title="Negociações" empty="Nenhuma negociação cadastrada." items={loaded.deals} fields={["name", "status", "temperature", "value", "nextAction", "responsible"]} moneyFields={["value"]} />}
           {activeTab === "products" && (
             <ProductsSection

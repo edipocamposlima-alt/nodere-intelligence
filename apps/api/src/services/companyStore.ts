@@ -143,6 +143,8 @@ function toRow(c: Company, workspaceId = "default", includeWorkspace = workspace
     latitude, longitude, status, score, opportunityLevel, enrichmentStatus,
     lastContactAt, source, detectedOpportunities, suggestions, createdAt, updatedAt,
     temperature, probability, dealValue, expectedCloseDate, lostReason, nextAction, ownerId,
+    recordState, isArchived, isDeleted, archivedAt, archivedBy, trashedAt, trashedBy,
+    purgeAfter, deleteReason, legalHold,
     notes, ...rest } = c;
   const row: Record<string, unknown> = {
     id, name, category, city, state, address, phone, whatsapp, website,
@@ -163,6 +165,16 @@ function toRow(c: Company, workspaceId = "default", includeWorkspace = workspace
     lost_reason: lostReason ?? null,
     next_action: nextAction ?? null,
     owner_id: ownerId ?? null,
+    record_state: recordState ?? "active",
+    is_archived: isArchived ?? recordState === "archived",
+    is_deleted: isDeleted ?? recordState === "trash",
+    archived_at: archivedAt ?? null,
+    archived_by: archivedBy ?? null,
+    trashed_at: trashedAt ?? null,
+    trashed_by: trashedBy ?? null,
+    purge_after: purgeAfter ?? null,
+    delete_reason: deleteReason ?? null,
+    legal_hold: legalHold ?? false,
     source,
     place_id: rawCompany.placeId || rawCompany.place_id || rawCompany.googlePlaceId || rawCompany.google_place_id || (source === "google_places" ? id : null),
     google_place_id: rawCompany.googlePlaceId || rawCompany.google_place_id || rawCompany.placeId || rawCompany.place_id || (source === "google_places" ? id : null),
@@ -209,6 +221,16 @@ function toUpdateRow(updates: Partial<Company>): Record<string, unknown> {
     ["lostReason", "lost_reason"],
     ["nextAction", "next_action"],
     ["ownerId", "owner_id"],
+    ["recordState", "record_state"],
+    ["isArchived", "is_archived"],
+    ["isDeleted", "is_deleted"],
+    ["archivedAt", "archived_at"],
+    ["archivedBy", "archived_by"],
+    ["trashedAt", "trashed_at"],
+    ["trashedBy", "trashed_by"],
+    ["purgeAfter", "purge_after"],
+    ["deleteReason", "delete_reason"],
+    ["legalHold", "legal_hold"],
     ["score", "score"],
     ["opportunityLevel", "opportunity_level"],
     ["enrichmentStatus", "enrichment_status"],
@@ -273,6 +295,16 @@ function fromRow(row: Record<string, unknown>): Company {
     lostReason: row.lost_reason as string | undefined,
     nextAction: row.next_action as string | undefined,
     ownerId: row.owner_id as string | undefined,
+    recordState: (row.record_state as Company["recordState"] | undefined) ?? (row.is_deleted ? "trash" : row.is_archived ? "archived" : "active"),
+    isArchived: Boolean(row.is_archived),
+    isDeleted: Boolean(row.is_deleted),
+    archivedAt: row.archived_at as string | undefined,
+    archivedBy: row.archived_by as string | undefined,
+    trashedAt: row.trashed_at as string | undefined,
+    trashedBy: row.trashed_by as string | undefined,
+    purgeAfter: row.purge_after as string | undefined,
+    deleteReason: row.delete_reason as string | undefined,
+    legalHold: Boolean(row.legal_hold),
     source: row.source as Company["source"] | undefined,
     placeId: (row.place_id as string | undefined) ?? (signals?.placeId as string | undefined) ?? (signals?.googlePlaceId as string | undefined),
     googlePlaceId: (row.google_place_id as string | undefined) ?? (signals?.googlePlaceId as string | undefined) ?? (signals?.placeId as string | undefined),
@@ -584,11 +616,11 @@ export async function listCompaniesAsync(workspaceId = "default"): Promise<Compa
   if (hasSupabase()) {
     return withPersistentRead(
       "listar leads",
-      async () => (await dbList(workspaceId)).filter(isCrmLead),
-      () => memStore.filter((c) => ((c as any).workspaceId ?? "default") === workspaceId && isCrmLead(c)).sort((a, b) => b.score - a.score)
+      async () => (await dbList(workspaceId)).filter(isCrmLead).filter(isActiveRecord),
+      () => memStore.filter((c) => ((c as any).workspaceId ?? "default") === workspaceId && isCrmLead(c) && isActiveRecord(c)).sort((a, b) => b.score - a.score)
     );
   }
-  return memStore.filter((c) => ((c as any).workspaceId ?? "default") === workspaceId && isCrmLead(c)).sort((a, b) => b.score - a.score);
+  return memStore.filter((c) => ((c as any).workspaceId ?? "default") === workspaceId && isCrmLead(c) && isActiveRecord(c)).sort((a, b) => b.score - a.score);
 }
 
 export function listCompanies(): Company[] {
@@ -599,10 +631,10 @@ export async function getCompanyAsync(id: string, workspaceId = "default"): Prom
   if (hasSupabase()) {
     return withPersistentRead("carregar lead", async () => {
       const company = await dbGet(id, workspaceId);
-      return company && isCrmLead(company) ? company : undefined;
-    }, () => memStore.find((c) => c.id === id && (((c as any).workspaceId ?? "default") === workspaceId) && isCrmLead(c)));
+      return company && isCrmLead(company) && isActiveRecord(company) ? company : undefined;
+    }, () => memStore.find((c) => c.id === id && (((c as any).workspaceId ?? "default") === workspaceId) && isCrmLead(c) && isActiveRecord(c)));
   }
-  return memStore.find((c) => c.id === id && (((c as any).workspaceId ?? "default") === workspaceId) && isCrmLead(c));
+  return memStore.find((c) => c.id === id && (((c as any).workspaceId ?? "default") === workspaceId) && isCrmLead(c) && isActiveRecord(c));
 }
 
 export function getCompany(id: string): Company | undefined {
@@ -890,11 +922,15 @@ export async function updateCompany(id: string, updates: Partial<Company>, works
 export async function deleteCompany(id: string, workspaceId = "default") {
   const existing = await getCompanyAsync(id, workspaceId);
   if (!existing) return false;
-  if (hasSupabase()) await withPersistentWrite("excluir lead", () => dbDeleteCompany(id, workspaceId), () => undefined);
-  const index = memStore.findIndex((company) => company.id === id && (((company as any).workspaceId ?? "default") === workspaceId));
-  if (index >= 0) memStore.splice(index, 1);
-  taskStore.delete(`${workspaceId}:${id}`);
-  documentStore.delete(`${workspaceId}:${id}`);
+  const now = new Date().toISOString();
+  const purgeAfter = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  const changes: Partial<Company> = {
+    recordState: "trash", isDeleted: true, isArchived: false,
+    trashedAt: now, purgeAfter, updatedAt: now
+  };
+  if (hasSupabase()) await withPersistentWrite("mover lead para a lixeira", () => dbUpdateFields(id, toUpdateRow(changes), workspaceId), () => undefined);
+  const local = memStore.find((company) => company.id === id && (((company as any).workspaceId ?? "default") === workspaceId));
+  if (local) Object.assign(local, changes);
   return true;
 }
 
@@ -986,6 +1022,10 @@ function getDedupeKeys(company: Partial<Company>) {
   if (domain) add("domain", domain);
 
   return keys;
+}
+
+function isActiveRecord(company: Company) {
+  return company.recordState !== "trash" && company.recordState !== "archived" && company.isDeleted !== true && company.isArchived !== true;
 }
 
 function isExternalCompanyId(value: unknown) {

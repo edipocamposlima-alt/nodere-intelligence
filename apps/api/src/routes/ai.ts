@@ -20,6 +20,7 @@ const chatSchema = z.object({
   conversationId: z.string().uuid().optional().nullable(),
   agentId: z.string().trim().min(1).max(120).optional().nullable(),
   modelId: z.string().trim().min(1).max(160).optional().nullable(),
+  routingMode: z.enum(["automatic", "manual"]).optional().default("automatic"),
   requestId: z.string().trim().min(1).max(160).optional().nullable()
 });
 
@@ -119,6 +120,7 @@ router.post("/chat", requireWorkspaceRole("owner", "admin", "operator", "viewer"
       conversationId: body.conversationId,
       agentId: body.agentId,
       modelId: body.modelId,
+      routingMode: body.routingMode,
       requestId: body.requestId,
       messages: body.messages as UIMessage[],
       abortSignal: controller.signal

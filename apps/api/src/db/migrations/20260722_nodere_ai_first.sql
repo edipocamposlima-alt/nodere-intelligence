@@ -4,6 +4,9 @@
 
 begin;
 
+set local lock_timeout = '5s';
+set local statement_timeout = '60s';
+
 create extension if not exists pgcrypto;
 
 create table if not exists public.nodere_ai_model_registry (
@@ -151,6 +154,10 @@ create index if not exists nodere_ai_executions_conversation_idx
   on public.nodere_ai_executions (conversation_id, started_at desc);
 create index if not exists nodere_ai_executions_status_idx
   on public.nodere_ai_executions (workspace_id, status, started_at desc);
+create index if not exists nodere_ai_executions_agent_idx
+  on public.nodere_ai_executions (agent_id);
+create index if not exists nodere_ai_executions_model_idx
+  on public.nodere_ai_executions (model_id);
 
 create table if not exists public.nodere_ai_tool_receipts (
   id uuid primary key default gen_random_uuid(),
@@ -177,6 +184,9 @@ create index if not exists nodere_ai_tool_receipts_workspace_created_idx
   on public.nodere_ai_tool_receipts (workspace_id, created_at desc);
 create index if not exists nodere_ai_tool_receipts_execution_idx
   on public.nodere_ai_tool_receipts (execution_id);
+create index if not exists nodere_ai_tool_receipts_conversation_idx
+  on public.nodere_ai_tool_receipts (conversation_id)
+  where conversation_id is not null;
 
 create table if not exists public.nodere_credit_wallets (
   workspace_id text primary key references public.nodere_workspaces(id) on delete cascade,
@@ -612,6 +622,15 @@ alter table public.nodere_ai_executions enable row level security;
 alter table public.nodere_ai_tool_receipts enable row level security;
 alter table public.nodere_credit_wallets enable row level security;
 alter table public.nodere_credit_ledger enable row level security;
+
+alter table public.nodere_ai_model_registry force row level security;
+alter table public.nodere_ai_agents force row level security;
+alter table public.nodere_ai_conversations force row level security;
+alter table public.nodere_ai_messages force row level security;
+alter table public.nodere_ai_executions force row level security;
+alter table public.nodere_ai_tool_receipts force row level security;
+alter table public.nodere_credit_wallets force row level security;
+alter table public.nodere_credit_ledger force row level security;
 
 revoke all on table public.nodere_ai_model_registry from public;
 revoke all on table public.nodere_ai_agents from public;

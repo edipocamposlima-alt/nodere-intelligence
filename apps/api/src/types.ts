@@ -98,6 +98,16 @@ export interface Company {
   lostReason?: string;
   nextAction?: string;
   ownerId?: string;
+  recordState?: "active" | "archived" | "trash";
+  isArchived?: boolean;
+  isDeleted?: boolean;
+  archivedAt?: string;
+  archivedBy?: string;
+  trashedAt?: string;
+  trashedBy?: string;
+  purgeAfter?: string;
+  deleteReason?: string;
+  legalHold?: boolean;
   score: number;
   opportunityLevel: OpportunityLevel;
   detectedOpportunities: string[];

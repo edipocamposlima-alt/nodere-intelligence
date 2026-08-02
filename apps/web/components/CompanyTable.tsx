@@ -2,10 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bot, CheckCircle2, Download, ExternalLink, FileText, MessageCircle, PhoneCall, Save, Search, Trash2, X } from "lucide-react";
+import { Archive, Bot, CheckCircle2, ClipboardList, Download, ExternalLink, FileText, MessageCircle, PhoneCall, Save, Search, Trash2, X } from "lucide-react";
 import { Company } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
-import { ApiRequestError, generateAiCallScript, generateAiDiagnosis, generateAiWhatsappMessage, getCompanies, saveSearchResultAsLead, updateCompany } from "@/lib/api";
+import { ApiRequestError, archiveCompany, generateAiCallScript, generateAiDiagnosis, generateAiWhatsappMessage, getCompanies, getCompanyDependencies, saveSearchResultAsLead, trashCompany, updateCompany } from "@/lib/api";
 import { downloadNoderePdf } from "@/lib/pdf";
 
 const whatsappMessage =
@@ -122,6 +122,7 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
   const [aiMessages, setAiMessages] = useState<Record<string, string>>({});
   const [aiLoading, setAiLoading] = useState<Record<string, string>>({});
   const [openingFicha, setOpeningFicha] = useState<Record<string, boolean>>({});
+  const [openingBriefing, setOpeningBriefing] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [invalidWhatsappOnly, setInvalidWhatsappOnly] = useState(false);
   const [editingWhatsapp, setEditingWhatsapp] = useState<Record<string, boolean>>({});
@@ -301,6 +302,42 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
     }
   }
 
+  async function lifecycleCompany(company: Company, action: "archive" | "trash") {
+    const dependencies = await getCompanyDependencies(company.id).catch(() => ({ total: 0, dependencies: {}, companyId: company.id }));
+    const reason = window.prompt(action === "archive" ? "Motivo do arquivamento" : "Motivo para mover à lixeira por 30 dias")?.trim();
+    if (!reason || reason.length < 3) return;
+    const impact = dependencies.total ? ` Há ${dependencies.total} registro(s) vinculado(s), que serão preservados.` : " Não há dependências identificadas.";
+    if (!window.confirm(`${action === "archive" ? "Arquivar" : "Mover para a lixeira"} “${company.name}”?${impact}`)) return;
+    try {
+      if (action === "archive") await archiveCompany(company.id, reason);
+      else await trashCompany(company.id, reason);
+      setBaseCompanies((items) => items.filter((item) => item.id !== company.id));
+      setMessages((current) => ({ ...current, [company.id]: action === "archive" ? "Empresa arquivada." : "Empresa movida à lixeira por 30 dias." }));
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "A ação não foi concluída.");
+    }
+  }
+
+  async function lifecycleSelected(action: "archive" | "trash") {
+    if (!selectedCompanies.length) return;
+    const reason = window.prompt(`${action === "archive" ? "Motivo do arquivamento" : "Motivo da movimentação à lixeira"} em massa`)?.trim();
+    if (!reason || reason.length < 3 || !window.confirm(`${action === "archive" ? "Arquivar" : "Mover para a lixeira"} ${selectedCompanies.length} empresa(s)?`)) return;
+    const succeeded = new Set<string>();
+    const failures: string[] = [];
+    for (const company of selectedCompanies) {
+      try {
+        if (action === "archive") await archiveCompany(company.id, reason);
+        else await trashCompany(company.id, reason);
+        succeeded.add(company.id);
+      } catch (error) {
+        failures.push(`${company.name}: ${error instanceof Error ? error.message : "falha"}`);
+      }
+    }
+    setBaseCompanies((items) => items.filter((item) => !succeeded.has(item.id)));
+    setSelected({});
+    if (failures.length) window.alert(`Ação parcial. ${succeeded.size} concluída(s).\n${failures.join("\n")}`);
+  }
+
   function resolveCompanyFromDuplicate(error: unknown) {
     if (error instanceof ApiRequestError && error.status === 409 && error.payload && typeof error.payload === "object" && "company" in error.payload) {
       return (error.payload as { company?: Company }).company;
@@ -344,6 +381,25 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
         delete next[company.id];
         return next;
       });
+    }
+  }
+
+  async function openBriefing(company: Company) {
+    setOpeningBriefing((current) => ({ ...current, [company.id]: true }));
+    try {
+      const listResponse = await fetch(`/api/backend/briefings?companyId=${encodeURIComponent(company.id)}`, { cache: "no-store", credentials: "include" });
+      const list = await listResponse.json().catch(() => []);
+      if (!listResponse.ok) throw new Error(list.message || "Não foi possível consultar o briefing.");
+      const existing = (Array.isArray(list) ? list : []).find((item) => item.status === "draft") || (Array.isArray(list) ? list[0] : null);
+      if (existing?.id) return router.push(`/crm/briefings/${encodeURIComponent(existing.id)}`);
+      const createResponse = await fetch("/api/backend/briefings", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ companyId: company.id, priority: "normal" }) });
+      const created = await createResponse.json().catch(() => ({}));
+      if (!createResponse.ok) throw new Error(created.message || "Não foi possível criar o briefing.");
+      router.push(`/crm/briefings/${encodeURIComponent(created.id)}`);
+    } catch (error) {
+      setMessages((current) => ({ ...current, [company.id]: error instanceof Error ? error.message : "Não foi possível abrir o briefing." }));
+    } finally {
+      setOpeningBriefing((current) => { const next = { ...current }; delete next[company.id]; return next; });
     }
   }
 
@@ -402,6 +458,9 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
           <button type="button" onClick={() => void runAi(company, "call")} className="nodere-company-action-icon nodere-company-action-icon--accent" aria-label="Gerar roteiro de ligação" title="Gerar roteiro de ligação">
             <PhoneCall className="h-4 w-4" />
           </button>
+          {!embedded && !shouldPersistBeforeFicha(company, false) && <button type="button" onClick={() => void openBriefing(company)} disabled={openingBriefing[company.id]} className="nodere-company-action-icon nodere-company-action-icon--info" aria-label="Criar ou abrir Briefing Comercial" title="Criar ou abrir Briefing Comercial"><ClipboardList /></button>}
+          {!embedded && !shouldPersistBeforeFicha(company, false) && <button type="button" onClick={() => void lifecycleCompany(company, "archive")} className={iconButtonClass} aria-label="Arquivar empresa" title="Arquivar empresa"><Archive /></button>}
+          {!embedded && !shouldPersistBeforeFicha(company, false) && <button type="button" onClick={() => void lifecycleCompany(company, "trash")} className="nodere-company-action-icon nodere-company-action-icon--danger" aria-label="Mover empresa para a lixeira" title="Mover empresa para a lixeira"><Trash2 /></button>}
         </div>
 
         {company.whatsapp && !isValidBrazilMobileWhatsapp(company.whatsapp) && (
@@ -501,6 +560,8 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
           <button onClick={ignoreSelected} disabled={selectedCompanies.length === 0} className="btn-secondary min-h-9 px-3 py-2 text-xs">
             <Trash2 className="h-4 w-4" />Ignorar
           </button>
+          {!embedded && <button onClick={() => void lifecycleSelected("archive")} disabled={selectedCompanies.length === 0} className="btn-secondary min-h-9 px-3 py-2 text-xs"><Archive />Arquivar</button>}
+          {!embedded && <button onClick={() => void lifecycleSelected("trash")} disabled={selectedCompanies.length === 0} className="btn-secondary min-h-9 px-3 py-2 text-xs"><Trash2 />Lixeira</button>}
           <button onClick={exportCsv} disabled={visibleCompanies.length === 0} className="btn-secondary min-h-9 px-3 py-2 text-xs">
             <Download className="h-4 w-4" />CSV
           </button>

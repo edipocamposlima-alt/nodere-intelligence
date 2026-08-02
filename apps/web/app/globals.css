@@ -7329,6 +7329,123 @@ textarea,
   stroke-width: var(--nodere-icon-stroke);
 }
 
+/* NODERE V5 — identidade oficial do briefing comercial. */
+:root {
+  --nodere-forest: #07362B;
+  --nodere-green: #0B4D3B;
+  --nodere-gold: #C9A03C;
+  --nodere-gold-soft: #DFC16F;
+  --nodere-mint: #EAF3EF;
+  --nodere-graphite: #2D3632;
+  --nodere-font-family: var(--font-nodere-body), "Open Sans", system-ui, sans-serif;
+  --nodere-heading-family: var(--font-nodere-heading), Montserrat, system-ui, sans-serif;
+}
+
+:root:not([data-theme="light"]),
+:root[data-theme="dark"],
+.dark:not(.light) {
+  --brand-primary: var(--nodere-green);
+  --brand-primary-hover: color-mix(in srgb, var(--nodere-green) 80%, white);
+  --brand-glow: var(--nodere-gold-soft);
+  --brand-glow-soft: var(--nodere-gold-soft);
+  --brand-glow-dim: color-mix(in srgb, var(--nodere-gold-soft) 20%, transparent);
+  --bg-root: #06100D;
+  --bg-main: #081814;
+  --bg-sidebar: #07130F;
+  --bg-card: #0B211A;
+  --bg-card-hover: #12352A;
+  --bg-modal: #102B22;
+  --bg-hover: #12352A;
+  --bg-input: #0A1D17;
+  --border: #24473D;
+  --border-soft: #1D3B32;
+  --text-primary: #F6FAF8;
+  --text-secondary: #C9D8D2;
+  --text-muted: #89A098;
+  --color-ink: var(--bg-main);
+  --color-panel: var(--bg-card);
+  --color-line: var(--border);
+  --color-cyan: var(--nodere-gold-soft);
+  --color-text: var(--text-primary);
+  --color-muted: var(--text-muted);
+}
+
+:root[data-theme="light"],
+.light {
+  --brand-primary: var(--nodere-forest);
+  --brand-primary-hover: var(--nodere-green);
+  --brand-glow: var(--nodere-gold);
+  --brand-glow-soft: var(--nodere-gold-soft);
+  --brand-glow-dim: color-mix(in srgb, var(--nodere-gold) 16%, transparent);
+  --bg-root: var(--nodere-mint);
+  --bg-main: #F6FAF8;
+  --bg-sidebar: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F1F7F4;
+  --bg-modal: #FFFFFF;
+  --bg-hover: var(--nodere-mint);
+  --bg-input: #FFFFFF;
+  --border: #D5E4DE;
+  --border-soft: #C8DBD3;
+  --text-primary: var(--nodere-graphite);
+  --text-secondary: #40554D;
+  --text-muted: #6A7C75;
+  --color-ink: var(--bg-main);
+  --color-panel: var(--bg-card);
+  --color-line: var(--border);
+  --color-cyan: var(--nodere-green);
+  --color-text: var(--text-primary);
+  --color-muted: var(--text-muted);
+}
+
+body {
+  font-family: var(--nodere-font-family);
+}
+
+:where(h1, h2, h3, .font-heading) {
+  font-family: var(--nodere-heading-family);
+  letter-spacing: -0.018em;
+}
+
+.briefing-action {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 0.625rem;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 0.55rem 0.8rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.briefing-action:hover:not(:disabled) {
+  border-color: var(--nodere-gold);
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
+.briefing-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.briefing-action--primary {
+  border-color: var(--nodere-forest);
+  background: linear-gradient(135deg, var(--nodere-forest), var(--nodere-green));
+  color: #FFFFFF;
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--nodere-forest) 24%, transparent);
+}
+
+.briefing-action--primary:hover:not(:disabled) {
+  border-color: var(--nodere-gold-soft);
+  background: linear-gradient(135deg, var(--nodere-green), var(--nodere-forest));
+}
+
 .nodere-icon-slot,
 .nodere-icon-spin {
   width: var(--nodere-icon-action);

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BarChart3, Bot, Building2, CalendarDays, CircleHelp, CreditCard, Download, Inbox, KanbanSquare, LineChart, LogOut, Megaphone, Menu, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, X, Zap } from "lucide-react";
+import { ArchiveRestore, BarChart3, Bot, Building2, CalendarDays, CircleHelp, ClipboardList, CreditCard, Download, Inbox, KanbanSquare, LineChart, LogOut, Megaphone, Menu, MessagesSquare, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, X, Zap } from "lucide-react";
 import { useAuth } from "@/context/AuthProvider";
 
 const primaryItems = [
@@ -14,8 +14,11 @@ const primaryItems = [
 ];
 
 const drawerItems = [
-  { href: "/companies", label: "Empresas", icon: Building2, tone: "blue" },
-  { href: "/calendario", label: "Agenda", icon: CalendarDays, tone: "blue" },
+  { href: "/companies", label: "Clientes salvos", icon: Building2, tone: "blue" },
+  { href: "/crm/briefings", label: "Briefings Comerciais", icon: ClipboardList, tone: "gold" },
+  { href: "/crm/communications", label: "Comunicações", icon: MessagesSquare, tone: "cyan" },
+  { href: "/crm/lifecycle", label: "Arquivo e Lixeira", icon: ArchiveRestore, tone: "neutral" },
+  { href: "/calendario", label: "Atividades e Agenda", icon: CalendarDays, tone: "blue" },
   { href: "/app/leads", label: "Leads", icon: Users, tone: "green" },
   { href: "/app/proposals", label: "Propostas e Contratos", icon: PackageOpen, tone: "purple" },
   { href: "/catalog", label: "Produtos / Serviços", icon: PackageOpen, tone: "orange" },

@@ -12,6 +12,15 @@
 
 Dashboard, Discovery, Empresas, CRM/Funil, Leads, Agenda, Propostas, Catálogo, Inbox, Automações, Relatórios, Operadores, Marketing, Faturamento, Configurações, Integrações, Admin/CMS, PWA e PDFs continuam no mesmo produto e banco.
 
-## Não implementado nesta fatia
+## Expansão comercial V5
 
-Envio externo de WhatsApp/e-mail pela IA, deleção, pagamentos pela IA, computer use e web search não foram expostos como ferramentas. Isso é deliberado até existir política de confirmação e testes específicos.
+- `/crm/briefings`: lista, busca, filtros, criação e importação/exportação do Briefing Comercial.
+- `/crm/briefings/[id]`: editor dos 47 campos, salvamento otimista, conclusão, versões, PDF, anexos e apoio da IA.
+- `/crm/communications`: templates versionados, composição, consentimento, outbox, histórico e estado das integrações.
+- `/crm/lifecycle`: arquivo, lixeira, restauração e purga protegida.
+- Ficha 360: aba de briefings vinculados à empresa.
+- Empresas: nomenclatura de Clientes preservando a entidade canônica.
+
+## Limites explícitos
+
+WhatsApp por `wa.me` é assistido. Gmail está pendente sem credenciais. Anexos de comunicação são referenciados na outbox, mas ainda não transmitidos pelo adaptador SMTP/Gmail. Migração D1/R2 não foi executada sem exportação do legado. Pagamentos, computer use e web search não foram expostos como ferramentas operacionais.

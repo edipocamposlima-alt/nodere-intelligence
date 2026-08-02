@@ -270,3 +270,13 @@ Para um novo chat antes de qualquer publicacao:
 4. Validar `apps/web npm run typecheck`.
 5. Validar `apps/api npm run typecheck`.
 6. Consultar Vercel/Render se a tarefa envolver producao.
+# Extensão de rollback V5
+
+- Reverter o frontend pela promoção do deployment Vercel anterior conhecido: `dpl_5uE3ZH9hGskw6FFNVaNE5rydZQLN`.
+- Reverter o backend pelo rollback de commit no Git/Render, mantendo migrations compatíveis durante a janela de observação.
+- Rollbacks SQL versionados:
+  - `apps/api/src/db/migrations/20260801_nodere_v5_briefing_field_catalog.rollback.sql`
+  - `apps/api/src/db/migrations/20260801_nodere_v5_commercial.rollback.sql`
+  - `apps/api/src/db/migrations/20260722_nodere_ai_first.rollback.sql`
+- Antes de rollback SQL destrutivo, exportar dados V5, confirmar contagens e validar que o frontend/backend anterior não depende das tabelas.
+- Preferir rollback de aplicação sem remover schema; a remoção de tabelas só é permitida em incidente confirmado e com backup verificável.

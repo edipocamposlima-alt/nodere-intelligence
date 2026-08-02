@@ -48,3 +48,15 @@ Este documento registra as rotas preferenciais do NODERE atual e os aliases hist
 - Padronizar novos links internos para as canonicas acima.
 - Criar testes E2E para detectar alias quebrado, 404 ou redirecionamento indevido.
 - Documentar excecoes quando um alias precisar permanecer por motivo comercial ou legal.
+# Rotas V5
+
+| Superfície | Rota |
+|---|---|
+| Briefings | `/crm/briefings` |
+| Editor de briefing | `/crm/briefings/[id]` |
+| Comunicações | `/crm/communications` |
+| Ciclo de vida | `/crm/lifecycle` |
+| API Briefing | `/api/briefings` |
+| API Comunicações | `/api/communications-center` |
+
+Todas as rotas privadas dependem de sessão validada pelo backend. Cookies ausentes, malformados ou expirados redirecionam para `/login` sem renderizar dados privados.

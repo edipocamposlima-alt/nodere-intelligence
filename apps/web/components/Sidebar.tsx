@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Bot, Building2, CalendarDays, CircleHelp, CreditCard, Inbox, KanbanSquare, LineChart, Megaphone, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
+import { ArchiveRestore, BarChart3, Bot, Building2, CalendarDays, CircleHelp, ClipboardList, CreditCard, Inbox, KanbanSquare, LineChart, Megaphone, MessagesSquare, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
 import { useCredits } from "@/context/CreditsProvider";
 import { useAuth } from "@/context/AuthProvider";
 import { Logo } from "@/components/brand/Logo";
@@ -13,16 +13,24 @@ const groups = [
     items: [
       { href: "/ai", label: "NODERE AI", icon: Bot, tone: "green" },
       { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: BarChart3, tone: "neutral" },
-      { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search, tone: "cyan" },
-      { href: "/companies", label: "Empresas", icon: Building2, tone: "blue" },
-      { href: "/crm", label: "CRM / Funil", icon: KanbanSquare, tone: "green" }
+      { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search, tone: "cyan" }
+    ]
+  },
+  {
+    label: "CRM",
+    items: [
+      { href: "/crm", label: "Funil comercial", icon: KanbanSquare, tone: "green" },
+      { href: "/companies", label: "Clientes salvos", icon: Building2, tone: "blue" },
+      { href: "/crm/briefings", label: "Briefings Comerciais", icon: ClipboardList, tone: "gold" },
+      { href: "/crm/communications", label: "Comunicações", icon: MessagesSquare, tone: "cyan" },
+      { href: "/crm/lifecycle", label: "Arquivo e Lixeira", icon: ArchiveRestore, tone: "neutral" },
+      { href: "/app/leads", label: "Leads", icon: Users, tone: "green" },
+      { href: "/calendario", label: "Atividades e Agenda", icon: CalendarDays, tone: "blue" }
     ]
   },
   {
     label: "Comercial",
     items: [
-      { href: "/app/leads", label: "Leads", icon: Users, tone: "green" },
-      { href: "/calendario", label: "Agenda", icon: CalendarDays, tone: "blue" },
       { href: "/app/proposals", label: "Propostas e Contratos", icon: PackageOpen, tone: "purple" },
       { href: "/catalog", label: "Produtos / Serviços", icon: PackageOpen, tone: "orange" }
     ]

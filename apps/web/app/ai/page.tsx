@@ -43,6 +43,7 @@ type AiMetadata = {
   agentId: string;
   modelId: string;
   provider: string;
+  routingMode?: "automatic" | "manual";
 };
 
 type NodereMessage = UIMessage<AiMetadata>;
@@ -81,6 +82,7 @@ export default function NodereAiPage() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [agentId, setAgentId] = useState("commercial-copilot");
   const [modelId, setModelId] = useState("openai:gpt-5.6-terra");
+  const [routingMode, setRoutingMode] = useState<"automatic" | "manual">("automatic");
   const [loadingShell, setLoadingShell] = useState(true);
   const [shellError, setShellError] = useState("");
 
@@ -95,10 +97,11 @@ export default function NodereAiPage() {
         conversationId,
         agentId,
         modelId,
+        routingMode,
         requestId: crypto.randomUUID()
       }
     })
-  }), [agentId, conversationId, modelId]);
+  }), [agentId, conversationId, modelId, routingMode]);
 
   const refreshOperationalData = useCallback(async () => {
     const [registryResponse, conversationsResponse, walletResponse] = await Promise.all([
@@ -260,12 +263,20 @@ export default function NodereAiPage() {
                 {agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.label}</option>)}
               </select>
             </label>
+            <label className="min-w-0 flex-1 md:max-w-[220px]">
+              <span className="sr-only">Roteamento de modelo</span>
+              <select value={routingMode} onChange={(event) => setRoutingMode(event.target.value as "automatic" | "manual")} disabled={busy} className="min-h-10 w-full rounded-lg border border-line bg-panel px-3 text-sm font-bold text-white outline-none focus:border-[var(--nodere-gold-soft)]">
+                <option value="automatic">Modelo automático</option>
+                <option value="manual">Escolha manual</option>
+              </select>
+            </label>
             <label className="min-w-0 flex-1 md:max-w-xs">
               <span className="sr-only">Modelo</span>
-              <select value={modelId} onChange={(event) => setModelId(event.target.value)} disabled={busy} className="min-h-10 w-full rounded-lg border border-line bg-panel px-3 text-sm font-bold text-white outline-none focus:border-cyan-400">
+              <select value={modelId} onChange={(event) => setModelId(event.target.value)} disabled={busy || routingMode === "automatic"} className="min-h-10 w-full rounded-lg border border-line bg-panel px-3 text-sm font-bold text-white outline-none focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-60">
                 {allowedModels.map((model) => <option key={model.id} value={model.id}>{model.label} · {model.capabilityTier}</option>)}
               </select>
             </label>
+            {routingMode === "automatic" && <span className="w-full text-xs text-slate-400">A NODERE seleciona o modelo por complexidade, ferramentas e custo antes de cada resposta.</span>}
           </div>
 
           <Conversation className="min-h-0 flex-1">
@@ -363,8 +374,9 @@ export default function NodereAiPage() {
           </section>
           <section className="rounded-2xl border border-line bg-panel/75 p-4">
             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-300">Modelo e custo</p>
-            <h2 className="mt-2 font-black text-white">{selectedModel?.label || "Carregando…"}</h2>
-            {selectedModel && <div className="mt-3 space-y-2 text-xs text-slate-400">
+            <h2 className="mt-2 font-black text-white">{routingMode === "automatic" ? "Seleção automática" : selectedModel?.label || "Carregando…"}</h2>
+            {routingMode === "automatic" && <p className="mt-2 text-xs leading-5 text-slate-400">Tarefas simples usam o modelo eficiente; análises e operações complexas escalam automaticamente.</p>}
+            {selectedModel && routingMode === "manual" && <div className="mt-3 space-y-2 text-xs text-slate-400">
               <div className="flex justify-between gap-3"><span>Entrada / 1M</span><strong className="text-slate-200">US$ {selectedModel.inputCostUsdPerMillion.toFixed(2)}</strong></div>
               <div className="flex justify-between gap-3"><span>Cache / 1M</span><strong className="text-slate-200">US$ {selectedModel.cachedInputCostUsdPerMillion.toFixed(2)}</strong></div>
               <div className="flex justify-between gap-3"><span>Saída / 1M</span><strong className="text-slate-200">US$ {selectedModel.outputCostUsdPerMillion.toFixed(2)}</strong></div>

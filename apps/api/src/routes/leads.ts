@@ -119,7 +119,16 @@ router.patch("/:id/stage", canEditCrm, async (req, res, next) => {
 
 router.delete("/:id", canEditCrm, async (req, res, next) => {
   try {
-    const updated = await updateCompany(String(req.params.id), { status: "Perdido", isArchived: true } as any, getRequestWorkspaceId(req));
+    const actorId = String((req as any).session?.userId || (req as any).session?.email || "unknown");
+    const updated = await updateCompany(String(req.params.id), {
+      status: "Perdido",
+      recordState: "archived",
+      isArchived: true,
+      isDeleted: false,
+      archivedAt: new Date().toISOString(),
+      archivedBy: actorId,
+      deleteReason: String(req.body?.reason || "Arquivado pelo CRM")
+    } as any, getRequestWorkspaceId(req));
     if (!updated) return res.status(404).json({ message: "Lead não encontrado." });
     await recordActivity(req, String(req.params.id), "note", "Lead arquivado", "Soft delete/arquivamento executado.");
     res.json(updated);

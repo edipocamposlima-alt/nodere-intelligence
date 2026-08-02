@@ -13,7 +13,6 @@ import {
   listDocuments,
   listNotes,
   listTasks,
-  deleteCompany,
   removeDocument,
   removeNote,
   updateNote,
@@ -321,6 +320,22 @@ router.post("/", async (req, res, next) => {
   } catch (err) { return next(err); }
 });
 
+router.get("/lifecycle", async (req, res, next) => {
+  try {
+    const state = z.enum(["active", "archived", "trash"]).parse(String(req.query.state || "trash"));
+    const sb = requireSupabase();
+    const { data, error } = await sb
+      .from("nodere_companies")
+      .select("id, name, category, city, state, status, record_state, archived_at, archived_by, trashed_at, trashed_by, purge_after, delete_reason, legal_hold, updated_at")
+      .eq("workspace_id", getRequestWorkspaceId(req))
+      .eq("record_state", state)
+      .order("updated_at", { ascending: false })
+      .limit(500);
+    if (error) throw error;
+    return res.json(data ?? []);
+  } catch (error) { return next(error); }
+});
+
 router.get("/:id", async (req, res, next) => {
   try {
     const company = await getCompanyAsync(req.params.id, getRequestWorkspaceId(req));
@@ -345,10 +360,86 @@ router.patch("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const removed = await deleteCompany(req.params.id, getRequestWorkspaceId(req));
-    if (!removed) return res.status(404).json({ message: "Company not found" });
-    return res.json({ ok: true });
+    const body = z.object({ reason: z.string().min(3).max(500) }).parse(req.body ?? {});
+    const workspaceId = getRequestWorkspaceId(req);
+    const before = await getCompanyAsync(req.params.id, workspaceId);
+    if (!before) return res.status(404).json({ message: "Empresa não encontrada." });
+    const actorId = getSessionUserId(req);
+    const now = new Date().toISOString();
+    const company = await updateCompany(req.params.id, {
+      recordState: "trash", isDeleted: true, isArchived: false,
+      trashedAt: now, trashedBy: actorId,
+      archivedAt: null, archivedBy: null,
+      purgeAfter: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      deleteReason: body.reason
+    } as any, workspaceId);
+    if (!company) return res.status(404).json({ message: "Empresa não encontrada." });
+    await insertLifecycleAudit(req, "company.trash", before, company, body.reason);
+    return res.json({ ok: true, company, message: "Lead movido para a lixeira por 30 dias." });
   } catch (err) { return next(err); }
+});
+
+router.post("/:id/archive", async (req, res, next) => {
+  try {
+    const body = z.object({ reason: z.string().min(3).max(500).optional() }).parse(req.body ?? {});
+    const workspaceId = getRequestWorkspaceId(req);
+    const before = await getCompanyAsync(req.params.id, workspaceId);
+    if (!before) return res.status(404).json({ message: "Empresa não encontrada." });
+    const company = await updateCompany(req.params.id, {
+      recordState: "archived", isArchived: true, isDeleted: false,
+      archivedAt: new Date().toISOString(), archivedBy: getSessionUserId(req),
+      trashedAt: null, trashedBy: null, purgeAfter: null,
+      deleteReason: body.reason || "Arquivamento operacional"
+    } as any, workspaceId);
+    await insertLifecycleAudit(req, "company.archive", before, company, body.reason);
+    return res.json(company);
+  } catch (error) { return next(error); }
+});
+
+router.post("/:id/restore", async (req, res, next) => {
+  try {
+    const body = z.object({ reason: z.string().min(3).max(500).optional() }).parse(req.body ?? {});
+    const workspaceId = getRequestWorkspaceId(req);
+    const { data: before, error } = await requireSupabase().from("nodere_companies").select("*").eq("workspace_id", workspaceId).eq("id", req.params.id).maybeSingle();
+    if (error) throw error;
+    if (!before) return res.status(404).json({ message: "Empresa não encontrada." });
+    const company = await updateCompany(req.params.id, {
+      recordState: "active", isArchived: false, isDeleted: false,
+      archivedAt: null, archivedBy: null, trashedAt: null,
+      trashedBy: null, purgeAfter: null, deleteReason: null
+    } as any, workspaceId);
+    await insertLifecycleAudit(req, "company.restore", before, company, body.reason || "Restauração para operação ativa");
+    return res.json(company);
+  } catch (error) { return next(error); }
+});
+
+router.get("/:id/dependencies", async (req, res, next) => {
+  try {
+    const dependencies = await companyDependencies(getRequestWorkspaceId(req), req.params.id);
+    return res.json({ companyId: req.params.id, dependencies, total: Object.values(dependencies).reduce((sum, count) => sum + count, 0) });
+  } catch (error) { return next(error); }
+});
+
+router.post("/:id/purge", requireWorkspaceMutation("owner", "admin"), async (req, res, next) => {
+  try {
+    const body = z.object({ confirmation: z.string().min(1), reason: z.string().min(10).max(500) }).parse(req.body ?? {});
+    const workspaceId = getRequestWorkspaceId(req);
+    const sb = requireSupabase();
+    const { data: company, error } = await sb.from("nodere_companies").select("*").eq("workspace_id", workspaceId).eq("id", req.params.id).maybeSingle();
+    if (error) throw error;
+    if (!company) return res.status(404).json({ message: "Empresa não encontrada." });
+    if (company.record_state !== "trash") return res.status(409).json({ message: "Mova a empresa para a lixeira antes da exclusão definitiva." });
+    if (company.legal_hold) return res.status(409).json({ message: "A empresa está sob retenção legal e não pode ser excluída." });
+    if (body.confirmation !== company.name && body.confirmation !== "EXCLUIR DEFINITIVAMENTE") return res.status(422).json({ message: "Confirmação não corresponde ao nome da empresa." });
+    if (!company.purge_after || new Date(company.purge_after).getTime() > Date.now()) return res.status(409).json({ message: "O prazo de retenção da lixeira ainda não terminou.", purgeAfter: company.purge_after });
+    const dependencies = await companyDependencies(workspaceId, String(req.params.id));
+    const total = Object.values(dependencies).reduce((sum, count) => sum + count, 0);
+    if (total > 0) return res.status(409).json({ code: "COMPANY_DEPENDENCIES_EXIST", message: "Exclusão definitiva bloqueada por dependências.", dependencies, total });
+    await insertLifecycleAudit(req, "company.purge", company, { purged: true }, body.reason);
+    const { error: deleteError } = await sb.from("nodere_companies").delete().eq("workspace_id", workspaceId).eq("id", req.params.id);
+    if (deleteError) throw deleteError;
+    return res.json({ ok: true, recoverable: false });
+  } catch (error) { return next(error); }
 });
 
 
@@ -1772,6 +1863,49 @@ function parseColumnMap(value: unknown) {
 
 function getSessionUserId(req: any) {
   return String(req.session?.userId || req.admin?.userId || "");
+}
+
+async function companyDependencies(workspaceId: string, companyId: string) {
+  const definitions = [
+    ["commercial_briefings", "company_id"],
+    ["company_contacts", "company_id"],
+    ["communications", "company_id"],
+    ["communication_threads", "company_id"],
+    ["communication_events", "company_id"],
+    ["company_contracts", "company_id"],
+    ["calendar_events", "company_id"],
+    ["schedules", "company_id"],
+    ["proposal_versions", "lead_id"],
+    ["inbox_messages", "lead_id"],
+    ["cadence_enrollments", "lead_id"],
+    ["nodere_company_notes", "company_id"],
+    ["company_files", "company_id"]
+  ] as const;
+  const values = await Promise.all(definitions.map(async ([table, column]) => {
+    const { count, error } = await requireSupabase().from(table).select("id", { head: true, count: "exact" }).eq("workspace_id", workspaceId).eq(column, companyId);
+    if (error && !isMissingSupabaseSchema(error)) throw error;
+    if (error) return [table, 0] as const;
+    return [table, count ?? 0] as const;
+  }));
+  return Object.fromEntries(values) as Record<string, number>;
+}
+
+async function insertLifecycleAudit(req: any, action: string, beforeState: unknown, afterState: unknown, reason?: string) {
+  const session = req.session || {};
+  const { error } = await requireSupabase().from("nodere_audit_events").insert({
+    id: randomUUID(),
+    workspace_id: getRequestWorkspaceId(req),
+    actor_id: getSessionUserId(req),
+    actor_role: String(session.role || "viewer"),
+    action,
+    entity_type: "company",
+    entity_id: String(req.params.id),
+    reason: reason || null,
+    before_state: beforeState,
+    after_state: afterState,
+    metadata: { source: "nodere-api", recovery: action === "company.trash" ? "30_days" : null }
+  });
+  if (error) throw error;
 }
 
 function normalizeCompanyPatch(input: Record<string, unknown>) {

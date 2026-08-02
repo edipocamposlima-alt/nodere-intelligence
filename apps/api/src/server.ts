@@ -38,6 +38,8 @@ import discoveryRouter from "./routes/discovery.js";
 import aiRouter from "./routes/ai.js";
 import intelligenceRouter from "./routes/intelligence.js";
 import onboardingRouter from "./routes/onboarding.js";
+import briefingsRouter from "./routes/briefings.js";
+import communicationCenterRouter from "./routes/communicationCenter.js";
 import { processDueSteps } from "./services/emailSequences.js";
 import { requireAuth } from "./middleware/auth.js";
 import { attachSession, getRequestWorkspaceId, requireWorkspaceRole, requireWorkspaceSession } from "./middleware/session.js";
@@ -472,6 +474,8 @@ app.get("/api/files", requireWorkspaceSession, listWorkspaceResource("company_fi
 app.use("/api/companies", requireWorkspaceSession, companiesRouter);
 app.use("/api/crm", requireWorkspaceSession, crmRouter);
 app.use("/api/leads", requireWorkspaceSession, leadsRouter);
+app.use("/api/briefings", requireWorkspaceSession, briefingsRouter);
+app.use("/api/communications-center", requireWorkspaceSession, communicationCenterRouter);
 app.use("/api/discovery", requireWorkspaceSession, discoveryRouter);
 app.use("/api/ai", requireWorkspaceSession, aiRouter);
 app.use("/api/intelligence", requireWorkspaceSession, intelligenceRouter);

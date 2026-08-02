@@ -16,6 +16,7 @@
     "test:ai-first": "tsx --test src/tests/ai-first-core.test.ts",
     "test:import-security": "tsx --test src/tests/import-security.test.ts",
     "test:security-hardening": "tsx --test src/tests/security-hardening.test.ts",
+    "test:v5": "tsx --test src/tests/v5-commercial.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "npm run typecheck"
   },
@@ -23,6 +24,7 @@
     "@ai-sdk/anthropic": "^3.0.99",
     "@ai-sdk/openai": "^3.0.86",
     "@supabase/supabase-js": "^2.106.2",
+    "@types/sanitize-html": "2.16.1",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "@types/web-push": "^3.6.4",
@@ -37,6 +39,7 @@
     "nodemailer": "^9.0.3",
     "pdfkit": "^0.19.0",
     "pg": "^8.13.1",
+    "sanitize-html": "2.17.6",
     "stripe": "^22.2.0",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
