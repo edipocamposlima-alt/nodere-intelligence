@@ -51,6 +51,8 @@ test("fontes de produção não mantêm curingas e segredos inseguros", () => {
   assert.doesNotMatch(server, /endsWith\(["']\.vercel\.app["']\)/);
   assert.match(server, /denied\.status = 403/);
   assert.match(server, /CORS_ORIGIN_DENIED/);
+  assert.match(server, /vercelPreviewOrigin\.test\(origin\)/);
+  assert.match(server, /web-\[a-z0-9-\]\+-edipo-lima-s-projects/);
   assert.doesNotMatch(config, /nodere-webhook-secret/);
   assert.match(config, /isProduction \? "" : "nodere-local-admin-secret"/);
   assert.match(webhooks, /router\.post\("\/whatsapp", requireMetaWebhookSignature/);

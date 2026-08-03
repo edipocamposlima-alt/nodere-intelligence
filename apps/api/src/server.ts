@@ -84,13 +84,14 @@ const allowedOrigins = new Set([
   "http://localhost:3000",
   "http://localhost:4000",
 ]);
+const vercelPreviewOrigin = /^https:\/\/web-[a-z0-9-]+-edipo-lima-s-projects\.vercel\.app$/;
 
 app.use(helmet());
 app.use(
   cors({
     origin(origin, callback) {
       if (!origin) return callback(null, true);
-      if (allowedOrigins.has(origin)) {
+      if (allowedOrigins.has(origin) || vercelPreviewOrigin.test(origin)) {
         return callback(null, true);
       }
       const denied = new Error("Origem não permitida pelo CORS.") as Error & { status?: number; code?: string };
