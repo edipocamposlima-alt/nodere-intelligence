@@ -505,7 +505,12 @@ app.use("/api/operators", requireWorkspaceSession, requireModuleAccess("admin"),
 app.use("/api/credits", requireWorkspaceSession, creditsRouter);
 app.use("/api/backup", requireWorkspaceSession, backupRouter);
 app.use("/api/billing", billingRouter);
-app.use("/api/proposals", requireWorkspaceSession, requireModuleAccess("crm"), proposalsRouter);
+app.use(
+  "/api/proposals",
+  requireWorkspaceSession,
+  requireModuleAccess("crm", { readOnlyPostSuffixes: ["/pdf", "/contract-pdf"] }),
+  proposalsRouter
+);
 app.use("/api/push", requireWorkspaceSession, pushRouter);
 app.use("/api/notifications", requireWorkspaceSession, pushRouter);
 app.use("/api/developer", requireWorkspaceSession, requireModuleAccess("admin"), developerRouter);

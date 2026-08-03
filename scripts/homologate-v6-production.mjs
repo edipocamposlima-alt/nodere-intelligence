@@ -352,11 +352,14 @@ async function authenticateProfiles(users) {
     }
     const refresh = await api("/api/admin/session/refresh", primary.token, { method: "POST", body: "{}" });
     record(`renovação de sessão: ${profile.key}`, refresh.response.ok && Boolean(refresh.body?.token), `HTTP ${refresh.response.status}`);
+    const customRoleOk = profile.customRole
+      ? Boolean(primary.profile?.customRoleId) && (!user.customRoleId || primary.profile.customRoleId === user.customRoleId)
+      : !primary.profile?.customRoleId;
     const profileOk = primary.profile?.email === profile.email
       && primary.profile?.role === profile.role
       && primary.profile?.workspaceId === WORKSPACE_ID
       && primary.profile?.status === profile.status
-      && (primary.profile?.customRoleId || null) === (user.customRoleId || null);
+      && customRoleOk;
     record(`perfil propagado na sessão: ${profile.key}`, profileOk, `${primary.profile?.role || "?"}/${primary.profile?.status || "?"}`);
     sessions[profile.key] = { ...primary, user };
   }
@@ -750,7 +753,13 @@ function saveState(users) {
     apiBaseUrl: API_BASE_URL,
     webBaseUrl: WEB_BASE_URL,
     password,
-    accounts: Object.fromEntries(Object.entries(users).map(([key, user]) => [key, { email: user.email, label: user.label, role: user.role, status: user.status }]))
+    accounts: Object.fromEntries(Object.entries(users).map(([key, user]) => [key, {
+      email: user.email,
+      label: user.label,
+      role: user.role,
+      status: user.status,
+      customRoleId: user.customRoleId || null
+    }]))
   }, null, 2));
 }
 

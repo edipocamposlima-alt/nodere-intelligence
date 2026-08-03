@@ -90,9 +90,12 @@ export function requireModulePermission(module: WorkspaceModule, access: "read" 
   };
 }
 
-export function requireModuleAccess(module: WorkspaceModule) {
+export function requireModuleAccess(module: WorkspaceModule, options: { readOnlyPostSuffixes?: string[] } = {}) {
   return (request: Request, response: Response, next: NextFunction) => {
-    const access = ["GET", "HEAD", "OPTIONS"].includes(request.method.toUpperCase()) ? "read" : "write";
+    const method = request.method.toUpperCase();
+    const isReadOnlyPost = method === "POST"
+      && options.readOnlyPostSuffixes?.some((suffix) => request.path.endsWith(suffix));
+    const access = ["GET", "HEAD", "OPTIONS"].includes(method) || isReadOnlyPost ? "read" : "write";
     return requireModulePermission(module, access)(request, response, next);
   };
 }

@@ -97,6 +97,17 @@ test("permissão por módulo bloqueia leitura e escrita conforme o perfil", () =
   assert.equal(run(requireModuleAccess("crm"), readOnly).nextCalled, true);
 });
 
+test("geração de PDF por POST respeita permissão de leitura sem liberar outras mutações", () => {
+  const readOnly = request("viewer", "POST") as any;
+  readOnly.path = "/proposal-1/pdf";
+  readOnly.session.modulePermissions = { crm: "read" };
+  const guard = requireModuleAccess("crm", { readOnlyPostSuffixes: ["/pdf", "/contract-pdf"] });
+  assert.equal(run(guard, readOnly).nextCalled, true);
+
+  readOnly.path = "/";
+  assert.equal(run(guard, readOnly).res.statusCode, 403);
+});
+
 test("token de sessao assinado preserva perfil e workspace", () => {
   const token = issueSessionToken({
     email: "admin@nodere.test",
