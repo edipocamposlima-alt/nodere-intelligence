@@ -82,14 +82,14 @@ drop policy if exists nodere_catalog_read_workspace on public.nodere_commercial_
 create policy nodere_catalog_read_workspace
 on public.nodere_commercial_catalog_items
 for select to authenticated
-using (workspace_id = any((select nodere_private.current_user_workspace_ids())));
+using (workspace_id = any(nodere_private.current_user_workspace_ids()));
 
 drop policy if exists nodere_catalog_write_admin_owner on public.nodere_commercial_catalog_items;
 drop policy if exists nodere_catalog_insert_admin_owner on public.nodere_commercial_catalog_items;
 create policy nodere_catalog_insert_admin_owner on public.nodere_commercial_catalog_items
 for insert to authenticated
 with check (
-  workspace_id = any((select nodere_private.current_user_workspace_ids()))
+  workspace_id = any(nodere_private.current_user_workspace_ids())
   and (select nodere_private.current_user_role()) = any(array['admin'::text, 'owner'::text])
 );
 
@@ -97,11 +97,11 @@ drop policy if exists nodere_catalog_update_admin_owner on public.nodere_commerc
 create policy nodere_catalog_update_admin_owner on public.nodere_commercial_catalog_items
 for update to authenticated
 using (
-  workspace_id = any((select nodere_private.current_user_workspace_ids()))
+  workspace_id = any(nodere_private.current_user_workspace_ids())
   and (select nodere_private.current_user_role()) = any(array['admin'::text, 'owner'::text])
 )
 with check (
-  workspace_id = any((select nodere_private.current_user_workspace_ids()))
+  workspace_id = any(nodere_private.current_user_workspace_ids())
   and (select nodere_private.current_user_role()) = any(array['admin'::text, 'owner'::text])
 );
 
@@ -109,7 +109,7 @@ drop policy if exists nodere_catalog_delete_admin_owner on public.nodere_commerc
 create policy nodere_catalog_delete_admin_owner on public.nodere_commercial_catalog_items
 for delete to authenticated
 using (
-  workspace_id = any((select nodere_private.current_user_workspace_ids()))
+  workspace_id = any(nodere_private.current_user_workspace_ids())
   and (select nodere_private.current_user_role()) = any(array['admin'::text, 'owner'::text])
 );
 
@@ -117,7 +117,7 @@ drop policy if exists nodere_proposal_audit_workspace on public.nodere_proposal_
 create policy nodere_proposal_audit_workspace
 on public.nodere_proposal_audit_logs
 for select to authenticated
-using (workspace_id = any((select nodere_private.current_user_workspace_ids())));
+using (workspace_id = any(nodere_private.current_user_workspace_ids()));
 
 drop policy if exists nodere_proposal_items_read_workspace on public.nodere_proposal_items;
 create policy nodere_proposal_items_read_workspace
@@ -126,7 +126,7 @@ for select to authenticated
 using (
   proposal_id in (
     select id from public.nodere_proposals
-    where workspace_id = any((select nodere_private.current_user_workspace_ids()))
+    where workspace_id = any(nodere_private.current_user_workspace_ids())
   )
 );
 
@@ -137,7 +137,7 @@ for insert to authenticated
 with check (
   proposal_id in (
     select id from public.nodere_proposals
-    where workspace_id = any((select nodere_private.current_user_workspace_ids()))
+    where workspace_id = any(nodere_private.current_user_workspace_ids())
   )
   and (select nodere_private.current_user_role()) = any(array['operator'::text, 'manager'::text, 'admin'::text, 'owner'::text])
 );
@@ -148,14 +148,14 @@ for update to authenticated
 using (
   proposal_id in (
     select id from public.nodere_proposals
-    where workspace_id = any((select nodere_private.current_user_workspace_ids()))
+    where workspace_id = any(nodere_private.current_user_workspace_ids())
   )
   and (select nodere_private.current_user_role()) = any(array['operator'::text, 'manager'::text, 'admin'::text, 'owner'::text])
 )
 with check (
   proposal_id in (
     select id from public.nodere_proposals
-    where workspace_id = any((select nodere_private.current_user_workspace_ids()))
+    where workspace_id = any(nodere_private.current_user_workspace_ids())
   )
   and (select nodere_private.current_user_role()) = any(array['operator'::text, 'manager'::text, 'admin'::text, 'owner'::text])
 );
@@ -166,7 +166,7 @@ for delete to authenticated
 using (
   proposal_id in (
     select id from public.nodere_proposals
-    where workspace_id = any((select nodere_private.current_user_workspace_ids()))
+    where workspace_id = any(nodere_private.current_user_workspace_ids())
   )
   and (select nodere_private.current_user_role()) = any(array['operator'::text, 'manager'::text, 'admin'::text, 'owner'::text])
 );
@@ -176,7 +176,7 @@ drop policy if exists nodere_proposals_workspace_select on public.nodere_proposa
 create policy nodere_proposals_read_workspace
 on public.nodere_proposals
 for select to authenticated
-using (workspace_id = any((select nodere_private.current_user_workspace_ids())));
+using (workspace_id = any(nodere_private.current_user_workspace_ids()));
 
 drop policy if exists nodere_proposals_write_workspace on public.nodere_proposals;
 drop policy if exists nodere_proposals_workspace_insert on public.nodere_proposals;
@@ -184,7 +184,7 @@ drop policy if exists nodere_proposals_insert_workspace on public.nodere_proposa
 create policy nodere_proposals_insert_workspace on public.nodere_proposals
 for insert to authenticated
 with check (
-  workspace_id = any((select nodere_private.current_user_workspace_ids()))
+  workspace_id = any(nodere_private.current_user_workspace_ids())
   and (select nodere_private.current_user_role()) = any(array['operator'::text, 'manager'::text, 'admin'::text, 'owner'::text])
 );
 
@@ -193,11 +193,11 @@ drop policy if exists nodere_proposals_update_workspace on public.nodere_proposa
 create policy nodere_proposals_update_workspace on public.nodere_proposals
 for update to authenticated
 using (
-  workspace_id = any((select nodere_private.current_user_workspace_ids()))
+  workspace_id = any(nodere_private.current_user_workspace_ids())
   and (select nodere_private.current_user_role()) = any(array['operator'::text, 'manager'::text, 'admin'::text, 'owner'::text])
 )
 with check (
-  workspace_id = any((select nodere_private.current_user_workspace_ids()))
+  workspace_id = any(nodere_private.current_user_workspace_ids())
   and (select nodere_private.current_user_role()) = any(array['operator'::text, 'manager'::text, 'admin'::text, 'owner'::text])
 );
 
@@ -206,7 +206,7 @@ drop policy if exists nodere_proposals_delete_workspace on public.nodere_proposa
 create policy nodere_proposals_delete_workspace on public.nodere_proposals
 for delete to authenticated
 using (
-  workspace_id = any((select nodere_private.current_user_workspace_ids()))
+  workspace_id = any(nodere_private.current_user_workspace_ids())
   and (select nodere_private.current_user_role()) = any(array['operator'::text, 'manager'::text, 'admin'::text, 'owner'::text])
 );
 
