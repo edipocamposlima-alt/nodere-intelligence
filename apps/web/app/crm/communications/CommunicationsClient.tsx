@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Clock3, ExternalLink, History, Mail, MessageCircle, RefreshCw, Save, Send, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Clock3, ExternalLink, FileUp, History, Mail, MessageCircle, Paperclip, RefreshCw, Save, Send, ShieldCheck } from "lucide-react";
 import type { Company } from "@/lib/types";
 
 const RichTextEditor = dynamic(() => import("@/components/RichTextEditor").then((module) => module.RichTextEditor), { ssr: false });
@@ -22,6 +22,7 @@ type Thread = {
 };
 type Event = { id: string; event_type: string; direction: string; status: string; subject?: string; body_text?: string; body_html?: string; occurred_at: string };
 type Draft = { id: string; thread_id: string; channel: Channel; status: string };
+type AttachmentOption = { ref: string; source: "briefing" | "company-file"; name: string; mimeType?: string; sizeBytes: number; context: string };
 
 export function CommunicationsClient({ companies }: { companies: Company[] }) {
   const [status, setStatus] = useState<Record<string, IntegrationStatus>>({});
@@ -40,6 +41,9 @@ export function CommunicationsClient({ companies }: { companies: Company[] }) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [assistedPending, setAssistedPending] = useState<{ outboxId: string; url: string } | null>(null);
+  const [attachments, setAttachments] = useState<AttachmentOption[]>([]);
+  const [selectedAttachmentRefs, setSelectedAttachmentRefs] = useState<string[]>([]);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
 
   const availableTemplates = useMemo(() => templates.filter((item) => item.channel === channel), [channel, templates]);
   const selectedCompany = companies.find((item) => item.id === companyId);
@@ -57,6 +61,12 @@ export function CommunicationsClient({ companies }: { companies: Company[] }) {
     if (!selectedCompany) return;
     setRecipient(channel === "email" ? selectedCompany.email || "" : selectedCompany.whatsapp || selectedCompany.phone || "");
   }, [channel, selectedCompany]);
+
+  useEffect(() => {
+    setSelectedAttachmentRefs([]);
+    if (!companyId) return void setAttachments([]);
+    void refreshAttachments(companyId);
+  }, [companyId]);
 
   useEffect(() => {
     if (!activeThreadId) return void setEvents([]);
@@ -82,6 +92,35 @@ export function CommunicationsClient({ companies }: { companies: Company[] }) {
     }
   }
 
+  async function refreshAttachments(targetCompanyId = companyId) {
+    if (!targetCompanyId) return setAttachments([]);
+    try {
+      setAttachments(await request<AttachmentOption[]>(`/attachments?companyId=${encodeURIComponent(targetCompanyId)}`));
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Não foi possível listar os anexos.");
+    }
+  }
+
+  async function uploadAttachment(file?: File) {
+    if (!file || !companyId) return;
+    setUploadingAttachment(true);
+    setNotice("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const response = await fetch(`/api/backend/companies/${encodeURIComponent(companyId)}/files`, { method: "POST", credentials: "include", body: form });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.message || "Não foi possível anexar o arquivo à empresa.");
+      await refreshAttachments(companyId);
+      if (payload.id) setSelectedAttachmentRefs((current) => [...new Set([...current, `company-file:${payload.id}`])]);
+      setNotice("Arquivo protegido e selecionado para este e-mail.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Não foi possível anexar o arquivo.");
+    } finally {
+      setUploadingAttachment(false);
+    }
+  }
+
   function applyTemplate(id: string) {
     setTemplateId(id);
     const template = templates.find((item) => item.id === id);
@@ -103,6 +142,7 @@ export function CommunicationsClient({ companies }: { companies: Company[] }) {
           recipient,
           subject: channel === "email" ? subject : "",
           bodyHtml,
+          attachmentRefs: channel === "email" ? selectedAttachmentRefs : [],
           consentConfirmed,
           idempotencyKey: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`
         })
@@ -199,6 +239,17 @@ export function CommunicationsClient({ companies }: { companies: Company[] }) {
             {channel === "email" && <label className="space-y-1 text-sm font-bold text-[var(--text-secondary)] md:col-span-2">Assunto<input value={subject} onChange={(event) => setSubject(event.target.value)} className="min-h-11 w-full rounded-lg border border-[var(--border-soft)] bg-[var(--bg-input)] px-3" /></label>}
           </div>
           <div className="mt-4"><RichTextEditor value={bodyHtml} onChange={setBodyHtml} minHeight={210} allowImages={false} placeholder="Escreva a mensagem comercial..." /></div>
+          {channel === "email" && (
+            <section className="mt-4 rounded-xl border border-[var(--border-soft)] bg-[var(--bg-main)] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div><h3 className="flex items-center gap-2 text-sm font-black"><Paperclip /> Anexos protegidos</h3><p className="mt-1 text-xs text-[var(--text-muted)]">PDFs, propostas, contratos, documentos e imagens já vinculados à empresa. Limite total: 20 MB.</p></div>
+                <label className="briefing-action cursor-pointer"><FileUp /> {uploadingAttachment ? "Enviando..." : "Anexar arquivo local"}<input hidden type="file" disabled={!companyId || uploadingAttachment} accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,image/jpeg,image/png,image/webp" onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; void uploadAttachment(file); }} /></label>
+              </div>
+              {!companyId && <p className="mt-3 text-xs text-amber-400">Selecione uma empresa para usar anexos.</p>}
+              {companyId && !attachments.length && <p className="mt-3 text-xs text-[var(--text-muted)]">Nenhum arquivo disponível. Use “Anexar arquivo local” ou adicione documentos no briefing comercial.</p>}
+              {!!attachments.length && <div className="mt-3 grid gap-2 md:grid-cols-2">{attachments.map((attachment) => <label key={attachment.ref} className="flex cursor-pointer items-start gap-3 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] p-3 text-sm"><input type="checkbox" className="mt-1" checked={selectedAttachmentRefs.includes(attachment.ref)} onChange={(event) => setSelectedAttachmentRefs((current) => event.target.checked ? [...new Set([...current, attachment.ref])].slice(0, 10) : current.filter((ref) => ref !== attachment.ref))} /><span className="min-w-0"><strong className="block truncate text-[var(--text-primary)]">{attachment.name}</strong><small className="text-[var(--text-muted)]">{attachment.context} · {fileSizeLabel(attachment.sizeBytes)}</small></span></label>)}</div>}
+            </section>
+          )}
           <label className="mt-4 flex items-start gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--bg-main)] p-3 text-sm text-[var(--text-secondary)]"><input type="checkbox" checked={consentConfirmed} onChange={(event) => setConsentConfirmed(event.target.checked)} className="mt-0.5 h-4 w-4" /><span>Confirmo que este contato possui base legítima/consentimento e que respeitarei horário, finalidade e preferência do destinatário.</span></label>
           <div className="mt-4 flex flex-wrap gap-2">
             <button type="button" onClick={saveDraft} disabled={busy || !consentConfirmed} className="briefing-action briefing-action--primary"><Save /> Salvar na outbox</button>
@@ -235,3 +286,4 @@ async function request<T = unknown>(path: string, options: RequestInit = {}): Pr
 function statusLabel(value: string) { return ({ configured: "Configurado", connected: "Conectado", active: "Ativo", assisted: "Assistido", not_configured: "Pendente", verifying: "Verificando" } as Record<string, string>)[value] || value; }
 function eventLabel(value: string) { return value.replaceAll("_", " "); }
 function dateLabel(value: string) { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(date); }
+function fileSizeLabel(value: number) { return value >= 1024 * 1024 ? `${(value / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(value / 1024))} KB`; }

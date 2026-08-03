@@ -35,33 +35,25 @@ export function LoginClient() {
     setError("");
     setNotice("");
     try {
+      let supabaseFailure = "";
       if (hasSupabaseAuthConfig()) {
-        const auth = await signInWithPassword(email, password);
-        if (!auth.access_token) throw new Error("Supabase não retornou token de sessão.");
-        const exchangeResponse = await fetch(`${getDirectApiBaseUrl()}/admin/supabase-session`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ accessToken: auth.access_token })
-        });
-        const exchange = await exchangeResponse.json().catch(() => ({}));
-        if (!exchangeResponse.ok || !exchange.token) {
-          throw new Error(exchange.message || "Não foi possível iniciar a sessão NODERE.");
+        try {
+          const auth = await signInWithPassword(email, password);
+          if (!auth.access_token) throw new Error("Supabase não retornou token de sessão.");
+          const exchangeResponse = await fetch(`${getDirectApiBaseUrl()}/admin/supabase-session`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ accessToken: auth.access_token })
+          });
+          const exchange = await exchangeResponse.json().catch(() => ({}));
+          if (!exchangeResponse.ok || !exchange.token) throw new Error(exchange.message || "Não foi possível iniciar a sessão NODERE.");
+          await persistSession(exchange, auth.user?.email || email);
+          router.replace(nextPath);
+          router.refresh();
+          return;
+        } catch (error) {
+          supabaseFailure = error instanceof Error ? error.message : "Sessão Supabase indisponível.";
         }
-        setAdminToken(exchange.token);
-        localStorage.setItem("nodere_user_profile", JSON.stringify({
-          email: exchange.user?.email || email,
-          name: exchange.user?.name || (auth.user?.email ? formatDisplayName(auth.user.email) : formatDisplayName(email)),
-          role: exchange.user?.role || (isBuiltInOwner(email) ? "owner" : "operator")
-        }));
-        const sessionResponse = await fetch("/api/auth/session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ access_token: exchange.token })
-        });
-        if (!sessionResponse.ok) throw new Error("Não foi possível persistir a sessão no navegador.");
-        router.replace(nextPath);
-        router.refresh();
-        return;
       }
 
       const response = await fetch(`${getDirectApiBaseUrl()}/admin/login`, {
@@ -70,19 +62,8 @@ export function LoginClient() {
         body: JSON.stringify({ email, password })
       });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.message || "Não foi possível entrar.");
-      setAdminToken(payload.token);
-      localStorage.setItem("nodere_user_profile", JSON.stringify({
-        email: payload.user?.email || email,
-        name: payload.user?.name || formatDisplayName(payload.user?.email || email),
-        role: payload.user?.role
-      }));
-      const sessionResponse = await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ access_token: payload.token })
-      });
-      if (!sessionResponse.ok) throw new Error("Não foi possível persistir a sessão no navegador.");
+      if (!response.ok) throw new Error(payload.message || supabaseFailure || "Não foi possível entrar.");
+      await persistSession(payload, email);
       router.replace(nextPath);
       router.refresh();
     } catch (err) {
@@ -90,6 +71,26 @@ export function LoginClient() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function persistSession(payload: any, fallbackEmail: string) {
+    if (!payload.token) throw new Error("O backend não retornou uma sessão válida.");
+    setAdminToken(payload.token);
+    localStorage.setItem("nodere_user_profile", JSON.stringify({
+      email: payload.user?.email || fallbackEmail,
+      name: payload.user?.name || formatDisplayName(payload.user?.email || fallbackEmail),
+      role: payload.user?.role || (isBuiltInOwner(fallbackEmail) ? "owner" : "operator"),
+      customRoleId: payload.user?.customRoleId ?? null,
+      status: payload.user?.status || "active",
+      visibilityLevel: payload.user?.visibilityLevel || "read_edit",
+      modulePermissions: payload.user?.modulePermissions || {}
+    }));
+    const sessionResponse = await fetch("/api/auth/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ access_token: payload.token })
+    });
+    if (!sessionResponse.ok) throw new Error("Não foi possível persistir a sessão no navegador.");
   }
 
   async function recoverPassword() {

@@ -41,7 +41,11 @@ export async function GET(request: NextRequest) {
       email: payload.user?.email,
       name: displayName,
       avatar_url: payload.user?.avatar_url,
-      role: payload.user?.role ?? "operator"
+      role: payload.user?.role ?? "operator",
+      customRoleId: payload.user?.customRoleId ?? null,
+      status: payload.user?.status ?? "active",
+      visibilityLevel: payload.user?.visibilityLevel ?? (payload.user?.role === "viewer" ? "read" : "read_edit"),
+      modulePermissions: payload.user?.modulePermissions ?? {}
     },
     workspace: {
       id: payload.workspace?.id,

@@ -61,6 +61,20 @@ function getAdminSession(request: any) {
   return session;
 }
 
+function sessionProfile(user: any) {
+  return {
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    workspaceId: user.workspaceId,
+    userId: user.userId || user.id,
+    customRoleId: user.customRoleId ?? null,
+    status: user.status || "active",
+    visibilityLevel: user.visibilityLevel || (user.role === "viewer" ? "read" : "read_edit"),
+    modulePermissions: user.modulePermissions || {}
+  };
+}
+
 function maskValue(value = "") {
   const text = String(value || "");
   if (!text) return "";
@@ -242,14 +256,8 @@ router.post("/login", async (request, response, next) => {
     const user = await authenticateUser(body.email, body.password);
     if (user) {
       return response.json({
-        token: issueSessionToken({
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          workspaceId: user.workspaceId,
-          userId: user.id
-        }),
-        user: { email: user.email, name: user.name, role: user.role, workspaceId: user.workspaceId }
+        token: issueSessionToken(sessionProfile(user)),
+        user: sessionProfile(user)
       });
     }
 
@@ -291,17 +299,11 @@ router.post("/supabase-session", async (request, response, next) => {
       email: data.user.email,
       name: String(data.user.user_metadata?.name || data.user.user_metadata?.full_name || "")
     });
-    const token = issueSessionToken({
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      workspaceId: user.workspaceId,
-      userId: user.id
-    });
+    const token = issueSessionToken(sessionProfile(user));
 
     return response.json({
       token,
-      user: { email: user.email, name: user.name, role: user.role, workspaceId: user.workspaceId }
+      user: sessionProfile(user)
     });
   } catch (error) {
     return next(error);
@@ -309,18 +311,12 @@ router.post("/supabase-session", async (request, response, next) => {
 });
 
 router.get("/session", requireAdmin, (request: any, response) => {
-  response.json({ user: { email: request.admin.email, name: request.admin.name || config.admin.name, role: request.admin.role, workspaceId: request.admin.workspaceId, userId: request.admin.userId } });
+  response.json({ user: sessionProfile({ ...request.admin, name: request.admin.name || config.admin.name }) });
 });
 
 router.post("/session/refresh", requireSession, (request: any, response) => {
   const session = normalizeAdminSession(request.admin);
-  const token = issueSessionToken({
-    email: session.email,
-    name: session.name,
-    role: session.role,
-    workspaceId: session.workspaceId,
-    userId: session.userId
-  });
+  const token = issueSessionToken(sessionProfile(session));
   response.json({ token, expiresIn: 60 * 60 * 24 * 7 });
 });
 
@@ -335,13 +331,7 @@ router.get("/status", (request: any, response) => {
 
   return response.json({
     ok: true,
-    user: {
-      email: session.email,
-      name: session.name || config.admin.name,
-      role: session.role,
-      workspaceId: session.workspaceId,
-      userId: session.userId
-    }
+    user: sessionProfile({ ...session, name: session.name || config.admin.name })
   });
 });
 

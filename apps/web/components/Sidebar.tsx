@@ -4,66 +4,66 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArchiveRestore, BarChart3, Bot, Building2, CalendarDays, CircleHelp, ClipboardList, CreditCard, Inbox, KanbanSquare, LineChart, Megaphone, MessagesSquare, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
 import { useCredits } from "@/context/CreditsProvider";
-import { useAuth } from "@/context/AuthProvider";
+import { canUseModule, useAuth } from "@/context/AuthProvider";
 import { Logo } from "@/components/brand/Logo";
 
 const groups = [
   {
     label: "Principal",
     items: [
-      { href: "/ai", label: "NODERE AI", icon: Bot, tone: "green" },
-      { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: BarChart3, tone: "neutral" },
-      { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search, tone: "cyan" }
+      { href: "/ai", label: "NODERE AI", icon: Bot, tone: "green", module: "dashboard" },
+      { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: BarChart3, tone: "neutral", module: "dashboard" },
+      { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search, tone: "cyan", module: "buscas" }
     ]
   },
   {
     label: "CRM",
     items: [
-      { href: "/crm", label: "Funil comercial", icon: KanbanSquare, tone: "green" },
-      { href: "/companies", label: "Clientes salvos", icon: Building2, tone: "blue" },
-      { href: "/crm/briefings", label: "Briefings Comerciais", icon: ClipboardList, tone: "gold" },
-      { href: "/crm/communications", label: "Comunicações", icon: MessagesSquare, tone: "cyan" },
-      { href: "/crm/lifecycle", label: "Arquivo e Lixeira", icon: ArchiveRestore, tone: "neutral" },
-      { href: "/app/leads", label: "Leads", icon: Users, tone: "green" },
-      { href: "/calendario", label: "Atividades e Agenda", icon: CalendarDays, tone: "blue" }
+      { href: "/crm", label: "Funil comercial", icon: KanbanSquare, tone: "green", module: "crm" },
+      { href: "/companies", label: "Clientes salvos", icon: Building2, tone: "blue", module: "crm" },
+      { href: "/crm/briefings", label: "Briefings Comerciais", icon: ClipboardList, tone: "gold", module: "crm" },
+      { href: "/crm/communications", label: "Comunicações", icon: MessagesSquare, tone: "cyan", module: "crm" },
+      { href: "/crm/lifecycle", label: "Arquivo e Lixeira", icon: ArchiveRestore, tone: "neutral", module: "crm" },
+      { href: "/app/leads", label: "Leads", icon: Users, tone: "green", module: "crm" },
+      { href: "/calendario", label: "Atividades e Agenda", icon: CalendarDays, tone: "blue", module: "agenda" }
     ]
   },
   {
     label: "Comercial",
     items: [
-      { href: "/app/proposals", label: "Propostas e Contratos", icon: PackageOpen, tone: "purple" },
-      { href: "/catalog", label: "Produtos / Serviços", icon: PackageOpen, tone: "orange" }
+      { href: "/app/proposals", label: "Propostas e Contratos", icon: PackageOpen, tone: "purple", module: "crm" },
+      { href: "/catalog", label: "Produtos / Serviços", icon: PackageOpen, tone: "orange", module: "crm" }
     ]
   },
   {
     label: "Comunicação",
     items: [
-      { href: "/inbox", label: "Caixa de Entrada", icon: Inbox, tone: "blue" },
-      { href: "/automations", label: "Automações", icon: Workflow, tone: "orange" }
+      { href: "/inbox", label: "Caixa de Entrada", icon: Inbox, tone: "blue", module: "crm" },
+      { href: "/automations", label: "Automações", icon: Workflow, tone: "orange", module: "crm" }
     ]
   },
   {
     label: "Inteligência",
     items: [
-      { href: "/intelligence", label: "IA / Inteligência", icon: Zap, tone: "gold" },
-      { href: "/reports", label: "Relatórios", icon: LineChart, tone: "blue" }
+      { href: "/intelligence", label: "IA / Inteligência", icon: Zap, tone: "gold", module: "relatorios" },
+      { href: "/reports", label: "Relatórios", icon: LineChart, tone: "blue", module: "relatorios" }
     ]
   },
   {
     label: "Gestão",
     items: [
-      { href: "/operators", label: "Operadores", icon: Users, tone: "green", adminOnly: true },
-      { href: "/marketing", label: "Marketing", icon: Megaphone, tone: "orange" },
-      { href: "/billing", label: "Faturamento", icon: CreditCard, tone: "gold" },
-      { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: Settings, tone: "neutral" }
+      { href: "/operators", label: "Operadores", icon: Users, tone: "green", adminOnly: true, module: "admin" },
+      { href: "/marketing", label: "Marketing", icon: Megaphone, tone: "orange", module: "dashboard" },
+      { href: "/billing", label: "Faturamento", icon: CreditCard, tone: "gold", module: "admin" },
+      { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: Settings, tone: "neutral", module: "admin" }
     ]
   },
   {
     label: "Administração",
     items: [
-      { href: "/integrations", label: "Integrações", icon: Plug, tone: "cyan", adminOnly: true },
-      { href: "/admin", label: "Administrador / CMS", icon: ShieldCheck, tone: "red", adminOnly: true },
-      { href: "/manual", label: "Manual NODERE", icon: CircleHelp, tone: "blue" }
+      { href: "/integrations", label: "Integrações", icon: Plug, tone: "cyan", adminOnly: true, module: "integracoes" },
+      { href: "/admin", label: "Administrador / CMS", icon: ShieldCheck, tone: "red", adminOnly: true, module: "admin" },
+      { href: "/manual", label: "Manual NODERE", icon: CircleHelp, tone: "blue", module: "dashboard" }
     ]
   }
 ];
@@ -90,7 +90,7 @@ export function Sidebar() {
         {groups.map((group) => (
           <section key={group.label} className="space-y-1">
             <p className="px-3 pb-1 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{group.label}</p>
-            {group.items.filter((item) => !item.adminOnly || isAdmin).map((item) => {
+            {group.items.filter((item) => (!item.adminOnly || isAdmin) && canUseModule(user, item.module)).map((item) => {
               const href = isApp && item.appHref ? item.appHref : item.href;
               const active = pathname === href || pathname.startsWith(`${href}/`);
               return (

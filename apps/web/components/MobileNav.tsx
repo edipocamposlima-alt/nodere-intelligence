@@ -4,35 +4,35 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArchiveRestore, BarChart3, Bot, Building2, CalendarDays, CircleHelp, ClipboardList, CreditCard, Download, Inbox, KanbanSquare, LineChart, LogOut, Megaphone, Menu, MessagesSquare, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, X, Zap } from "lucide-react";
-import { useAuth } from "@/context/AuthProvider";
+import { canUseModule, useAuth } from "@/context/AuthProvider";
 
 const primaryItems = [
-  { href: "/ai", label: "NODERE AI", icon: Bot, tone: "green" },
-  { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: BarChart3, tone: "neutral" },
-  { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search, tone: "cyan" },
-  { href: "/crm", label: "CRM", icon: KanbanSquare, tone: "green" }
+  { href: "/ai", label: "NODERE AI", icon: Bot, tone: "green", module: "dashboard" },
+  { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: BarChart3, tone: "neutral", module: "dashboard" },
+  { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search, tone: "cyan", module: "buscas" },
+  { href: "/crm", label: "CRM", icon: KanbanSquare, tone: "green", module: "crm" }
 ];
 
 const drawerItems = [
-  { href: "/companies", label: "Clientes salvos", icon: Building2, tone: "blue" },
-  { href: "/crm/briefings", label: "Briefings Comerciais", icon: ClipboardList, tone: "gold" },
-  { href: "/crm/communications", label: "Comunicações", icon: MessagesSquare, tone: "cyan" },
-  { href: "/crm/lifecycle", label: "Arquivo e Lixeira", icon: ArchiveRestore, tone: "neutral" },
-  { href: "/calendario", label: "Atividades e Agenda", icon: CalendarDays, tone: "blue" },
-  { href: "/app/leads", label: "Leads", icon: Users, tone: "green" },
-  { href: "/app/proposals", label: "Propostas e Contratos", icon: PackageOpen, tone: "purple" },
-  { href: "/catalog", label: "Produtos / Serviços", icon: PackageOpen, tone: "orange" },
-  { href: "/inbox", label: "Caixa de Entrada", icon: Inbox, tone: "blue" },
-  { href: "/automations", label: "Automações", icon: Workflow, tone: "orange" },
-  { href: "/intelligence", label: "IA / Inteligência", icon: Zap, tone: "gold" },
-  { href: "/reports", label: "Relatórios", icon: LineChart, tone: "blue" },
-  { href: "/operators", label: "Operadores", icon: Users, tone: "green", adminOnly: true },
-  { href: "/marketing", label: "Marketing", icon: Megaphone, tone: "orange" },
-  { href: "/billing", label: "Faturamento", icon: CreditCard, tone: "gold" },
-  { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: Settings, tone: "neutral" },
-  { href: "/integrations", label: "Integrações", icon: Plug, tone: "cyan", adminOnly: true },
-  { href: "/admin", label: "Administrador / CMS", icon: ShieldCheck, tone: "red", adminOnly: true },
-  { href: "/manual", label: "Manual NODERE", icon: CircleHelp, tone: "blue" }
+  { href: "/companies", label: "Clientes salvos", icon: Building2, tone: "blue", module: "crm" },
+  { href: "/crm/briefings", label: "Briefings Comerciais", icon: ClipboardList, tone: "gold", module: "crm" },
+  { href: "/crm/communications", label: "Comunicações", icon: MessagesSquare, tone: "cyan", module: "crm" },
+  { href: "/crm/lifecycle", label: "Arquivo e Lixeira", icon: ArchiveRestore, tone: "neutral", module: "crm" },
+  { href: "/calendario", label: "Atividades e Agenda", icon: CalendarDays, tone: "blue", module: "agenda" },
+  { href: "/app/leads", label: "Leads", icon: Users, tone: "green", module: "crm" },
+  { href: "/app/proposals", label: "Propostas e Contratos", icon: PackageOpen, tone: "purple", module: "crm" },
+  { href: "/catalog", label: "Produtos / Serviços", icon: PackageOpen, tone: "orange", module: "crm" },
+  { href: "/inbox", label: "Caixa de Entrada", icon: Inbox, tone: "blue", module: "crm" },
+  { href: "/automations", label: "Automações", icon: Workflow, tone: "orange", module: "crm" },
+  { href: "/intelligence", label: "IA / Inteligência", icon: Zap, tone: "gold", module: "relatorios" },
+  { href: "/reports", label: "Relatórios", icon: LineChart, tone: "blue", module: "relatorios" },
+  { href: "/operators", label: "Operadores", icon: Users, tone: "green", adminOnly: true, module: "admin" },
+  { href: "/marketing", label: "Marketing", icon: Megaphone, tone: "orange", module: "dashboard" },
+  { href: "/billing", label: "Faturamento", icon: CreditCard, tone: "gold", module: "admin" },
+  { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: Settings, tone: "neutral", module: "admin" },
+  { href: "/integrations", label: "Integrações", icon: Plug, tone: "cyan", adminOnly: true, module: "integracoes" },
+  { href: "/admin", label: "Administrador / CMS", icon: ShieldCheck, tone: "red", adminOnly: true, module: "admin" },
+  { href: "/manual", label: "Manual NODERE", icon: CircleHelp, tone: "blue", module: "dashboard" }
 ];
 
 export function MobileNav() {
@@ -68,7 +68,7 @@ export function MobileNav() {
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-line bg-ink/95 px-1 py-1.5 shadow-[0_-14px_40px_rgba(0,0,0,0.35)] backdrop-blur lg:hidden">
-        {primaryItems.map((item) => (
+        {primaryItems.filter((item) => canUseModule(user, item.module)).map((item) => (
           <MobileLink key={item.href} item={item} isApp={isApp} activePathname={pathname} onClick={() => setOpen(false)} />
         ))}
         <button
@@ -110,7 +110,7 @@ export function MobileNav() {
                 </span>
                 Instalar app
               </button>
-              {drawerItems.filter((item) => !item.adminOnly || isAdmin).map((item) => (
+              {drawerItems.filter((item) => (!item.adminOnly || isAdmin) && canUseModule(user, item.module)).map((item) => (
                 <Link
                   key={`${item.label}-${isApp && item.appHref ? item.appHref : item.href}`}
                   href={isApp && item.appHref ? item.appHref : item.href}

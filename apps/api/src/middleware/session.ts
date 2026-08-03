@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { extractBearerToken, isBuiltInOwnerEmail, normalizeAdminSession, verifySessionToken } from "../services/adminSession.js";
+import { canAccessModule, extractBearerToken, isBuiltInOwnerEmail, normalizeAdminSession, verifySessionToken, WorkspaceModule } from "../services/adminSession.js";
 import { getSupabase, hasSupabase } from "../db/supabase.js";
 import { ensureSupabaseAuthUser } from "../services/userStore.js";
 
@@ -27,6 +27,10 @@ export async function attachSession(request: Request, _response: Response, next:
           role: user.role,
           workspaceId: user.workspaceId,
           userId: user.id,
+          customRoleId: user.customRoleId,
+          status: user.status,
+          visibilityLevel: user.visibilityLevel,
+          modulePermissions: user.modulePermissions,
           exp: Date.now() + 1000 * 60 * 30
         });
       }
@@ -72,5 +76,23 @@ export function requireWorkspaceMutation(...roles: Array<"owner" | "admin" | "op
   return (request: Request, response: Response, next: NextFunction) => {
     if (["GET", "HEAD", "OPTIONS"].includes(request.method.toUpperCase())) return next();
     return authorize(request, response, next);
+  };
+}
+
+export function requireModulePermission(module: WorkspaceModule, access: "read" | "write" = "read") {
+  return (request: Request, response: Response, next: NextFunction) => {
+    const session = (request as any).session;
+    if (!session) return response.status(401).json({ error: "Unauthorized", message: "Login obrigatório." });
+    if (!canAccessModule(session, module, access)) {
+      return response.status(403).json({ error: "Forbidden", code: "MODULE_PERMISSION_DENIED", message: "Seu perfil não possui acesso a este módulo." });
+    }
+    return next();
+  };
+}
+
+export function requireModuleAccess(module: WorkspaceModule) {
+  return (request: Request, response: Response, next: NextFunction) => {
+    const access = ["GET", "HEAD", "OPTIONS"].includes(request.method.toUpperCase()) ? "read" : "write";
+    return requireModulePermission(module, access)(request, response, next);
   };
 }

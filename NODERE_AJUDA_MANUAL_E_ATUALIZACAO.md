@@ -65,3 +65,13 @@ O saldo exibido vem da carteira transacional. Antes de gerar, o backend reserva 
 A chave OpenAI é central do ambiente e fica somente no backend. Configurações do workspace não aceitam mais openai_key. O usuário nunca precisa de chave por modelo.
 
 Estado operacional em 2026-07-22: código, testes, migration e rollback estão preparados no branch codex/nodere-ai-first-v3; a migration e o deploy V3 não foram aplicados à produção. Não use o novo chat em produção até a aplicação controlada do schema, validação do ledger e smoke autenticado.
+
+## Retomada V6 — atualização de 2026-08-01
+
+- Login: contas do Supabase Auth e contas protegidas da plataforma convergem para a mesma sessão; nenhuma senha ou token é persistido no código.
+- Permissões: menu desktop, menu mobile e API usam a mesma matriz por módulo e nível de leitura/escrita.
+- Perfis: Owner/Admin têm acesso integral; Operador respeita os módulos liberados; Viewer é somente leitura; Restricted é bloqueado.
+- Comunicações: anexos de briefing e arquivos da empresa são resolvidos no backend, limitados a 10 itens/20 MB e enviados pelo SMTP. Arquivo local é salvo primeiro na área protegida da empresa.
+- Segurança: anexos externos, tipos não permitidos, caminhos de outro workspace e referências inexistentes bloqueiam todo o envio.
+- Banco: a migração e o rollback V6 estão versionados; a aplicação em produção depende da liberação do conector Supabase.
+- Qualidade local: 71 testes da API, builds de API/web e 25 verificações mobile/PWA aprovados nesta retomada.

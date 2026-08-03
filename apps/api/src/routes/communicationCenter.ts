@@ -9,6 +9,20 @@ import { createSmtpTransport } from "../services/emailSender.js";
 
 const router = Router();
 const canEdit = requireWorkspaceRole("owner", "admin", "operator");
+const MAX_ATTACHMENT_COUNT = 10;
+const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+const allowedEmailAttachmentTypes = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/csv",
+  "text/plain",
+  "image/jpeg",
+  "image/png",
+  "image/webp"
+]);
 
 const channelSchema = z.enum(["email", "whatsapp", "internal"]);
 const templateSchema = z.object({
@@ -31,7 +45,7 @@ const composeSchema = z.object({
   subject: z.string().max(240).optional(),
   bodyText: z.string().max(50_000).optional(),
   bodyHtml: z.string().max(100_000).optional(),
-  attachmentRefs: z.array(z.string().min(1)).max(20).optional(),
+  attachmentRefs: z.array(z.string().min(1)).max(MAX_ATTACHMENT_COUNT).optional(),
   consentConfirmed: z.boolean(),
   idempotencyKey: z.string().min(8).max(180)
 }).superRefine((value, context) => {
@@ -54,6 +68,38 @@ router.get("/status", async (req, res, next) => {
       gmail: persisted.get("gmail") ?? { provider: "gmail", status: "not_configured" },
       whatsapp: persisted.get("whatsapp") ?? { provider: "whatsapp", status: "assisted", account_label: "Abertura assistida via wa.me" }
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/attachments", async (req, res, next) => {
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    const companyId = String(req.query.companyId || "").trim();
+    const sb = requireSupabase();
+    let companyFilesQuery = sb.from("company_files").select("id,company_id,filename,file_type,file_size,created_at").eq("workspace_id", workspaceId).order("created_at", { ascending: false }).limit(100);
+    let briefingsQuery = sb.from("commercial_briefings").select("id,company_id,code,title").eq("workspace_id", workspaceId).is("archived_at", null).limit(100);
+    if (companyId) {
+      companyFilesQuery = companyFilesQuery.eq("company_id", companyId);
+      briefingsQuery = briefingsQuery.eq("company_id", companyId);
+    }
+    const [companyFilesResult, briefingsResult] = await Promise.all([companyFilesQuery, briefingsQuery]);
+    if (companyFilesResult.error) throw companyFilesResult.error;
+    if (briefingsResult.error) throw briefingsResult.error;
+    const briefings = briefingsResult.data ?? [];
+    const briefingIds = briefings.map((item) => item.id);
+    const briefingLabel = new Map(briefings.map((item) => [item.id, `${item.code || "Briefing"} · ${item.title || "Sem título"}`]));
+    let briefingAttachments: any[] = [];
+    if (briefingIds.length) {
+      const result = await sb.from("commercial_briefing_attachments").select("id,briefing_id,original_name,mime_type,size_bytes,created_at").eq("workspace_id", workspaceId).in("briefing_id", briefingIds).is("deleted_at", null).order("created_at", { ascending: false }).limit(100);
+      if (result.error) throw result.error;
+      briefingAttachments = result.data ?? [];
+    }
+    res.json([
+      ...(companyFilesResult.data ?? []).map((file) => ({ ref: `company-file:${file.id}`, source: "company-file", companyId: file.company_id, name: file.filename, mimeType: file.file_type, sizeBytes: Number(file.file_size || 0), context: "Arquivo da empresa" })),
+      ...briefingAttachments.map((file) => ({ ref: `briefing:${file.id}`, source: "briefing", briefingId: file.briefing_id, name: file.original_name, mimeType: file.mime_type, sizeBytes: Number(file.size_bytes || 0), context: briefingLabel.get(file.briefing_id) || "Briefing comercial" }))
+    ]);
   } catch (error) {
     next(error);
   }
@@ -272,6 +318,7 @@ router.post("/outbox/:id/approve", canEdit, async (req, res, next) => {
     }
     const transport = createSmtpTransport();
     if (!transport) return res.status(409).json({ code: "EMAIL_PROVIDER_NOT_CONFIGURED", message: "SMTP/Gmail ainda não está configurado. O rascunho foi preservado." });
+    const attachments = await resolveEmailAttachments(workspaceId, arrayOfStrings(payload.attachmentRefs));
     const { data: processing, error: processingError } = await requireSupabase().from("communication_outbox").update({ status: "processing", approved_by: actor.id, approved_at: new Date().toISOString(), attempt_count: Number(item.attempt_count || 0) + 1 }).eq("workspace_id", workspaceId).eq("id", item.id).eq("status", item.status).select("*").maybeSingle();
     if (processingError) throw processingError;
     if (!processing) return res.status(409).json({ message: "A mensagem já foi processada em outra sessão." });
@@ -281,7 +328,8 @@ router.post("/outbox/:id/approve", canEdit, async (req, res, next) => {
         to: String(payload.recipient || ""),
         subject: String(payload.subject || "Mensagem NODERE"),
         text: String(payload.bodyText || ""),
-        html: sanitizeCommunicationHtml(String(payload.bodyHtml || "")) || undefined
+        html: sanitizeCommunicationHtml(String(payload.bodyHtml || "")) || undefined,
+        attachments
       });
       const providerMessageId = String(sent.messageId || "");
       const { data, error: updateError } = await requireSupabase().from("communication_outbox").update({ status: "sent", provider_message_id: providerMessageId, last_error: null, next_attempt_at: null }).eq("workspace_id", workspaceId).eq("id", item.id).select("*").single();
@@ -411,7 +459,54 @@ function asRecord(value: unknown): Record<string, any> {
 }
 
 function arrayOfStrings(value: unknown) {
-  return Array.isArray(value) ? value.map(String).filter(Boolean).slice(0, 20) : [];
+  return Array.isArray(value) ? value.map(String).filter(Boolean).slice(0, MAX_ATTACHMENT_COUNT) : [];
+}
+
+export function parseAttachmentRef(value: string) {
+  const match = /^(briefing|company-file):([a-zA-Z0-9-]{8,})$/.exec(String(value || "").trim());
+  return match ? { source: match[1] as "briefing" | "company-file", id: match[2] } : null;
+}
+
+export async function resolveEmailAttachments(workspaceId: string, refs: string[]) {
+  const uniqueRefs = [...new Set(refs)];
+  if (uniqueRefs.length > MAX_ATTACHMENT_COUNT) throw httpError(422, `Selecione no máximo ${MAX_ATTACHMENT_COUNT} anexos.`);
+  const parsed = uniqueRefs.map(parseAttachmentRef);
+  if (parsed.some((item) => !item)) throw httpError(422, "Referência de anexo inválida. Selecione novamente o arquivo no NODERE.");
+  if (!parsed.length) return [];
+  const sb = requireSupabase();
+  const briefingIds = parsed.filter((item) => item?.source === "briefing").map((item) => item!.id);
+  const companyFileIds = parsed.filter((item) => item?.source === "company-file").map((item) => item!.id);
+  const resolved = new Map<string, { ref: string; bucket: string; path: string; filename: string; mimeType: string; expectedSize: number }>();
+  if (briefingIds.length) {
+    const result = await sb.from("commercial_briefing_attachments").select("id,storage_bucket,storage_path,original_name,mime_type,size_bytes").eq("workspace_id", workspaceId).in("id", briefingIds).is("deleted_at", null);
+    if (result.error) throw result.error;
+    for (const item of result.data ?? []) resolved.set(`briefing:${item.id}`, { ref: `briefing:${item.id}`, bucket: item.storage_bucket, path: item.storage_path, filename: item.original_name, mimeType: item.mime_type, expectedSize: Number(item.size_bytes || 0) });
+  }
+  if (companyFileIds.length) {
+    const result = await sb.from("company_files").select("id,storage_path,filename,file_type,file_size").eq("workspace_id", workspaceId).in("id", companyFileIds);
+    if (result.error) throw result.error;
+    for (const item of result.data ?? []) resolved.set(`company-file:${item.id}`, { ref: `company-file:${item.id}`, bucket: "client-files", path: item.storage_path, filename: item.filename, mimeType: item.file_type || "application/octet-stream", expectedSize: Number(item.file_size || 0) });
+  }
+  if (resolved.size !== uniqueRefs.length) throw httpError(404, "Um ou mais anexos não existem neste workspace. O envio foi bloqueado.");
+  let totalBytes = 0;
+  const attachments = [];
+  for (const ref of uniqueRefs) {
+    const item = resolved.get(ref)!;
+    if (!item.path.startsWith(`${workspaceId}/`)) throw httpError(403, "O caminho de um anexo não pertence a este workspace.");
+    if (!allowedEmailAttachmentTypes.has(item.mimeType)) throw httpError(415, `O tipo ${item.mimeType} não é permitido em e-mails.`);
+    if (item.expectedSize > MAX_ATTACHMENT_BYTES) throw httpError(413, "Um anexo excede o limite total de 20 MB.");
+    const downloaded = await sb.storage.from(item.bucket).download(item.path);
+    if (downloaded.error || !downloaded.data) throw httpError(502, `Não foi possível carregar o anexo ${safeAttachmentName(item.filename)}.`);
+    const content = Buffer.from(await downloaded.data.arrayBuffer());
+    totalBytes += content.length;
+    if (totalBytes > MAX_ATTACHMENT_BYTES) throw httpError(413, "Os anexos excedem o limite total de 20 MB.");
+    attachments.push({ filename: safeAttachmentName(item.filename), content, contentType: item.mimeType });
+  }
+  return attachments;
+}
+
+function safeAttachmentName(value: string) {
+  return String(value || "anexo").replace(/[\r\n\"\\/]+/g, "-").replace(/[^\p{L}\p{N}._() -]/gu, "-").slice(0, 180) || "anexo";
 }
 
 function httpError(status: number, message: string) {

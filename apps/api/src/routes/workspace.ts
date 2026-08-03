@@ -24,7 +24,11 @@ router.get("/me", requireWorkspaceSession, async (req, res, next) => {
         email: session.email,
         name: session.name || member?.name || session.email,
         role: session.role,
-        workspaceId
+        workspaceId,
+        customRoleId: session.customRoleId ?? member?.customRoleId ?? null,
+        status: session.status || member?.status || "active",
+        visibilityLevel: session.visibilityLevel || member?.visibilityLevel || (session.role === "viewer" ? "read" : "read_edit"),
+        modulePermissions: session.modulePermissions || member?.modulePermissions || {}
       },
       workspace: workspace ?? {
         id: workspaceId,

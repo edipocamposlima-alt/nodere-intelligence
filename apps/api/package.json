@@ -17,6 +17,7 @@
     "test:import-security": "tsx --test src/tests/import-security.test.ts",
     "test:security-hardening": "tsx --test src/tests/security-hardening.test.ts",
     "test:v5": "tsx --test src/tests/v5-commercial.test.ts",
+    "test:v6": "tsx --test src/tests/v6-homologation.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "npm run typecheck"
   },
@@ -59,6 +60,7 @@
   },
   "overrides": {
     "brace-expansion@>=3.0.0": "^5.0.7",
+    "fast-uri": "^3.1.5",
     "exceljs": {
       "uuid": "^11.1.1"
     }

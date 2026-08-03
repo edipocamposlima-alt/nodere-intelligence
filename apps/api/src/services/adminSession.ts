@@ -2,6 +2,8 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { config } from "../config.js";
 
 export type SessionRole = "owner" | "admin" | "operator" | "viewer";
+export type WorkspaceModule = "dashboard" | "buscas" | "crm" | "agenda" | "relatorios" | "integracoes" | "admin";
+export type ModulePermissionValue = boolean | "none" | "read" | "write" | "full";
 
 export interface AdminSession {
   email: string;
@@ -9,6 +11,10 @@ export interface AdminSession {
   role: SessionRole;
   workspaceId: string;
   userId?: string;
+  customRoleId?: string | null;
+  status?: string;
+  visibilityLevel?: string;
+  modulePermissions?: Record<string, ModulePermissionValue | unknown>;
   exp: number;
 }
 
@@ -32,8 +38,27 @@ export function normalizeAdminSession(data: AdminSession): AdminSession {
     name: isBuiltInOwner ? BUILTIN_OWNER_NAME : data.name,
     role: isBuiltInOwner ? "owner" : normalizeRole(data.role),
     workspaceId: data.workspaceId || "default",
-    userId: isBuiltInOwner ? data.userId || "admin-default" : data.userId
+    userId: isBuiltInOwner ? data.userId || "admin-default" : data.userId,
+    customRoleId: data.customRoleId ?? null,
+    status: isBuiltInOwner ? "active" : data.status || "active",
+    visibilityLevel: isBuiltInOwner ? "full" : data.visibilityLevel || (data.role === "viewer" ? "read" : "read_edit"),
+    modulePermissions: isBuiltInOwner ? {} : data.modulePermissions || {}
   };
+}
+
+export function canAccessModule(session: Pick<AdminSession, "role" | "modulePermissions" | "visibilityLevel" | "status">, module: WorkspaceModule, access: "read" | "write" = "read") {
+  if (session.status === "inactive" || session.status === "restricted") return false;
+  if (session.role === "owner" || session.role === "admin") return true;
+  if (access === "write" && session.role === "viewer") return false;
+  const configured = session.modulePermissions?.[module];
+  if (configured !== undefined) {
+    if (configured === false || configured === "none") return false;
+    if (access === "write") return configured === true || configured === "write" || configured === "full";
+    return configured === true || configured === "read" || configured === "write" || configured === "full";
+  }
+  if (module === "admin" || module === "integracoes") return false;
+  if (access === "write") return session.role === "operator" && session.visibilityLevel !== "read";
+  return true;
 }
 
 function sign(payload: string) {

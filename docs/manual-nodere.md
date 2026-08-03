@@ -83,7 +83,8 @@ Abra **CRM > Comunicações** ou use o atalho contextual do briefing. Escolha um
 - Gmail aparece como pendente até OAuth e teste controlado estarem válidos.
 - WhatsApp assistido abre `wa.me`; isso não equivale a envio, entrega ou leitura pela API.
 - Histórico, tentativas e falhas ficam na outbox/timeline.
-- Anexos de comunicação ainda não são transmitidos pelo adaptador; não dependa deles no envio.
+- E-mails podem incluir até 10 anexos e 20 MB no total. A Central lista documentos do briefing e arquivos da empresa; também aceita arquivo local, que primeiro é salvo no armazenamento protegido da empresa.
+- O backend resolve cada anexo pelo workspace, bloqueia referência externa ou inexistente, limita os tipos a documentos/imagens comerciais e só então entrega o conteúdo ao SMTP. Não envie executáveis.
 
 O resumo do funil usa a ordem canônica acima. A conversão é calculada por progressão acumulada e fica limitada a 100%, evitando percentuais artificiais quando etapas estão vazias ou foram criadas em ordem diferente.
 
@@ -396,6 +397,13 @@ Foram revisados autenticação, workspace, CRM, dashboard, importação, depend�
 - Créditos: carteira e ledger transacionais com reserva, captura, liberação, grant e consumo operacional.
 - Chaves: uma credencial por provedor no backend; nenhuma chave por modelo e nenhuma captura de chave no frontend.
 - PWA: manifests iniciam em /ai?source=pwa; páginas autenticadas não entram no cache offline.
+
+## Homologação V6 — login e permissões
+
+- O login tenta Supabase Auth e, quando aquela conta ainda não existe no Auth, usa o cadastro protegido da própria plataforma. Nos dois casos, o backend emite a mesma sessão NODERE vinculada ao workspace.
+- Owner e Admin têm acesso integral. Operador pode ler e editar os módulos liberados. Viewer usa leitura. Um perfil `restricted` não inicia sessão.
+- As permissões de `dashboard`, `buscas`, `crm`, `agenda`, `relatorios`, `integracoes` e `admin` são aplicadas no menu desktop, no menu mobile e novamente na API. Ocultar o item no menu nunca substitui a autorização do backend.
+- A migração `20260802_nodere_v6_homologation.sql` adiciona cargo personalizado, estado, último acesso, nível de visibilidade e permissões por módulo ao perfil. O rollback exige exportação dos usuários antes de remover essas colunas.
 
 ### Operação segura
 

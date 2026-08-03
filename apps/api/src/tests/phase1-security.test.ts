@@ -5,6 +5,7 @@ import test from "node:test";
 import type { NextFunction, Request, Response } from "express";
 import {
   getRequestWorkspaceId,
+  requireModuleAccess,
   requireWorkspaceMutation,
   requireWorkspaceRole
 } from "../middleware/session.js";
@@ -85,6 +86,17 @@ test("workspace vem exclusivamente da sessao", () => {
   assert.equal(getRequestWorkspaceId(req), "workspace-test");
 });
 
+test("permissão por módulo bloqueia leitura e escrita conforme o perfil", () => {
+  const denied = request("operator", "GET") as any;
+  denied.session.modulePermissions = { crm: false };
+  assert.equal(run(requireModuleAccess("crm"), denied).res.statusCode, 403);
+  const readOnly = request("operator", "POST") as any;
+  readOnly.session.modulePermissions = { crm: "read" };
+  assert.equal(run(requireModuleAccess("crm"), readOnly).res.statusCode, 403);
+  readOnly.method = "GET";
+  assert.equal(run(requireModuleAccess("crm"), readOnly).nextCalled, true);
+});
+
 test("token de sessao assinado preserva perfil e workspace", () => {
   const token = issueSessionToken({
     email: "admin@nodere.test",
@@ -106,7 +118,7 @@ test("routers criticos possuem guardas e montagem protegida", () => {
   }
   const server = readFileSync(join(process.cwd(), "src", "server.ts"), "utf8");
   assert.match(server, /\/api\/audit", requireWorkspaceRole\("owner", "admin"\), auditRouter/);
-  assert.match(server, /\/api\/companies", requireWorkspaceSession, companiesRouter/);
+  assert.match(server, /\/api\/companies", requireWorkspaceSession, requireModuleAccess\("crm"\), companiesRouter/);
   assert.match(server, /app\.get\("\/api\/settings", requireWorkspaceSession/);
   assert.match(server, /app\.get\("\/api\/communications", requireWorkspaceSession/);
   assert.match(server, /app\.get\("\/api\/contracts", requireWorkspaceSession/);

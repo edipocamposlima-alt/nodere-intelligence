@@ -9,6 +9,10 @@ type AuthUser = {
   name?: string;
   avatar_url?: string;
   role?: "owner" | "admin" | "operator" | "viewer";
+  customRoleId?: string | null;
+  status?: string;
+  visibilityLevel?: string;
+  modulePermissions?: Record<string, boolean | "none" | "read" | "write" | "full" | unknown>;
 };
 
 type AuthWorkspace = {
@@ -121,4 +125,19 @@ export function useAuth() {
     throw new Error("useAuth precisa estar dentro de AuthProvider.");
   }
   return context;
+}
+
+export function canUseModule(user: AuthUser | null | undefined, module: string, access: "read" | "write" = "read") {
+  if (!user || user.status === "inactive" || user.status === "restricted") return false;
+  if (user.role === "owner" || user.role === "admin") return true;
+  if (access === "write" && user.role === "viewer") return false;
+  const configured = user.modulePermissions?.[module];
+  if (configured !== undefined) {
+    if (configured === false || configured === "none") return false;
+    if (access === "write") return configured === true || configured === "write" || configured === "full";
+    return configured === true || configured === "read" || configured === "write" || configured === "full";
+  }
+  if (module === "admin" || module === "integracoes") return false;
+  if (access === "write") return user.role === "operator" && user.visibilityLevel !== "read";
+  return true;
 }

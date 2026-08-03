@@ -54,6 +54,26 @@ function isUserSchemaMissing(error: unknown) {
     text.includes("42P01");
 }
 
+function isOptionalUserProfileColumnMissing(error: unknown) {
+  const text = error instanceof Error ? error.message : JSON.stringify(error);
+  return ["custom_role_id", "status", "last_active_at", "visibility_level", "module_permissions"].some((column) => text.includes(column)) || text.includes("42703");
+}
+
+function legacyUserRow(row: PlatformUserRow) {
+  return {
+    id: row.id,
+    workspace_id: row.workspace_id,
+    name: row.name,
+    email: row.email,
+    role: row.role,
+    active: row.active,
+    password_hash: row.password_hash,
+    ...(row.auth_user_id ? { auth_user_id: row.auth_user_id } : {}),
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  };
+}
+
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
@@ -238,7 +258,11 @@ export async function ensureDefaultAdminUser() {
     if (error) throw error;
     if (!data) {
       const { error: insertError } = await sb.from("nodere_platform_users").insert(fallback);
-      if (insertError) throw insertError;
+      if (insertError) {
+        if (!isOptionalUserProfileColumnMissing(insertError)) throw insertError;
+        const { error: legacyInsertError } = await sb.from("nodere_platform_users").insert(legacyUserRow(fallback));
+        if (legacyInsertError) throw legacyInsertError;
+      }
     } else if (isBuiltInOwner(email)) {
       const { error: updateError } = await sb.from("nodere_platform_users").update({
         name: BUILTIN_OWNER_NAME,
@@ -248,7 +272,16 @@ export async function ensureDefaultAdminUser() {
         visibility_level: "full",
         updated_at: now
       }).eq("id", data.id);
-      if (updateError) throw updateError;
+      if (updateError) {
+        if (!isOptionalUserProfileColumnMissing(updateError)) throw updateError;
+        const { error: legacyUpdateError } = await sb.from("nodere_platform_users").update({
+          name: BUILTIN_OWNER_NAME,
+          role: "owner",
+          active: true,
+          updated_at: now
+        }).eq("id", data.id);
+        if (legacyUpdateError) throw legacyUpdateError;
+      }
     }
   } catch (error) {
     if (isUserSchemaMissing(error)) {
@@ -326,7 +359,7 @@ export async function listWorkspaceUsers(workspaceId: string) {
 export async function createWorkspaceUser(workspaceId: string, input: { name: string; email: string; password: string; role: SessionRole; customRoleId?: string | null; status?: string; visibilityLevel?: string; modulePermissions?: Record<string, unknown> }) {
   await ensureDefaultAdminUser();
   if (hasSupabase() && !userSchemaAvailable && process.env.NODE_ENV === "production") {
-    const error = new Error("Schema de usuários não aplicado no Supabase. Execute apps/api/src/db/schema.sql antes de criar usuários.") as Error & { status?: number; code?: string };
+    const error = new Error("Schema principal de usuários não aplicado no Supabase.") as Error & { status?: number; code?: string };
     error.status = 503;
     error.code = "USER_SCHEMA_UNAVAILABLE";
     throw error;
@@ -352,7 +385,10 @@ export async function createWorkspaceUser(workspaceId: string, input: { name: st
     const sb = getSupabase()!;
     const { error } = await sb.from("nodere_platform_users").insert(row);
     if (error) {
-      if (isUserSchemaMissing(error)) {
+      if (isOptionalUserProfileColumnMissing(error)) {
+        const { error: legacyError } = await sb.from("nodere_platform_users").insert(legacyUserRow(row));
+        if (legacyError) throw legacyError;
+      } else if (isUserSchemaMissing(error)) {
         userSchemaAvailable = false;
       } else {
         throw error;
@@ -519,7 +555,7 @@ export async function ensureSupabaseAuthUser(input: { authUserId: string; email:
     const sb = getSupabase()!;
     const { data, error } = await sb
       .from("nodere_platform_users")
-      .select("id,workspace_id,name,email,role,active,created_at,updated_at,auth_user_id")
+      .select("*")
       .ilike("email", email)
       .eq("active", true)
       .maybeSingle();
