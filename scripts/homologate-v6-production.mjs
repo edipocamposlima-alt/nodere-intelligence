@@ -625,14 +625,22 @@ async function validateDashboardAndReports(sessions, companyId) {
 
 async function validateAi(sessions) {
   const health = await expectApi("OpenAI health responde", "/api/openai/health", sessions.owner.token, {}, [200]);
-  record("OpenAI configurada no backend", health.body?.openaiConfigured === true && health.body?.status?.configured === true, JSON.stringify(health.body?.status || {}));
+  record(
+    "OpenAI configurada no backend",
+    health.body?.openaiConfigured === true && (health.body?.status === "ok" || health.body?.status?.configured === true),
+    JSON.stringify(health.body?.status || {})
+  );
   const providerHealth = await expectApi("health dos provedores de IA", "/api/health/providers", "", {}, [200]);
-  record("provedor OpenAI operacional", providerHealth.body?.providers?.openai?.configured === true, JSON.stringify(providerHealth.body?.providers?.openai || {}));
+  record(
+    "provedor OpenAI operacional",
+    providerHealth.body?.providers?.openai === "ok" || providerHealth.body?.providers?.openai?.configured === true,
+    JSON.stringify(providerHealth.body?.providers?.openai || {})
+  );
   const registry = await expectApi("registry AI Gateway disponível", "/api/ai/registry", sessions.owner.token, {}, [200]);
   const efficient = registry.body?.models?.find((model) => model.id === "openai:gpt-5.6-luna");
   record("modelo eficiente habilitado", Boolean(efficient), efficient?.label || "ausente");
   const walletBefore = await expectApi("carteira de créditos disponível", "/api/ai/wallet", sessions.owner.token, {}, [200]);
-  const requestId = `${runId}:real-ai-controlled`;
+  const requestId = `${runId}:real-ai-controlled:${randomUUID()}`;
   const chat = await api("/api/ai/chat", sessions.owner.token, {
     method: "POST",
     body: jsonBody({
@@ -644,8 +652,12 @@ async function validateAi(sessions) {
     })
   });
   const streamText = Buffer.isBuffer(chat.body) ? chat.body.toString("utf8") : JSON.stringify(chat.body);
-  record("teste real e controlado de IA", chat.response.ok && streamText.length > 20 && /OK|V6/i.test(streamText), `HTTP ${chat.response.status}, ${streamText.length} bytes`);
-  if (!chat.response.ok) throw new Error(`Teste real de IA falhou: ${streamText.slice(0, 500)}`);
+  const aiSucceeded = chat.response.ok
+    && streamText.length > 20
+    && /OK|V6/i.test(streamText)
+    && !/"type":"error"/i.test(streamText);
+  record("teste real e controlado de IA", aiSucceeded, `HTTP ${chat.response.status}, ${streamText.length} bytes`);
+  if (!aiSucceeded) throw new Error(`Teste real de IA falhou: ${streamText.slice(0, 500)}`);
 
   if (HTTP_ONLY) {
     await new Promise((resolve) => setTimeout(resolve, 1500));

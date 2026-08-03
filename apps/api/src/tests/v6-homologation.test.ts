@@ -107,3 +107,9 @@ test("atualização parcial não substitui sinais internos por updatedAt", () =>
   const store = source("apps/api/src/services/companyStore.ts");
   assert.match(store, /\["notes",\s*"updatedAt",\s*"workspaceId"\]\.includes\(key\)/);
 });
+
+test("ferramentas do AI Gateway mantêm validação Zod sem schema estrito incompatível", () => {
+  const tools = source("apps/api/src/services/aiTools.ts");
+  assert.doesNotMatch(tools, /strict:\s*true/);
+  assert.ok((tools.match(/strict:\s*false/g) || []).length >= 20);
+});

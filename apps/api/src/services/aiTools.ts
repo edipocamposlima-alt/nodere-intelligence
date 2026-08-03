@@ -39,7 +39,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
         status: z.string().trim().max(60).optional(),
         limit: z.number().int().min(1).max(50).default(20)
       }),
-      strict: true,
+      strict: false,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "list_companies", "read", false, input, async () => {
         const sb = requireAiDatabase();
         let query = sb.from("nodere_companies")
@@ -61,7 +61,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
     tools.get_company = tool({
       description: "Obtém os dados verificáveis de uma empresa do CRM pelo ID, sempre isolada no workspace atual.",
       inputSchema: z.object({ companyId: z.string().min(1).max(120) }),
-      strict: true,
+      strict: false,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "get_company", "read", false, input, async () => {
         const sb = requireAiDatabase();
         const { data, error } = await sb.from("nodere_companies")
@@ -85,7 +85,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
         query: z.string().max(120).optional(),
         limit: z.number().int().min(1).max(50).default(20)
       }),
-      strict: true,
+      strict: false,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "briefing_list", "read", false, input, async () => {
         let query = requireAiDatabase().from("commercial_briefings")
           .select("id,code,company_id,title,status,priority,completion_percent,current_version,next_action,next_action_at,updated_at")
@@ -106,7 +106,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
     tools.briefing_get = tool({
       description: "Abre um briefing comercial pelo ID e retorna seu snapshot atual, sem inventar respostas ausentes.",
       inputSchema: z.object({ briefingId: z.string().min(1).max(120) }),
-      strict: true,
+      strict: false,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "briefing_get", "read", false, input, async () => {
         const { data, error } = await requireAiDatabase().from("commercial_briefings")
           .select("*").eq("workspace_id", context.workspaceId).eq("id", input.briefingId).maybeSingle();
@@ -121,7 +121,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
     tools.briefing_compare = tool({
       description: "Compara campos mapeados do briefing com a ficha atual da empresa e lista conflitos que exigem decisão humana.",
       inputSchema: z.object({ briefingId: z.string().min(1).max(120) }),
-      strict: true,
+      strict: false,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "briefing_compare", "read", false, input, async () => {
         const sb = requireAiDatabase();
         const briefing = await sb.from("commercial_briefings").select("id,company_id,primary_contact_id,answers").eq("workspace_id", context.workspaceId).eq("id", input.briefingId).maybeSingle();
@@ -156,7 +156,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
         priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
         answers: z.record(z.string(), z.unknown()).optional()
       }),
-      strict: true,
+      strict: false,
       needsApproval: true,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "briefing_create", "write", true, input, async () => {
         const sb = requireAiDatabase();
@@ -185,7 +185,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
         answers: z.record(z.string(), z.unknown()),
         reason: z.string().min(3).max(500)
       }),
-      strict: true,
+      strict: false,
       needsApproval: true,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "briefing_update", "write", true, input, async () => {
         const sb = requireAiDatabase();
@@ -205,7 +205,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
     tools.briefing_complete = tool({
       description: "Conclui um briefing quando todos os campos obrigatórios estão preenchidos. Exige aprovação humana.",
       inputSchema: z.object({ briefingId: z.string().min(1).max(120), reason: z.string().min(3).max(500) }),
-      strict: true,
+      strict: false,
       needsApproval: true,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "briefing_complete", "write", true, input, async () => {
         const sb = requireAiDatabase();
@@ -226,7 +226,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
     tools.briefing_create_version = tool({
       description: "Cria uma nova versão editável preservando o snapshot atual do briefing. Exige aprovação humana.",
       inputSchema: z.object({ briefingId: z.string().min(1).max(120), reason: z.string().min(3).max(500) }),
-      strict: true,
+      strict: false,
       needsApproval: true,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "briefing_create_version", "write", true, input, async () => {
         const sb = requireAiDatabase();
@@ -249,7 +249,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
     tools[action] = tool({
       description: action === "briefing_archive" ? "Arquiva um briefing sem apagá-lo. Exige aprovação humana." : "Restaura um briefing arquivado como rascunho. Exige aprovação humana.",
       inputSchema: z.object({ briefingId: z.string().min(1).max(120), reason: z.string().min(3).max(500) }),
-      strict: true,
+      strict: false,
       needsApproval: true,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, action, "write", true, input, async () => {
         const archived = action === "briefing_archive";
@@ -269,7 +269,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
     tools.company_dependencies = tool({
       description: "Mostra o impacto e as dependências antes de arquivar, mover à lixeira ou excluir uma empresa.",
       inputSchema: z.object({ companyId: z.string().min(1).max(120) }),
-      strict: true,
+      strict: false,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "company_dependencies", "read", false, input, async () => {
         const dependencies = await aiCompanyDependencies(context.workspaceId, input.companyId);
         return { companyId: input.companyId, dependencies, total: Object.values(dependencies).reduce((sum, value) => sum + value, 0) };
@@ -282,7 +282,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
     tools[action] = tool({
       description: action === "company_restore" ? "Restaura uma empresa arquivada ou na lixeira. Exige aprovação." : action === "company_trash" ? "Move uma empresa à lixeira recuperável por 30 dias. Exige aprovação e mostra impacto." : "Arquiva uma empresa sem apagar dependências. Exige aprovação.",
       inputSchema: z.object({ companyId: z.string().min(1).max(120), reason: z.string().min(3).max(500) }),
-      strict: true,
+      strict: false,
       needsApproval: true,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, action, "write", true, input, async () => {
         const sb = requireAiDatabase();
@@ -309,7 +309,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
     tools.company_purge = tool({
       description: "Exclui definitivamente uma empresa após retenção, confirmação nominal, ausência de retenção legal e zero dependências. Ação irreversível.",
       inputSchema: z.object({ companyId: z.string().min(1).max(120), confirmation: z.string().min(1).max(180), reason: z.string().min(10).max(500) }),
-      strict: true,
+      strict: false,
       needsApproval: true,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "company_purge", "destructive", true, input, async () => {
         const sb = requireAiDatabase();
@@ -335,7 +335,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
     tools.briefing_generate_pdf = tool({
       description: "Prepara o link autenticado para gerar e baixar o PDF completo de um briefing.",
       inputSchema: z.object({ briefingId: z.string().min(1).max(120) }),
-      strict: true,
+      strict: false,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "briefing_generate_pdf", "read", false, input, async () => {
         const { data, error } = await requireAiDatabase().from("commercial_briefings").select("id,code,title").eq("workspace_id", context.workspaceId).eq("id", input.briefingId).maybeSingle();
         if (error) throw error;
@@ -349,7 +349,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
     tools.briefing_export = tool({
       description: "Prepara exportação integral de briefings em XLSX ou CSV.",
       inputSchema: z.object({ format: z.enum(["xlsx", "csv"]).default("xlsx") }),
-      strict: true,
+      strict: false,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "briefing_export", "read", false, input, async () => ({ receipt: "briefing_export_ready", format: input.format, downloadPath: `/api/backend/briefings/export.${input.format}` }))
     });
   }
@@ -358,7 +358,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
     tools.briefing_import = tool({
       description: "Abre o fluxo seguro de prévia e importação XLSX. A IA não importa silenciosamente.",
       inputSchema: z.object({ confirmed: z.boolean().default(false) }),
-      strict: true,
+      strict: false,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "briefing_import", "read", false, input, async () => ({ receipt: "briefing_import_ui_ready", confirmed: input.confirmed, pagePath: "/crm/briefings", templatePath: "/api/backend/briefings/import-template.xlsx", requiresFileReview: true }))
     });
   }
@@ -367,7 +367,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
     tools.briefing_attach_file = tool({
       description: "Abre o briefing na seção segura de anexos; o binário exige seleção e confirmação humana no navegador.",
       inputSchema: z.object({ briefingId: z.string().min(1).max(120) }),
-      strict: true,
+      strict: false,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "briefing_attach_file", "read", false, input, async () => ({ receipt: "briefing_attachment_ui_ready", pagePath: `/crm/briefings/${encodeURIComponent(input.briefingId)}#attachments`, requiresHumanFileSelection: true }))
     });
   }
@@ -376,7 +376,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
     tools.communication_template_list = tool({
       description: "Lista modelos ativos de comunicação do workspace por canal.",
       inputSchema: z.object({ channel: z.enum(["email", "whatsapp", "internal"]).optional(), limit: z.number().int().min(1).max(50).default(20) }),
-      strict: true,
+      strict: false,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "communication_template_list", "read", false, input, async () => {
         let query = requireAiDatabase().from("nodere_communication_templates").select("id,name,channel,category,subject,body_text,body_html,signature,current_version,updated_at").eq("workspace_id", context.workspaceId).eq("active", true).is("archived_at", null).order("updated_at", { ascending: false }).limit(input.limit);
         if (input.channel) query = query.eq("channel", input.channel);
@@ -391,7 +391,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
     tools.communication_history = tool({
       description: "Resume o histórico imutável de comunicação de uma empresa, sem acessar outro workspace.",
       inputSchema: z.object({ companyId: z.string().min(1).max(120), limit: z.number().int().min(1).max(100).default(30) }),
-      strict: true,
+      strict: false,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "communication_history", "read", false, input, async () => {
         const { data, error } = await requireAiDatabase().from("communication_events").select("id,event_type,direction,status,subject,body_text,occurred_at").eq("workspace_id", context.workspaceId).eq("company_id", input.companyId).order("occurred_at", { ascending: false }).limit(input.limit);
         if (error) throw error;
@@ -408,7 +408,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
         recipient: z.string().min(5).max(320), subject: z.string().max(240).default(""),
         bodyText: z.string().min(1).max(50_000), consentConfirmed: z.literal(true)
       }),
-      strict: true,
+      strict: false,
       needsApproval: true,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "communication_create_draft", "write", true, input, async () => {
         if (input.channel === "email" && !z.string().email().safeParse(input.recipient).success) throw serviceError("INVALID_EMAIL", "Destinatário de e-mail inválido.", 422);
@@ -443,7 +443,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
         phone: z.string().trim().max(40).optional(),
         website: z.string().trim().url().max(500).optional()
       }),
-      strict: true,
+      strict: false,
       needsApproval: true,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "create_company", "write", true, input, async () => {
         const sb = requireAiDatabase();
@@ -475,7 +475,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
         stage: z.enum(pipelineStages),
         reason: z.string().trim().min(3).max(500)
       }),
-      strict: true,
+      strict: false,
       needsApproval: true,
       execute: async (input, options) => withToolReceipt(context, options.toolCallId, "update_pipeline_stage", "write", true, input, async () => {
         const sb = requireAiDatabase();
