@@ -84,5 +84,8 @@ test("migração V6 é idempotente e possui rollback explícito", () => {
   assert.match(migration, /add column if not exists module_permissions jsonb/);
   assert.match(migration, /force row level security/);
   assert.match(migration, /revoke all .* anon, authenticated/);
+  assert.match(migration, /revoke execute on function public\.nodere_ai_reserve_credits[\s\S]*from public, anon, authenticated/);
+  assert.match(migration, /grant execute on function public\.nodere_ai_reserve_credits[\s\S]*to service_role/);
+  assert.match(migration, /alter function public\.nodere_touch_commercial_updated_at\(\) set search_path = ''/);
   assert.match(rollback, /drop column if exists module_permissions/);
 });

@@ -52,4 +52,22 @@ alter table public.custom_roles force row level security;
 revoke all on table public.nodere_platform_users from anon, authenticated;
 revoke all on table public.custom_roles from anon, authenticated;
 
+-- Funções financeiras privilegiadas são internas do backend. Revogar os
+-- papéis públicos impede chamada direta ao ledger pelo Data API.
+revoke execute on function public.nodere_ai_seed_wallet() from public, anon, authenticated;
+revoke execute on function public.nodere_ai_reserve_credits(text, uuid, text, numeric) from public, anon, authenticated;
+revoke execute on function public.nodere_ai_capture_credits(text, uuid, text, numeric, numeric, jsonb) from public, anon, authenticated;
+revoke execute on function public.nodere_ai_release_credits(text, uuid, text, jsonb) from public, anon, authenticated;
+revoke execute on function public.nodere_ai_grant_credits(text, text, numeric, jsonb) from public, anon, authenticated;
+revoke execute on function public.nodere_consume_credits(text, text, numeric, jsonb) from public, anon, authenticated;
+
+grant execute on function public.nodere_ai_reserve_credits(text, uuid, text, numeric) to service_role;
+grant execute on function public.nodere_ai_capture_credits(text, uuid, text, numeric, numeric, jsonb) to service_role;
+grant execute on function public.nodere_ai_release_credits(text, uuid, text, jsonb) to service_role;
+grant execute on function public.nodere_ai_grant_credits(text, text, numeric, jsonb) to service_role;
+grant execute on function public.nodere_consume_credits(text, text, numeric, jsonb) to service_role;
+
+alter function public.nodere_touch_commercial_updated_at() set search_path = '';
+alter function public.nodere_reject_immutable_change() set search_path = '';
+
 commit;
