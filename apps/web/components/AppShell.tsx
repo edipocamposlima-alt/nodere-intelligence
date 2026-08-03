@@ -4,6 +4,7 @@ import { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { Header } from "@/components/Header";
 import { MobileNav } from "@/components/MobileNav";
+import { ModuleRouteGuard } from "@/components/ModuleRouteGuard";
 import { PwaRegister } from "@/components/PwaRegister";
 import { Sidebar } from "@/components/Sidebar";
 import { ThemeRuntime } from "@/components/ThemeRuntime";
@@ -51,7 +52,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Sidebar />
           <main className="nodere-app-main min-w-0 flex-1 pb-20 lg:pb-0">
             <Header />
-            <div className="nodere-app-content">{children}</div>
+            <div className="nodere-app-content"><ModuleRouteGuard>{children}</ModuleRouteGuard></div>
             <footer className="px-4 py-6 text-center text-xs text-slate-500 md:px-8">
               <a className="hover:text-cyan" href="/terms">Termos de uso</a>
               <span className="px-2">·</span>
