@@ -243,7 +243,11 @@ function toUpdateRow(updates: Partial<Company>): Record<string, unknown> {
     if (updates[key] !== undefined) row[column] = updates[key];
   }
   for (const [key, value] of Object.entries(updates)) {
-    if (value !== undefined && !direct.some(([directKey]) => directKey === key) && key !== "notes") {
+    if (
+      value !== undefined
+      && !direct.some(([directKey]) => directKey === key)
+      && !["notes", "updatedAt", "workspaceId"].includes(key)
+    ) {
       signals[key] = value;
     }
   }

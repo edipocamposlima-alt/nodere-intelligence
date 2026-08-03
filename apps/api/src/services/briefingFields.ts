@@ -43,7 +43,7 @@ export const BRIEFING_FIELDS: BriefingFieldDefinition[] = [
   { key: "hypotheses", label: "Hipóteses a validar", section: "Diagnóstico", type: "textarea", legacyKeys: ["hipoteses_a_validar"] },
   { key: "approach_objective", label: "Objetivo da abordagem", section: "Planejamento", type: "textarea", legacyKeys: ["objetivo_da_abordagem"] },
   { key: "contact_date", label: "Data do contato", section: "Planejamento", type: "date", legacyKeys: ["data_do_contato"] },
-  { key: "next_action", label: "Próxima ação", section: "Planejamento", type: "textarea", required: true, legacyKeys: ["proxima_acao"] },
+  { key: "next_action", label: "Próxima ação", section: "Planejamento", type: "textarea", required: true, companyColumn: "next_action", legacyKeys: ["proxima_acao"] },
   { key: "next_action_date", label: "Data da próxima ação", section: "Planejamento", type: "date", legacyKeys: ["data_da_proxima_acao"] },
   { key: "next_action_time", label: "Hora da próxima ação", section: "Planejamento", type: "time" },
   { key: "status", label: "Status", section: "Controle", type: "select", options: ["Rascunho", "Pesquisa concluída", "Contato iniciado", "Em acompanhamento", "Concluído"] },

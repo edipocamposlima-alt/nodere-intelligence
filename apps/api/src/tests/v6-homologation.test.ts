@@ -89,3 +89,21 @@ test("migração V6 é idempotente e possui rollback explícito", () => {
   assert.match(migration, /alter function public\.nodere_touch_commercial_updated_at\(\) set search_path = ''/);
   assert.match(rollback, /drop column if exists module_permissions/);
 });
+
+test("alinhamento V6 completa o schema canônico de empresas sem reclassificar dados", () => {
+  const migration = source("apps/api/src/db/migrations/20260803_nodere_v6_company_schema_alignment.sql");
+  for (const column of ["temperature", "probability", "deal_value", "expected_close_date", "next_action", "owner_id", "source"]) {
+    assert.match(migration, new RegExp(`add column if not exists ${column}`));
+  }
+  assert.doesNotMatch(migration, /update\s+public\.nodere_companies\s+set\s+source/i);
+});
+
+test("próxima ação do briefing possui mapeamento canônico para a ficha CRM", () => {
+  const fields = source("apps/api/src/services/briefingFields.ts");
+  assert.match(fields, /key:\s*"next_action"[^\n]*companyColumn:\s*"next_action"/);
+});
+
+test("atualização parcial não substitui sinais internos por updatedAt", () => {
+  const store = source("apps/api/src/services/companyStore.ts");
+  assert.match(store, /\["notes",\s*"updatedAt",\s*"workspaceId"\]\.includes\(key\)/);
+});
