@@ -574,12 +574,13 @@ async function validateCalendar(sessions, companyId) {
 }
 
 async function validateProposals(sessions, companyId) {
+  const catalogCode = `${runId}_${executionNonce}`;
   const catalog = await expectApi("produto/serviço criado", "/api/catalog", sessions.owner.token, {
     method: "POST",
     body: jsonBody({
-      code: runId,
-      name: `${runId} Serviço de Homologação`,
-      commercialName: `${runId} Comercial`,
+      code: catalogCode,
+      name: `${catalogCode} Serviço de Homologação`,
+      commercialName: `${catalogCode} Comercial`,
       category: "Homologação",
       type: "service",
       status: "active",
@@ -598,7 +599,7 @@ async function validateProposals(sessions, companyId) {
     method: "POST",
     body: jsonBody({
       lead_id: companyId,
-      title: `${runId} Proposta`,
+      title: `${catalogCode} Proposta`,
       document_type: "proposal",
       customer_notes: "Proposta temporária para homologação.",
       internal_notes: "NOTA INTERNA V6 NÃO DEVE APARECER NO PDF DO CLIENTE",
