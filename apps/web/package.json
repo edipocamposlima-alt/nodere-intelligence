@@ -10,6 +10,7 @@
     "lint": "tsc -p tsconfig.json --noEmit",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:e2e": "playwright test",
+    "test:v7-docs": "node scripts/validate-v7-documentation.mjs",
     "generate:pwa-icons": "node scripts/generate-pwa-icons.js",
     "test:mobile-pwa": "node scripts/validate-mobile-pwa.mjs"
   },

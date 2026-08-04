@@ -4,9 +4,9 @@ type ScoreInput = Partial<Company>;
 
 export function calculateOpportunityScore(company: ScoreInput) {
   const nodere = calculateNodereScore(company, { targetCity: company.city });
-  const normalizedLegacyScore = Math.min(100, Math.round(nodere.total / 10));
-  const level: OpportunityLevel = nodere.total >= 650 ? "Alta" : nodere.total >= 400 ? "Media" : "Baixa";
-  const temperature = normalizedLegacyScore >= 70 || level === "Alta" ? "Quente" : normalizedLegacyScore <= 35 ? "Frio" : "Morno";
+  const commercialScore = nodere.total;
+  const level: OpportunityLevel = commercialScore >= 65 ? "Alta" : commercialScore >= 40 ? "Media" : "Baixa";
+  const temperature = commercialScore >= 70 || level === "Alta" ? "Quente" : commercialScore <= 35 ? "Frio" : "Morno";
   const topActions = dedupe([nodere.suggestedApproach, ...nodere.breakdown.slice(0, 3).map((item) => actionForReason(item.reason))]);
   const opportunitySignals = dedupe([
     company.category ? `Segmento: ${company.category}` : "Segmento nao informado",
@@ -24,7 +24,7 @@ export function calculateOpportunityScore(company: ScoreInput) {
   ]);
 
   return {
-    score: normalizedLegacyScore,
+    score: commercialScore,
     opportunityLevel: level,
     detectedOpportunities: dedupe(nodere.digitalGaps.map((gap) => `Gap digital: ${gap}`)),
     suggestions: topActions,
@@ -127,12 +127,17 @@ export function calculateNodereScore(company: ScoreInput, context: { targetCity?
     add("Oportunidade crítica: sem site, avaliações e segmento relevante", 100);
   }
 
-  const total = Math.min(1000, score);
+  // A pontuação histórica era calculada em 0–1000. O produto V7 adota uma
+  // única escala pública de 0–100 para evitar interpretações conflitantes.
+  const total = Math.min(100, Math.round(score / 10));
+  const normalizedBreakdown = breakdown
+    .map((item) => ({ ...item, points: Math.max(1, Math.round(item.points / 10)) }))
+    .sort((a, b) => b.points - a.points);
   const digitalGaps = identifyDigitalGaps(company);
 
   return {
     total,
-    breakdown: breakdown.sort((a, b) => b.points - a.points),
+    breakdown: normalizedBreakdown,
     classification: classifyNodereScore(total),
     digitalGaps,
     suggestedApproach: getSuggestedApproach(total)
@@ -144,9 +149,9 @@ function dedupe(items: string[]) {
 }
 
 function classifyNodereScore(score: number) {
-  if (score <= 250) return { label: "Baixa oportunidade", color: "var(--score-critical)" };
-  if (score <= 500) return { label: "Oportunidade moderada", color: "var(--score-low)" };
-  if (score <= 750) return { label: "Alta oportunidade", color: "var(--score-good)" };
+  if (score <= 25) return { label: "Baixa oportunidade", color: "var(--score-critical)" };
+  if (score <= 50) return { label: "Oportunidade moderada", color: "var(--score-low)" };
+  if (score <= 75) return { label: "Alta oportunidade", color: "var(--score-good)" };
   return { label: "Oportunidade crítica", color: "var(--score-excellent)" };
 }
 
@@ -162,9 +167,9 @@ export function identifyDigitalGaps(company: ScoreInput) {
 }
 
 function getSuggestedApproach(score: number) {
-  if (score > 750) return "Abordagem imediata recomendada. Empresa com múltiplos gaps digitais críticos.";
-  if (score > 500) return "Boa oportunidade. Apresentar diagnóstico de presença digital.";
-  if (score > 250) return "Oportunidade moderada. Qualificar antes de investir tempo.";
+  if (score > 75) return "Abordagem imediata recomendada. Empresa com múltiplos gaps digitais críticos.";
+  if (score > 50) return "Boa oportunidade. Apresentar diagnóstico de presença digital.";
+  if (score > 25) return "Oportunidade moderada. Qualificar antes de investir tempo.";
   return "Baixa prioridade. Focar em leads com Score NODERE maior.";
 }
 

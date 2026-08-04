@@ -105,8 +105,16 @@ export interface Company {
   archivedBy?: string;
   trashedAt?: string;
   trashedBy?: string;
+  deletedAt?: string;
+  deletedBy?: string;
   purgeAfter?: string;
   deleteReason?: string;
+  deletionReason?: string;
+  retentionUntil?: string;
+  purgedAt?: string;
+  purgedBy?: string;
+  restoreCount?: number;
+  deletionBatchId?: string;
   legalHold?: boolean;
   score: number;
   opportunityLevel: OpportunityLevel;
@@ -114,7 +122,7 @@ export interface Company {
   suggestions: string[];
   notes: CrmNote[];
   lastContactAt?: string;
-  source?: "google_places" | "manual" | "import" | "demo" | "test" | "apollo" | "econodata" | "website";
+  source?: "google_places" | "manual" | "import" | "demo" | "test" | "public_research" | "website";
   createdAt: string;
   updatedAt: string;
 }
@@ -154,7 +162,7 @@ export interface DecisionMaker {
   email?: string;
   phone?: string;
   linkedin?: string;
-  source?: "apollo" | "econodata" | "manual" | "website";
+  source?: "public_source" | "manual" | "website";
 }
 
 export interface SavedSearch {
@@ -164,7 +172,7 @@ export interface SavedSearch {
   segment: string;
   keyword?: string;
   resultCount: number;
-  source: "google" | "mock" | "fallback";
+  source: "google" | "public_research";
   companyIds: string[];
   createdAt: string;
   lastRanAt: string;

@@ -15,10 +15,10 @@ router.get("/summary", async (req, res, next) => {
     const avgScore = total
       ? Math.round(companies.reduce((sum, company) => sum + nodereValue(company), 0) / total)
       : 0;
-    const critical = companies.filter((company) => nodereValue(company) >= 750).length;
+    const critical = companies.filter((company) => nodereValue(company) >= 75).length;
     const high = companies.filter((company) => {
       const score = nodereValue(company);
-      return score >= 500 && score < 750;
+      return score >= 50 && score < 75;
     }).length;
 
     res.json({
@@ -54,7 +54,7 @@ function groupAverage(items: Company[], key: "category" | "city") {
 }
 
 function nodereValue(company: Pick<Company, "nodereScore" | "score">) {
-  return Number(company.nodereScore ?? Number(company.score || 0) * 10);
+  return Math.max(0, Math.min(100, Number(company.nodereScore ?? company.score ?? 0)));
 }
 
 export default router;

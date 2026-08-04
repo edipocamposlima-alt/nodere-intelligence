@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { AuthProvider } from "@/context/AuthProvider";
 import { CreditsProvider } from "@/context/CreditsProvider";
 import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
+import { VoiceInputAssistant } from "@/components/VoiceInputAssistant";
 
 export default function PlatformAppLayout({ children }: { children: ReactNode }) {
   return (
@@ -24,6 +25,7 @@ export default function PlatformAppLayout({ children }: { children: ReactNode })
               </footer>
             </main>
             <MobileNav />
+            <VoiceInputAssistant />
           </div>
         </WorkspaceProvider>
       </CreditsProvider>

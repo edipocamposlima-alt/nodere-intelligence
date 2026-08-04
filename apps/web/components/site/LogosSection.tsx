@@ -1,7 +1,6 @@
 const LOGOS = [
   { name: "Google Maps", icon: "🗺️" },
   { name: "Google Business", icon: "⭐" },
-  { name: "Apollo.io", icon: "🚀" },
   { name: "OpenAI GPT-4", icon: "🤖" },
   { name: "WhatsApp Business", icon: "💬" },
   { name: "Receita Federal", icon: "🏛️" },

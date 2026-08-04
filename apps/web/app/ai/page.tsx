@@ -9,7 +9,7 @@ import {
   lastAssistantMessageIsCompleteWithApprovalResponses,
   type UIMessage
 } from "ai";
-import { Bot, Check, ChevronRight, Coins, History, Plus, ShieldCheck, Sparkles, X } from "lucide-react";
+import { Bot, Check, ChevronRight, Coins, History, Maximize2, PanelLeftClose, PanelRightClose, Plus, ShieldCheck, Sparkles, X } from "lucide-react";
 import {
   Conversation,
   ConversationContent,
@@ -72,7 +72,16 @@ type ConversationItem = {
   model_id: string;
   updated_at: string;
 };
-type Wallet = { available: number; held: number; lifetimeSpent: number; creditsPerUsd: number };
+type Wallet = {
+  available: number;
+  held: number;
+  lifetimeSpent: number;
+  creditsPerUsd: number;
+  accountType?: "STANDARD" | "OWNER_INTERNAL";
+  commercialBlocking?: boolean;
+  usageMeteringEnabled?: boolean;
+  providerLimitsStillApply?: boolean;
+};
 
 export default function NodereAiPage() {
   const [models, setModels] = useState<ModelOption[]>([]);
@@ -85,6 +94,9 @@ export default function NodereAiPage() {
   const [routingMode, setRoutingMode] = useState<"automatic" | "manual">("automatic");
   const [loadingShell, setLoadingShell] = useState(true);
   const [shellError, setShellError] = useState("");
+  const [historyOpen, setHistoryOpen] = useState(true);
+  const [detailsOpen, setDetailsOpen] = useState(true);
+  const [focusMode, setFocusMode] = useState(false);
 
   const transport = useMemo(() => new DefaultChatTransport<NodereMessage>({
     api: "/api/backend/ai/chat",
@@ -167,7 +179,7 @@ export default function NodereAiPage() {
   const selectedAgent = agents.find((agent) => agent.id === agentId);
   const allowedModels = models.filter((model) => !selectedAgent || selectedAgent.allowedModelIds.includes(model.id));
   const selectedModel = models.find((model) => model.id === modelId);
-  const blocked = !wallet || wallet.available <= 0;
+  const blocked = !wallet || (wallet.commercialBlocking !== false && wallet.available <= 0);
   const busy = status === "submitted" || status === "streaming";
 
   async function submitPrompt(message: PromptInputMessage) {
@@ -219,7 +231,7 @@ export default function NodereAiPage() {
               <ShieldCheck className="h-4 w-4" /> Workspace isolado
             </span>
             <span className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 font-bold ${blocked ? "border-rose-400/30 bg-rose-500/10 text-rose-100" : "border-cyan-400/25 bg-cyan-400/10 text-cyan-100"}`}>
-              <Coins className="h-4 w-4" /> {wallet ? `${wallet.available.toLocaleString("pt-BR", { maximumFractionDigits: 4 })} créditos` : "Saldo indisponível"}
+              <Coins className="h-4 w-4" /> {wallet?.accountType === "OWNER_INTERNAL" ? "Uso técnico medido · sem bloqueio comercial" : wallet ? `${wallet.available.toLocaleString("pt-BR", { maximumFractionDigits: 4 })} créditos` : "Saldo indisponível"}
             </span>
           </div>
         </div>
@@ -232,8 +244,8 @@ export default function NodereAiPage() {
         </section>
       )}
 
-      <div className="grid min-h-[680px] flex-1 gap-4 xl:grid-cols-[250px_minmax(0,1fr)_280px]">
-        <aside className="hidden min-h-0 flex-col rounded-2xl border border-line bg-panel/75 p-3 xl:flex">
+      <div className={`grid min-h-[680px] flex-1 gap-4 ${focusMode || (!historyOpen && !detailsOpen) ? "xl:grid-cols-[minmax(0,1fr)]" : historyOpen && detailsOpen ? "xl:grid-cols-[250px_minmax(0,1fr)_280px]" : historyOpen ? "xl:grid-cols-[250px_minmax(0,1fr)]" : "xl:grid-cols-[minmax(0,1fr)_280px]"}`}>
+        {!focusMode && historyOpen && <aside className="hidden min-h-0 flex-col rounded-2xl border border-line bg-panel/75 p-3 xl:flex">
           <button type="button" onClick={newConversation} disabled={busy} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 text-sm font-black text-white transition hover:bg-emerald-500 disabled:opacity-50">
             <Plus className="h-4 w-4" /> Nova conversa
           </button>
@@ -249,10 +261,15 @@ export default function NodereAiPage() {
             ))}
             {!loadingShell && conversations.length === 0 && <p className="px-3 py-6 text-center text-xs text-slate-500">Nenhuma conversa salva.</p>}
           </div>
-        </aside>
+        </aside>}
 
         <main className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-line bg-[rgba(8,16,24,.82)] shadow-card">
           <div className="flex flex-wrap items-center gap-2 border-b border-line px-3 py-3 md:px-4">
+            <div className="flex items-center gap-1">
+              <button type="button" onClick={() => { setFocusMode(false); setHistoryOpen((value) => !value); }} className="grid h-10 w-10 place-items-center rounded-lg border border-line bg-panel text-slate-300 hover:border-emerald-400" aria-label={historyOpen ? "Recolher histórico" : "Mostrar histórico"} title={historyOpen ? "Recolher histórico" : "Mostrar histórico"}><PanelLeftClose className="h-4 w-4" /></button>
+              <button type="button" onClick={() => { setFocusMode(false); setDetailsOpen((value) => !value); }} className="grid h-10 w-10 place-items-center rounded-lg border border-line bg-panel text-slate-300 hover:border-cyan-400" aria-label={detailsOpen ? "Recolher detalhes" : "Mostrar detalhes"} title={detailsOpen ? "Recolher detalhes" : "Mostrar detalhes"}><PanelRightClose className="h-4 w-4" /></button>
+              <button type="button" onClick={() => setFocusMode((value) => !value)} className={`grid h-10 w-10 place-items-center rounded-lg border bg-panel ${focusMode ? "border-emerald-400 text-emerald-300" : "border-line text-slate-300"}`} aria-label="Alternar modo foco" title="Modo foco"><Maximize2 className="h-4 w-4" /></button>
+            </div>
             <label className="min-w-0 flex-1 md:max-w-xs">
               <span className="sr-only">Agente</span>
               <select value={agentId} onChange={(event) => {
@@ -363,7 +380,7 @@ export default function NodereAiPage() {
           </div>
         </main>
 
-        <aside className="hidden min-h-0 flex-col gap-3 xl:flex">
+        {!focusMode && detailsOpen && <aside className="hidden min-h-0 flex-col gap-3 xl:flex">
           <section className="rounded-2xl border border-line bg-panel/75 p-4">
             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-300">Agente ativo</p>
             <h2 className="mt-2 font-black text-white">{selectedAgent?.label || "Carregando…"}</h2>
@@ -387,7 +404,7 @@ export default function NodereAiPage() {
             <p className="font-black text-emerald-200">Como a cobrança funciona</p>
             <p className="mt-2">A NODERE reserva um teto antes da chamada, captura o custo calculado pelos tokens usados e devolve automaticamente a diferença.</p>
           </section>
-        </aside>
+        </aside>}
       </div>
     </div>
   );

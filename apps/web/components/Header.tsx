@@ -213,7 +213,11 @@ export function Header() {
         </form>
 
         <div className="flex min-w-0 shrink-0 items-center gap-2">
-          {credits && (
+          {credits?.account_type === "OWNER_INTERNAL" ? (
+            <span className="hidden shrink-0 items-center gap-2 rounded-lg border border-emerald-400/50 bg-emerald-400/15 px-3 py-2 text-xs font-semibold text-emerald-100 sm:inline-flex" title="Conta interna: uso medido sem bloqueio comercial; limites do provedor continuam válidos.">
+              <CreditCard className="h-4 w-4" /> Uso técnico
+            </span>
+          ) : credits && (
             <Link
               href="/billing"
               className={`hidden shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold sm:inline-flex ${

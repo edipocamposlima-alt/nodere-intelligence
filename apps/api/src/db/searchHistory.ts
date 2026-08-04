@@ -12,7 +12,7 @@ function fromRow(row: Record<string, unknown>): SavedSearch {
     segment: row.segment as string,
     keyword: row.keyword as string | undefined,
     resultCount: (row.result_count as number) ?? 0,
-    source: (row.source as SavedSearch["source"]) ?? "mock",
+    source: (row.source as SavedSearch["source"]) ?? "google",
     companyIds: (row.company_ids as string[]) ?? [],
     createdAt: (row.created_at as string) ?? new Date().toISOString(),
     lastRanAt: (row.last_ran_at as string) ?? new Date().toISOString()

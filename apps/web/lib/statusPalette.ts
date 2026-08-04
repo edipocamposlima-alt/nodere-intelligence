@@ -42,20 +42,20 @@ function normalizeStatus(value: unknown) {
     .trim();
 }
 
-export function normalizeCommercialScore(score: number, max: 1000 | 100 = 1000) {
+export function normalizeCommercialScore(score: number, max: 1000 | 100 = 100) {
   const numeric = Number.isFinite(score) ? Number(score) : 0;
-  const scaled = max === 100 ? numeric * 10 : numeric;
-  return Math.max(0, Math.min(1000, scaled));
+  const normalized = max === 1000 ? numeric / 10 : numeric;
+  return Math.max(0, Math.min(100, normalized));
 }
 
-export function getScoreBand(score: number, max: 1000 | 100 = 1000): ScoreBand {
+export function getScoreBand(score: number, max: 1000 | 100 = 100): ScoreBand {
   const normalized = normalizeCommercialScore(score, max);
 
-  if (normalized >= 850) return { label: "Oportunidade Excelente", tone: "excellent", colorVar: "var(--status-excellent)" };
-  if (normalized >= 700) return { label: "Alta oportunidade", tone: "high", colorVar: "var(--status-high)" };
-  if (normalized >= 550) return { label: "Boa oportunidade", tone: "good", colorVar: "var(--status-good)" };
-  if (normalized >= 400) return { label: "Oportunidade moderada", tone: "moderate", colorVar: "var(--status-moderate)" };
-  if (normalized >= 250) return { label: "Baixa oportunidade", tone: "waiting", colorVar: "var(--status-waiting)" };
+  if (normalized >= 85) return { label: "Oportunidade Excelente", tone: "excellent", colorVar: "var(--status-excellent)" };
+  if (normalized >= 70) return { label: "Alta oportunidade", tone: "high", colorVar: "var(--status-high)" };
+  if (normalized >= 55) return { label: "Boa oportunidade", tone: "good", colorVar: "var(--status-good)" };
+  if (normalized >= 40) return { label: "Oportunidade moderada", tone: "moderate", colorVar: "var(--status-moderate)" };
+  if (normalized >= 25) return { label: "Baixa oportunidade", tone: "waiting", colorVar: "var(--status-waiting)" };
   return { label: "Pouca oportunidade", tone: "low", colorVar: "var(--status-low)" };
 }
 

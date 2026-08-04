@@ -9,12 +9,19 @@ export type CommercialBriefingSummary = {
   code: string;
   company_id: string;
   title: string;
-  status: "draft" | "completed" | "archived";
+  status: "draft" | "completed" | "archived" | "trash";
   priority: "low" | "normal" | "high" | "urgent";
   completion_percent: number;
   current_version: number;
   next_action?: string | null;
   next_action_at?: string | null;
+  is_deleted?: boolean;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
+  deletion_reason?: string | null;
+  retention_until?: string | null;
+  legal_hold?: boolean;
+  restore_count?: number;
   updated_at: string;
   nodere_companies?: { id: string; name: string; category?: string; city?: string; state?: string } | null;
 };
@@ -193,6 +200,22 @@ export function getCommercialBriefings(token?: string | null, filters: { status?
 
 export function getCommercialBriefing(id: string, token?: string | null) {
   return api<CommercialBriefingDetail>(`/briefings/${encodeURIComponent(id)}`, withAuthToken(token));
+}
+
+export function trashCommercialBriefing(id: string, reason: string, deletionBatchId?: string) {
+  return api<CommercialBriefingSummary>(`/briefings/${encodeURIComponent(id)}`, { method: "DELETE", body: JSON.stringify({ reason, deletionBatchId }) });
+}
+
+export function restoreDeletedCommercialBriefing(id: string, reason: string) {
+  return api<CommercialBriefingSummary>(`/briefings/${encodeURIComponent(id)}/restore-deleted`, { method: "POST", body: JSON.stringify({ reason }) });
+}
+
+export function getCommercialBriefingDependencies(id: string) {
+  return api<{ briefingId: string; dependencies: Record<string, number>; total: number }>(`/briefings/${encodeURIComponent(id)}/dependencies`);
+}
+
+export function purgeCommercialBriefing(id: string, confirmation: string, reason: string) {
+  return api<{ ok: boolean; recoverable: false }>(`/briefings/${encodeURIComponent(id)}/purge`, { method: "POST", body: JSON.stringify({ confirmation, reason }) });
 }
 
 export function searchCompanyOptions(q: string, limit = 10) {
@@ -388,26 +411,6 @@ export function saveWorkspaceSegment(segment: string) {
   });
 }
 
-
-export function searchApollo(payload: {
-  type?: "companies" | "people";
-  companyName?: string;
-  domain?: string;
-  personName?: string;
-  title?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  page?: number;
-  perPage?: number;
-}) {
-  return api<{
-    source: "apollo";
-    type: "companies" | "people";
-    count: number;
-    results: Array<Record<string, string | number | undefined>>;
-  }>("/searches/apollo", { method: "POST", body: JSON.stringify(payload) });
-}
 
 export function discoverySearch(payload: { companyName?: string; segment?: string; keyword?: string; city?: string; state?: string; country?: string; limit?: number; lat?: number; lng?: number; radiusKm?: number }) {
   return api<{ source: "google" | "mock" | "google_places"; warning?: string; companies: Company[] }>(
@@ -712,6 +715,12 @@ export type CreditStatus = {
   resetAt?: string | null;
   blocked?: boolean;
   trialExpired?: boolean;
+  account_type?: "STANDARD" | "OWNER_INTERNAL";
+  billing_exempt?: boolean;
+  plan_enforcement_exempt?: boolean;
+  internal_credit_blocking?: boolean;
+  usage_metering_enabled?: boolean;
+  provider_limits_still_apply?: boolean;
 };
 
 export function getCreditStatus() {

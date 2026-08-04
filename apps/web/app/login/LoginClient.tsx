@@ -79,7 +79,7 @@ export function LoginClient() {
     localStorage.setItem("nodere_user_profile", JSON.stringify({
       email: payload.user?.email || fallbackEmail,
       name: payload.user?.name || formatDisplayName(payload.user?.email || fallbackEmail),
-      role: payload.user?.role || (isBuiltInOwner(fallbackEmail) ? "owner" : "operator"),
+      role: payload.user?.role || "operator",
       customRoleId: payload.user?.customRoleId ?? null,
       status: payload.user?.status || "active",
       visibilityLevel: payload.user?.visibilityLevel || "read_edit",
@@ -164,12 +164,7 @@ export function LoginClient() {
     </main>
   );
 }
-
 function formatDisplayName(email: string) {
   const raw = String(email || "Usuário").split("@")[0].replace(/[._-]+/g, " ");
   return raw.split(" ").filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join(" ") || "Usuário";
-}
-
-function isBuiltInOwner(email: string) {
-  return String(email || "").trim().toLowerCase() === "edipo.lima@nodere.com.br";
 }

@@ -3,13 +3,14 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Bot, BriefcaseBusiness, CalendarDays, CheckCircle2, ClipboardList, Copy, Download, FileText, FolderOpen, Globe2, Linkedin, Mail, MapPin, MessageCircle, PackageCheck, Pencil, Phone, Plus, Send, Sparkles, Trash2, Users, XCircle } from "lucide-react";
+import { ArrowLeft, Bot, BriefcaseBusiness, CalendarDays, CheckCircle2, ClipboardList, Copy, Download, FileText, FolderOpen, Globe2, Linkedin, Mail, MapPin, MessageCircle, PackageCheck, Pencil, Phone, Plus, Save, Send, Sparkles, Trash2, Users, XCircle } from "lucide-react";
 import type { Company } from "@/lib/types";
 import { CalendarEvent, CatalogItem, InboxMessage, NodereProposal, ProposalItemPayload, addLeadDeal, createProposal, deleteProposal, downloadContractPdf, downloadProposalPdf, getCalendarEvents, getCatalogItems, getInboxMessagesByCompany, getLeadActivities, getLeadContacts, getLeadDeals, getProposals, updateLeadDeal } from "@/lib/api";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
 import { CompanyBriefingsSection } from "@/components/crm/CompanyBriefingsSection";
+import { RecordActionsMenu } from "@/components/records/RecordActionsMenu";
 
-type TabId = "overview" | "history" | "contacts" | "briefing" | "deals" | "products" | "proposals" | "whatsapp" | "email" | "agenda" | "ai" | "apollo" | "files";
+type TabId = "overview" | "history" | "contacts" | "briefing" | "deals" | "products" | "proposals" | "communications" | "agenda" | "ai" | "research" | "files";
 
 const tabs: Array<{ id: TabId; label: string; icon: typeof Sparkles }> = [
   { id: "overview", label: "Visão Geral", icon: Sparkles },
@@ -19,11 +20,10 @@ const tabs: Array<{ id: TabId; label: string; icon: typeof Sparkles }> = [
   { id: "deals", label: "Negociações", icon: BriefcaseBusiness },
   { id: "products", label: "Produtos/Serviços", icon: PackageCheck },
   { id: "proposals", label: "Propostas e Contratos", icon: FileText },
-  { id: "whatsapp", label: "WhatsApp", icon: MessageCircle },
-  { id: "email", label: "E-mail", icon: Mail },
+  { id: "communications", label: "Comunicações", icon: MessageCircle },
   { id: "agenda", label: "Agenda", icon: CalendarDays },
   { id: "ai", label: "IA / Editor", icon: Bot },
-  { id: "apollo", label: "Apollo/Econodata", icon: Globe2 },
+  { id: "research", label: "Pesquisa com fontes", icon: Globe2 },
   { id: "files", label: "Arquivos/Anexos", icon: FolderOpen }
 ];
 
@@ -299,11 +299,7 @@ export function CrmClientFullPage({ company }: { company: Company }) {
           const proposals = (await getProposals()).filter((item) => item.lead_id === company.id);
           if (!cancelled) setLoaded((current) => ({ ...current, proposals }));
         }
-        if (activeTab === "whatsapp" && !loaded.whatsapp) {
-          const payload = await getInboxMessagesByCompany(company.id);
-          if (!cancelled) setLoaded((current) => ({ ...current, inbox: payload.messages, whatsapp: payload.messages.filter((item) => item.type === "whatsapp") }));
-        }
-        if (activeTab === "email" && !loaded.inbox) {
+        if (activeTab === "communications" && !loaded.inbox) {
           const payload = await getInboxMessagesByCompany(company.id);
           if (!cancelled) setLoaded((current) => ({ ...current, inbox: payload.messages, whatsapp: payload.messages.filter((item) => item.type === "whatsapp") }));
         }
@@ -366,6 +362,7 @@ export function CrmClientFullPage({ company }: { company: Company }) {
             <Link href="/app/proposals" className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm font-semibold"><Send className="h-4 w-4" /> Criar proposta</Link>
             <button disabled={!canEdit} onClick={() => changeTab("agenda")} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"><Plus className="h-4 w-4" /> Criar tarefa</button>
             <button onClick={copyLink} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm font-semibold"><Copy className="h-4 w-4" /> Copiar link</button>
+            <RecordActionsMenu company={company} role={role} onChanged={() => { router.push("/companies"); router.refresh(); }} />
           </div>
         </div>
       </header>
@@ -405,11 +402,10 @@ export function CrmClientFullPage({ company }: { company: Company }) {
             />
           )}
           {activeTab === "proposals" && <ProposalsSection company={company} products={loaded.deals} items={loaded.proposals} role={role} onChange={(proposals) => setLoaded((current) => ({ ...current, proposals }))} />}
-          {activeTab === "whatsapp" && <ListSection title="WhatsApp" empty="Nenhuma conversa WhatsApp encontrada." items={loaded.whatsapp as unknown as Array<Record<string, unknown>> | undefined} fields={["body", "message", "direction", "sent_at", "created_at"]} />}
-          {activeTab === "email" && <ListSection title="E-mail" empty="Nenhum e-mail encontrado nesta ficha." items={(loaded.inbox || []).filter((item) => item.type === "email") as unknown as Array<Record<string, unknown>>} fields={["subject", "body", "message", "direction", "sent_at", "created_at"]} />}
+          {activeTab === "communications" && <CommunicationsSection company={company} items={loaded.inbox} />}
           {activeTab === "agenda" && <ListSection title="Agenda" empty="Nenhuma tarefa ou evento vinculado." items={loaded.agenda as unknown as Array<Record<string, unknown>> | undefined} fields={["title", "status", "start_at", "end_at", "responsible"]} />}
           {activeTab === "ai" && <AiSection company={company} />}
-          {activeTab === "apollo" && <ApolloSection company={company} />}
+          {activeTab === "research" && <ResearchSection company={company} />}
           {activeTab === "files" && <ListSection title="Arquivos/Anexos" empty="Nenhum anexo encontrado no histórico carregado." items={[]} fields={[]} />}
         </section>
 
@@ -1331,20 +1327,44 @@ function AiSection({ company }: { company: Company }) {
   return <div><h2 className="text-xl font-black">IA / Editor</h2><p className="mt-3 text-sm text-[var(--text-secondary)]">Use os sinais comerciais da ficha para preparar abordagem, follow-up e observações controladas para {company.name}.</p></div>;
 }
 
-function ApolloSection({ company }: { company: Company }) {
+function CommunicationsSection({ company, items }: { company: Company; items?: InboxMessage[] }) {
   return (
-    <div>
-      <h2 className="text-xl font-black">Apollo/Econodata</h2>
-      <div className="mt-4 space-y-3">
-        {(company.decisionMakers || []).map((person, index) => (
-          <article key={`${person.name}-${index}`} className="rounded-lg border border-line bg-ink/60 p-4">
-            <h3 className="font-black">{person.name || "Decisor sem nome"}</h3>
-            <p className="text-sm text-[var(--text-secondary)]">{person.title || "Cargo não informado"} · {person.source || "fonte não informada"}</p>
-            {person.linkedin && <a href={person.linkedin} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-sm font-bold text-cyan">LinkedIn</a>}
-          </article>
-        ))}
-        {(!company.decisionMakers || company.decisionMakers.length === 0) && <p className="rounded-lg border border-dashed border-line p-6 text-sm text-[var(--text-secondary)]">Nenhum decisor carregado para esta ficha.</p>}
-      </div>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-xl font-black">Comunicações</h2><p className="mt-1 text-sm text-[var(--text-secondary)]">WhatsApp e e-mail compartilham o mesmo histórico, contexto e compositor canônico.</p></div><Link href={`/crm/communications?companyId=${encodeURIComponent(company.id)}`} className="inline-flex items-center gap-2 rounded-lg bg-electric px-3 py-2 text-sm font-bold text-white"><Send className="h-4 w-4" /> Abrir compositor</Link></div>
+      <ListSection title="Histórico unificado" empty="Nenhuma comunicação registrada para esta empresa." items={items as unknown as Array<Record<string, unknown>> | undefined} fields={["type", "subject", "body", "message", "direction", "status", "sent_at", "created_at"]} />
     </div>
   );
+}
+
+function ResearchSection({ company }: { company: Company }) {
+  const [busy, setBusy] = useState(false);
+  const [run, setRun] = useState<{ id: string; status: string; facts: Array<{ statement: string; sourceUrl: string; confidence: number }>; signals: Array<{ statement: string; sourceUrl: string; confidence: number }>; inferences: Array<{ statement: string; sourceUrl: string; confidence: number }>; opportunities: Array<{ statement: string; sourceUrl: string; confidence: number }>; recommended_services: string[]; sources: Array<{ title: string; url: string }>; commercial_score: number; identity_confidence: number; data_confidence: number } | null>(null);
+  const [message, setMessage] = useState("");
+  async function research() {
+    setBusy(true); setMessage("");
+    try {
+      const response = await fetch("/api/backend/research/run", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ companyId: company.id, query: `${company.name} ${company.city || ""} ${company.state || ""}`.trim(), mode: "refresh" }) });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.message || "A pesquisa não foi concluída.");
+      setRun(payload); setMessage("Resultado em revisão. Nenhum campo da ficha foi alterado.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Falha na pesquisa."); }
+    finally { setBusy(false); }
+  }
+  async function transition(action: "approve" | "persist") {
+    if (!run || !window.confirm(action === "approve" ? "Você revisou as fontes e confirma este resultado?" : "Aplicar os fatos aprovados na Ficha 360?")) return;
+    setBusy(true);
+    try {
+      const response = await fetch(`/api/backend/research/${encodeURIComponent(run.id)}/${action}`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirmed: true }) });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.message || "A etapa da pesquisa falhou.");
+      setRun((current) => current ? { ...current, ...(action === "persist" ? payload.research : payload) } : current);
+      setMessage(action === "approve" ? "Pesquisa aprovada. Revise novamente antes de aplicar os dados." : "Dados aprovados distribuídos na Ficha 360 com evento de domínio e sem duplicação automática.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Falha ao confirmar a pesquisa."); }
+    finally { setBusy(false); }
+  }
+  return <div className="space-y-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-xl font-black">Pesquisa autônoma com fontes</h2><p className="mt-1 text-sm text-[var(--text-secondary)]">Somente fontes públicas, com confiança de identidade/dados e revisão antes de persistir.</p></div><button type="button" onClick={research} disabled={busy} className="inline-flex items-center gap-2 rounded-lg bg-electric px-3 py-2 text-sm font-bold text-white disabled:opacity-50"><Globe2 className="h-4 w-4" />{busy ? "Pesquisando..." : "Atualizar pesquisa"}</button></div>{message && <p className="rounded-lg border border-line bg-ink/60 p-3 text-sm text-[var(--text-secondary)]">{message}</p>}{run && <><div className="grid gap-3 sm:grid-cols-3"><SummaryRow label="Identidade" value={`${run.identity_confidence}/100`} /><SummaryRow label="Confiança dos dados" value={`${run.data_confidence}/100`} /><SummaryRow label="Score comercial" value={`${run.commercial_score}/100`} /></div><div className="grid gap-4 xl:grid-cols-2"><ResearchFindings title="Fatos" items={run.facts} /><ResearchFindings title="Sinais" items={run.signals} /><ResearchFindings title="Inferências" items={run.inferences} /><ResearchFindings title="Oportunidades" items={run.opportunities} /><article className="rounded-lg border border-line bg-ink/60 p-4"><h3 className="font-black">Fontes</h3><div className="mt-3 space-y-2">{run.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="block text-sm font-bold text-cyan hover:underline">{source.title}</a>)}</div></article><article className="rounded-lg border border-line bg-ink/60 p-4"><h3 className="font-black">Serviços recomendados</h3><div className="mt-3 space-y-2">{run.recommended_services.map((service) => <p key={service} className="text-sm text-[var(--text-secondary)]">{service}</p>)}{!run.recommended_services.length && <p className="text-sm text-[var(--text-secondary)]">Nenhum serviço recomendado sem evidência.</p>}</div></article></div><div className="flex flex-wrap gap-2">{run.status === "review" && <button type="button" onClick={() => void transition("approve")} disabled={busy || !run.sources.length} className="briefing-action briefing-action--primary"><CheckCircle2 className="h-4 w-4" /> Aprovar fontes</button>}{run.status === "approved" && <button type="button" onClick={() => void transition("persist")} disabled={busy} className="briefing-action briefing-action--primary"><Save className="h-4 w-4" /> Aplicar na Ficha 360</button>}{run.status === "persisted" && <span className="rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm font-bold text-emerald-200">Dados aplicados com revisão humana</span>}</div></>}</div>;
+}
+
+function ResearchFindings({ title, items }: { title: string; items: Array<{ statement: string; sourceUrl: string; confidence: number }> }) {
+  return <article className="rounded-lg border border-line bg-ink/60 p-4"><h3 className="font-black">{title}</h3><div className="mt-3 space-y-2">{items.map((item, index) => <p key={`${item.sourceUrl}-${index}`} className="text-sm text-[var(--text-secondary)]">{item.statement} <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="text-cyan">fonte · {item.confidence}/100</a></p>)}{!items.length && <p className="text-sm text-[var(--text-secondary)]">Nenhum item comprovado.</p>}</div></article>;
 }

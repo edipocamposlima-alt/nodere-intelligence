@@ -5,6 +5,8 @@ import { Check, GripVertical, Pencil, Plus, Search, Trash2, X } from "lucide-rea
 import { Company, CrmStatus } from "@/lib/types";
 import { getPublicSettings, savePipelineSettings, updateCompany, updateCompanyStatus } from "@/lib/api";
 import { LeadCard } from "@/components/crm/LeadCard";
+import { RecordActionsMenu } from "@/components/records/RecordActionsMenu";
+import { useAuth } from "@/context/AuthProvider";
 
 const STAGES_STORAGE_KEY = "nodere_pipeline_stages";
 const STAGE_COLORS_STORAGE_KEY = "nodere_pipeline_stage_colors";
@@ -106,6 +108,7 @@ function defaultNextAction(stage: string) {
 }
 
 export function CrmBoard({ companies, onLeadClick }: { companies: Company[]; onLeadClick?: (lead: Company) => void }) {
+  const { user } = useAuth();
   const [items, setItems] = useState(companies);
   const [query, setQuery] = useState("");
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -502,6 +505,7 @@ export function CrmBoard({ companies, onLeadClick }: { companies: Company[]; onL
                         <span>Arraste para mudar etapa</span>
                       </div>
                       <LeadCard lead={company} onEdit={onLeadClick} />
+                      <div className="mt-2 flex justify-end"><RecordActionsMenu company={company} role={user?.role} compact onChanged={() => setItems((current) => current.filter((item) => item.id !== company.id))} /></div>
                       {stale && <p className="mt-2 rounded-md bg-black/20 px-2 py-1 text-[11px] font-semibold text-amber-100">{stale.label}</p>}
                       {company.whatsapp && !isValidBrazilianMobile(company.whatsapp) && (
                         <div className="mt-2">

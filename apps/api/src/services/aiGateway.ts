@@ -25,8 +25,9 @@ import {
   reserveAiCredits
 } from "./creditLedger.js";
 import { buildAiTools } from "./aiTools.js";
+import { getAccountEntitlement } from "./entitlements.js";
 
-type SessionIdentity = { userId?: string; email?: string; role?: string };
+type SessionIdentity = { userId?: string; authUserId?: string | null; email?: string; role?: string };
 
 export type NodereAiMessageMetadata = {
   conversationId: string;
@@ -64,6 +65,7 @@ export async function startAiChat(input: {
         messagesJson: JSON.stringify(input.messages)
       });
   const languageModel = resolveLanguageModel(model);
+  const entitlement = await getAccountEntitlement({ ...input.session, workspaceId: input.workspaceId });
   const wallet = await getCreditWallet(input.workspaceId);
   const reservation = estimateReservationCredit({
     messagesJson: JSON.stringify(input.messages),
@@ -89,7 +91,7 @@ export async function startAiChat(input: {
     reservedCredit: reservation
   });
   try {
-    await reserveAiCredits(input.workspaceId, executionId, reservation);
+    await reserveAiCredits(input.workspaceId, executionId, reservation, entitlement);
   } catch (error) {
     await updateAiExecution(executionId, input.workspaceId, {
       status: "failed",
@@ -114,7 +116,7 @@ export async function startAiChat(input: {
     await persistLatestUserMessage(conversationId, input.workspaceId, validatedMessages);
     await updateAiExecution(executionId, input.workspaceId, { status: "streaming" });
   } catch (error) {
-    await releaseAiCredits(input.workspaceId, executionId, "invalid_messages").catch(() => undefined);
+    await releaseAiCredits(input.workspaceId, executionId, "invalid_messages", entitlement).catch(() => undefined);
     await updateAiExecution(executionId, input.workspaceId, {
       status: "failed",
       error_code: "INVALID_AI_MESSAGES",
@@ -164,7 +166,8 @@ export async function startAiChat(input: {
             provider: model.provider,
             finish_reason: finishReason,
             cache_write_tokens: cost.cacheWriteTokens
-          }
+          },
+          entitlement
         });
         await updateAiExecution(executionId, input.workspaceId, {
           status: "succeeded",
@@ -201,7 +204,7 @@ export async function startAiChat(input: {
   async function settleFailure(code: string, error: unknown, status: "failed" | "cancelled" = "failed") {
     if (terminal) return;
     terminal = true;
-    await releaseAiCredits(input.workspaceId, executionId, code).catch(() => undefined);
+    await releaseAiCredits(input.workspaceId, executionId, code, entitlement).catch(() => undefined);
     await updateAiExecution(executionId, input.workspaceId, {
       status,
       error_code: code,
@@ -242,6 +245,7 @@ export async function generateMeteredAiText(input: {
     allowedModelIds: agent.allowedModelIds
   });
   const languageModel = resolveLanguageModel(model);
+  const entitlement = await getAccountEntitlement({ ...input.session, workspaceId: input.workspaceId });
   const wallet = await getCreditWallet(input.workspaceId);
   const reservation = estimateReservationCredit({
     messagesJson: JSON.stringify({ system: input.systemPrompt, user: input.userPrompt }),
@@ -260,7 +264,7 @@ export async function generateMeteredAiText(input: {
   let providerCompleted = false;
 
   try {
-    await reserveAiCredits(input.workspaceId, executionId, reservation);
+    await reserveAiCredits(input.workspaceId, executionId, reservation, entitlement);
     await updateAiExecution(executionId, input.workspaceId, { status: "streaming", metadata: { action: input.action, compatibility_endpoint: true } });
     const result = await generateText({
       model: languageModel,
@@ -282,7 +286,8 @@ export async function generateMeteredAiText(input: {
       executionId,
       amount: cost.chargedCredit,
       providerCostUsd: cost.providerCostUsd,
-      metadata: { action: input.action, model_id: model.id, provider: model.provider, finish_reason: result.finishReason }
+      metadata: { action: input.action, model_id: model.id, provider: model.provider, finish_reason: result.finishReason },
+      entitlement
     });
     await updateAiExecution(executionId, input.workspaceId, {
       status: "succeeded",
@@ -299,7 +304,7 @@ export async function generateMeteredAiText(input: {
     // A resposta concluida pelo provedor ja gerou custo. Se a captura falhar,
     // mantemos a reserva retida para reconciliacao em vez de devolver saldo.
     if (!providerCompleted) {
-      await releaseAiCredits(input.workspaceId, executionId, "compatibility_endpoint_failed").catch(() => undefined);
+      await releaseAiCredits(input.workspaceId, executionId, "compatibility_endpoint_failed", entitlement).catch(() => undefined);
     }
     await updateAiExecution(executionId, input.workspaceId, {
       status: "failed",

@@ -1,6 +1,6 @@
 const MODULE_INFO: Record<string, { name: string; plan: string; desc: string }> = {
   "DISC-06": { name: "Social Scanner", plan: "Pro", desc: "Identifique presença em redes sociais e oportunidades de gestão." },
-  "INTEL-01": { name: "Enriquecimento", plan: "Pro", desc: "Enriqueça leads com dados do Apollo, Receita Federal e LinkedIn." },
+  "INTEL-01": { name: "Pesquisa com fontes", plan: "Pro", desc: "Pesquise fontes públicas, revise evidências e aplique dados comerciais com segurança." },
   "ENG-01": { name: "WhatsApp Inbox", plan: "Pro", desc: "Gerencie conversas de WhatsApp direto do CRM." },
   "ENG-02": { name: "Disparos em Massa", plan: "Agency", desc: "Envie campanhas para listas segmentadas com rastreamento." },
   "ENG-03": { name: "E-mail", plan: "Pro", desc: "Envie e acompanhe campanhas de e-mail integradas ao CRM." },

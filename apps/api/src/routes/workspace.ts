@@ -5,6 +5,7 @@ import { getSupabase } from "../db/supabase.js";
 import { ensureSupabaseAuthUser, listWorkspaceUsers } from "../services/userStore.js";
 import { getCreditStatus } from "../services/credits.js";
 import { PREDEFINED_SEGMENTS } from "../constants/segments.js";
+import { getAccountEntitlement } from "../services/entitlements.js";
 
 const router = Router();
 
@@ -17,10 +18,12 @@ router.get("/me", requireWorkspaceSession, async (req, res, next) => {
     const modules = sb ? await loadWorkspaceModules(sb, workspaceId) : [];
     const members = await listWorkspaceUsers(workspaceId);
     const member = members.find((item) => item.email === session.email);
+    const entitlement = await getAccountEntitlement({ ...session, workspaceId });
 
     res.json({
       user: {
         id: session.userId,
+        authUserId: session.authUserId || member?.authUserId || null,
         email: session.email,
         name: session.name || member?.name || session.email,
         role: session.role,
@@ -36,7 +39,8 @@ router.get("/me", requireWorkspaceSession, async (req, res, next) => {
         plan: "trial"
       },
       modules,
-      credits: await getCreditStatus(workspaceId),
+      entitlement,
+      credits: await getCreditStatus(workspaceId, entitlement),
       members
     });
   } catch (error) {

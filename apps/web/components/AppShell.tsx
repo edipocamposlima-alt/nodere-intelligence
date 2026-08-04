@@ -10,6 +10,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { ThemeRuntime } from "@/components/ThemeRuntime";
 import { AuthProvider } from "@/context/AuthProvider";
 import { CreditsProvider } from "@/context/CreditsProvider";
+import { VoiceInputAssistant } from "@/components/VoiceInputAssistant";
 
 const PUBLIC_PREFIXES = [
   "/",
@@ -60,6 +61,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </footer>
           </main>
           <MobileNav />
+          <VoiceInputAssistant />
           <PwaRegister />
           <ThemeRuntime />
         </div>

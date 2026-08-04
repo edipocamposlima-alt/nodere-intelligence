@@ -2,27 +2,25 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Archive, ArrowLeft, CheckCircle2, Download, FilePlus2, History, Mail, Mic, Paperclip, RefreshCw, Save, Sparkles, Upload } from "lucide-react";
-import { fetchAuthenticatedFile, type BriefingFieldDefinition, type CommercialBriefingDetail } from "@/lib/api";
+import { Archive, ArrowLeft, CheckCircle2, Download, FilePlus2, History, Mail, Paperclip, RefreshCw, Save, Sparkles, Trash2, Upload } from "lucide-react";
+import { fetchAuthenticatedFile, getCommercialBriefingDependencies, trashCommercialBriefing, type BriefingFieldDefinition, type CommercialBriefingDetail } from "@/lib/api";
+import { useAuth } from "@/context/AuthProvider";
 
 type Conflict = { fieldKey: string; label: string; currentValue: unknown; collectedValue: unknown; decision?: "keep" | "replace" | "append" };
 
-type VoiceDraft = { field: BriefingFieldDefinition; transcript: string } | null;
-
 export function BriefingEditor({ initialBriefing }: { initialBriefing: CommercialBriefingDetail }) {
+  const { user } = useAuth();
   const [briefing, setBriefing] = useState(initialBriefing);
   const [answers, setAnswers] = useState<Record<string, unknown>>(initialBriefing.answers || {});
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [notice, setNotice] = useState("");
   const [recoverableDraft, setRecoverableDraft] = useState<Record<string, unknown> | null>(null);
-  const [voiceDraft, setVoiceDraft] = useState<VoiceDraft>(null);
   const [assistantText, setAssistantText] = useState("");
   const [assistantBusy, setAssistantBusy] = useState(false);
   const [assistantSuggestions, setAssistantSuggestions] = useState<Record<string, unknown> | null>(null);
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
   const [conflictBusy, setConflictBusy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const recognitionRef = useRef<{ stop: () => void } | null>(null);
   const localKey = `nodere:briefing-draft:${briefing.id}`;
 
   const sections = useMemo(() => {
@@ -132,34 +130,19 @@ export function BriefingEditor({ initialBriefing }: { initialBriefing: Commercia
     catch (error) { setNotice(error instanceof Error ? error.message : "Falha ao alterar arquivamento."); }
   }
 
+  async function moveToTrash() {
+    const impact = await getCommercialBriefingDependencies(briefing.id).catch(() => null);
+    const reason = window.prompt(`Mover ${briefing.code} para a lixeira por 30 dias?\n${impact?.total || 0} dependência(s) serão preservadas.\n\nInforme o motivo:`)?.trim();
+    if (!reason || reason.length < 3 || !window.confirm("Li o impacto, entendi que o briefing sairá da operação ativa e confirmo a ação.")) return;
+    try {
+      await trashCommercialBriefing(briefing.id, reason);
+      window.location.assign("/crm/briefings");
+    } catch (error) { setNotice(error instanceof Error ? error.message : "Não foi possível mover o briefing para a lixeira."); }
+  }
+
   function updateField(key: string, value: unknown) {
     setAnswers((current) => ({ ...current, [key]: value }));
     setSaveState("idle");
-  }
-
-  function startVoice(field: BriefingFieldDefinition) {
-    const SpeechRecognition = (window as unknown as { SpeechRecognition?: new () => any; webkitSpeechRecognition?: new () => any }).SpeechRecognition
-      || (window as unknown as { webkitSpeechRecognition?: new () => any }).webkitSpeechRecognition;
-    if (!SpeechRecognition) return setNotice("O reconhecimento de voz não está disponível neste navegador. Use Chrome/Edge atualizado ou digite o conteúdo.");
-    recognitionRef.current?.stop();
-    const recognition = new SpeechRecognition();
-    recognition.lang = "pt-BR";
-    recognition.interimResults = false;
-    recognition.continuous = false;
-    recognition.onresult = (event: any) => setVoiceDraft({ field, transcript: String(event.results?.[0]?.[0]?.transcript || "").trim() });
-    recognition.onerror = () => setNotice("Não foi possível transcrever o áudio. Verifique a permissão do microfone.");
-    recognition.onend = () => { recognitionRef.current = null; };
-    recognitionRef.current = recognition;
-    recognition.start();
-    setNotice(`Ouvindo o campo “${field.label}”...`);
-  }
-
-  function applyVoice(decision: "keep" | "replace" | "append") {
-    if (!voiceDraft) return;
-    const previous = String(answers[voiceDraft.field.key] || "").trim();
-    if (decision !== "keep") updateField(voiceDraft.field.key, decision === "append" && previous ? `${previous}\n${voiceDraft.transcript}` : voiceDraft.transcript);
-    setVoiceDraft(null);
-    setNotice(decision === "keep" ? "Valor atual mantido." : "Transcrição aplicada. Revise e salve antes de concluir.");
   }
 
   async function assistedExtraction() {
@@ -243,6 +226,7 @@ export function BriefingEditor({ initialBriefing }: { initialBriefing: Commercia
             <button type="button" onClick={() => fetchAuthenticatedFile(`/briefings/${encodeURIComponent(briefing.id)}/pdf`, { fileName: `${briefing.code}.pdf` }).catch((error) => setNotice(error instanceof Error ? error.message : "Falha no PDF."))} className="briefing-action"><Download className="h-4 w-4" /> PDF</button>
             {briefing.company_id && <Link href={`/crm/communications?companyId=${encodeURIComponent(briefing.company_id)}`} className="briefing-action"><Mail className="h-4 w-4" /> Comunicar</Link>}
             <button type="button" onClick={toggleArchive} className="briefing-action"><Archive className="h-4 w-4" /> {briefing.status === "archived" ? "Restaurar" : "Arquivar"}</button>
+            {(user?.role === "owner" || user?.role === "admin") && <button type="button" onClick={() => void moveToTrash()} className="briefing-action border-red-400/40 text-red-300"><Trash2 className="h-4 w-4" /> Lixeira</button>}
           </div>
         </div>
         <div className="mt-5 h-2 overflow-hidden rounded-full bg-[var(--bg-hover)]"><div className="h-full rounded-full bg-[var(--brand-primary)]" style={{ width: `${briefing.completion_percent || 0}%` }} /></div>
@@ -262,7 +246,7 @@ export function BriefingEditor({ initialBriefing }: { initialBriefing: Commercia
           <article key={section} className="rounded-2xl border border-[var(--border-soft)] bg-[var(--bg-card)] p-5">
             <h2 className="font-heading text-lg font-black text-[var(--brand-primary)]">{section}</h2>
             <div className="mt-4 grid gap-4 lg:grid-cols-2">
-              {fields.map((field) => <BriefingField key={field.key} field={field} value={answers[field.key]} disabled={briefing.status === "archived"} onChange={(value) => updateField(field.key, value)} onBlur={() => save({ [field.key]: answers[field.key] })} onVoice={() => startVoice(field)} />)}
+              {fields.map((field) => <BriefingField key={field.key} field={field} value={answers[field.key]} disabled={briefing.status === "archived"} onChange={(value) => updateField(field.key, value)} onBlur={() => save({ [field.key]: answers[field.key] })} />)}
             </div>
           </article>
         ))}
@@ -282,15 +266,14 @@ export function BriefingEditor({ initialBriefing }: { initialBriefing: Commercia
         </article>
       </section>
 
-      {voiceDraft && <div className="fixed inset-0 z-[120] grid place-items-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-labelledby="voice-title"><div className="w-full max-w-xl rounded-2xl border border-[var(--border-soft)] bg-[var(--bg-modal)] p-5 shadow-2xl"><h2 id="voice-title" className="font-heading text-lg font-black text-[var(--text-primary)]">Revisar transcrição · {voiceDraft.field.label}</h2><p className="mt-3 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-main)] p-3 text-sm text-[var(--text-primary)]">{voiceDraft.transcript || "Nenhum texto reconhecido."}</p><div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => applyVoice("replace")} className="briefing-action briefing-action--primary">Substituir</button><button type="button" onClick={() => applyVoice("append")} className="briefing-action">Adicionar</button><button type="button" onClick={() => applyVoice("keep")} className="briefing-action">Manter atual</button></div></div></div>}
     </div>
   );
 }
 
-function BriefingField({ field, value, disabled, onChange, onBlur, onVoice }: { field: BriefingFieldDefinition; value: unknown; disabled: boolean; onChange: (value: unknown) => void; onBlur: () => void; onVoice: () => void }) {
+function BriefingField({ field, value, disabled, onChange, onBlur }: { field: BriefingFieldDefinition; value: unknown; disabled: boolean; onChange: (value: unknown) => void; onBlur: () => void }) {
   const text = Array.isArray(value) ? value.join(", ") : String(value ?? "");
   const common = "min-h-11 w-full rounded-lg border border-[var(--border-soft)] bg-[var(--bg-input)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)] disabled:opacity-60";
-  return <label className={`space-y-1 text-sm font-bold text-[var(--text-secondary)] ${field.type === "textarea" ? "lg:col-span-2" : ""}`}><span className="flex items-center justify-between gap-2"><span>{field.label}{field.required ? " *" : ""}</span><button type="button" disabled={disabled} onClick={onVoice} aria-label={`Preencher ${field.label} por voz`} title={`Preencher ${field.label} por voz`} className="rounded-md border border-[var(--border-soft)] p-1.5 text-[var(--brand-primary)] hover:border-[var(--brand-primary)] disabled:opacity-40"><Mic className="h-4 w-4" /></button></span>{field.type === "textarea" ? <textarea value={text} disabled={disabled} rows={4} onChange={(event) => onChange(event.target.value)} onBlur={onBlur} className={`${common} py-3`} /> : field.type === "select" ? <select value={text} disabled={disabled} onChange={(event) => onChange(event.target.value)} onBlur={onBlur} className={common}><option value="">Selecione</option>{field.options?.map((option) => <option key={option} value={option}>{option}</option>)}</select> : <input type={field.type === "tags" ? "text" : field.type} value={text} disabled={disabled} onChange={(event) => onChange(field.type === "tags" ? event.target.value.split(",").map((item) => item.trim()).filter(Boolean) : event.target.value)} onBlur={onBlur} className={common} />}</label>;
+  return <label className={`space-y-1 text-sm font-bold text-[var(--text-secondary)] ${field.type === "textarea" ? "lg:col-span-2" : ""}`}><span>{field.label}{field.required ? " *" : ""}</span>{field.type === "textarea" ? <textarea value={text} disabled={disabled} rows={4} onChange={(event) => onChange(event.target.value)} onBlur={onBlur} className={`${common} py-3`} /> : field.type === "select" ? <select value={text} disabled={disabled} onChange={(event) => onChange(event.target.value)} onBlur={onBlur} className={common}><option value="">Selecione</option>{field.options?.map((option) => <option key={option} value={option}>{option}</option>)}</select> : <input type={field.type === "tags" ? "text" : field.type} value={text} disabled={disabled} onChange={(event) => onChange(field.type === "tags" ? event.target.value.split(",").map((item) => item.trim()).filter(Boolean) : event.target.value)} onBlur={onBlur} className={common} />}</label>;
 }
 
 function formatValue(value: unknown) { return Array.isArray(value) ? value.join(", ") : String(value ?? "Não informado"); }

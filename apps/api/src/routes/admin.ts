@@ -3,7 +3,7 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { config } from "../config.js";
 import { getSupabase } from "../db/supabase.js";
-import { extractBearerToken, isBuiltInOwnerEmail, issueSessionToken, normalizeAdminSession, verifySessionToken } from "../services/adminSession.js";
+import { extractBearerToken, issueSessionToken, normalizeAdminSession, verifySessionToken } from "../services/adminSession.js";
 import { authenticateUser, createWorkspaceUser, ensureSupabaseAuthUser, inviteWorkspaceUser, listWorkspaceUsers, updateWorkspaceUser } from "../services/userStore.js";
 import { isMissingSupabaseSchema } from "../utils/supabaseErrors.js";
 
@@ -16,10 +16,6 @@ const apiKeyFields = [
   "OPENAI_API_KEY",
   "WHATSAPP_CLOUD_TOKEN",
   "WHATSAPP_PHONE_NUMBER_ID",
-  "ECONODATA_API_KEY",
-  "ECONODATA_API_URL",
-  "APOLLO_API_KEY",
-  "APOLLO_API_URL",
   "SUPABASE_URL",
   "SUPABASE_SERVICE_ROLE_KEY"
 ] as const;
@@ -42,8 +38,7 @@ function requireAdmin(request: any, response: any, next: any) {
     console.warn("[admin] blocked admin route", {
       email: session?.email || rawSession?.email || null,
       foundRole: rawSession?.role || null,
-      effectiveRole: session?.role || null,
-      builtInOwner: isBuiltInOwnerEmail(session?.email || rawSession?.email)
+      effectiveRole: session?.role || null
     });
     return response.status(403).json({
       message: "Acesso restrito a Owner ou Administrador.",
@@ -68,6 +63,7 @@ function sessionProfile(user: any) {
     role: user.role,
     workspaceId: user.workspaceId,
     userId: user.userId || user.id,
+    authUserId: user.authUserId ?? null,
     customRoleId: user.customRoleId ?? null,
     status: user.status || "active",
     visibilityLevel: user.visibilityLevel || (user.role === "viewer" ? "read" : "read_edit"),
@@ -90,10 +86,6 @@ function configuredFromEnv(field: ApiKeyField) {
     OPENAI_API_KEY: config.openai.apiKey,
     WHATSAPP_CLOUD_TOKEN: config.whatsapp.token,
     WHATSAPP_PHONE_NUMBER_ID: config.whatsapp.phoneNumberId,
-    ECONODATA_API_KEY: config.enrichment.econodataApiKey,
-    ECONODATA_API_URL: config.enrichment.econodataApiUrl,
-    APOLLO_API_KEY: config.enrichment.apolloApiKey,
-    APOLLO_API_URL: config.enrichment.apolloApiUrl,
     SUPABASE_URL: config.supabase.url,
     SUPABASE_SERVICE_ROLE_KEY: config.supabase.serviceRoleKey
   };
@@ -133,18 +125,6 @@ function applyRuntimeValue(field: ApiKeyField, value: string) {
       break;
     case "WHATSAPP_PHONE_NUMBER_ID":
       config.whatsapp.phoneNumberId = value;
-      break;
-    case "ECONODATA_API_KEY":
-      config.enrichment.econodataApiKey = value;
-      break;
-    case "ECONODATA_API_URL":
-      config.enrichment.econodataApiUrl = value;
-      break;
-    case "APOLLO_API_KEY":
-      config.enrichment.apolloApiKey = value;
-      break;
-    case "APOLLO_API_URL":
-      config.enrichment.apolloApiUrl = value;
       break;
     case "SUPABASE_URL":
       config.supabase.url = value;
@@ -269,14 +249,13 @@ router.post("/login", async (request, response, next) => {
     }
 
     const loginEmail = body.email.toLowerCase();
-    const allowedAdminEmails = new Set([config.admin.email.toLowerCase(), "edipo.lima@nodere.com.br"]);
-    if (!allowedAdminEmails.has(loginEmail) || body.password !== config.admin.password) {
+    if (loginEmail !== config.admin.email.toLowerCase() || body.password !== config.admin.password) {
       return response.status(401).json({ message: "Login ou senha invalidos." });
     }
 
     return response.json({
-      token: issueSessionToken({ email: body.email, name: loginEmail === "edipo.lima@nodere.com.br" ? "Édipo Lima" : config.admin.name, role: "owner", workspaceId: "default", userId: "admin-default" }),
-      user: { email: body.email, name: loginEmail === "edipo.lima@nodere.com.br" ? "Édipo Lima" : config.admin.name, role: "owner", workspaceId: "default" }
+      token: issueSessionToken({ email: body.email, name: config.admin.name, role: "admin", workspaceId: "default", userId: "admin-default" }),
+      user: { email: body.email, name: config.admin.name, role: "admin", workspaceId: "default" }
     });
   } catch (error) {
     return next(error);
@@ -511,28 +490,76 @@ router.get("/audit", requireAdmin, async (request: any, response, next) => {
   }
 });
 
+router.get("/test-data-batches", requireAdmin, async (request: any, response, next) => {
+  try {
+    const sb = getSupabase();
+    if (!sb) return response.status(503).json({ message: "Supabase não configurado." });
+    const workspaceId = request.admin.workspaceId || "default";
+    const { data, error } = await sb.from("nodere_test_data_registry").select("batch_id,entity_table,entity_id,purpose,created_by,created_at").eq("workspace_id", workspaceId).is("cleaned_at", null).order("created_at", { ascending: false }).limit(5_000);
+    if (error) throw error;
+    const batches = Object.values((data || []).reduce((acc: Record<string, any>, row: any) => {
+      const batch = acc[row.batch_id] || { batchId: row.batch_id, purpose: row.purpose, createdBy: row.created_by, createdAt: row.created_at, count: 0, entities: {} };
+      batch.count += 1;
+      batch.entities[row.entity_table] = Number(batch.entities[row.entity_table] || 0) + 1;
+      acc[row.batch_id] = batch;
+      return acc;
+    }, {}));
+    response.json({ batches });
+  } catch (error) { next(error); }
+});
+
 router.post("/cleanup-demo-data", requireAdmin, async (request: any, response, next) => {
   try {
-    const body = z.object({ confirm: z.string() }).parse(request.body);
-    if (body.confirm !== "CONFIRMO") {
-      return response.status(400).json({ error: "Confirmação necessária.", message: "Digite CONFIRMO para limpar dados demo/teste." });
+    const body = z.object({ confirm: z.string(), batchId: z.string().min(3).max(180) }).parse(request.body);
+    if (body.confirm !== "CONFIRMO LIMPEZA") {
+      return response.status(400).json({ error: "Confirmação necessária.", message: "Digite CONFIRMO LIMPEZA para remover o lote registrado." });
     }
     const sb = getSupabase();
     if (!sb) {
       return response.status(503).json({ message: "Supabase não configurado. Limpeza segura exige banco persistente." });
     }
     const workspaceId = request.admin.workspaceId || "default";
-    const { data, error } = await sb
-      .from("nodere_companies")
-      .delete()
-      .eq("workspace_id", workspaceId)
-      .or("source.is.null,source.in.(demo,test)")
-      .select("id");
+    const { data: registry, error } = await sb.from("nodere_test_data_registry").select("id,entity_table,entity_id").eq("workspace_id", workspaceId).eq("batch_id", body.batchId).is("cleaned_at", null).limit(5_000);
     if (error) throw error;
+    if (!registry?.length) return response.status(404).json({ message: "Nenhum registro aberto foi encontrado neste lote." });
+    const allowedTables = new Set([
+      "communication_outbox", "communication_events", "communication_threads", "communication_template_versions", "nodere_communication_templates",
+      "briefing_answers", "briefing_versions", "commercial_briefing_attachments", "commercial_briefings",
+      "nodere_proposal_audit_logs", "nodere_proposal_items", "proposal_versions", "nodere_proposals",
+      "calendar_events", "communications", "company_contacts", "nodere_company_notes", "nodere_research_runs", "nodere_domain_events",
+      "nodere_ai_tool_receipts", "nodere_ai_executions", "nodere_ai_messages", "nodere_ai_conversations", "nodere_companies", "nodere_platform_users", "auth.users"
+    ]);
+    const tableOrder = [...allowedTables];
+    const unsupported = registry.filter((row: any) => !allowedTables.has(row.entity_table));
+    if (unsupported.length) return response.status(409).json({ message: "O lote contém entidades não suportadas pela limpeza segura.", unsupported: unsupported.map((row: any) => ({ table: row.entity_table, id: row.entity_id })) });
+    let deleted = 0;
+    const cleanedRegistryIds: string[] = [];
+    for (const table of tableOrder) {
+      const rows = registry.filter((row: any) => row.entity_table === table);
+      for (const row of rows) {
+        if (table === "auth.users") {
+          const result = await sb.auth.admin.deleteUser(row.entity_id);
+          if (result.error) throw result.error;
+          deleted += 1;
+          cleanedRegistryIds.push(row.id);
+          continue;
+        }
+        const query = sb.from(table).delete().eq("id", row.entity_id);
+        const scoped = table === "nodere_proposal_items" ? query : query.eq("workspace_id", workspaceId);
+        const result = await scoped;
+        if (result.error) throw result.error;
+        deleted += 1;
+        cleanedRegistryIds.push(row.id);
+      }
+    }
+    if (cleanedRegistryIds.length) {
+      const { error: markError } = await sb.from("nodere_test_data_registry").update({ cleaned_at: new Date().toISOString() }).in("id", cleanedRegistryIds);
+      if (markError) throw markError;
+    }
     response.json({
       ok: true,
-      deleted: data?.length ?? 0,
-      message: `${data?.length ?? 0} registro(s) demo/teste removido(s) deste workspace.`
+      deleted,
+      message: `${deleted} registro(s) exatos do lote ${body.batchId} foram removidos. Nenhum filtro por nome, origem nula ou e-mail foi usado.`
     });
   } catch (error) {
     next(error);

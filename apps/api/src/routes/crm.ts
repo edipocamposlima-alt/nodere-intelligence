@@ -1,8 +1,5 @@
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
-import fs from "node:fs";
-import path from "node:path";
-import PDFDocument from "pdfkit";
 import { parse as parseCsvSync } from "csv-parse/sync";
 import { z } from "zod";
 import { getSupabase } from "../db/supabase.js";
@@ -19,18 +16,10 @@ import {
   updateCrmStage,
   updateStatus
 } from "../services/companyStore.js";
+import { emitDomainEvent } from "../services/domainEvents.js";
 
 const router = Router();
 router.use(requireWorkspaceMutation("owner", "admin", "operator"));
-
-function findNoderePdfIcon() {
-  const candidates = [
-    path.resolve(process.cwd(), "../web/public/android-chrome-192x192.png"),
-    path.resolve(process.cwd(), "apps/web/public/android-chrome-192x192.png"),
-    path.resolve(process.cwd(), "public/android-chrome-192x192.png")
-  ];
-  return candidates.find((candidate) => fs.existsSync(candidate));
-}
 
 router.get("/cards", async (req, res, next) => {
   try {
@@ -67,10 +56,15 @@ router.patch("/cards/bulk-stage", async (req, res, next) => {
   try {
     const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(String) : [];
     const stage = String(req.body?.stage || "Novo Lead");
+    const workspaceId = getRequestWorkspaceId(req);
     const updated = [];
     for (const id of ids) {
-      const item = await updateCrmStage(id, { status: stage as any }, getRequestWorkspaceId(req));
-      if (item) updated.push(item);
+      const before = await getCompanyAsync(id, workspaceId);
+      const item = await updateCrmStage(id, { status: stage as any }, workspaceId);
+      if (item) {
+        updated.push(item);
+        await emitDomainEvent({ workspaceId, aggregateType: "lead", aggregateId: id, eventType: "lead.stage_changed", actorId: (req as any).session?.userId || null, payload: { from: before?.status || null, to: stage, source: "bulk_stage" } });
+      }
     }
     res.json({ updated });
   } catch (error) {
@@ -111,7 +105,9 @@ router.post("/leads", async (req, res, next) => {
       createdAt: now,
       updatedAt: now
     } as any;
-    const [saved] = await saveCompanies([lead], getRequestWorkspaceId(req));
+    const workspaceId = getRequestWorkspaceId(req);
+    const [saved] = await saveCompanies([lead], workspaceId);
+    await emitDomainEvent({ workspaceId, aggregateType: "lead", aggregateId: saved.id, eventType: "lead.created", actorId: (req as any).session?.userId || null, payload: { status: saved.status, source: saved.source } });
     res.status(201).json(saved);
   } catch (error) {
     next(error);
@@ -181,8 +177,11 @@ router.get("/leads/:id", async (req, res, next) => {
 
 router.patch("/leads/:id", async (req, res, next) => {
   try {
-    const lead = await updateCompany(req.params.id, req.body ?? {}, getRequestWorkspaceId(req));
+    const workspaceId = getRequestWorkspaceId(req);
+    const before = await getCompanyAsync(req.params.id, workspaceId);
+    const lead = await updateCompany(req.params.id, req.body ?? {}, workspaceId);
     if (!lead) return res.status(404).json({ message: "Lead não encontrado." });
+    await emitDomainEvent({ workspaceId, aggregateType: "lead", aggregateId: lead.id, eventType: before?.status !== lead.status ? "lead.stage_changed" : "lead.updated", actorId: (req as any).session?.userId || null, payload: before?.status !== lead.status ? { from: before?.status || null, to: lead.status, source: "lead_patch" } : { changedFields: Object.keys(req.body || {}) } });
     res.json(lead);
   } catch (error) {
     next(error);
@@ -253,7 +252,9 @@ router.post("/leads/:id/activities", async (req, res, next) => {
   try {
     const body = activitySchema.parse(req.body ?? {});
     if (body.type === "note") {
-      const note = await addNote(req.params.id, body.body, getRequestWorkspaceId(req));
+      const workspaceId = getRequestWorkspaceId(req);
+      const note = await addNote(req.params.id, body.body, workspaceId);
+      await emitDomainEvent({ workspaceId, aggregateType: "lead", aggregateId: req.params.id, eventType: "activity.note_added", actorId: (req as any).session?.userId || null, payload: { noteId: note?.id || null } });
       return res.status(201).json({ ...note, type: "note" });
     }
     const row = {
@@ -275,6 +276,7 @@ router.post("/leads/:id/activities", async (req, res, next) => {
       return res.status(201).json({ ...note, type: body.type });
     }
     if (error) throw error;
+    await emitDomainEvent({ workspaceId: getRequestWorkspaceId(req), aggregateType: "lead", aggregateId: req.params.id, eventType: "communication.logged", actorId: (req as any).session?.userId || null, payload: { communicationId: data.id, channel: body.type, direction: body.direction || "manual", status: body.status || "sent" } });
     res.status(201).json(data);
   } catch (error) {
     next(error);
@@ -292,6 +294,7 @@ router.get("/leads/:id/tasks", async (req, res, next) => {
 router.post("/leads/:id/tasks", async (req, res, next) => {
   try {
     const task = await createTask(req.params.id, taskSchema.parse(req.body ?? {}), getRequestWorkspaceId(req));
+    await emitDomainEvent({ workspaceId: getRequestWorkspaceId(req), aggregateType: "lead", aggregateId: req.params.id, eventType: "task.created", actorId: (req as any).session?.userId || null, payload: { taskId: task?.id || null, dueAt: (task as any)?.dueAt || null } });
     res.status(201).json(task);
   } catch (error) {
     next(error);
@@ -302,30 +305,11 @@ router.get("/leads/:id/proposal.pdf", async (req, res, next) => {
   try {
     const lead = await getCompanyAsync(req.params.id, getRequestWorkspaceId(req));
     if (!lead) return res.status(404).json({ message: "Lead não encontrado." });
-    const doc = new PDFDocument({ margin: 48 });
-    const chunks: Buffer[] = [];
-    doc.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
-    doc.on("end", () => {
-      const pdf = Buffer.concat(chunks);
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="proposta-${safeFileName(lead.name)}.pdf"`);
-      res.send(pdf);
+    return res.status(410).json({
+      code: "LEGACY_PROPOSAL_PDF_REMOVED",
+      message: "A geração automática de proposta a partir de uma mensagem ou lead foi removida. Crie uma proposta comercial com escopo, itens, valores e condições no módulo Propostas e Contratos.",
+      lead_id: lead.id
     });
-    const logoPath = findNoderePdfIcon();
-    if (logoPath) doc.image(logoPath, 48, 44, { width: 28, height: 28 });
-    doc.fillColor("#00382F").fontSize(20).text("Proposta Comercial NODERE", logoPath ? 86 : 48, 48);
-    doc.moveDown();
-    doc.fontSize(14).text(`Lead: ${lead.name}`);
-    doc.text(`Segmento: ${lead.category || "Não informado"}`);
-    doc.text(`Cidade: ${[lead.city, lead.state].filter(Boolean).join(" / ") || "Não informada"}`);
-    doc.text(`Score: ${lead.score}/100 (${lead.opportunityLevel})`);
-    doc.moveDown();
-    doc.fontSize(12).text("Oportunidades detectadas:");
-    for (const item of lead.detectedOpportunities || []) doc.text(`- ${item}`);
-    doc.moveDown();
-    doc.text("Próximos passos sugeridos:");
-    for (const item of lead.suggestions || []) doc.text(`- ${item}`);
-    doc.end();
   } catch (error) {
     next(error);
   }
@@ -388,15 +372,6 @@ function requireSupabase() {
 
 function csvCell(value: unknown) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
-}
-
-function safeFileName(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9._-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80) || "lead";
 }
 
 function isMissingSupabaseRelation(error: unknown) {

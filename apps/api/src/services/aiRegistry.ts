@@ -16,6 +16,15 @@ export type AiModelRecord = {
   reasoningEffort: "none" | "low" | "medium" | "high" | "xhigh" | "max";
   allowedRoles: string[];
   enabled: boolean;
+  providerAvailable: boolean;
+  availabilityCheckedAt: string | null;
+  supportsResponses: boolean;
+  supportsTools: boolean;
+  supportsWebSearch: boolean;
+  supportsAudio: boolean;
+  rateLimitProfile: Record<string, unknown>;
+  discoverySource: string;
+  availabilityError: string | null;
 };
 
 export type AiAgentRecord = {
@@ -31,6 +40,7 @@ export type AiAgentRecord = {
 };
 
 export async function listAvailableModels(role?: string | null) {
+  await refreshAiModelAvailability({ maxAgeMs: 15 * 60_000 }).catch(() => undefined);
   const sb = requireAiDatabase();
   const { data, error } = await sb
     .from("nodere_ai_model_registry")
@@ -41,7 +51,59 @@ export async function listAvailableModels(role?: string | null) {
   return (data ?? [])
     .map(mapModel)
     .filter((model) => providerConfigured(model.provider))
+    .filter((model) => model.providerAvailable || !model.availabilityCheckedAt)
     .filter((model) => !role || isModelAllowedForRole(model, role));
+}
+
+export async function refreshAiModelAvailability(options: { force?: boolean; maxAgeMs?: number } = {}) {
+  const sb = requireAiDatabase();
+  const maxAgeMs = options.maxAgeMs ?? 15 * 60_000;
+  const { data: rows, error: listError } = await sb
+    .from("nodere_ai_model_registry")
+    .select("id, provider, provider_model_id, availability_checked_at")
+    .eq("enabled", true);
+  if (listError) {
+    if (isAvailabilitySchemaMissing(listError)) return { refreshed: false, reason: "migration_pending" as const };
+    throw listError;
+  }
+  const now = Date.now();
+  const needsRefresh = options.force || (rows ?? []).some((row) => {
+    const checkedAt = Date.parse(String(row.availability_checked_at || ""));
+    return !Number.isFinite(checkedAt) || now - checkedAt > maxAgeMs;
+  });
+  if (!needsRefresh) return { refreshed: false, reason: "fresh" as const };
+
+  const checkedAt = new Date().toISOString();
+  const openAiRows = (rows ?? []).filter((row) => row.provider === "openai");
+  if (openAiRows.length) {
+    if (!config.openai.apiKey) {
+      await updateProviderAvailability(sb, openAiRows.map((row) => String(row.id)), [], checkedAt, "OPENAI_API_KEY não configurada");
+    } else {
+      try {
+        const response = await fetch("https://api.openai.com/v1/models", {
+          headers: { Authorization: `Bearer ${config.openai.apiKey}`, Accept: "application/json" },
+          signal: AbortSignal.timeout(12_000)
+        });
+        const body = await response.json().catch(() => ({})) as { data?: Array<{ id?: string }>; error?: { message?: string } };
+        if (!response.ok) throw new Error(body.error?.message || `OpenAI retornou HTTP ${response.status}`);
+        const discovered = new Set((body.data || []).map((item) => String(item.id || "")).filter(Boolean));
+        const availableIds = openAiRows
+          .filter((row) => discovered.has(String(row.provider_model_id)))
+          .map((row) => String(row.id));
+        await updateProviderAvailability(sb, openAiRows.map((row) => String(row.id)), availableIds, checkedAt, null);
+      } catch (error) {
+        const message = error instanceof Error ? error.message.slice(0, 500) : "Falha ao consultar o catálogo OpenAI";
+        await updateProviderAvailability(sb, openAiRows.map((row) => String(row.id)), [], checkedAt, message);
+      }
+    }
+  }
+
+  const anthropicRows = (rows ?? []).filter((row) => row.provider === "anthropic");
+  if (anthropicRows.length) {
+    const availableIds = config.anthropic.apiKey ? anthropicRows.map((row) => String(row.id)) : [];
+    await updateProviderAvailability(sb, anthropicRows.map((row) => String(row.id)), availableIds, checkedAt, config.anthropic.apiKey ? null : "ANTHROPIC_API_KEY não configurada");
+  }
+  return { refreshed: true, checkedAt };
 }
 
 export async function getAvailableModel(modelId?: string | null, constraints?: {
@@ -135,8 +197,43 @@ function mapModel(row: Record<string, unknown>): AiModelRecord {
     outputCostUsdPerMillion: Number(row.output_cost_usd_per_million || 0),
     reasoningEffort: String(row.reasoning_effort || "medium") as AiModelRecord["reasoningEffort"],
     allowedRoles: Array.isArray(row.allowed_roles) ? row.allowed_roles.map(String) : ["owner", "admin", "operator", "viewer"],
-    enabled: Boolean(row.enabled)
+    enabled: Boolean(row.enabled),
+    providerAvailable: row.provider_available === undefined ? true : Boolean(row.provider_available),
+    availabilityCheckedAt: row.availability_checked_at ? String(row.availability_checked_at) : null,
+    supportsResponses: row.supports_responses === undefined ? true : Boolean(row.supports_responses),
+    supportsTools: Boolean(row.supports_tools),
+    supportsWebSearch: Boolean(row.supports_web_search),
+    supportsAudio: Boolean(row.supports_audio),
+    rateLimitProfile: row.rate_limit_profile && typeof row.rate_limit_profile === "object" ? row.rate_limit_profile as Record<string, unknown> : {},
+    discoverySource: String(row.discovery_source || "curated_registry"),
+    availabilityError: row.availability_error ? String(row.availability_error) : null
   };
+}
+
+async function updateProviderAvailability(
+  sb: ReturnType<typeof requireAiDatabase>,
+  allIds: string[],
+  availableIds: string[],
+  checkedAt: string,
+  errorMessage: string | null
+) {
+  if (!allIds.length) return;
+  const available = new Set(availableIds);
+  const updates = allIds.map(async (id) => {
+    const { error } = await sb.from("nodere_ai_model_registry").update({
+      provider_available: available.has(id),
+      availability_checked_at: checkedAt,
+      availability_error: errorMessage,
+      discovery_source: "provider_catalog"
+    }).eq("id", id);
+    if (error) throw error;
+  });
+  await Promise.all(updates);
+}
+
+function isAvailabilitySchemaMissing(error: unknown) {
+  const text = error instanceof Error ? error.message : JSON.stringify(error);
+  return text.includes("availability_checked_at") || text.includes("provider_available") || text.includes("42703");
 }
 
 function mapAgent(row: Record<string, unknown>): AiAgentRecord {

@@ -21,7 +21,16 @@ const model: AiModelRecord = {
   outputCostUsdPerMillion: 15,
   reasoningEffort: "medium",
   allowedRoles: ["owner", "admin", "operator", "viewer"],
-  enabled: true
+  enabled: true,
+  providerAvailable: true,
+  availabilityCheckedAt: new Date().toISOString(),
+  supportsResponses: true,
+  supportsTools: true,
+  supportsWebSearch: false,
+  supportsAudio: false,
+  rateLimitProfile: {},
+  discoverySource: "test",
+  availabilityError: null
 };
 
 const agent: AiAgentRecord = {

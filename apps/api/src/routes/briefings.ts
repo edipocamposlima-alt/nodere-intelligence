@@ -4,7 +4,7 @@ import ExcelJS from "exceljs";
 import multer from "multer";
 import { z } from "zod";
 import { getSupabase } from "../db/supabase.js";
-import { getRequestWorkspaceId, requireWorkspaceRole } from "../middleware/session.js";
+import { getRequestWorkspaceId, requireRecordPermission, requireWorkspaceRole } from "../middleware/session.js";
 import {
   BRIEFING_FIELDS,
   calculateBriefingCompletion,
@@ -14,6 +14,7 @@ import {
 } from "../services/briefingFields.js";
 import { renderCommercialBriefingPdf } from "../services/briefingPdf.js";
 import { generateMeteredAiText } from "../services/aiGateway.js";
+import { emitDomainEvent } from "../services/domainEvents.js";
 
 const router = Router();
 const canEdit = requireWorkspaceRole("owner", "admin", "operator");
@@ -62,6 +63,7 @@ router.get("/export.csv", async (req, res, next) => {
       .from("commercial_briefings")
       .select("*")
       .eq("workspace_id", workspaceId)
+      .eq("is_deleted", false)
       .order("updated_at", { ascending: false });
     if (error) throw error;
     const headers = ["code", "company_id", "status", "priority", ...BRIEFING_FIELDS.map((field) => field.key), "created_at", "updated_at"];
@@ -94,7 +96,7 @@ router.post("/import", canEdit, async (req, res, next) => {
 router.get("/export.xlsx", async (req, res, next) => {
   try {
     const workspaceId = getRequestWorkspaceId(req);
-    const { data, error } = await requireSupabase().from("commercial_briefings").select("*").eq("workspace_id", workspaceId).order("updated_at", { ascending: false }).limit(10_000);
+    const { data, error } = await requireSupabase().from("commercial_briefings").select("*").eq("workspace_id", workspaceId).eq("is_deleted", false).order("updated_at", { ascending: false }).limit(10_000);
     if (error) throw error;
     const workbook = createBriefingWorkbook("Briefings Comerciais");
     const worksheet = workbook.getWorksheet(1)!;
@@ -183,7 +185,11 @@ router.get("/", async (req, res, next) => {
       .eq("workspace_id", workspaceId)
       .order("updated_at", { ascending: false })
       .limit(500);
-    if (status) query = query.eq("status", status);
+    if (status === "trash") query = query.eq("is_deleted", true);
+    else {
+      query = query.eq("is_deleted", false);
+      if (status) query = query.eq("status", status);
+    }
     if (companyId) query = query.eq("company_id", companyId);
     if (search) query = query.or(`code.ilike.%${escapePostgrest(search)}%,title.ilike.%${escapePostgrest(search)}%`);
     const { data, error } = await query;
@@ -284,6 +290,7 @@ router.post("/:id/complete", canEdit, async (req, res, next) => {
     await ensureBriefingNextAction(workspaceId, data, actor.id);
     await saveVersion(workspaceId, briefingId, Number(current.current_version || 1), snapshot, actor.id, "complete", String(req.body?.reason || "Conclusão do briefing"));
     await audit(req, "briefing.complete", "commercial_briefing", briefingId, current, { briefing: data, mapping }, String(req.body?.reason || ""));
+    await emitDomainEvent({ workspaceId, aggregateType: current.company_id ? "lead" : "briefing", aggregateId: String(current.company_id || briefingId), eventType: "briefing.completed", actorId: actor.id, payload: { briefingId, completionPercent: snapshot.completion_percent, nextActionAt: data.next_action_at || null } });
     res.json({ ...data, mapping, nextActionSynchronized: Boolean(data.next_action_at) });
   } catch (error) {
     next(error);
@@ -331,6 +338,80 @@ router.post("/:id/duplicate", canEdit, async (req, res, next) => {
 
 router.post("/:id/archive", canEdit, async (req, res, next) => setArchiveState(req, res, next, true));
 router.post("/:id/restore", canEdit, async (req, res, next) => setArchiveState(req, res, next, false));
+
+router.get("/:id/dependencies", async (req, res, next) => {
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    const definitions = [["briefing_versions", "briefing_id"], ["briefing_answers", "briefing_id"], ["commercial_briefing_attachments", "briefing_id"]] as const;
+    const values = await Promise.all(definitions.map(async ([table, column]) => {
+      const { count, error } = await requireSupabase().from(table).select("id", { head: true, count: "exact" }).eq("workspace_id", workspaceId).eq(column, req.params.id);
+      if (error) throw error;
+      return [table, count ?? 0] as const;
+    }));
+    const dependencies = Object.fromEntries(values) as Record<string, number>;
+    return res.json({ briefingId: req.params.id, dependencies, total: Object.values(dependencies).reduce((sum, count) => sum + count, 0) });
+  } catch (error) { return next(error); }
+});
+
+router.delete("/:id", requireRecordPermission("records.delete"), async (req, res, next) => {
+  try {
+    const body = z.object({ reason: z.string().min(3).max(500), deletionBatchId: z.string().min(3).max(180).optional() }).parse(req.body ?? {});
+    const workspaceId = getRequestWorkspaceId(req);
+    const actor = sessionActor(req);
+    const current = await getBriefing(workspaceId, String(req.params.id));
+    if (!current) return res.status(404).json({ message: "Briefing não encontrado." });
+    if (current.is_deleted) return res.json({ ...current, replayed: true });
+    const now = new Date().toISOString();
+    const retentionUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await requireSupabase().from("commercial_briefings").update({
+      status: "archived", is_deleted: true, deleted_at: now, deleted_by: actor.id,
+      deletion_reason: body.reason, retention_until: retentionUntil,
+      deletion_batch_id: body.deletionBatchId || null, archived_at: now, updated_by: actor.id
+    }).eq("workspace_id", workspaceId).eq("id", req.params.id).select("*").single();
+    if (error) throw error;
+    await audit(req, "briefing.trash", "commercial_briefing", String(req.params.id), current, data, body.reason);
+    return res.json(data);
+  } catch (error) { return next(error); }
+});
+
+router.post("/:id/restore-deleted", requireRecordPermission("records.delete"), async (req, res, next) => {
+  try {
+    const body = z.object({ reason: z.string().min(3).max(500) }).parse(req.body ?? {});
+    const workspaceId = getRequestWorkspaceId(req);
+    const actor = sessionActor(req);
+    const current = await getBriefing(workspaceId, String(req.params.id));
+    if (!current) return res.status(404).json({ message: "Briefing não encontrado." });
+    const { data, error } = await requireSupabase().from("commercial_briefings").update({
+      status: "draft", is_deleted: false, deleted_at: null, deleted_by: null,
+      deletion_reason: null, retention_until: null, deletion_batch_id: null,
+      archived_at: null, restore_count: Number(current.restore_count || 0) + 1, updated_by: actor.id
+    }).eq("workspace_id", workspaceId).eq("id", req.params.id).select("*").single();
+    if (error) throw error;
+    await audit(req, "briefing.restoreDeleted", "commercial_briefing", String(req.params.id), current, data, body.reason);
+    return res.json(data);
+  } catch (error) { return next(error); }
+});
+
+router.post("/:id/purge", requireRecordPermission("records.purge"), async (req, res, next) => {
+  try {
+    const body = z.object({ confirmation: z.string().min(1), reason: z.string().min(10).max(500) }).parse(req.body ?? {});
+    const workspaceId = getRequestWorkspaceId(req);
+    const current = await getBriefing(workspaceId, String(req.params.id));
+    if (!current) return res.status(404).json({ message: "Briefing não encontrado." });
+    if (!current.is_deleted) return res.status(409).json({ message: "Mova o briefing para a lixeira antes do purge." });
+    if (current.legal_hold) return res.status(409).json({ message: "Briefing sob retenção legal." });
+    if (body.confirmation !== current.code && body.confirmation !== "EXCLUIR DEFINITIVAMENTE") return res.status(422).json({ message: "A confirmação não corresponde ao código do briefing." });
+    const registeredTest = current.deletion_batch_id ? await isRegisteredTestBriefing(workspaceId, current.deletion_batch_id, current.id) : false;
+    if (!registeredTest && (!current.retention_until || new Date(current.retention_until).getTime() > Date.now())) return res.status(409).json({ message: "O prazo de retenção ainda não terminou.", retentionUntil: current.retention_until });
+    const dependencies = await briefingDependencyCounts(workspaceId, current.id);
+    const total = Object.values(dependencies).reduce((sum, count) => sum + count, 0);
+    if (total) return res.status(409).json({ code: "BRIEFING_DEPENDENCIES_EXIST", message: "Exclusão definitiva bloqueada por dependências.", dependencies, total });
+    await audit(req, "briefing.purge", "commercial_briefing", current.id, current, { purged: true, purgedAt: new Date().toISOString(), purgedBy: sessionActor(req).id }, body.reason);
+    const { error } = await requireSupabase().from("commercial_briefings").delete().eq("workspace_id", workspaceId).eq("id", current.id);
+    if (error) throw error;
+    return res.json({ ok: true, recoverable: false });
+  } catch (error) { return next(error); }
+});
 
 router.get("/:id/compare", async (req, res, next) => {
   try {
@@ -651,6 +732,22 @@ async function getBriefing(workspaceId: string, id: string) {
   const { data, error } = await requireSupabase().from("commercial_briefings").select("*").eq("workspace_id", workspaceId).eq("id", id).maybeSingle();
   if (error) throw error;
   return data;
+}
+
+async function briefingDependencyCounts(workspaceId: string, briefingId: string) {
+  const definitions = [["briefing_versions", "briefing_id"], ["briefing_answers", "briefing_id"], ["commercial_briefing_attachments", "briefing_id"]] as const;
+  const counts = await Promise.all(definitions.map(async ([table, column]) => {
+    const { count, error } = await requireSupabase().from(table).select("id", { head: true, count: "exact" }).eq("workspace_id", workspaceId).eq(column, briefingId);
+    if (error) throw error;
+    return [table, count ?? 0] as const;
+  }));
+  return Object.fromEntries(counts) as Record<string, number>;
+}
+
+async function isRegisteredTestBriefing(workspaceId: string, batchId: string, briefingId: string) {
+  const { data, error } = await requireSupabase().from("nodere_test_data_registry").select("id").eq("workspace_id", workspaceId).eq("batch_id", batchId).eq("entity_table", "commercial_briefings").eq("entity_id", briefingId).is("cleaned_at", null).maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
 }
 
 async function upsertAnswers(workspaceId: string, briefingId: string, actorId: string, answers: Record<string, unknown>) {

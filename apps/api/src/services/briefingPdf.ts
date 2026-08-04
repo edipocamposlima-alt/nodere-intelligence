@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import PDFDocument from "pdfkit";
 import { BRIEFING_FIELDS } from "./briefingFields.js";
 
@@ -31,22 +33,37 @@ function printable(value: unknown) {
 
 export async function renderCommercialBriefingPdf(input: BriefingPdfInput) {
   return new Promise<Buffer>((resolve, reject) => {
-    const document = new PDFDocument({ size: "A4", margin: 44, bufferPages: true, info: { Title: `${input.code} - ${input.companyName}` } });
+    const document = new PDFDocument({ size: "A4", margins: { top: 44, right: 44, bottom: 0, left: 44 }, bufferPages: true, info: { Title: `${input.code} - ${input.companyName}` } });
     const chunks: Buffer[] = [];
     document.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
     document.on("end", () => resolve(Buffer.concat(chunks)));
     document.on("error", reject);
 
     const pageWidth = document.page.width - 88;
+    const logoCandidates = [
+      path.resolve(process.cwd(), "../web/public/nodere-icon-official.png"),
+      path.resolve(process.cwd(), "apps/web/public/nodere-icon-official.png"),
+      path.resolve(process.cwd(), "public/nodere-icon-official.png"),
+      path.resolve(process.cwd(), "../web/public/android-chrome-192x192.png")
+    ];
+    const logoPath = logoCandidates.find((candidate) => fs.existsSync(candidate));
+    const drawHeader = () => {
+      document.rect(0, 0, document.page.width, 118).fill(palette.forest);
+      if (logoPath) document.image(logoPath, 44, 30, { width: 42, height: 42 });
+      document.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(23).text("NODERE", logoPath ? 96 : 44, 36);
+      document.fillColor(palette.goldSoft).fontSize(10).text("BRIEFING COMERCIAL", 44, 76, { characterSpacing: 1.4 });
+      document.fillColor("#FFFFFF").font("Helvetica").fontSize(10).text(`${input.code} · versão ${input.version}`, 44, 94);
+      document.x = 44;
+      document.y = 140;
+    };
     const ensureSpace = (height = 70) => {
-      if (document.y + height > document.page.height - 48) document.addPage();
+      if (document.y + height > document.page.height - 94) {
+        document.addPage();
+        drawHeader();
+      }
     };
 
-    document.rect(0, 0, document.page.width, 118).fill(palette.forest);
-    document.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(23).text("NODERE", 44, 36);
-    document.fillColor(palette.goldSoft).fontSize(10).text("BRIEFING COMERCIAL", 44, 69, { characterSpacing: 1.4 });
-    document.fillColor("#FFFFFF").font("Helvetica").fontSize(10).text(`${input.code} · versão ${input.version}`, 44, 91);
-    document.y = 140;
+    drawHeader();
 
     document.fillColor(palette.forest).font("Helvetica-Bold").fontSize(19).text(input.companyName || input.title);
     document.moveDown(0.3);
@@ -59,14 +76,14 @@ export async function renderCommercialBriefingPdf(input: BriefingPdfInput) {
     for (const field of BRIEFING_FIELDS) {
       const value = input.answers[field.key];
       if (field.section !== currentSection) {
-        ensureSpace(56);
+        ensureSpace(70);
         currentSection = field.section;
         document.moveDown(0.7);
         document.roundedRect(44, document.y, pageWidth, 25, 5).fill(palette.mint);
         document.fillColor(palette.green).font("Helvetica-Bold").fontSize(11).text(currentSection, 54, document.y - 18);
         document.moveDown(1.1);
       }
-      ensureSpace(46);
+      ensureSpace(54);
       document.fillColor(palette.gold).font("Helvetica-Bold").fontSize(8.5).text(field.label.toUpperCase());
       document.fillColor(palette.graphite).font("Helvetica").fontSize(10.5).text(printable(value), { width: pageWidth, lineGap: 2 });
       document.moveDown(0.55);
@@ -81,7 +98,7 @@ export async function renderCommercialBriefingPdf(input: BriefingPdfInput) {
       document.fillColor(palette.graphite).font("Helvetica").fontSize(10).text("Nenhum anexo registrado.");
     } else {
       for (const attachment of input.attachments) {
-        ensureSpace(34);
+        ensureSpace(46);
         document.fillColor(palette.gold).font("Helvetica-Bold").fontSize(9).text(attachment.original_name || "Arquivo");
         document.fillColor(palette.graphite).font("Helvetica").fontSize(8.5).text(`${attachment.mime_type || "tipo não informado"} · ${Math.max(1, Math.round(Number(attachment.size_bytes || 0) / 1024))} KB · SHA-256 ${attachment.sha256 || "não informado"}`);
         document.moveDown(0.45);
@@ -91,12 +108,15 @@ export async function renderCommercialBriefingPdf(input: BriefingPdfInput) {
     const range = document.bufferedPageRange();
     for (let pageIndex = range.start; pageIndex < range.start + range.count; pageIndex += 1) {
       document.switchToPage(pageIndex);
+      const originalBottomMargin = document.page.margins.bottom;
+      document.page.margins.bottom = 0;
       document.fillColor(palette.graphite).font("Helvetica").fontSize(8).text(
-        `NODERE · ${input.code} · página ${pageIndex + 1} de ${range.count}`,
+        `NODERE · ${input.code} · página ${pageIndex - range.start + 1} de ${range.count}`,
         44,
         document.page.height - 32,
-        { width: pageWidth, align: "center" }
+        { width: pageWidth, align: "center", lineBreak: false }
       );
+      document.page.margins.bottom = originalBottomMargin;
     }
     document.end();
   });

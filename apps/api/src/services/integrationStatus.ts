@@ -103,24 +103,6 @@ export function getIntegrationStatus() {
       message: config.anthropic.apiKey ? configuredMessage("Anthropic") : "Configure ANTHROPIC_API_KEY no backend."
     },
     {
-      key: "econodata",
-      name: "Econodata",
-      configured: Boolean(config.enrichment.econodataApiKey && config.enrichment.econodataApiUrl),
-      status: statusFromConfig(Boolean(config.enrichment.econodataApiKey && config.enrichment.econodataApiUrl)),
-      required: false,
-      capability: "Enriquecimento de CNPJ, razão social e dados cadastrais via endpoint oficial configurado.",
-      message: config.enrichment.econodataApiKey && config.enrichment.econodataApiUrl ? configuredMessage("Econodata") : "Configure ECONODATA_API_URL e ECONODATA_API_KEY no backend."
-    },
-    {
-      key: "apollo",
-      name: "Apollo.io",
-      configured: Boolean(config.enrichment.apolloApiKey),
-      status: statusFromConfig(Boolean(config.enrichment.apolloApiKey)),
-      required: false,
-      capability: "Enriquecimento automatizado de organização e decisores B2B por domínio/site.",
-      message: config.enrichment.apolloApiKey ? "Apollo: credencial carregada; operação e permissões dependem do plano/API da conta e ainda precisam de teste real." : "Configure APOLLO_API_KEY no backend."
-    },
-    {
       key: "bling",
       name: "Bling ERP",
       configured: Boolean(config.marketplace.blingClientId && config.marketplace.blingClientSecret),

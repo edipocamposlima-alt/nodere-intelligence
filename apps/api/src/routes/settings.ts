@@ -8,7 +8,6 @@ const router = Router();
 
 const INTEGRATION_KEYS = [
   "google_places_key",
-  "apollo_key",
   "smtp_host",
   "smtp_port",
   "smtp_user",
@@ -155,20 +154,6 @@ router.get("/test/google", requireWorkspaceRole("admin", "owner"), async (req, r
     return res.json({ ok: true });
   } catch {
     return res.status(500).json({ error: "Erro ao testar Google Places." });
-  }
-});
-
-router.get("/test/apollo", requireWorkspaceRole("admin", "owner"), async (req, res) => {
-  try {
-    const value = await getIntegrationValue(getRequestWorkspaceId(req), "apollo_key");
-    if (!value) return res.status(400).json({ error: "Chave Apollo não configurada." });
-    const response = await fetch("https://api.apollo.io/v1/auth/health", {
-      headers: { "X-Api-Key": value }
-    });
-    if (!response.ok) return res.status(400).json({ error: "Chave Apollo inválida." });
-    return res.json({ ok: true });
-  } catch {
-    return res.status(500).json({ error: "Erro ao testar Apollo.io." });
   }
 });
 

@@ -4,7 +4,6 @@ import { scanWebsite } from "./websiteScanner.js";
 import { calculateOpportunityScore, calculateMaturityScore, calculateCommercialScore, calculatePaidTrafficScore } from "./scoring.js";
 import { saveAudit } from "../db/auditStore.js";
 import { getCompany, updateCompany } from "./companyStore.js";
-import { enrichCompanyExternal } from "./externalEnrichment.js";
 
 const jobs: EnrichmentJob[] = [];
 const MAX_CONCURRENT = 3;
@@ -62,8 +61,7 @@ async function processJob(job: EnrichmentJob) {
     const scan = await scanWebsite(company.website);
     saveAudit(job.companyId, scan);
 
-    const external = await enrichCompanyExternal({ ...company, ...scan });
-    const opportunityData = calculateOpportunityScore({ ...company, ...scan, ...external });
+    const opportunityData = calculateOpportunityScore({ ...company, ...scan });
 
     updateCompany(job.companyId, {
       // basic signals (backward compat)
@@ -80,12 +78,7 @@ async function processJob(job: EnrichmentJob) {
       facebook: scan.facebook,
       linkedin: scan.linkedin,
       youtube: scan.youtube,
-      cnpj: external.cnpj,
-      legalName: external.legalName,
-      companySize: external.companySize,
-      revenueRange: external.revenueRange,
-      decisionMakers: external.decisionMakers,
-      enrichmentSources: external.enrichmentSources,
+      enrichmentSources: [company.website].filter(Boolean) as string[],
       // Phase 3 deep signals
       hasGA4: scan.hasGA4,
       ga4MeasurementId: scan.ga4MeasurementId,

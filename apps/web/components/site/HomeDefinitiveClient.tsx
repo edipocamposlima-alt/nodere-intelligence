@@ -14,7 +14,7 @@ const STATS = [
 
 const SOLUTIONS = [
   { icon: "🔍", code: "DISC", name: "Discovery", color: "#F59E0B", desc: "Encontre empresas com baixa presença digital e alto potencial de compra por segmento e cidade." },
-  { icon: "🧠", code: "INTEL", name: "Inteligência", color: "#7C3AED", desc: "Enriquecimento automático com Apollo, Receita Federal e diagnóstico por IA." },
+  { icon: "🧠", code: "INTEL", name: "Inteligência", color: "#7C3AED", desc: "Pesquisa pública com fontes, revisão humana e diagnóstico por IA." },
   { icon: "📊", code: "CRM", name: "CRM", color: "var(--crm-new)", desc: "Pipeline visual, ficha 360, propostas em PDF e agenda de follow-ups integrados." },
   { icon: "💬", code: "ENGAGE", name: "Engage", color: "#16A34A", desc: "WhatsApp inbox, disparos em massa, e-mail e central omnichannel com automações." },
   { icon: "🤖", code: "AI", name: "IA NODERE", color: "var(--ai-primary)", desc: "Copiloto comercial com contexto real do lead. Scripts, análise e respostas inteligentes." },
@@ -27,7 +27,6 @@ const INTEGRATIONS = [
   { icon: "🗺️", name: "Google Maps", color: "#4285F4" },
   { icon: "⭐", name: "Google Business", color: "#FBBC04" },
   { icon: "📊", name: "Google Ads", color: "#34A853" },
-  { icon: "🚀", name: "Apollo.io", color: "#7C3AED" },
   { icon: "🤖", name: "OpenAI GPT-4", color: "#10A37F" },
   { icon: "💬", name: "WhatsApp Business", color: "#25D366" },
   { icon: "📘", name: "Facebook Ads", color: "#1877F2" },
@@ -59,7 +58,7 @@ const BLOG_POSTS = [
   { tag: "IA NODERE", color: "var(--ai-primary)", title: "Copiloto comercial: como a IA gera scripts de abordagem em segundos", read: "6 min", date: "Mai 2026" },
   { tag: "Engage", color: "#16A34A", title: "WhatsApp B2B: como escalar prospecção sem virar spam", read: "5 min", date: "Mai 2026" },
   { tag: "Analytics", color: "#2563EB", title: "Forecast de receita: como prever seu faturamento com precisão", read: "4 min", date: "Abr 2026" },
-  { tag: "Inteligência", color: "#7C3AED", title: "Enriquecimento de dados: Apollo + Receita Federal na mesma tela", read: "3 min", date: "Abr 2026" }
+  { tag: "Inteligência", color: "#7C3AED", title: "Pesquisa comercial: fatos, fontes e revisão na mesma tela", read: "3 min", date: "Abr 2026" }
 ];
 
 function slugify(value: string) {

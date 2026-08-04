@@ -11,6 +11,7 @@ export interface AdminSession {
   role: SessionRole;
   workspaceId: string;
   userId?: string;
+  authUserId?: string | null;
   customRoleId?: string | null;
   status?: string;
   visibilityLevel?: string;
@@ -18,31 +19,24 @@ export interface AdminSession {
   exp: number;
 }
 
-const BUILTIN_OWNER_EMAIL = "edipo.lima@nodere.com.br";
-const BUILTIN_OWNER_NAME = "Édipo Lima";
-
 function normalizeRole(role?: string): SessionRole {
   return role === "owner" ? "owner" : role === "admin" ? "admin" : role === "viewer" ? "viewer" : "operator";
 }
 
-export function isBuiltInOwnerEmail(email?: string) {
-  return String(email || "").trim().toLowerCase() === BUILTIN_OWNER_EMAIL;
-}
-
 export function normalizeAdminSession(data: AdminSession): AdminSession {
   const email = String(data.email || "").trim().toLowerCase();
-  const isBuiltInOwner = isBuiltInOwnerEmail(email);
   return {
     ...data,
     email,
-    name: isBuiltInOwner ? BUILTIN_OWNER_NAME : data.name,
-    role: isBuiltInOwner ? "owner" : normalizeRole(data.role),
+    name: data.name,
+    role: normalizeRole(data.role),
     workspaceId: data.workspaceId || "default",
-    userId: isBuiltInOwner ? data.userId || "admin-default" : data.userId,
+    userId: data.userId,
+    authUserId: data.authUserId ?? null,
     customRoleId: data.customRoleId ?? null,
-    status: isBuiltInOwner ? "active" : data.status || "active",
-    visibilityLevel: isBuiltInOwner ? "full" : data.visibilityLevel || (data.role === "viewer" ? "read" : "read_edit"),
-    modulePermissions: isBuiltInOwner ? {} : data.modulePermissions || {}
+    status: data.status || "active",
+    visibilityLevel: data.visibilityLevel || (data.role === "viewer" ? "read" : "read_edit"),
+    modulePermissions: data.modulePermissions || {}
   };
 }
 

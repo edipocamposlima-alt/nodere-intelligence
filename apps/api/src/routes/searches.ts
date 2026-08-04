@@ -1,32 +1,16 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getRequestWorkspaceId, isPrivilegedSession } from "../middleware/session.js";
+import { getRequestWorkspaceId } from "../middleware/session.js";
 import { filterUnsavedSearchResults, findExistingCrmLead, searchCompaniesWithMeta } from "../services/companyStore.js";
 import { consumeSearch } from "../services/credits.js";
 import { listSearchHistory, saveSearch, getSearch, touchSearch } from "../db/searchHistory.js";
 import { calculateOpportunityScore } from "../services/scoring.js";
-import { config } from "../config.js";
 import { markOnboardingStep } from "../services/onboardingStore.js";
 import { logRequestMetric } from "../services/metricsStore.js";
 import type { Company } from "../types.js";
+import { getAccountEntitlement } from "../services/entitlements.js";
 
 const router = Router();
-const apolloSearchSchema = z.object({
-  type: z.enum(["companies", "people"]).default("companies"),
-  companyName: z.string().optional(),
-  domain: z.string().optional(),
-  personName: z.string().optional(),
-  title: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  country: z.string().optional(),
-  page: z.coerce.number().min(1).max(20).default(1),
-  perPage: z.coerce.number().min(1).max(25).default(10)
-}).refine(
-  (input) => [input.companyName, input.domain, input.personName, input.title, input.city, input.state].some((value) => value && value.trim().length >= 2),
-  { message: "Informe pelo menos empresa, domínio, pessoa, cargo, cidade ou estado para buscar no Apollo." }
-);
-
 const searchSchema = z.object({
   mode: z.enum(["places", "cnpj", "global"]).optional(),
   companyName: z.string().optional(),
@@ -118,102 +102,6 @@ router.get("/cnpj", async (req, res, next) => {
 });
 
 
-router.post("/apollo", async (req, res, next) => {
-  try {
-    if (!config.enrichment.apolloApiKey) {
-      return res.status(503).json({
-        configured: false,
-        code: "APOLLO_NOT_CONFIGURED",
-        error: "Apollo.io não configurado. Configure sua chave em Integrações.",
-        message: "Apollo.io não está configurado neste workspace. Defina APOLLO_API_KEY no Render/Admin para executar busca real.",
-        results: [],
-        count: 0
-      });
-    }
-
-    const input = apolloSearchSchema.parse(req.body);
-    const headers = {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-cache",
-      "X-Api-Key": config.enrichment.apolloApiKey
-    };
-    const endpoint = input.type === "people" ? "/mixed_people/search" : "/mixed_companies/search";
-    const payload = input.type === "people"
-      ? {
-          q_person_name: input.personName || undefined,
-          q_keywords: [input.companyName, input.title].filter(Boolean).join(" ") || undefined,
-          person_titles: input.title ? [input.title] : undefined,
-          organization_locations: [input.city, input.state, input.country].filter(Boolean),
-          page: input.page,
-          per_page: input.perPage
-        }
-      : {
-          q_organization_name: input.companyName || undefined,
-          q_organization_domains: input.domain || undefined,
-          organization_locations: [input.city, input.state, input.country].filter(Boolean),
-          page: input.page,
-          per_page: input.perPage
-        };
-
-    const response = await fetch(`${config.enrichment.apolloApiUrl}${endpoint}`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(15000)
-    });
-    const rawText = await response.text();
-    let raw: any = {};
-    try {
-      raw = rawText ? JSON.parse(rawText) : {};
-    } catch {
-      raw = { message: rawText.slice(0, 260) };
-    }
-
-    if (!response.ok) {
-      return res.status(response.status).json({
-        code: response.status === 403 ? "APOLLO_FORBIDDEN" : response.status === 401 ? "APOLLO_INVALID_KEY" : "APOLLO_HTTP_ERROR",
-        message: response.status === 403
-          ? "Apollo.io recusou este endpoint. Verifique se a chave tem plano/API com acesso a busca de empresas/pessoas."
-          : raw?.message || raw?.error || `Apollo.io retornou HTTP ${response.status}`,
-        detail: sanitizeApolloDetail(rawText)
-      });
-    }
-
-    const rows = input.type === "people"
-      ? (Array.isArray(raw.people) ? raw.people : [])
-      : (Array.isArray(raw.organizations) ? raw.organizations : Array.isArray(raw.accounts) ? raw.accounts : []);
-
-    const results = rows.slice(0, input.perPage).map((item: any, index: number) => input.type === "people"
-      ? {
-          id: `apollo-person-${item.id || index}`,
-          type: "person",
-          name: item.name || [item.first_name, item.last_name].filter(Boolean).join(" "),
-          title: item.title || item.headline || "",
-          companyName: item.organization?.name || item.account?.name || item.organization_name || "",
-          email: item.email || "",
-          linkedin: normalizeLinkedInUrl(item.linkedin_url),
-          city: item.city || "",
-          state: item.state || "",
-          source: "apollo"
-        }
-      : {
-          id: `apollo-company-${item.id || index}`,
-          type: "company",
-          name: item.name || item.organization_name || item.account_name || "",
-          domain: item.primary_domain || item.website_url || item.domain || "",
-          linkedin: normalizeLinkedInUrl(item.linkedin_url || item.linkedin),
-          city: item.city || item.raw_address || "",
-          state: item.state || "",
-          employeeCount: item.estimated_num_employees || item.num_employees || item.employee_count || "",
-          revenueRange: item.annual_revenue_printed || item.revenue_range || "",
-          source: "apollo"
-        });
-
-    return res.json({ source: "apollo", type: input.type, count: results.length, results });
-  } catch (error) {
-    return next(error);
-  }
-});
 router.get("/:id", async (req, res, next) => {
   try {
     const search = await getSearch(req.params.id, getRequestWorkspaceId(req));
@@ -226,9 +114,8 @@ router.post("/", async (req, res, next) => {
   try {
     const input = searchSchema.parse(req.body);
     const workspaceId = getRequestWorkspaceId(req);
-    if (!isPrivilegedSession(req)) {
-      await consumeSearch([input.companyName, input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" "), workspaceId);
-    }
+    const entitlement = await getAccountEntitlement({ ...(req as any).session, workspaceId });
+    await consumeSearch([input.companyName, input.segment, input.keyword, input.city, input.state].filter(Boolean).join(" "), workspaceId, entitlement);
     const result = await searchCompaniesWithMeta(input, workspaceId);
     const filteredByCrm = await filterUnsavedSearchResults(result.companies as Company[], workspaceId);
     const companies = filterAndSortCompanies(filteredByCrm.companies as Company[], input);
@@ -300,9 +187,8 @@ router.post("/:id/rerun", async (req, res, next) => {
     }
 
     const companyIds = companies.map((c) => c.id);
-    if (!isPrivilegedSession(req)) {
-      await consumeSearch(`${saved.segment} em ${saved.city} (rerun)`, workspaceId);
-    }
+    const entitlement = await getAccountEntitlement({ ...(req as any).session, workspaceId });
+    await consumeSearch(`${saved.segment} em ${saved.city} (rerun)`, workspaceId, entitlement);
     await touchSearch(saved.id, companies.length, result.source, companyIds, workspaceId);
     logRequestMetric(req, "search_performed", null, {
       query: `${saved.segment} em ${saved.city}`,
@@ -342,25 +228,6 @@ router.post("/:id/rerun", async (req, res, next) => {
 export default router;
 
 
-function sanitizeApolloDetail(value: string) {
-  return String(value || "")
-    .replace(/sk-[A-Za-z0-9_-]+|AIza[0-9A-Za-z_-]+|[A-Za-z0-9_-]{24,}/g, "[secret]")
-    .slice(0, 260);
-}
-
-function normalizeLinkedInUrl(value?: string) {
-  if (!value) return "";
-  const clean = String(value).trim();
-  if (!clean) return "";
-  try {
-    const url = new URL(clean.startsWith("http") ? clean : `https://${clean}`);
-    if (!url.hostname.includes("linkedin.com")) return "";
-    url.hash = "";
-    return url.toString();
-  } catch {
-    return "";
-  }
-}
 function cleanCnpj(value: string) {
   return value.replace(/\D/g, "");
 }
@@ -403,8 +270,8 @@ function filterAndSortCompanies<T extends { rating?: number; reviewCount?: numbe
   const dir = input.sortDir === "asc" ? 1 : -1;
   const sortBy = input.sortBy || "nodere_score";
   return filtered.sort((a, b) => {
-    const av = sortBy === "rating" ? (a.rating ?? 0) : sortBy === "review_count" ? (a.reviewCount ?? 0) : sortBy === "relevance" ? (a.score ?? 0) : (a.nodereScore ?? (a.score ?? 0) * 10);
-    const bv = sortBy === "rating" ? (b.rating ?? 0) : sortBy === "review_count" ? (b.reviewCount ?? 0) : sortBy === "relevance" ? (b.score ?? 0) : (b.nodereScore ?? (b.score ?? 0) * 10);
+    const av = sortBy === "rating" ? (a.rating ?? 0) : sortBy === "review_count" ? (a.reviewCount ?? 0) : sortBy === "relevance" ? (a.score ?? 0) : (a.nodereScore ?? a.score ?? 0);
+    const bv = sortBy === "rating" ? (b.rating ?? 0) : sortBy === "review_count" ? (b.reviewCount ?? 0) : sortBy === "relevance" ? (b.score ?? 0) : (b.nodereScore ?? b.score ?? 0);
     return (av - bv) * dir;
   });
 }

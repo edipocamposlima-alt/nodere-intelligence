@@ -279,6 +279,7 @@ export function buildAiTools(context: ToolContext): ToolSet {
 
   for (const action of ["company_archive", "company_trash", "company_restore"] as const) {
     if (!canWrite || !allowed.has(action)) continue;
+    if ((action === "company_trash" || action === "company_restore") && role !== "owner" && role !== "admin") continue;
     tools[action] = tool({
       description: action === "company_restore" ? "Restaura uma empresa arquivada ou na lixeira. Exige aprovação." : action === "company_trash" ? "Move uma empresa à lixeira recuperável por 30 dias. Exige aprovação e mostra impacto." : "Arquiva uma empresa sem apagar dependências. Exige aprovação.",
       inputSchema: z.object({ companyId: z.string().min(1).max(120), reason: z.string().min(3).max(500) }),
@@ -291,10 +292,11 @@ export function buildAiTools(context: ToolContext): ToolSet {
         if (!current.data) throw serviceError("COMPANY_NOT_FOUND", "Empresa não encontrada neste workspace.", 404);
         const actorId = context.session.userId || context.session.email || "unknown";
         const now = new Date().toISOString();
+        const retentionUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
         const update = action === "company_restore"
-          ? { record_state: "active", is_archived: false, is_deleted: false, archived_at: null, archived_by: null, trashed_at: null, trashed_by: null, purge_after: null, delete_reason: null }
+          ? { record_state: "active", is_archived: false, is_deleted: false, archived_at: null, archived_by: null, trashed_at: null, trashed_by: null, deleted_at: null, deleted_by: null, purge_after: null, retention_until: null, delete_reason: null, deletion_reason: null, restore_count: Number(current.data.restore_count || 0) + 1 }
           : action === "company_trash"
-            ? { record_state: "trash", is_archived: false, is_deleted: true, archived_at: null, archived_by: null, trashed_at: now, trashed_by: actorId, purge_after: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), delete_reason: input.reason }
+            ? { record_state: "trash", is_archived: false, is_deleted: true, archived_at: null, archived_by: null, trashed_at: now, trashed_by: actorId, deleted_at: now, deleted_by: actorId, purge_after: retentionUntil, retention_until: retentionUntil, delete_reason: input.reason, deletion_reason: input.reason }
             : { record_state: "archived", is_archived: true, is_deleted: false, archived_at: now, archived_by: actorId, trashed_at: null, trashed_by: null, purge_after: null, delete_reason: input.reason };
         const { data, error } = await sb.from("nodere_companies").update({ ...update, updated_at: now }).eq("workspace_id", context.workspaceId).eq("id", input.companyId).select("id,name,record_state,archived_at,trashed_at,purge_after,updated_at").single();
         if (error) throw error;
@@ -592,7 +594,7 @@ async function aiCompanyDependencies(workspaceId: string, companyId: string) {
   const definitions = [
     ["commercial_briefings", "company_id"], ["company_contacts", "company_id"], ["communications", "company_id"],
     ["communication_threads", "company_id"], ["communication_events", "company_id"], ["company_contracts", "company_id"],
-    ["calendar_events", "company_id"], ["schedules", "company_id"], ["proposal_versions", "lead_id"],
+    ["calendar_events", "company_id"], ["schedules", "company_id"], ["nodere_proposals", "lead_id"], ["proposal_versions", "lead_id"],
     ["inbox_messages", "lead_id"], ["cadence_enrollments", "lead_id"], ["nodere_company_notes", "company_id"],
     ["company_files", "company_id"]
   ] as const;

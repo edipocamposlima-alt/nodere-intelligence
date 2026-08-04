@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useDeferredValue, useMemo, useState } from "react";
-import { Archive, CheckCircle2, Download, FilePlus2, FileText, Search, Sparkles, Upload } from "lucide-react";
-import type { CommercialBriefingSummary } from "@/lib/api";
+import { Archive, CheckCircle2, Download, FilePlus2, FileText, RotateCcw, Search, Sparkles, Trash2, Upload } from "lucide-react";
+import { getCommercialBriefingDependencies, purgeCommercialBriefing, restoreDeletedCommercialBriefing, trashCommercialBriefing, type CommercialBriefingSummary } from "@/lib/api";
 import type { Company } from "@/lib/types";
+import { useAuth } from "@/context/AuthProvider";
 
 type Props = {
   initialBriefings: CommercialBriefingSummary[];
@@ -16,10 +17,12 @@ const tabs = [
   { id: "draft", label: "Em preenchimento" },
   { id: "completed", label: "Concluídos" },
   { id: "archived", label: "Arquivados" },
+  { id: "trash", label: "Lixeira" },
   { id: "all", label: "Todos" }
 ] as const;
 
 export function BriefingsClient({ initialBriefings, companies, initialError = "" }: Props) {
+  const { user } = useAuth();
   const [briefings, setBriefings] = useState(initialBriefings);
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]["id"]>("draft");
   const [search, setSearch] = useState("");
@@ -40,7 +43,7 @@ export function BriefingsClient({ initialBriefings, companies, initialError = ""
   }), [briefings]);
 
   const visible = useMemo(() => briefings.filter((item) => {
-    if (activeTab !== "all" && item.status !== activeTab) return false;
+    if (activeTab !== "all" && (activeTab === "trash" ? !item.is_deleted : item.status !== activeTab || item.is_deleted)) return false;
     if (!deferredSearch) return true;
     const company = item.nodere_companies?.name || "";
     return `${item.code} ${item.title} ${company}`.toLowerCase().includes(deferredSearch);
@@ -166,7 +169,7 @@ export function BriefingsClient({ initialBriefings, companies, initialError = ""
         </div>
 
         <div className="mt-4 grid gap-3 xl:grid-cols-2">
-          {visible.map((briefing) => <BriefingCard key={briefing.id} briefing={briefing} />)}
+          {visible.map((briefing) => <BriefingCard key={briefing.id} briefing={briefing} role={user?.role} onChanged={(id, next) => setBriefings((current) => next ? current.map((item) => item.id === id ? next : item) : current.filter((item) => item.id !== id))} />)}
         </div>
         {!visible.length && <div className="mt-4 rounded-xl border border-dashed border-[var(--border-soft)] p-8 text-center text-sm text-[var(--text-muted)]">Nenhum briefing encontrado neste filtro.</div>}
       </section>
@@ -174,8 +177,34 @@ export function BriefingsClient({ initialBriefings, companies, initialError = ""
   );
 }
 
-function BriefingCard({ briefing }: { briefing: CommercialBriefingSummary }) {
+function BriefingCard({ briefing, role, onChanged }: { briefing: CommercialBriefingSummary; role?: string; onChanged: (id: string, next?: CommercialBriefingSummary) => void }) {
   const companyName = briefing.nodere_companies?.name || "Empresa vinculada";
+  const canDelete = role === "owner" || role === "admin";
+
+  async function moveToTrash() {
+    const impact = await getCommercialBriefingDependencies(briefing.id).catch(() => null);
+    const reason = window.prompt(`Mover ${briefing.code} para a lixeira por 30 dias?\n${impact?.total || 0} dependência(s) serão preservadas.\n\nInforme o motivo:`)?.trim();
+    if (!reason || reason.length < 3 || !window.confirm("Li o impacto e confirmo a movimentação para a lixeira.")) return;
+    const updated = await trashCommercialBriefing(briefing.id, reason);
+    onChanged(briefing.id, { ...briefing, ...updated, status: "trash", is_deleted: true });
+  }
+
+  async function restore() {
+    const reason = window.prompt(`Motivo para restaurar ${briefing.code}`)?.trim();
+    if (!reason || reason.length < 3) return;
+    const updated = await restoreDeletedCommercialBriefing(briefing.id, reason);
+    onChanged(briefing.id, { ...briefing, ...updated, status: "draft", is_deleted: false });
+  }
+
+  async function purge() {
+    const impact = await getCommercialBriefingDependencies(briefing.id).catch(() => null);
+    if (impact?.total) return window.alert(`Purge bloqueado por ${impact.total} dependência(s).`);
+    const confirmation = window.prompt(`Exclusão irreversível. Digite o código exatamente:\n${briefing.code}`);
+    const reason = window.prompt("Justificativa obrigatória (mínimo de 10 caracteres)")?.trim();
+    if (confirmation !== briefing.code || !reason || reason.length < 10 || !window.confirm("Confirmar exclusão definitiva?")) return;
+    await purgeCommercialBriefing(briefing.id, confirmation, reason);
+    onChanged(briefing.id);
+  }
   return (
     <article className="rounded-xl border border-[var(--border-soft)] bg-[var(--bg-main)] p-4 transition hover:border-[var(--brand-primary)]">
       <div className="flex items-start justify-between gap-3">
@@ -184,7 +213,7 @@ function BriefingCard({ briefing }: { briefing: CommercialBriefingSummary }) {
           <h3 className="mt-1 truncate font-heading text-lg font-black text-[var(--text-primary)]">{companyName}</h3>
           <p className="mt-1 line-clamp-2 text-sm text-[var(--text-secondary)]">{briefing.title}</p>
         </div>
-        <Status status={briefing.status} />
+        <Status status={briefing.is_deleted ? "trash" : briefing.status} />
       </div>
       <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--bg-hover)]"><div className="h-full rounded-full bg-[var(--brand-primary)]" style={{ width: `${Math.max(0, Math.min(100, briefing.completion_percent || 0))}%` }} /></div>
       <div className="mt-2 flex items-center justify-between text-xs text-[var(--text-muted)]"><span>{briefing.completion_percent || 0}% preenchido</span><span>Versão {briefing.current_version || 1}</span></div>
@@ -194,8 +223,11 @@ function BriefingCard({ briefing }: { briefing: CommercialBriefingSummary }) {
         <span className="sm:col-span-2">Próxima ação: <strong>{briefing.next_action || "Não definida"}</strong></span>
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
-        <Link href={`/crm/briefings/${encodeURIComponent(briefing.id)}`} className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-[var(--brand-primary)] px-3 text-sm font-black text-white"><FileText className="h-4 w-4" /> {briefing.status === "draft" ? "Continuar" : "Visualizar"}</Link>
+        {!briefing.is_deleted && <Link href={`/crm/briefings/${encodeURIComponent(briefing.id)}`} className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-[var(--brand-primary)] px-3 text-sm font-black text-white"><FileText className="h-4 w-4" /> {briefing.status === "draft" ? "Continuar" : "Visualizar"}</Link>}
         {briefing.status === "archived" && <span className="inline-flex items-center gap-1 text-xs text-[var(--text-muted)]"><Archive className="h-4 w-4" /> preservado no histórico</span>}
+        {canDelete && !briefing.is_deleted && <button type="button" onClick={() => void moveToTrash()} className="briefing-action border-red-400/40 text-red-300"><Trash2 className="h-4 w-4" /> Lixeira</button>}
+        {canDelete && briefing.is_deleted && <button type="button" onClick={() => void restore()} className="briefing-action briefing-action--primary"><RotateCcw className="h-4 w-4" /> Restaurar</button>}
+        {canDelete && briefing.is_deleted && <button type="button" onClick={() => void purge()} disabled={Boolean(briefing.legal_hold) || !retentionExpired(briefing.retention_until)} className="briefing-action border-red-400/40 text-red-300"><Trash2 className="h-4 w-4" /> Excluir definitivamente</button>}
       </div>
     </article>
   );
@@ -206,8 +238,8 @@ function Metric({ label, value, icon: Icon }: { label: string; value: number; ic
 }
 
 function Status({ status }: { status: CommercialBriefingSummary["status"] }) {
-  const labels = { draft: "Rascunho", completed: "Concluído", archived: "Arquivado" };
-  return <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-black ${status === "completed" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" : status === "archived" ? "border-slate-500/40 bg-slate-500/10 text-slate-300" : "border-amber-500/40 bg-amber-500/10 text-amber-300"}`}>{labels[status]}</span>;
+  const labels = { draft: "Rascunho", completed: "Concluído", archived: "Arquivado", trash: "Lixeira" };
+  return <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-black ${status === "completed" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" : status === "archived" ? "border-slate-500/40 bg-slate-500/10 text-slate-300" : status === "trash" ? "border-red-500/40 bg-red-500/10 text-red-300" : "border-amber-500/40 bg-amber-500/10 text-amber-300"}`}>{labels[status]}</span>;
 }
 
 function priorityLabel(priority: CommercialBriefingSummary["priority"]) {
@@ -218,3 +250,5 @@ function dateLabel(value: string) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(date);
 }
+
+function retentionExpired(value?: string | null) { return Boolean(value && new Date(value).getTime() <= Date.now()); }

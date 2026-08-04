@@ -2,6 +2,8 @@ import type { LanguageModelUsage } from "ai";
 import { config } from "../config.js";
 import { getSupabase } from "../db/supabase.js";
 import type { AiModelRecord } from "./aiRegistry.js";
+import type { AccountEntitlement } from "./entitlements.js";
+import { isInternalOwnerEntitlement } from "./entitlements.js";
 
 export type CreditWallet = {
   available: number;
@@ -62,7 +64,10 @@ export function calculateActualCost(model: AiModelRecord, usage: LanguageModelUs
   };
 }
 
-export async function reserveAiCredits(workspaceId: string, executionId: string, amount: number) {
+export async function reserveAiCredits(workspaceId: string, executionId: string, amount: number, entitlement?: AccountEntitlement) {
+  if (isInternalOwnerEntitlement(entitlement)) {
+    return meterOwnerLedger({ workspaceId, executionId, entryType: "reserve", amount, entitlement });
+  }
   return callLedgerRpc("nodere_ai_reserve_credits", {
     p_workspace_id: workspaceId,
     p_execution_id: executionId,
@@ -77,7 +82,19 @@ export async function captureAiCredits(input: {
   amount: number;
   providerCostUsd: number;
   metadata: Record<string, unknown>;
+  entitlement?: AccountEntitlement;
 }) {
+  if (isInternalOwnerEntitlement(input.entitlement)) {
+    return meterOwnerLedger({
+      workspaceId: input.workspaceId,
+      executionId: input.executionId,
+      entryType: "capture",
+      amount: input.amount,
+      providerCostUsd: input.providerCostUsd,
+      metadata: input.metadata,
+      entitlement: input.entitlement
+    });
+  }
   return callLedgerRpc("nodere_ai_capture_credits", {
     p_workspace_id: input.workspaceId,
     p_execution_id: input.executionId,
@@ -88,13 +105,59 @@ export async function captureAiCredits(input: {
   });
 }
 
-export async function releaseAiCredits(workspaceId: string, executionId: string, reason: string) {
+export async function releaseAiCredits(workspaceId: string, executionId: string, reason: string, entitlement?: AccountEntitlement) {
+  if (isInternalOwnerEntitlement(entitlement)) {
+    const sb = requireAiDatabase();
+    const reservation = await sb.from("nodere_credit_ledger").select("amount_credit").eq("workspace_id", workspaceId).eq("idempotency_key", `ai:${executionId}:reserve`).maybeSingle();
+    if (reservation.error) throw reservation.error;
+    return meterOwnerLedger({ workspaceId, executionId, entryType: "release", amount: Number(reservation.data?.amount_credit || 0), metadata: { reason }, entitlement });
+  }
   return callLedgerRpc("nodere_ai_release_credits", {
     p_workspace_id: workspaceId,
     p_execution_id: executionId,
     p_idempotency_key: `ai:${executionId}:release`,
     p_metadata: { reason }
   });
+}
+
+async function meterOwnerLedger(input: {
+  workspaceId: string;
+  executionId: string;
+  entryType: "reserve" | "capture" | "release";
+  amount: number;
+  providerCostUsd?: number;
+  metadata?: Record<string, unknown>;
+  entitlement?: AccountEntitlement;
+}) {
+  const sb = requireAiDatabase();
+  const wallet = await sb.from("nodere_credit_wallets").select("available_credit,held_credit").eq("workspace_id", input.workspaceId).maybeSingle();
+  if (wallet.error || !wallet.data) throw wallet.error || serviceError("AI_WALLET_UNAVAILABLE", "Carteira técnica indisponível para medição.", 503);
+  const idempotencyKey = `ai:${input.executionId}:${input.entryType}`;
+  const row = {
+    workspace_id: input.workspaceId,
+    execution_id: input.executionId,
+    idempotency_key: idempotencyKey,
+    entry_type: input.entryType,
+    amount_credit: Math.max(0, input.amount),
+    available_delta: 0,
+    held_delta: 0,
+    available_after: Number(wallet.data.available_credit || 0),
+    held_after: Number(wallet.data.held_credit || 0),
+    provider_cost_usd: input.providerCostUsd ?? null,
+    metadata: {
+      ...(input.metadata || {}),
+      account_type: "OWNER_INTERNAL",
+      billing_exempt: true,
+      usage_metered: true,
+      auth_user_id: input.entitlement?.authUserId || null
+    }
+  };
+  const { data, error } = await sb.from("nodere_credit_ledger").insert(row).select("*").maybeSingle();
+  if (error && String(error.code) !== "23505") throw error;
+  if (data) return data;
+  const existing = await sb.from("nodere_credit_ledger").select("*").eq("workspace_id", input.workspaceId).eq("idempotency_key", idempotencyKey).maybeSingle();
+  if (existing.error) throw existing.error;
+  return existing.data;
 }
 
 async function callLedgerRpc(name: string, params: Record<string, unknown>) {

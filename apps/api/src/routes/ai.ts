@@ -9,9 +9,10 @@ import { callAI } from "../services/ai.js";
 import { buildCommercialInsight, buildCommercialInsightPrompt, parseCommercialInsightJson } from "../services/commercialInsights.js";
 import type { Company } from "../types.js";
 import { startAiChat, type NodereAiMessage } from "../services/aiGateway.js";
-import { listAvailableAgents, listAvailableModels } from "../services/aiRegistry.js";
+import { listAvailableAgents, listAvailableModels, refreshAiModelAvailability } from "../services/aiRegistry.js";
 import { getAiConversation, listAiConversations } from "../services/aiRepository.js";
 import { getCreditWallet } from "../services/creditLedger.js";
+import { getAccountEntitlement, isInternalOwnerEntitlement } from "../services/entitlements.js";
 
 const router = Router();
 
@@ -60,7 +61,16 @@ router.get("/registry", requireWorkspaceRole("owner", "admin", "operator", "view
         inputCostUsdPerMillion: model.inputCostUsdPerMillion,
         cachedInputCostUsdPerMillion: model.cachedInputCostUsdPerMillion,
         outputCostUsdPerMillion: model.outputCostUsdPerMillion,
-        reasoningEffort: model.reasoningEffort
+        reasoningEffort: model.reasoningEffort,
+        providerAvailable: model.providerAvailable,
+        availabilityCheckedAt: model.availabilityCheckedAt,
+        supportsResponses: model.supportsResponses,
+        supportsTools: model.supportsTools,
+        supportsWebSearch: model.supportsWebSearch,
+        supportsAudio: model.supportsAudio,
+        rateLimitProfile: model.rateLimitProfile,
+        discoverySource: model.discoverySource,
+        availabilityError: model.availabilityError
       })),
       agents: agents.flatMap((agent) => {
         const allowedModelIds = agent.allowedModelIds.filter((modelId) => availableModelIds.has(modelId));
@@ -80,9 +90,26 @@ router.get("/registry", requireWorkspaceRole("owner", "admin", "operator", "view
   }
 });
 
+router.post("/registry/refresh", requireWorkspaceMutation("owner", "admin"), async (_req, res, next) => {
+  try {
+    const refresh = await refreshAiModelAvailability({ force: true });
+    res.json({ ok: true, ...refresh });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get("/wallet", requireWorkspaceRole("owner", "admin", "operator", "viewer"), async (req, res, next) => {
   try {
-    res.json(await getCreditWallet(getRequestWorkspaceId(req)));
+    const workspaceId = getRequestWorkspaceId(req);
+    const entitlement = await getAccountEntitlement({ ...(req as any).session, workspaceId });
+    res.json({
+      ...(await getCreditWallet(workspaceId)),
+      accountType: entitlement.accountType,
+      commercialBlocking: !isInternalOwnerEntitlement(entitlement),
+      usageMeteringEnabled: entitlement.usageMeteringEnabled,
+      providerLimitsStillApply: entitlement.providerLimitsStillApply
+    });
   } catch (error) {
     next(error);
   }
@@ -157,7 +184,7 @@ Cidade: ${company.city}, ${company.state}
 Site: ${company.website || "Nao possui"}
 Avaliacao Google: ${company.rating || "N/A"} (${company.reviewCount || 0} avaliacoes)
 WhatsApp: ${company.whatsapp || company.phone || "Nao identificado"}
-Score NODERE: ${company.nodereScore || Number(company.score || 0) * 10}/1000
+Score comercial: ${Math.max(0, Math.min(100, Number(company.nodereScore ?? company.score ?? 0)))}/100
 Gaps identificados: ${(company.digitalGaps || company.detectedOpportunities || []).join(", ") || "Nenhum"}
 
 Forneca:

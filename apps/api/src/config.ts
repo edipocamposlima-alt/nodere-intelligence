@@ -39,7 +39,6 @@ export const config = {
     sessionSecret: process.env.ADMIN_SESSION_SECRET ?? process.env.API_KEY ?? (isProduction ? "" : "nodere-local-admin-secret")
   },
   databaseUrl: process.env.DATABASE_URL,
-  useMockData: process.env.USE_MOCK_DATA === "true",
   google: {
     mapsKey: process.env.GOOGLE_MAPS_API_KEY ?? _googleApiKey,
     placesKey: process.env.GOOGLE_PLACES_API_KEY ?? process.env.GOOGLE_PLACES_KEY ?? process.env.GOOGLE_MAPS_API_KEY ?? _googleApiKey,
@@ -72,12 +71,6 @@ export const config = {
     creditsPerUsd: Number(process.env.AI_CREDITS_PER_USD ?? 100),
     maxOutputTokens: Number(process.env.AI_MAX_OUTPUT_TOKENS ?? 2048),
     reservationBuffer: Number(process.env.AI_RESERVATION_BUFFER ?? 1.25)
-  },
-  enrichment: {
-    econodataApiKey: process.env.ECONODATA_API_KEY,
-    econodataApiUrl: process.env.ECONODATA_API_URL,
-    apolloApiKey: process.env.APOLLO_API_KEY,
-    apolloApiUrl: process.env.APOLLO_API_URL ?? "https://api.apollo.io/api/v1"
   },
   marketplace: {
     blingClientId: process.env.BLING_CLIENT_ID,

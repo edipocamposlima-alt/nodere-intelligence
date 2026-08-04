@@ -75,7 +75,7 @@ test("frontend oferece roteamento automático, briefing e comunicações", () =>
   const communications = readFileSync(join(root, "app", "crm", "communications", "CommunicationsClient.tsx"), "utf8");
   assert.match(ai, /Modelo automático/);
   assert.match(ai, /routingMode/);
-  assert.match(sidebar, /Briefings Comerciais/);
+  assert.match(sidebar, /label: "Briefings"/);
   assert.match(sidebar, /Comunicações/);
   assert.match(communications, /Salvar na outbox/);
   assert.match(communications, /Confirmar e enviar/);

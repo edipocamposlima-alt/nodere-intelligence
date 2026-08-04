@@ -73,6 +73,7 @@ export function renderReportPdf(report: ReportPdfInput, generatedAt = new Date()
     doc.fillColor("#03624C").fontSize(11).text(`Periodo: ${report.filters.period}`, 420, 42, { align: "right" });
     doc.fillColor("#64748B").fontSize(8).text(generatedAt.toLocaleString("pt-BR"), 420, 62, { align: "right" });
 
+    doc.x = 42;
     doc.y = 140;
     doc.fillColor("#0A0F1E").fontSize(18).text("Resumo executivo");
     doc.moveDown(0.8);
@@ -124,14 +125,17 @@ export function renderReportPdf(report: ReportPdfInput, generatedAt = new Date()
     });
 
     const pages = doc.bufferedPageRange();
-    for (let index = 0; index < pages.count; index += 1) {
+    for (let index = pages.start; index < pages.start + pages.count; index += 1) {
       doc.switchToPage(index);
+      const originalBottomMargin = doc.page.margins.bottom;
+      doc.page.margins.bottom = 0;
       doc.fillColor("#64748B").fontSize(8).text(
-        `NODERE - pagina ${index + 1}/${pages.count}`,
+        `NODERE · página ${index - pages.start + 1}/${pages.count}`,
         42,
         doc.page.height - 38,
-        { align: "center" }
+        { width: doc.page.width - 84, align: "center", lineBreak: false }
       );
+      doc.page.margins.bottom = originalBottomMargin;
     }
     doc.end();
   });

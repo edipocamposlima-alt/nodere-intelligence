@@ -72,24 +72,6 @@ export const AVAILABLE_INTEGRATIONS = [
     requiredPlan: "pro"
   },
   {
-    id: "apollo",
-    name: "Apollo.io",
-    description: "Busca de decisores e enriquecimento de dados empresariais.",
-    category: "Prospecção",
-    credentialLabel: "Credencial Apollo",
-    docsUrl: "https://app.apollo.io",
-    requiredPlan: "pro"
-  },
-  {
-    id: "econodata",
-    name: "Econodata",
-    description: "Enriquecimento cadastral de empresas brasileiras.",
-    category: "Prospecção",
-    credentialLabel: "Credenciais Econodata",
-    docsUrl: null,
-    requiredPlan: "pro"
-  },
-  {
     id: "smtp",
     name: "E-mail (SMTP)",
     description: "Envio de e-mails transacionais, notificações e sequências comerciais.",

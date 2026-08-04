@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArchiveRestore, BarChart3, Bot, Building2, CalendarDays, CircleHelp, ClipboardList, CreditCard, Download, Inbox, KanbanSquare, LineChart, LogOut, Megaphone, Menu, MessagesSquare, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, Workflow, X, Zap } from "lucide-react";
+import { ArchiveRestore, BarChart3, Bot, Building2, CalendarDays, CircleHelp, ClipboardList, Download, KanbanSquare, LineChart, LogOut, Menu, MessagesSquare, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, X } from "lucide-react";
 import { canUseModule, useAuth } from "@/context/AuthProvider";
 
 const primaryItems = [
@@ -19,16 +19,10 @@ const drawerItems = [
   { href: "/crm/communications", label: "Comunicações", icon: MessagesSquare, tone: "cyan", module: "crm" },
   { href: "/crm/lifecycle", label: "Arquivo e Lixeira", icon: ArchiveRestore, tone: "neutral", module: "crm" },
   { href: "/calendario", label: "Atividades e Agenda", icon: CalendarDays, tone: "blue", module: "agenda" },
-  { href: "/app/leads", label: "Leads", icon: Users, tone: "green", module: "crm" },
   { href: "/app/proposals", label: "Propostas e Contratos", icon: PackageOpen, tone: "purple", module: "crm" },
   { href: "/catalog", label: "Produtos / Serviços", icon: PackageOpen, tone: "orange", module: "crm" },
-  { href: "/inbox", label: "Caixa de Entrada", icon: Inbox, tone: "blue", module: "crm" },
-  { href: "/automations", label: "Automações", icon: Workflow, tone: "orange", module: "crm" },
-  { href: "/intelligence", label: "IA / Inteligência", icon: Zap, tone: "gold", module: "relatorios" },
   { href: "/reports", label: "Relatórios", icon: LineChart, tone: "blue", module: "relatorios" },
   { href: "/operators", label: "Operadores", icon: Users, tone: "green", adminOnly: true, module: "admin" },
-  { href: "/marketing", label: "Marketing", icon: Megaphone, tone: "orange", module: "dashboard" },
-  { href: "/billing", label: "Faturamento", icon: CreditCard, tone: "gold", module: "admin" },
   { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: Settings, tone: "neutral", module: "admin" },
   { href: "/integrations", label: "Integrações", icon: Plug, tone: "cyan", adminOnly: true, module: "integracoes" },
   { href: "/admin", label: "Administrador / CMS", icon: ShieldCheck, tone: "red", adminOnly: true, module: "admin" },

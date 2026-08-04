@@ -28,7 +28,7 @@ const moduleLinks = [
   { href: "/reports", match: /relat[oó]rios/i },
   { href: "/catalog", match: /cat[aá]logo|produtos|servi[cç]os/i },
   { href: "/settings", match: /configura[cç][oõ]es|tema/i },
-  { href: "/integrations", match: /integra[cç][oõ]es|apollo|econodata|openai|google/i }
+  { href: "/integrations", match: /integra[cç][oõ]es|openai|google|whatsapp|supabase/i }
 ];
 
 function getSectionHref(title: string) {
@@ -170,7 +170,7 @@ export function ManualClient({ sections }: { sections: string[][] }) {
                 <BookOpen className="h-5 w-5 text-cyan print:text-blue-700" />
                 <h2 className="text-2xl font-semibold text-white print:text-slate-950">Ajuda / Manual NODERE</h2>
               </div>
-              <p className="mt-1 text-sm text-slate-400 print:text-slate-600">Manual completo de operação, CRM, busca, IA, Apollo, relatórios e integrações.</p>
+              <p className="mt-1 text-sm text-slate-400 print:text-slate-600">Manual completo de operação, CRM, pesquisa com fontes, IA, relatórios e integrações.</p>
             </div>
           </div>
           <button
@@ -186,10 +186,15 @@ export function ManualClient({ sections }: { sections: string[][] }) {
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar no manual: Apollo, CRM, score, PDF, integrações..."
+            placeholder="Buscar no manual: pesquisa, CRM, score, PDF, integrações..."
             className="w-full bg-transparent text-sm outline-none"
           />
         </label>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3" aria-label="Fluxo ilustrado de operação">
+          <div className="rounded-xl border border-emerald-400/25 bg-emerald-400/10 p-4"><Search className="h-6 w-6 text-emerald-300" /><p className="mt-3 text-xs font-black uppercase tracking-[0.14em] text-emerald-200">1 · Descobrir</p><p className="mt-1 text-sm text-slate-300 print:text-slate-700">Prospecte e pesquise fontes públicas verificáveis.</p></div>
+          <div className="rounded-xl border border-cyan-400/25 bg-cyan-400/10 p-4"><LayoutDashboard className="h-6 w-6 text-cyan-300" /><p className="mt-3 text-xs font-black uppercase tracking-[0.14em] text-cyan-200">2 · Operar</p><p className="mt-1 text-sm text-slate-300 print:text-slate-700">Qualifique na Ficha 360 e avance o funil por eventos.</p></div>
+          <div className="rounded-xl border border-amber-300/25 bg-amber-300/10 p-4"><CheckCircle2 className="h-6 w-6 text-amber-200" /><p className="mt-3 text-xs font-black uppercase tracking-[0.14em] text-amber-100">3 · Comprovar</p><p className="mt-1 text-sm text-slate-300 print:text-slate-700">Revise, aprove, gere PDFs e audite cada ação.</p></div>
+        </div>
       </section>
 
       <div className="grid gap-5 lg:grid-cols-[280px_1fr] print:block">

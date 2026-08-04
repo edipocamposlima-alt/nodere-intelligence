@@ -63,6 +63,7 @@ type AuditRow = {
   file_name?: string;
   created_at: string;
 };
+type TestDataBatch = { batchId: string; purpose: string; createdBy?: string; createdAt: string; count: number; entities: Record<string, number> };
 
 const roleLabels: Record<AdminUserRole, string> = {
   owner: "Owner",
@@ -96,6 +97,8 @@ export function AdminClient() {
   const [downloadLogs, setDownloadLogs] = useState<AuditRow[]>([]);
   const [cleanupConfirm, setCleanupConfirm] = useState("");
   const [cleanupLoading, setCleanupLoading] = useState(false);
+  const [testDataBatches, setTestDataBatches] = useState<TestDataBatch[]>([]);
+  const [cleanupBatchId, setCleanupBatchId] = useState("");
   const [userForm, setUserForm] = useState({
     name: "",
     email: "",
@@ -111,11 +114,12 @@ export function AdminClient() {
   async function load() {
     try {
       await withAdminTimeout(adminFetch("/admin/status"));
-      const [data, userData, roleData, auditData] = await withAdminTimeout(Promise.allSettled([
+      const [data, userData, roleData, auditData, testData] = await withAdminTimeout(Promise.allSettled([
         adminFetch<{ keys: ApiKeyStatus[] }>("/admin/api-keys"),
         adminFetch<{ users: AdminUser[] }>("/admin/users"),
         adminFetch<{ roles: CustomRole[] }>("/admin/roles"),
-        adminFetch<{ activityLogs: AuditRow[]; downloadLogs: AuditRow[] }>("/admin/audit")
+        adminFetch<{ activityLogs: AuditRow[]; downloadLogs: AuditRow[] }>("/admin/audit"),
+        adminFetch<{ batches: TestDataBatch[] }>("/admin/test-data-batches")
       ]));
       const warnings: string[] = [];
       if (data.status === "fulfilled") setKeys(Array.isArray(data.value.keys) ? data.value.keys : []);
@@ -130,6 +134,11 @@ export function AdminClient() {
       } else {
         warnings.push(`Auditoria: ${auditData.reason instanceof Error ? auditData.reason.message : "falha ao carregar"}`);
       }
+      if (testData.status === "fulfilled") {
+        const batches = Array.isArray(testData.value.batches) ? testData.value.batches : [];
+        setTestDataBatches(batches);
+        setCleanupBatchId((current) => current || batches[0]?.batchId || "");
+      } else warnings.push(`Dados de teste: ${testData.reason instanceof Error ? testData.reason.message : "falha ao carregar"}`);
       setAuthorized(true);
       setMessage(warnings.length ? `Painel administrativo conectado com avisos: ${warnings.join(" · ")}` : "Painel administrativo conectado.");
     } catch (error) {
@@ -241,14 +250,17 @@ export function AdminClient() {
   }
 
   async function cleanupDemoData() {
+    if (!cleanupBatchId) return setMessage("Selecione um lote de teste registrado.");
     setCleanupLoading(true);
     setMessage("");
     try {
       const payload = await adminFetch<{ deleted: number; message: string }>("/admin/cleanup-demo-data", {
         method: "POST",
-        body: JSON.stringify({ confirm: cleanupConfirm })
+        body: JSON.stringify({ confirm: cleanupConfirm, batchId: cleanupBatchId })
       });
       setCleanupConfirm("");
+      setTestDataBatches((current) => current.filter((batch) => batch.batchId !== cleanupBatchId));
+      setCleanupBatchId("");
       setMessage(payload.message || `${payload.deleted} registro(s) removido(s).`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Erro ao limpar dados de demonstração.");
@@ -438,25 +450,27 @@ export function AdminClient() {
           <section className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-5">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-white">Limpar dados de demonstração</h2>
+                <h2 className="text-lg font-semibold text-white">Limpar lote de homologação registrado</h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-rose-100/80">
-                  Remove somente empresas deste workspace com <code>source</code> nulo, <code>demo</code> ou <code>test</code>. Leads reais marcados como Google Places, manual ou importação são preservados.
+                  Remove somente IDs previamente registrados no <code>test data registry</code>. Não há exclusão por nome, e-mail, origem nula ou padrão amplo; dados reais ficam fora do lote.
                 </p>
+                {testDataBatches.length > 0 && <select value={cleanupBatchId} onChange={(event) => setCleanupBatchId(event.target.value)} className="mt-3 w-full max-w-xl rounded-lg border border-rose-400/40 bg-slate-950 px-3 py-3 text-sm text-white"><option value="">Selecione o lote</option>{testDataBatches.map((batch) => <option key={batch.batchId} value={batch.batchId}>{batch.batchId} · {batch.count} registro(s) · {batch.purpose}</option>)}</select>}
+                {!testDataBatches.length && <p className="mt-3 text-sm font-bold text-emerald-200">Nenhum lote de teste pendente neste workspace.</p>}
               </div>
               <div className="flex flex-wrap gap-2">
                 <input
                   value={cleanupConfirm}
                   onChange={(event) => setCleanupConfirm(event.target.value)}
-                  placeholder="Digite CONFIRMO"
+                  placeholder="Digite CONFIRMO LIMPEZA"
                   className="rounded-lg border border-rose-400/40 bg-slate-950 px-3 py-3 text-sm text-white outline-none focus:border-rose-300"
                 />
                 <button
                   onClick={() => void cleanupDemoData()}
-                  disabled={cleanupLoading || cleanupConfirm !== "CONFIRMO"}
+                  disabled={cleanupLoading || cleanupConfirm !== "CONFIRMO LIMPEZA" || !cleanupBatchId}
                   className="inline-flex items-center gap-2 rounded-lg bg-rose-500 px-4 py-3 text-sm font-bold text-white hover:bg-rose-400 disabled:opacity-50"
                 >
                   <Trash2 className="h-4 w-4" />
-                  {cleanupLoading ? "Limpando..." : "Limpar demo"}
+                  {cleanupLoading ? "Limpando..." : "Limpar lote exato"}
                 </button>
               </div>
             </div>

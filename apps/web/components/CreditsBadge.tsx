@@ -25,6 +25,16 @@ export function CreditsBadge() {
     );
   }
 
+  if (credits.account_type === "OWNER_INTERNAL") {
+    return (
+      <div className="rounded-lg border border-emerald-400/25 bg-emerald-400/10 px-4 py-3 text-center">
+        <p className="flex items-center justify-center gap-1 text-xs text-emerald-200"><CreditCard className="h-3.5 w-3.5" /> Conta interna</p>
+        <p className="mt-1 text-sm font-semibold text-white">Uso técnico medido</p>
+        <p className="text-xs text-slate-400">Sem bloqueio comercial · limites do provedor se aplicam</p>
+      </div>
+    );
+  }
+
   return (
     <Link href="/billing" className="rounded-lg border border-line bg-panel/90 px-4 py-3 text-center transition hover:border-electric/60">
       <p className="flex items-center justify-center gap-1 text-xs text-slate-400">

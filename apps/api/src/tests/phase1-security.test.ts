@@ -73,11 +73,12 @@ test("operador nao administra operadores", () => {
   assert.equal(result.res.statusCode, 403);
 });
 
-test("administrador geral e elevado a owner", () => {
+test("email administrativo isolado nao eleva o perfil para owner", () => {
   const req = request("viewer", "POST", "edipo.lima@nodere.com.br");
   const result = run(requireWorkspaceRole("owner"), req);
-  assert.equal(result.nextCalled, true);
-  assert.equal((req as any).session.role, "owner");
+  assert.equal(result.nextCalled, false);
+  assert.equal(result.res.statusCode, 403);
+  assert.equal((req as any).session.role, "viewer");
 });
 
 test("workspace vem exclusivamente da sessao", () => {

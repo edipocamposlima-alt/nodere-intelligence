@@ -144,7 +144,8 @@ function toRow(c: Company, workspaceId = "default", includeWorkspace = workspace
     lastContactAt, source, detectedOpportunities, suggestions, createdAt, updatedAt,
     temperature, probability, dealValue, expectedCloseDate, lostReason, nextAction, ownerId,
     recordState, isArchived, isDeleted, archivedAt, archivedBy, trashedAt, trashedBy,
-    purgeAfter, deleteReason, legalHold,
+    deletedAt, deletedBy, purgeAfter, deleteReason, deletionReason, retentionUntil,
+    purgedAt, purgedBy, restoreCount, deletionBatchId, legalHold,
     notes, ...rest } = c;
   const row: Record<string, unknown> = {
     id, name, category, city, state, address, phone, whatsapp, website,
@@ -172,8 +173,16 @@ function toRow(c: Company, workspaceId = "default", includeWorkspace = workspace
     archived_by: archivedBy ?? null,
     trashed_at: trashedAt ?? null,
     trashed_by: trashedBy ?? null,
+    deleted_at: deletedAt ?? trashedAt ?? null,
+    deleted_by: deletedBy ?? trashedBy ?? null,
     purge_after: purgeAfter ?? null,
     delete_reason: deleteReason ?? null,
+    deletion_reason: deletionReason ?? deleteReason ?? null,
+    retention_until: retentionUntil ?? purgeAfter ?? null,
+    purged_at: purgedAt ?? null,
+    purged_by: purgedBy ?? null,
+    restore_count: restoreCount ?? 0,
+    deletion_batch_id: deletionBatchId ?? null,
     legal_hold: legalHold ?? false,
     source,
     place_id: rawCompany.placeId || rawCompany.place_id || rawCompany.googlePlaceId || rawCompany.google_place_id || (source === "google_places" ? id : null),
@@ -228,8 +237,16 @@ function toUpdateRow(updates: Partial<Company>): Record<string, unknown> {
     ["archivedBy", "archived_by"],
     ["trashedAt", "trashed_at"],
     ["trashedBy", "trashed_by"],
+    ["deletedAt", "deleted_at"],
+    ["deletedBy", "deleted_by"],
     ["purgeAfter", "purge_after"],
     ["deleteReason", "delete_reason"],
+    ["deletionReason", "deletion_reason"],
+    ["retentionUntil", "retention_until"],
+    ["purgedAt", "purged_at"],
+    ["purgedBy", "purged_by"],
+    ["restoreCount", "restore_count"],
+    ["deletionBatchId", "deletion_batch_id"],
     ["legalHold", "legal_hold"],
     ["score", "score"],
     ["opportunityLevel", "opportunity_level"],
@@ -306,8 +323,16 @@ function fromRow(row: Record<string, unknown>): Company {
     archivedBy: row.archived_by as string | undefined,
     trashedAt: row.trashed_at as string | undefined,
     trashedBy: row.trashed_by as string | undefined,
+    deletedAt: row.deleted_at as string | undefined,
+    deletedBy: row.deleted_by as string | undefined,
     purgeAfter: row.purge_after as string | undefined,
     deleteReason: row.delete_reason as string | undefined,
+    deletionReason: row.deletion_reason as string | undefined,
+    retentionUntil: row.retention_until as string | undefined,
+    purgedAt: row.purged_at as string | undefined,
+    purgedBy: row.purged_by as string | undefined,
+    restoreCount: Number(row.restore_count || 0),
+    deletionBatchId: row.deletion_batch_id as string | undefined,
     legalHold: Boolean(row.legal_hold),
     source: row.source as Company["source"] | undefined,
     placeId: (row.place_id as string | undefined) ?? (signals?.placeId as string | undefined) ?? (signals?.googlePlaceId as string | undefined),
@@ -646,15 +671,10 @@ export function getCompany(id: string): Company | undefined {
 }
 
 export async function searchCompaniesWithMeta(input: SearchRequest, workspaceId = "default") {
-  if (config.useMockData) {
-    const generated = generateMockSearch(input).map((company) => ({ ...company, source: "demo" as const }));
-    return { source: "mock" as const, companies: generated, warning: "Modo demonstrativo ativo (USE_MOCK_DATA=true)." };
-  }
-
   try {
     const generated = await searchGooglePlaces(input);
     const withStatus = generated.map((c) => ({ ...c, enrichmentStatus: "pending" as const, source: "google_places" as const }));
-    return { source: "google" as const, companies: withStatus };
+    return { source: "google" as const, companies: withStatus, warning: undefined as string | undefined };
   } catch (error) {
     if (error instanceof GoogleApiError) throw error;
     throw error;
@@ -1033,7 +1053,7 @@ function isActiveRecord(company: Company) {
 }
 
 function isExternalCompanyId(value: unknown) {
-  return /^(ChIJ|search-|apollo-company-|econodata-|discovery-|google-|places?[-_])/i.test(String(value || "").trim());
+  return /^(ChIJ|search-|discovery-|google-|places?[-_])/i.test(String(value || "").trim());
 }
 
 function normalizePhoneKey(value: unknown) {
@@ -1125,57 +1145,4 @@ function queueEnrichmentForAll(items: Company[]) {
     }
   });
 }
-
-function generateMockSearch(input: SearchRequest): Company[] {
-  const segment = input.segment || input.companyName || input.keyword || "Empresa";
-  const city = input.city || "Brasil";
-  const seed = `${segment}-${city}-${input.state ?? ""}`.toLowerCase().replace(/\s+/g, "-");
-  return Array.from({ length: 4 }).map((_, i) => {
-    const rating = [3.7, 4.0, 4.3, 4.6][i];
-    const reviewCount = [12, 35, 64, 118][i];
-    const base: Company = {
-      id: `mock-${seed}-${i + 1}`,
-      name: `${segment} ${["Prime", "Central", "Norte", "Sul"][i]}`,
-      category: segment,
-      city,
-      state: input.state ?? "",
-      address: `${city}, ${input.state ?? "BR"}`,
-      phone: i === 2 ? undefined : `+55${i + 1}19999888${i}`,
-      whatsapp: i === 1 ? undefined : `+55${i + 1}19999888${i}`,
-      website: i < 2 ? undefined : "https://example.com",
-      rating,
-      reviewCount,
-      mapsUrl: `https://maps.google.com/?q=${encodeURIComponent(`${segment} ${city}`)}`,
-      businessSummary: `${segment} em ${city}/${input.state || "BR"} com dados demonstrativos para validacao de interface. Sinais comerciais: ${i < 2 ? "site nao localizado" : "site localizado"}, telefone ${i === 2 ? "nao localizado" : "localizado"}, avaliacao ${rating} com ${reviewCount} avaliacoes.`,
-      hasGoogleAds: i === 3 ? true : null,
-      hasDescription: i > 1,
-      hasRecentPhotos: i > 1,
-      hasRecentPosts: i === 3,
-      respondsReviews: i === 3,
-      hasSsl: i > 1,
-      isResponsive: i > 1,
-      pageSpeed: [0, 0, 48, 74][i],
-      metaPixel: false,
-      googleTagManager: i === 3,
-      googleAnalytics: i > 1,
-      seoBasics: i > 1,
-      status: "Novo Lead",
-      notes: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      score: 0,
-      opportunityLevel: "Baixa",
-      detectedOpportunities: [],
-      suggestions: []
-    };
-    return { ...base, ...calculateOpportunityScore(base) };
-  });
-}
-
-
-
-
-
-
-
 

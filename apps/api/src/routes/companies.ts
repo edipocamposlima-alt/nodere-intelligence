@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { existsSync, readFileSync } from "node:fs";
 import * as path from "node:path";
-import { getRequestWorkspaceId, isPrivilegedSession, requireWorkspaceMutation } from "../middleware/session.js";
+import { getRequestWorkspaceId, isPrivilegedSession, requireRecordPermission, requireWorkspaceMutation } from "../middleware/session.js";
 import {
   addNote,
   createDocument,
@@ -24,7 +24,6 @@ import {
   updateStatus,
   updateTask
 } from "../services/companyStore.js";
-import { enrichCompanyExternal } from "../services/externalEnrichment.js";
 import { queueEnrichment, getJobByCompany } from "../services/enrichmentQueue.js";
 import { consumeEnrichment } from "../services/credits.js";
 import { getAudit } from "../db/auditStore.js";
@@ -187,7 +186,7 @@ router.post("/save-from-search", async (req, res, next) => {
     const now = new Date().toISOString();
     const externalId = String((body as any).placeId || (body as any).googlePlaceId || (body as any).google_place_id || (body as any).id || "").trim();
     const incomingId = String((body as any).id || "").trim();
-    const isExternalId = /^(ChIJ|search-|apollo-company-|econodata-|discovery-)/i.test(incomingId);
+    const isExternalId = /^(ChIJ|search-|discovery-)/i.test(incomingId);
     const company = {
       id: incomingId && !isExternalId ? incomingId : `company-${randomUUID()}`,
       name: String(body.name || "Empresa sem nome"),
@@ -358,20 +357,24 @@ router.patch("/:id", async (req, res, next) => {
   } catch (err) { return next(err); }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requireRecordPermission("records.delete"), async (req, res, next) => {
   try {
-    const body = z.object({ reason: z.string().min(3).max(500) }).parse(req.body ?? {});
+    const body = z.object({ reason: z.string().min(3).max(500), deletionBatchId: z.string().min(3).max(180).optional() }).parse(req.body ?? {});
     const workspaceId = getRequestWorkspaceId(req);
-    const before = await getCompanyAsync(req.params.id, workspaceId);
+    const companyId = String(req.params.id);
+    const before = await getCompanyAsync(companyId, workspaceId);
     if (!before) return res.status(404).json({ message: "Empresa não encontrada." });
     const actorId = getSessionUserId(req);
     const now = new Date().toISOString();
-    const company = await updateCompany(req.params.id, {
+    const retentionUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const company = await updateCompany(companyId, {
       recordState: "trash", isDeleted: true, isArchived: false,
       trashedAt: now, trashedBy: actorId,
+      deletedAt: now, deletedBy: actorId,
       archivedAt: null, archivedBy: null,
-      purgeAfter: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      deleteReason: body.reason
+      purgeAfter: retentionUntil, retentionUntil,
+      deleteReason: body.reason, deletionReason: body.reason,
+      deletionBatchId: body.deletionBatchId
     } as any, workspaceId);
     if (!company) return res.status(404).json({ message: "Empresa não encontrada." });
     await insertLifecycleAudit(req, "company.trash", before, company, body.reason);
@@ -406,7 +409,9 @@ router.post("/:id/restore", async (req, res, next) => {
     const company = await updateCompany(req.params.id, {
       recordState: "active", isArchived: false, isDeleted: false,
       archivedAt: null, archivedBy: null, trashedAt: null,
-      trashedBy: null, purgeAfter: null, deleteReason: null
+      trashedBy: null, deletedAt: null, deletedBy: null,
+      purgeAfter: null, retentionUntil: null, deleteReason: null, deletionReason: null,
+      restoreCount: Number(before.restore_count || 0) + 1
     } as any, workspaceId);
     await insertLifecycleAudit(req, "company.restore", before, company, body.reason || "Restauração para operação ativa");
     return res.json(company);
@@ -420,7 +425,7 @@ router.get("/:id/dependencies", async (req, res, next) => {
   } catch (error) { return next(error); }
 });
 
-router.post("/:id/purge", requireWorkspaceMutation("owner", "admin"), async (req, res, next) => {
+router.post("/:id/purge", requireRecordPermission("records.purge"), async (req, res, next) => {
   try {
     const body = z.object({ confirmation: z.string().min(1), reason: z.string().min(10).max(500) }).parse(req.body ?? {});
     const workspaceId = getRequestWorkspaceId(req);
@@ -435,7 +440,7 @@ router.post("/:id/purge", requireWorkspaceMutation("owner", "admin"), async (req
     const dependencies = await companyDependencies(workspaceId, String(req.params.id));
     const total = Object.values(dependencies).reduce((sum, count) => sum + count, 0);
     if (total > 0) return res.status(409).json({ code: "COMPANY_DEPENDENCIES_EXIST", message: "Exclusão definitiva bloqueada por dependências.", dependencies, total });
-    await insertLifecycleAudit(req, "company.purge", company, { purged: true }, body.reason);
+    await insertLifecycleAudit(req, "company.purge", company, { purged: true, purgedAt: new Date().toISOString(), purgedBy: getSessionUserId(req), minimalAuditPreserved: true }, body.reason);
     const { error: deleteError } = await sb.from("nodere_companies").delete().eq("workspace_id", workspaceId).eq("id", req.params.id);
     if (deleteError) throw deleteError;
     return res.json({ ok: true, recoverable: false });
@@ -703,31 +708,6 @@ router.post("/:id/notes", async (req, res, next) => {
     if (!note) return res.status(404).json({ message: "Company not found" });
     return res.status(201).json(note);
   } catch (err) { return next(err); }
-});
-
-router.post("/:id/enrich-external", async (req, res, next) => {
-  try {
-    const workspaceId = getRequestWorkspaceId(req);
-    const companyId = String(req.params.id);
-    const company = await getCompanyAsync(companyId, workspaceId);
-    if (!company) return res.status(404).json({ message: "Company not found" });
-    const enrichment = await enrichCompanyExternal(company);
-    const updated = await import("../services/companyStore.js").then(({ updateCompany }) =>
-      updateCompany(company.id, {
-        cnpj: enrichment.cnpj,
-        legalName: enrichment.legalName,
-        companySize: enrichment.companySize,
-        revenueRange: enrichment.revenueRange,
-        linkedin: enrichment.linkedin || company.linkedin,
-        decisionMakers: enrichment.decisionMakers,
-        enrichmentSources: enrichment.enrichmentSources,
-        enrichmentStatus: enrichment.enrichmentSources.length ? "done" : "error"
-      }, workspaceId)
-    );
-    return res.json({ company: updated ?? company, enrichment });
-  } catch (err) {
-    return next(err);
-  }
 });
 
 router.get("/:id/enrich", async (req, res, next) => {
@@ -1467,7 +1447,7 @@ router.post("/:id/sequences", (req, res) => {
 
 export default router;
 
-async function renderCompanyExportPdf(input: {
+export async function renderCompanyExportPdf(input: {
   company: any;
   diagnosis: any;
   checks: Array<{ label: string; ok: boolean }>;
@@ -1479,7 +1459,7 @@ async function renderCompanyExportPdf(input: {
   generatedBy: string;
   logoDataUri: string;
 }) {
-  const doc = new PDFDocument({ size: "A4", margin: 42, bufferPages: true, info: { Title: `Ficha Cliente - ${input.company.name}`, Author: "NODERE" } });
+  const doc = new PDFDocument({ size: "A4", margins: { top: 42, right: 42, bottom: 0, left: 42 }, bufferPages: true, info: { Title: `Ficha Cliente - ${input.company.name}`, Author: "NODERE" } });
   const chunks: Buffer[] = [];
   doc.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
   const done = new Promise<Buffer>((resolve) => doc.on("end", () => resolve(Buffer.concat(chunks))));
@@ -1499,7 +1479,7 @@ async function renderCompanyExportPdf(input: {
     warning: "#B45309",
     danger: "#B91C1C"
   };
-  const page = { left: 42, right: doc.page.width - 42, top: 118, bottom: doc.page.height - 68 };
+  const page = { left: 42, right: doc.page.width - 42, top: 118, bottom: doc.page.height - 105 };
   const contentWidth = page.right - page.left;
 
   function header() {
@@ -1543,16 +1523,20 @@ async function renderCompanyExportPdf(input: {
     doc.fillColor(color).fontSize(19).text(cleanPdfText(value || "0"), x + 12, y + 30, { width: width - 24, ellipsis: true });
   }
 
-  function infoBox(title: string, rows: Array<[string, unknown]>) {
+  function infoBox(title: string, rows: Array<[string, unknown, string?]>) {
     ensureSpace(42 + rows.length * 26);
     const startY = doc.y;
     doc.roundedRect(page.left, startY, contentWidth, 30 + rows.length * 24, 10).fillAndStroke(palette.panel, palette.border);
     doc.fillColor(palette.primary).fontSize(10).text(title, page.left + 14, startY + 12, { width: contentWidth - 28 });
     let y = startY + 34;
-    rows.forEach(([label, value]) => {
+    rows.forEach(([label, value, href]) => {
       const cleanValue = cleanPdfText(value || "Não informado") || "Não informado";
       doc.fillColor(palette.muted).fontSize(8).text(label, page.left + 14, y, { width: 120 });
-      doc.fillColor(palette.text).fontSize(9).text(cleanValue, page.left + 142, y, { width: contentWidth - 158, lineGap: 1 });
+      doc.fillColor(href ? palette.primary : palette.text).fontSize(9).text(cleanValue, page.left + 142, y, {
+        width: contentWidth - 158,
+        lineGap: 1,
+        ...(href ? { link: href, underline: true } : {})
+      });
       y = Math.max(y + 24, doc.y + 4);
     });
     doc.y = y + 6;
@@ -1566,7 +1550,7 @@ async function renderCompanyExportPdf(input: {
       const paragraphs = item.split(/\n+/).map((part) => part.trim()).filter(Boolean);
       const parts = paragraphs.length ? paragraphs : [item];
       parts.forEach((text) => {
-        ensureSpace(34);
+        ensureSpace(46);
         const y = doc.y;
         doc.roundedRect(page.left, y, contentWidth, 27, 7).fillAndStroke(tone === "neutral" ? "#FFFFFF" : palette.soft, palette.border);
         doc.circle(page.left + 14, y + 13.5, 3).fill(color);
@@ -1589,6 +1573,8 @@ async function renderCompanyExportPdf(input: {
   doc.y = metricY + 82;
 
   sectionTitle("Dados da empresa", "Informacoes cadastrais e dados comerciais localizados.");
+  const rawMapsUrl = String(input.company.mapsUrl || input.company.maps_url || "");
+  const mapsUrl = /^https?:\/\//i.test(rawMapsUrl) ? rawMapsUrl : "";
   infoBox("Cadastro e contato", [
     ["Empresa", input.company.name],
     ["Segmento", input.company.category],
@@ -1598,13 +1584,13 @@ async function renderCompanyExportPdf(input: {
     ["WhatsApp", input.company.whatsapp],
     ["E-mail", input.company.emailPrincipal || input.company.email_principal || input.company.email],
     ["Site", input.company.website],
-    ["Maps", input.company.mapsUrl || input.company.maps_url],
+    ["Maps", mapsUrl ? "Abrir no Google Maps" : "Não localizado", mapsUrl || undefined],
     ["Resumo comercial", input.company.businessSummary || input.company.resumoSobreEmpresa || input.company.resumo_sobre_empresa || input.company.resumo]
   ]);
 
   sectionTitle("Sinais digitais");
   input.checks.forEach((check) => {
-    ensureSpace(28);
+    ensureSpace(40);
     const y = doc.y;
     doc.roundedRect(page.left, y, contentWidth, 24, 7).fillAndStroke(check.ok ? "#F0FDF4" : "#FFF7ED", check.ok ? "#BBF7D0" : "#FED7AA");
     doc.fillColor(check.ok ? palette.success : palette.warning).fontSize(8).text(check.ok ? "OK" : "PENDENTE", page.left + 12, y + 8, { width: 60 });
@@ -1616,7 +1602,11 @@ async function renderCompanyExportPdf(input: {
   listBox("Sugestoes comerciais", input.suggestions?.length ? input.suggestions : ["Sem sugestoes no momento."], "success");
   listBox("Historico e observacoes", (input.notes?.length ? input.notes : [{ body: "Sem observacoes registradas." }]).slice(0, 12).map((note) => `${note.createdAt ? `${formatPtBrDate(note.createdAt)} - ` : ""}${note.body || ""}`), "neutral");
   listBox("Follow-ups e agenda", (input.tasks?.length ? input.tasks : [{ title: "Sem follow-ups registrados." }]).slice(0, 12).map((task) => `${task.title || "Tarefa"}${task.status ? ` - ${task.status}` : ""}${task.dueAt ? ` - ${formatPtBrDate(task.dueAt)}` : ""}`), "warning");
-  listBox("Documentos anexados", (input.documents?.length ? input.documents : [{ title: "Sem documentos anexados." }]).slice(0, 12).map((item) => `${item.title || "Documento"}${item.fileName ? ` - ${item.fileName}` : ""}`), "primary");
+  const uniqueDocuments = Array.from(new Map(
+    (input.documents?.length ? input.documents : [{ title: "Sem documentos anexados." }])
+      .map((item) => [`${String(item.title || "").trim().toLowerCase()}|${String(item.fileName || "").trim().toLowerCase()}`, item] as const)
+  ).values());
+  listBox("Documentos anexados", uniqueDocuments.slice(0, 12).map((item) => `${item.title || "Documento"}${item.fileName ? ` - ${item.fileName}` : ""}`), "primary");
 
   if (input.diagnosis) {
     listBox("Diagnostico IA", [
@@ -1629,8 +1619,11 @@ async function renderCompanyExportPdf(input: {
   for (let index = range.start; index < range.start + range.count; index += 1) {
     doc.switchToPage(index);
     doc.moveTo(page.left, 760).lineTo(page.right, 760).strokeColor(palette.border).lineWidth(0.8).stroke();
-    doc.fillColor(palette.muted).fontSize(8).text("Gerado pelo NODERE - nodere.com.br", page.left, 770, { width: 240 });
-    doc.fillColor(palette.muted).fontSize(8).text(`Pagina ${index + 1} de ${range.count}`, page.right - 120, 770, { width: 120, align: "right" });
+    const originalBottomMargin = doc.page.margins.bottom;
+    doc.page.margins.bottom = 0;
+    doc.fillColor(palette.muted).fontSize(8).text("Gerado pelo NODERE · nodere.com.br", page.left, 770, { width: 240, lineBreak: false });
+    doc.fillColor(palette.muted).fontSize(8).text(`Página ${index - range.start + 1} de ${range.count}`, page.right - 120, 770, { width: 120, align: "right", lineBreak: false });
+    doc.page.margins.bottom = originalBottomMargin;
   }
   doc.end();
   return done;
@@ -1693,6 +1686,9 @@ function escapeHtml(value: unknown) {
 
 function loadNodereLogoDataUri() {
   const candidates = [
+    path.join(process.cwd(), "apps", "web", "public", "nodere-icon-official.png"),
+    path.join(process.cwd(), "..", "web", "public", "nodere-icon-official.png"),
+    path.join(process.cwd(), "public", "nodere-icon-official.png"),
     path.join(process.cwd(), "public", "android-chrome-192x192.png"),
     path.join(process.cwd(), "..", "web", "public", "android-chrome-192x192.png"),
     path.join(process.cwd(), "..", "..", "apps", "web", "public", "android-chrome-192x192.png")
@@ -1700,7 +1696,7 @@ function loadNodereLogoDataUri() {
   const found = candidates.find((candidate) => existsSync(candidate));
   if (!found) {
     console.warn("NODERE PDF logo not found locally; using inline SVG fallback", { candidates });
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="#1E6FDB"/><text x="256" y="318" text-anchor="middle" font-family="Arial, sans-serif" font-size="230" font-weight="800" fill="#FFFFFF">N</text></svg>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="#07362B"/><text x="256" y="318" text-anchor="middle" font-family="Arial, sans-serif" font-size="230" font-weight="800" fill="#EAF3EF">N</text></svg>`;
     return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
   }
   return `data:image/png;base64,${readFileSync(found).toString("base64")}`;
@@ -1875,6 +1871,7 @@ async function companyDependencies(workspaceId: string, companyId: string) {
     ["company_contracts", "company_id"],
     ["calendar_events", "company_id"],
     ["schedules", "company_id"],
+    ["nodere_proposals", "lead_id"],
     ["proposal_versions", "lead_id"],
     ["inbox_messages", "lead_id"],
     ["cadence_enrollments", "lead_id"],

@@ -5,7 +5,7 @@ import { CreditsBadge } from "@/components/CreditsBadge";
 import { getSearchHistory, getEnrichmentQueue } from "@/lib/api";
 import { RerunButton } from "./RerunButton";
 import { CsvImportPanel } from "./CsvImportPanel";
-import { ExternalSearchTabs } from "./ExternalSearchTabs";
+import { ResearchPanel } from "./ResearchPanel";
 
 export const metadata: Metadata = {
   title: "Busca de empresas | NODERE",
@@ -38,7 +38,7 @@ export default async function SearchesPage() {
 
       <section className="space-y-4">
         <SearchPanel />
-        <ExternalSearchTabs />
+        <ResearchPanel />
       </section>
 
       <CsvImportPanel />
@@ -82,7 +82,7 @@ export default async function SearchesPage() {
                         search.source === "google" ? "bg-[rgba(0,223,130,0.13)] text-[var(--brand-glow)]" : "bg-[rgba(245,158,11,0.14)] text-[var(--warning)]"
                       ].join(" ")}
                     >
-                      {search.source === "google" ? "Google Places" : search.source === "mock" ? "Demo" : "Fallback"}
+                      {search.source === "google" ? "Google Places" : "Pesquisa pública"}
                     </span>
                   </div>
                   <div className="mt-1.5 flex items-center gap-3 text-xs text-[var(--text-muted)]">

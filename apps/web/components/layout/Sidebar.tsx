@@ -2,23 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Bot, CalendarDays, FileText, Home, Inbox, KanbanSquare, Lock, Mail, Radio, Search, Settings, Users, Workflow } from "lucide-react";
+import { BarChart3, Bot, Building2, CalendarDays, FileText, Home, KanbanSquare, Lock, MessagesSquare, PackageOpen, Search, Settings } from "lucide-react";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { Logo } from "@/components/brand/Logo";
 
 const NAV_ITEMS = [
-  { code: "DISC-01", label: "Prospecção", icon: Search, href: "/app/discovery", group: "Descoberta" },
-  { code: "CRM-01", label: "Pipeline", icon: KanbanSquare, href: "/app/pipeline", group: "CRM" },
-  { code: "CRM-02", label: "Leads", icon: Users, href: "/app/leads", group: "CRM" },
-  { code: "CRM-03", label: "Agenda", icon: CalendarDays, href: "/app/agenda", group: "CRM" },
-  { code: "CRM-04", label: "Propostas", icon: FileText, href: "/app/proposals", group: "CRM" },
-  { code: "ENG-01", label: "WhatsApp", icon: Inbox, href: "/app/whatsapp", group: "Comunicação" },
-  { code: "ENG-03", label: "E-mail", icon: Mail, href: "/app/email", group: "Comunicação" },
-  { code: "ENG-04", label: "Omnichannel", icon: Radio, href: "/app/inbox", group: "Comunicação" },
-  { code: "AI-01", label: "IA NODERE", icon: Bot, href: "/app/ai", group: "Inteligência" },
-  { code: "ANA-01", label: "Dashboard", icon: BarChart3, href: "/app/analytics", group: "Analytics" },
-  { code: "ANA-02", label: "Relatórios", icon: FileText, href: "/app/reports", group: "Analytics" },
-  { code: "OPS-01", label: "Projetos", icon: Workflow, href: "/app/projects", group: "Operações" }
+  { code: "AI-01", label: "NODERE AI", icon: Bot, href: "/ai", group: "Operação" },
+  { code: "ANA-01", label: "Dashboard", icon: BarChart3, href: "/dashboard", group: "Operação" },
+  { code: "DISC-01", label: "Prospecção e pesquisa", icon: Search, href: "/searches", group: "Operação" },
+  { code: "CRM-01", label: "Funil comercial", icon: KanbanSquare, href: "/crm", group: "Operação" },
+  { code: "CRM-02", label: "Empresas e clientes", icon: Building2, href: "/companies", group: "Operação" },
+  { code: "ENG-01", label: "Comunicações", icon: MessagesSquare, href: "/crm/communications", group: "Operação" },
+  { code: "CRM-03", label: "Agenda", icon: CalendarDays, href: "/calendario", group: "Operação" },
+  { code: "CRM-02", label: "Briefings", icon: FileText, href: "/crm/briefings", group: "Comercial" },
+  { code: "CRM-04", label: "Propostas e contratos", icon: PackageOpen, href: "/app/proposals", group: "Comercial" },
+  { code: "CRM-01", label: "Produtos e serviços", icon: PackageOpen, href: "/catalog", group: "Comercial" },
+  { code: "ANA-02", label: "Relatórios", icon: FileText, href: "/reports", group: "Comercial" }
 ];
 
 export default function PlatformSidebar() {

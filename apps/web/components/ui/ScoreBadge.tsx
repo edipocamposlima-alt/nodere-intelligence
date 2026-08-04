@@ -7,9 +7,9 @@ interface ScoreBadgeProps {
 }
 
 export function ScoreBadge({ score, variant = "nodere", showLabel = true }: ScoreBadgeProps) {
-  const max = variant === "nodere" ? 1000 : 100;
+  const max = 100;
   const normalizedScore = normalizeCommercialScore(score, max);
-  const pct = Math.max(0, Math.min(100, normalizedScore / 10));
+  const pct = normalizedScore;
   const band = getScoreBand(score, max);
 
   return (
@@ -20,12 +20,12 @@ export function ScoreBadge({ score, variant = "nodere", showLabel = true }: Scor
           <circle cx="16" cy="16" r="13" fill="none" stroke={band.colorVar} strokeWidth="3" strokeDasharray={`${(pct / 100) * 81.7} 81.7`} strokeLinecap="round" />
         </svg>
         <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-text-primary">
-          {score > 99 ? Math.round(score / 10) : score}
+          {Math.round(normalizedScore)}
         </span>
       </div>
       {showLabel && (
         <div>
-          <p className="text-sm font-semibold" style={{ color: band.colorVar }}>{score}</p>
+          <p className="text-sm font-semibold" style={{ color: band.colorVar }}>{Math.round(normalizedScore)}/100</p>
           <p className="text-xs text-text-muted">{band.label}</p>
         </div>
       )}

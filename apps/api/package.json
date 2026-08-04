@@ -18,6 +18,7 @@
     "test:security-hardening": "tsx --test src/tests/security-hardening.test.ts",
     "test:v5": "tsx --test src/tests/v5-commercial.test.ts",
     "test:v6": "tsx --test src/tests/v6-homologation.test.ts",
+    "test:v7": "tsx --test src/tests/v7-operational.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "npm run typecheck"
   },

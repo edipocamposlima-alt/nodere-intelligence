@@ -7,6 +7,8 @@ import { Company } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
 import { ApiRequestError, archiveCompany, generateAiCallScript, generateAiDiagnosis, generateAiWhatsappMessage, getCompanies, getCompanyDependencies, saveSearchResultAsLead, trashCompany, updateCompany } from "@/lib/api";
 import { downloadNoderePdf } from "@/lib/pdf";
+import { useAuth } from "@/context/AuthProvider";
+import { RecordActionsMenu } from "@/components/records/RecordActionsMenu";
 
 const whatsappMessage =
   "Ola, tudo bem? Estive analisando a presenca digital da sua empresa no Google e identifiquei algumas oportunidades que podem ajudar voces a gerar mais contatos e melhorar o posicionamento online. Posso te mostrar rapidamente?";
@@ -71,7 +73,7 @@ function normalizeSearch(value: unknown) {
 }
 
 function isExternalCompanyId(value: unknown) {
-  return /^(ChIJ|search-|apollo-company-|econodata-|discovery-|google-|places?[-_])/i.test(String(value || "").trim());
+  return /^(ChIJ|search-|discovery-|google-|places?[-_])/i.test(String(value || "").trim());
 }
 
 function shouldPersistBeforeFicha(company: Company, embedded: boolean) {
@@ -112,6 +114,8 @@ function companyMatchesQuery(company: Company, query: string) {
 
 export function CompanyTable({ companies, initialQuery = "", embedded = false }: { companies: Company[]; initialQuery?: string; embedded?: boolean }) {
   const router = useRouter();
+  const { user } = useAuth();
+  const canDelete = user?.role === "owner" || user?.role === "admin";
   const [baseCompanies, setBaseCompanies] = useState(companies);
   const [visibleCompanies, setVisibleCompanies] = useState(companies);
   const [query, setQuery] = useState(initialQuery);
@@ -459,8 +463,7 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
             <PhoneCall className="h-4 w-4" />
           </button>
           {!embedded && !shouldPersistBeforeFicha(company, false) && <button type="button" onClick={() => void openBriefing(company)} disabled={openingBriefing[company.id]} className="nodere-company-action-icon nodere-company-action-icon--info" aria-label="Criar ou abrir Briefing Comercial" title="Criar ou abrir Briefing Comercial"><ClipboardList /></button>}
-          {!embedded && !shouldPersistBeforeFicha(company, false) && <button type="button" onClick={() => void lifecycleCompany(company, "archive")} className={iconButtonClass} aria-label="Arquivar empresa" title="Arquivar empresa"><Archive /></button>}
-          {!embedded && !shouldPersistBeforeFicha(company, false) && <button type="button" onClick={() => void lifecycleCompany(company, "trash")} className="nodere-company-action-icon nodere-company-action-icon--danger" aria-label="Mover empresa para a lixeira" title="Mover empresa para a lixeira"><Trash2 /></button>}
+          {!embedded && !shouldPersistBeforeFicha(company, false) && <RecordActionsMenu company={company} role={user?.role} compact onChanged={(action) => { setVisibleCompanies((current) => current.filter((item) => item.id !== company.id)); setBaseCompanies((current) => current.filter((item) => item.id !== company.id)); setMessages((current) => ({ ...current, [company.id]: action === "archive" ? "Empresa arquivada." : "Empresa movida para a lixeira." })); }} />}
         </div>
 
         {company.whatsapp && !isValidBrazilMobileWhatsapp(company.whatsapp) && (
@@ -561,7 +564,7 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
             <Trash2 className="h-4 w-4" />Ignorar
           </button>
           {!embedded && <button onClick={() => void lifecycleSelected("archive")} disabled={selectedCompanies.length === 0} className="btn-secondary min-h-9 px-3 py-2 text-xs"><Archive />Arquivar</button>}
-          {!embedded && <button onClick={() => void lifecycleSelected("trash")} disabled={selectedCompanies.length === 0} className="btn-secondary min-h-9 px-3 py-2 text-xs"><Trash2 />Lixeira</button>}
+          {!embedded && canDelete && <button onClick={() => void lifecycleSelected("trash")} disabled={selectedCompanies.length === 0} className="btn-secondary min-h-9 px-3 py-2 text-xs"><Trash2 />Lixeira</button>}
           <button onClick={exportCsv} disabled={visibleCompanies.length === 0} className="btn-secondary min-h-9 px-3 py-2 text-xs">
             <Download className="h-4 w-4" />CSV
           </button>
@@ -591,7 +594,7 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
         ) : (
           <div className="grid gap-4 p-3 sm:p-4 xl:grid-cols-2">
             {visibleCompanies.map((company) => {
-              const score = company.nodereScore ?? company.score * 10;
+              const score = Math.max(0, Math.min(100, Number(company.nodereScore ?? company.score ?? 0)));
               const gaps = (company.digitalGaps?.length ? company.digitalGaps : company.detectedOpportunities.slice(0, 3)).slice(0, 4);
               return (
                 <article id={`result-${company.id}`} key={company.id} className="scroll-mt-28 rounded-lg border border-line bg-panel/95 p-4 shadow-lg shadow-black/10">
@@ -641,8 +644,8 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <span className="text-xl font-black text-white">{score}</span>
-                          <span className="text-xs text-slate-500">/1000</span>
-                          <p className="text-[11px] text-slate-500">Legado {company.score}/100</p>
+                          <span className="text-xs text-slate-500">/100</span>
+                          <p className="text-[11px] text-slate-500">Score comercial explicável</p>
                         </div>
                         <div className="text-right text-slate-400">
                           <p className="font-bold text-slate-200">Avaliação</p>

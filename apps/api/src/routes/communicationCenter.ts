@@ -6,6 +6,7 @@ import { config } from "../config.js";
 import { getSupabase } from "../db/supabase.js";
 import { getRequestWorkspaceId, requireWorkspaceRole } from "../middleware/session.js";
 import { createSmtpTransport } from "../services/emailSender.js";
+import { emitDomainEvent } from "../services/domainEvents.js";
 
 const router = Router();
 const canEdit = requireWorkspaceRole("owner", "admin", "operator");
@@ -415,6 +416,14 @@ async function appendEvent(input: {
     provider_message_id: input.providerMessageId || null, metadata: input.metadata || {}, actor_id: input.actorId
   });
   if (error) throw error;
+  await emitDomainEvent({
+    workspaceId: input.workspaceId,
+    aggregateType: input.companyId ? "lead" : "communication_thread",
+    aggregateId: input.companyId || input.threadId,
+    eventType: `communication.${input.eventType}`,
+    actorId: input.actorId,
+    payload: { threadId: input.threadId, contactId: input.contactId || null, channel: input.metadata?.channel || null, direction: input.direction, status: input.status, providerMessageId: input.providerMessageId || null }
+  });
 }
 
 async function audit(req: any, action: string, entityType: string, entityId: string, beforeState: unknown, afterState: unknown, reason?: string) {

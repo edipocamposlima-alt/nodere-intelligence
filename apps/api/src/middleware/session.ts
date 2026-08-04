@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { canAccessModule, extractBearerToken, isBuiltInOwnerEmail, normalizeAdminSession, verifySessionToken, WorkspaceModule } from "../services/adminSession.js";
+import { canAccessModule, extractBearerToken, normalizeAdminSession, verifySessionToken, WorkspaceModule } from "../services/adminSession.js";
 import { getSupabase, hasSupabase } from "../db/supabase.js";
 import { ensureSupabaseAuthUser } from "../services/userStore.js";
 
@@ -27,6 +27,7 @@ export async function attachSession(request: Request, _response: Response, next:
           role: user.role,
           workspaceId: user.workspaceId,
           userId: user.id,
+          authUserId: user.authUserId || data.user.id,
           customRoleId: user.customRoleId,
           status: user.status,
           visibilityLevel: user.visibilityLevel,
@@ -48,7 +49,7 @@ export function getRequestWorkspaceId(request: Request) {
 export function isPrivilegedSession(request: Request) {
   const session = (request as any).session;
   const role = session?.role;
-  return role === "owner" || role === "admin" || isBuiltInOwnerEmail(session?.email);
+  return role === "owner" || role === "admin";
 }
 
 export function requireWorkspaceSession(request: Request, response: Response, next: NextFunction) {
@@ -62,11 +63,9 @@ export function requireWorkspaceRole(...roles: Array<"owner" | "admin" | "operat
   return (request: Request, response: Response, next: NextFunction) => {
     const session = (request as any).session;
     if (!session) return response.status(401).json({ error: "Unauthorized", message: "Login obrigatório." });
-    const effectiveRole = isBuiltInOwnerEmail(session.email) ? "owner" : session.role;
-    if (!roles.includes(effectiveRole)) {
+    if (!roles.includes(session.role)) {
       return response.status(403).json({ error: "Forbidden", message: "Você não tem permissão para esta ação." });
     }
-    session.role = effectiveRole;
     return next();
   };
 }
@@ -76,6 +75,21 @@ export function requireWorkspaceMutation(...roles: Array<"owner" | "admin" | "op
   return (request: Request, response: Response, next: NextFunction) => {
     if (["GET", "HEAD", "OPTIONS"].includes(request.method.toUpperCase())) return next();
     return authorize(request, response, next);
+  };
+}
+
+export function requireRecordPermission(permission: "records.delete" | "records.purge") {
+  return (request: Request, response: Response, next: NextFunction) => {
+    const session = (request as any).session;
+    if (!session) return response.status(401).json({ error: "Unauthorized", message: "Login obrigatório." });
+    if (session.role !== "owner" && session.role !== "admin") {
+      return response.status(403).json({ error: "Forbidden", code: "RECORD_PERMISSION_DENIED", message: "Somente Owner ou Administrador pode executar esta ação." });
+    }
+    const configured = session.modulePermissions?.[permission];
+    if (configured === false || configured === "none" || configured === "read") {
+      return response.status(403).json({ error: "Forbidden", code: "RECORD_PERMISSION_DENIED", message: `Seu perfil não possui a permissão ${permission}.` });
+    }
+    return next();
   };
 }
 

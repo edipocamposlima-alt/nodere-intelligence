@@ -1,6 +1,8 @@
 import { CreditAccount } from "../types.js";
 import { getSupabase, hasSupabase } from "../db/supabase.js";
 import { randomUUID } from "node:crypto";
+import type { AccountEntitlement } from "./entitlements.js";
+import { isInternalOwnerEntitlement } from "./entitlements.js";
 
 const TRIAL_CREDITS = 20;
 const TRIAL_DAYS = 14;
@@ -17,43 +19,65 @@ type WorkspaceCredits = CreditAccount & {
 
 const accounts = new Map<string, WorkspaceCredits>();
 
-export async function getCredits(workspaceId = "default"): Promise<CreditAccount> {
+export async function getCredits(workspaceId = "default", entitlement?: AccountEntitlement): Promise<CreditAccount> {
   const account = await ensureAccount(workspaceId);
-  return { balance: account.balance, used: account.used, plan: account.plan, resetAt: account.resetAt };
+  return { balance: account.balance, used: account.used, plan: isInternalOwnerEntitlement(entitlement) ? "Proprietário" : account.plan, resetAt: account.resetAt };
 }
 
-export async function getCreditStatus(workspaceId = "default") {
+export async function getCreditStatus(workspaceId = "default", entitlement?: AccountEntitlement) {
   const account = await ensureAccount(workspaceId);
+  const internalOwner = isInternalOwnerEntitlement(entitlement);
   const trialExpired = account.plan === "trial" && Boolean(account.trialExpiresAt) && new Date(account.trialExpiresAt!).getTime() < Date.now();
   return {
     total: account.total,
     used: account.used,
     remaining: account.balance,
-    plan: account.plan,
-    expires_at: account.expiresAt,
-    trial_expires_at: account.trialExpiresAt,
+    plan: internalOwner ? "Proprietário" : account.plan,
+    account_type: entitlement?.accountType || "STANDARD",
+    billing_exempt: Boolean(entitlement?.billingExempt),
+    usage_metering_enabled: entitlement?.usageMeteringEnabled !== false,
+    provider_limits_still_apply: entitlement?.providerLimitsStillApply !== false,
+    expires_at: internalOwner ? null : account.expiresAt,
+    trial_expires_at: internalOwner ? null : account.trialExpiresAt,
     renewal_at: account.renewalAt,
     resetAt: account.renewalAt || "",
-    blocked: account.balance <= 0 || trialExpired,
-    trialExpired
+    blocked: internalOwner ? false : account.balance <= 0 || trialExpired,
+    trialExpired: internalOwner ? false : trialExpired
   };
 }
 
-export function consumeSearch(description: string, workspaceId = "default") {
-  return consume(COST_SEARCH, "search", description, workspaceId);
+export function consumeSearch(description: string, workspaceId = "default", entitlement?: AccountEntitlement) {
+  return consume(COST_SEARCH, "search", description, workspaceId, entitlement);
 }
 
-export function consumeEnrichment(companyName: string, workspaceId = "default") {
-  return consume(COST_ENRICHMENT, "enrichment", companyName, workspaceId);
+export function consumeEnrichment(companyName: string, workspaceId = "default", entitlement?: AccountEntitlement) {
+  return consume(COST_ENRICHMENT, "enrichment", companyName, workspaceId, entitlement);
 }
 
-export function consumeCredit(type = "manual", description = "Uso operacional", workspaceId = "default") {
-  return consume(1, type, description, workspaceId);
+export function consumeCredit(type = "manual", description = "Uso operacional", workspaceId = "default", entitlement?: AccountEntitlement) {
+  return consume(1, type, description, workspaceId, entitlement);
 }
 
-async function consume(amount: number, type: string, description: string, workspaceId: string) {
+async function consume(amount: number, type: string, description: string, workspaceId: string, entitlement?: AccountEntitlement) {
   if (hasSupabase()) {
     const sb = getSupabase()!;
+    if (isInternalOwnerEntitlement(entitlement)) {
+      const wallet = await sb.from("nodere_credit_wallets").select("available_credit,held_credit").eq("workspace_id", workspaceId).maybeSingle();
+      if (wallet.error || !wallet.data) throw wallet.error || new Error("Carteira técnica indisponível para medição.");
+      const { error } = await sb.from("nodere_credit_ledger").insert({
+        workspace_id: workspaceId,
+        idempotency_key: `owner-metering:${type}:${randomUUID()}`,
+        entry_type: "capture",
+        amount_credit: amount,
+        available_delta: 0,
+        held_delta: 0,
+        available_after: Number(wallet.data.available_credit || 0),
+        held_after: Number(wallet.data.held_credit || 0),
+        metadata: { type, description, account_type: "OWNER_INTERNAL", billing_exempt: true, usage_metered: true, auth_user_id: entitlement?.authUserId }
+      });
+      if (error) throw error;
+      return Number(wallet.data.available_credit || 0);
+    }
     const { data, error } = await sb.rpc("nodere_consume_credits", {
       p_workspace_id: workspaceId,
       p_idempotency_key: `operation:${type}:${randomUUID()}`,

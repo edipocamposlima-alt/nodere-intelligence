@@ -40,6 +40,7 @@ import intelligenceRouter from "./routes/intelligence.js";
 import onboardingRouter from "./routes/onboarding.js";
 import briefingsRouter from "./routes/briefings.js";
 import communicationCenterRouter from "./routes/communicationCenter.js";
+import researchRouter from "./routes/research.js";
 import { processDueSteps } from "./services/emailSequences.js";
 import { requireAuth } from "./middleware/auth.js";
 import { attachSession, getRequestWorkspaceId, requireModuleAccess, requireWorkspaceRole, requireWorkspaceSession } from "./middleware/session.js";
@@ -236,9 +237,7 @@ function publicIntegrationSettings() {
       pageSpeed: Boolean(config.google.pageSpeedKey),
       openai: Boolean(config.openai.apiKey),
       supabase: Boolean(config.supabase.url && config.supabase.serviceRoleKey),
-      whatsappWeb: true,
-      econodata: Boolean(config.enrichment.econodataApiKey && config.enrichment.econodataApiUrl),
-      apollo: Boolean(config.enrichment.apolloApiKey)
+      whatsappWeb: true
     },
     status: "ok",
     backendTime: new Date().toISOString()
@@ -477,6 +476,7 @@ app.use("/api/crm", requireWorkspaceSession, requireModuleAccess("crm"), crmRout
 app.use("/api/leads", requireWorkspaceSession, requireModuleAccess("crm"), leadsRouter);
 app.use("/api/briefings", requireWorkspaceSession, requireModuleAccess("crm"), briefingsRouter);
 app.use("/api/communications-center", requireWorkspaceSession, requireModuleAccess("crm"), communicationCenterRouter);
+app.use("/api/research", requireWorkspaceSession, requireModuleAccess("buscas"), researchRouter);
 app.use("/api/discovery", requireWorkspaceSession, requireModuleAccess("buscas"), discoveryRouter);
 app.use("/api/ai", requireWorkspaceSession, requireModuleAccess("dashboard"), aiRouter);
 app.use("/api/intelligence", requireWorkspaceSession, requireModuleAccess("relatorios"), intelligenceRouter);

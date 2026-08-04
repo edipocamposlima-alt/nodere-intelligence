@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function CommercialBriefingsPage() {
   const token = await getServerSessionToken();
   const [briefingsResult, companiesResult] = await Promise.allSettled([
-    getCommercialBriefings(token),
+    Promise.all([getCommercialBriefings(token), getCommercialBriefings(token, { status: "trash" })]).then(([active, trash]) => [...active, ...trash.map((item) => ({ ...item, status: "trash" as const }))]),
     getCompanies(token)
   ]);
   const briefings = briefingsResult.status === "fulfilled" ? briefingsResult.value : [];

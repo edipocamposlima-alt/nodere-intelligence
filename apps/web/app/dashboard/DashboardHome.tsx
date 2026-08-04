@@ -436,8 +436,7 @@ function groupAndSort(values: string[]) {
 
 function sourceLabel(company: Company) {
   if (company.source === "manual" || company.notes?.some((note) => note.body.toLowerCase().includes("manual"))) return "Manual";
-  if (company.source === "apollo") return "Apollo";
-  if (company.source === "econodata") return "Econodata";
+  if (company.source === "public_research") return "Pesquisa pública";
   if (company.cnpj) return "CNPJ";
   if (company.mapsUrl || company.source === "google_places") return "Google Maps";
   return "CRM";

@@ -250,7 +250,7 @@ export async function getOperatorsReport(workspaceId = "default") {
     getUserMetrics(workspaceId, since)
   ]);
   const people = users.length
-    ? users.map((user) => ({
+    ? users.filter((user) => user.active && user.status !== "inactive").map((user) => ({
       id: user.id,
       name: user.name,
       email: user.email,

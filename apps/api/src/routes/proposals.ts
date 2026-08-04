@@ -10,6 +10,7 @@ import { getCompanyAsync } from "../services/companyStore.js";
 import { callAI } from "../services/ai.js";
 import { logRequestMetric } from "../services/metricsStore.js";
 import { isMissingSupabaseSchema } from "../utils/supabaseErrors.js";
+import { emitDomainEvent } from "../services/domainEvents.js";
 
 const router = Router();
 router.use(requireWorkspaceMutation("owner", "admin", "operator", "viewer"));
@@ -167,6 +168,7 @@ router.post("/", requireWorkspaceRole("owner", "admin", "operator"), async (req,
       items: commercial.items.map(auditItem)
     }).catch(() => undefined);
     await recordProposalActivity(workspaceId, lead.id, userId, body.document_type === "contract" ? "Contrato gerado" : "Proposta gerada", row, body.document_type).catch(() => undefined);
+    await emitDomainEvent({ workspaceId, aggregateType: "lead", aggregateId: lead.id, eventType: body.document_type === "contract" ? "contract.created" : "proposal.created", actorId: userId || null, payload: { proposalId: row.id, status: row.status, total: row.total, version: versionNumber, documentGroupId } });
     logRequestMetric(req, "proposal_generated", lead.id, { proposalId: row.id, source: "block05" });
     res.status(201).json(data);
   } catch (error) {
@@ -390,6 +392,7 @@ router.patch("/:id", requireWorkspaceRole("owner", "admin", "operator"), async (
     if (error) throw error;
     if (!data) return res.status(404).json({ message: "Proposta não encontrada." });
     await insertProposalAudit(workspaceId, String((req as any).session?.userId || ""), "proposal_updated", String(req.params.id), { status: data.status, items: Array.isArray(data.items) ? data.items.map(auditItem) : [] }).catch(() => undefined);
+    await emitDomainEvent({ workspaceId, aggregateType: "lead", aggregateId: String(data.lead_id), eventType: "proposal.updated", actorId: String((req as any).session?.userId || "") || null, payload: { proposalId: data.id, status: data.status, total: data.total, changedFields: Object.keys(updates) } });
     res.json(data);
   } catch (error) {
     next(error);
@@ -703,9 +706,9 @@ async function recordProposalActivity(workspaceId: string, leadId: string, userI
   });
 }
 
-async function renderProposalPdf(proposal: any, lead: any, documentType: "proposal" | "contract" = "proposal") {
+export async function renderProposalPdf(proposal: any, lead: any, documentType: "proposal" | "contract" = "proposal") {
   return new Promise<Buffer>((resolve, reject) => {
-    const doc = new PDFDocument({ size: "A4", margin: 48, bufferPages: true, info: { Title: String(proposal.title || "Documento NODERE"), Author: "NODERE" } });
+    const doc = new PDFDocument({ size: "A4", margins: { top: 48, right: 48, bottom: 72, left: 48 }, bufferPages: true, info: { Title: String(proposal.title || "Documento NODERE"), Author: "NODERE" } });
     const chunks: Buffer[] = [];
     doc.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
     doc.on("end", () => resolve(Buffer.concat(chunks)));
@@ -716,7 +719,8 @@ async function renderProposalPdf(proposal: any, lead: any, documentType: "propos
     if (logoPath) doc.image(logoPath, 48, 44, { width: 28, height: 28 });
     doc.fillColor("#00382F").fontSize(22).text("NODERE", logoPath ? 86 : 48, 48, { continued: false });
     doc.fillColor("#6B7280").fontSize(8).text(`Gerado em ${new Date(generatedAt).toLocaleString("pt-BR")}`, 390, 48, { width: 150, align: "right" });
-    doc.moveDown(0.4);
+    doc.x = 48;
+    doc.y = 92;
     doc.fillColor("#00D69E").fontSize(12).text(documentType === "contract" ? "Contrato comercial" : "Proposta comercial", { continued: false });
     doc.moveDown(1);
     doc.fillColor("#111827").fontSize(18).text(String(proposal.title || "Proposta comercial"));
@@ -727,18 +731,19 @@ async function renderProposalPdf(proposal: any, lead: any, documentType: "propos
     doc.moveDown();
     const proposalContent = cleanPdfText(proposal.content || "");
     const customerNotes = cleanPdfText(proposal.metadata?.customer_notes || "");
-    if (proposalContent) {
-      doc.fontSize(11).fillColor("#1F2937").text(proposalContent, { align: "left" });
-    }
-    if (customerNotes && customerNotes !== proposalContent) {
-      doc.moveDown(0.5);
-      doc.fillColor("#1F2937").fontSize(10).text(customerNotes, { align: "left" });
+    if (documentType === "proposal") {
+      pdfSection(doc, "Resumo executivo", proposalContent || `Esta proposta apresenta a solução comercial preparada para ${lead?.name || "o cliente"}, com escopo, investimento e condições definidos a seguir.`);
+      if (customerNotes && customerNotes !== proposalContent) pdfSection(doc, "Contexto e observações do cliente", customerNotes);
+    } else {
+      pdfSection(doc, "1. Partes e objeto", `CONTRATANTE: ${lead?.legalName || lead?.name || "Cliente identificado na proposta"}${lead?.cnpj ? `, CNPJ ${lead.cnpj}` : ""}. CONTRATADA: NODERE. O presente instrumento tem por objeto a prestação dos serviços descritos neste documento e nos itens contratados.`);
+      pdfSection(doc, "2. Escopo contratado", proposalContent || "O escopo é composto exclusivamente pelos produtos e serviços discriminados neste contrato, incluindo quantidades, prazos e condições comerciais registradas na plataforma.");
+      if (customerNotes && customerNotes !== proposalContent) pdfSection(doc, "3. Condições específicas", customerNotes);
     }
 
     const items = Array.isArray(proposal.items) ? proposal.items : [];
     if (items.length) {
       doc.moveDown();
-      doc.fillColor("#00382F").fontSize(13).text("Itens da proposta");
+      doc.fillColor("#00382F").fontSize(13).text(documentType === "contract" ? "4. Serviços e valores contratados" : "Escopo e investimento");
       doc.moveDown(0.4);
       items.forEach((item: any) => {
         const name = item.snapshot_name || item.description || "Item do catálogo";
@@ -757,21 +762,52 @@ async function renderProposalPdf(proposal: any, lead: any, documentType: "propos
     }
 
     doc.moveDown();
-    doc.fillColor("#374151").fontSize(10).text(`Subtotal: ${formatMoney(proposal.subtotal || 0)}`);
-    doc.fillColor("#374151").fontSize(10).text(`Descontos: ${formatMoney(proposal.discount || 0)}`);
-    doc.fillColor("#00382F").fontSize(12).text(`Total: ${formatMoney(proposal.total || 0)}`);
-    if (proposal.valid_until) doc.fillColor("#6B7280").fontSize(9).text(`Validade: ${new Date(proposal.valid_until).toLocaleDateString("pt-BR")}`);
-    doc.moveDown(2);
-    doc.fillColor("#6B7280").fontSize(9).text("Documento gerado automaticamente pela plataforma NODERE.");
+    doc.roundedRect(48, doc.y, 499, 58, 8).fillAndStroke("#F1F8F5", "#CFE5DC");
+    const totalsY = doc.y + 11;
+    doc.fillColor("#374151").fontSize(9).text(`Subtotal: ${formatMoney(proposal.subtotal || 0)}`, 62, totalsY);
+    doc.text(`Descontos: ${formatMoney(proposal.discount || 0)}`, 62, totalsY + 15);
+    doc.fillColor("#00382F").fontSize(13).text(`Total: ${formatMoney(proposal.total || 0)}`, 330, totalsY + 8, { width: 200, align: "right" });
+    doc.x = 48;
+    doc.y = totalsY + 62;
+    if (documentType === "contract") {
+      pdfSection(doc, "5. Pagamento, vigência e execução", `O valor total contratado é ${formatMoney(proposal.total || 0)}. As formas de pagamento, unidades de cobrança e prazos específicos constam nos itens acima. O serviço começa após a confirmação de aceite e das condições comerciais.`);
+      pdfSection(doc, "6. Obrigações e cooperação", "A CONTRATADA executará o escopo com diligência e informará impedimentos relevantes. A CONTRATANTE fornecerá acessos, materiais, aprovações e informações necessárias dentro dos prazos acordados.");
+      pdfSection(doc, "7. Confidencialidade e dados", "As partes devem proteger informações confidenciais e tratar dados pessoais somente para executar o contrato, observando a legislação aplicável e os controles de acesso da plataforma.");
+      pdfSection(doc, "8. Alterações, rescisão e aceite", "Mudanças de escopo exigem registro e aceite entre as partes. O contrato pode ser rescindido conforme as condições comerciais aplicáveis, preservadas obrigações já constituídas. O aceite eletrônico ou assinatura abaixo confirma ciência integral.");
+      doc.moveDown(1.5);
+      if (doc.y > 675) doc.addPage();
+      const signatureY = doc.y + 30;
+      doc.moveTo(62, signatureY).lineTo(270, signatureY).strokeColor("#94A3B8").stroke();
+      doc.moveTo(326, signatureY).lineTo(534, signatureY).strokeColor("#94A3B8").stroke();
+      doc.fillColor("#475569").fontSize(9).text("CONTRATANTE", 62, signatureY + 6, { width: 208, align: "center" });
+      doc.text("CONTRATADA · NODERE", 326, signatureY + 6, { width: 208, align: "center" });
+    } else {
+      pdfSection(doc, "Condições comerciais", `Validade da proposta: ${proposal.valid_until ? new Date(proposal.valid_until).toLocaleDateString("pt-BR") : "conforme aceite registrado"}. Valores em reais e sujeitos ao escopo descrito. Alterações de quantidade, prazo ou serviço geram nova versão rastreável.`);
+      pdfSection(doc, "Próximo passo", "Revise o escopo e os valores. Em caso de concordância, registre o aceite para que a equipe alinhe cronograma, acessos e início da execução.");
+    }
+    doc.moveDown(1.5);
+    doc.fillColor("#6B7280").fontSize(8).text("Documento gerado no servidor pela NODERE. Versão, autor e itens comerciais permanecem registrados para auditoria.");
     const range = doc.bufferedPageRange();
     for (let index = range.start; index < range.start + range.count; index += 1) {
       doc.switchToPage(index);
-      doc.moveTo(48, 760).lineTo(547, 760).strokeColor("#E5E7EB").stroke();
-      doc.fillColor("#6B7280").fontSize(8).text("NODERE", 48, 770);
-      doc.text(`Página ${index + 1} de ${range.count}`, 440, 770, { width: 107, align: "right" });
+      doc.moveTo(48, 790).lineTo(547, 790).strokeColor("#E5E7EB").stroke();
+      const originalBottomMargin = doc.page.margins.bottom;
+      doc.page.margins.bottom = 0;
+      doc.fillColor("#6B7280").fontSize(8).text("NODERE", 48, 801, { lineBreak: false });
+      doc.text(`Página ${index + 1} de ${range.count}`, 440, 801, { width: 107, align: "right", lineBreak: false });
+      doc.page.margins.bottom = originalBottomMargin;
     }
     doc.end();
   });
+}
+
+function pdfSection(doc: PDFKit.PDFDocument, title: string, body: string) {
+  if (!body.trim()) return;
+  if (doc.y > 690) doc.addPage();
+  doc.moveDown(0.6);
+  doc.fillColor("#00382F").fontSize(12).text(title);
+  doc.moveDown(0.25);
+  doc.fillColor("#1F2937").fontSize(9.5).text(cleanPdfText(body), { align: "justify", lineGap: 2 });
 }
 
 function formatMoney(value: number) {

@@ -6,6 +6,7 @@ import { SessionRole } from "./adminSession.js";
 
 export interface PlatformUser {
   id: string;
+  authUserId?: string | null;
   workspaceId: string;
   name: string;
   email: string;
@@ -40,8 +41,6 @@ interface PlatformUserRow {
 
 const memoryUsers = new Map<string, PlatformUserRow>();
 let userSchemaAvailable = true;
-const BUILTIN_OWNER_EMAIL = "edipo.lima@nodere.com.br";
-const BUILTIN_OWNER_NAME = "Édipo Lima";
 
 function isUserSchemaMissing(error: unknown) {
   const text = error instanceof Error ? error.message : JSON.stringify(error);
@@ -78,13 +77,10 @@ function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
-function isBuiltInOwner(email: string) {
-  return normalizeEmail(email) === BUILTIN_OWNER_EMAIL;
-}
-
 function toPublic(row: PlatformUserRow): PlatformUser {
   return {
     id: row.id,
+    authUserId: row.auth_user_id ?? null,
     workspaceId: row.workspace_id,
     name: row.name,
     email: row.email,
@@ -224,13 +220,13 @@ async function ensureWorkspace(workspaceId: string, _ownerEmail: string, name = 
 }
 
 export async function ensureDefaultAdminUser() {
-  const email = normalizeEmail(config.admin.email || BUILTIN_OWNER_EMAIL);
+  const email = normalizeEmail(config.admin.email || "");
   if (!config.admin.password || !email) return;
   const now = new Date().toISOString();
   const fallback: PlatformUserRow = {
     id: "admin-default",
     workspace_id: "default",
-    name: isBuiltInOwner(email) ? BUILTIN_OWNER_NAME : "Administrador",
+    name: config.admin.name || "Proprietário",
     email,
     role: "owner",
     active: true,
@@ -263,9 +259,9 @@ export async function ensureDefaultAdminUser() {
         const { error: legacyInsertError } = await sb.from("nodere_platform_users").insert(legacyUserRow(fallback));
         if (legacyInsertError) throw legacyInsertError;
       }
-    } else if (isBuiltInOwner(email)) {
+    } else {
       const { error: updateError } = await sb.from("nodere_platform_users").update({
-        name: BUILTIN_OWNER_NAME,
+        name: config.admin.name || "Proprietário",
         role: "owner",
         active: true,
         status: "active",
@@ -275,7 +271,7 @@ export async function ensureDefaultAdminUser() {
       if (updateError) {
         if (!isOptionalUserProfileColumnMissing(updateError)) throw updateError;
         const { error: legacyUpdateError } = await sb.from("nodere_platform_users").update({
-          name: BUILTIN_OWNER_NAME,
+          name: config.admin.name || "Proprietário",
           role: "owner",
           active: true,
           updated_at: now
@@ -292,7 +288,6 @@ export async function ensureDefaultAdminUser() {
     throw error;
   }
 }
-
 export async function authenticateUser(emailInput: string, password: string) {
   await ensureDefaultAdminUser();
   const email = normalizeEmail(emailInput);
@@ -309,10 +304,6 @@ export async function authenticateUser(emailInput: string, password: string) {
       if (error) throw error;
       const row = data as PlatformUserRow | null;
       if (row && verifyPassword(password, row.password_hash)) {
-        if (isBuiltInOwner(email) && (row.role !== "owner" || !row.active || row.visibility_level !== "full")) {
-          const fixed = await promoteBuiltInOwner(row);
-          return toPublic(fixed);
-        }
         return toPublic(row);
       }
     } catch (error) {
@@ -323,10 +314,6 @@ export async function authenticateUser(emailInput: string, password: string) {
 
   const databaseRow = await findActiveUserByEmailWithDatabaseUrl(email);
   if (databaseRow && verifyPassword(password, databaseRow.password_hash)) {
-    if (isBuiltInOwner(email) && (databaseRow.role !== "owner" || !databaseRow.active || databaseRow.visibility_level !== "full")) {
-      const fixed = await promoteBuiltInOwner(databaseRow);
-      return toPublic(fixed);
-    }
     return toPublic(databaseRow);
   }
 
@@ -414,7 +401,6 @@ export async function createWorkspaceUser(workspaceId: string, input: { name: st
 
   return toPublic(row);
 }
-
 export async function inviteWorkspaceUser(workspaceId: string, input: { name: string; email: string; role: SessionRole; customRoleId?: string | null; visibilityLevel?: string; modulePermissions?: Record<string, unknown> }) {
   if (!hasSupabase() || !userSchemaAvailable) {
     const unavailable = new Error("Convites exigem Supabase Auth e o schema de usuários disponível.") as Error & { status?: number; code?: string };
@@ -475,7 +461,6 @@ export async function inviteWorkspaceUser(workspaceId: string, input: { name: st
 
   return toPublic(row);
 }
-
 export async function updateWorkspaceUser(workspaceId: string, userId: string, input: { name?: string; role?: SessionRole; active?: boolean; password?: string; customRoleId?: string | null; status?: string; visibilityLevel?: string; modulePermissions?: Record<string, unknown> }) {
   const fields: Partial<PlatformUserRow> = { updated_at: new Date().toISOString() };
   if (input.name !== undefined) fields.name = input.name.trim();
@@ -508,7 +493,6 @@ export async function updateWorkspaceUser(workspaceId: string, userId: string, i
   Object.assign(row, fields);
   return toPublic(row);
 }
-
 function normalizeRole(role?: SessionRole | string): SessionRole {
   const normalized = String(role || "").trim().toLowerCase();
   if (["owner", "proprietario", "proprietário"].includes(normalized)) return "owner";
@@ -538,9 +522,6 @@ export async function getPlatformUserByEmail(emailInput: string) {
     }
     if (data) {
       const row = data as unknown as PlatformUserRow;
-      if (isBuiltInOwner(email) && (row.role !== "owner" || !row.active || row.visibility_level !== "full")) {
-        return toPublic(await promoteBuiltInOwner(row));
-      }
       return toPublic(row);
     }
   }
@@ -576,10 +557,7 @@ export async function ensureSupabaseAuthUser(input: { authUserId: string; email:
           .eq("workspace_id", row.workspace_id);
         if (linkError) throw linkError;
       }
-      const existing = toPublic(row);
-      return isBuiltInOwner(email)
-        ? { ...existing, name: BUILTIN_OWNER_NAME, role: "owner" as SessionRole, active: true }
-        : existing;
+      return toPublic({ ...row, auth_user_id: row.auth_user_id || input.authUserId });
     }
   } else {
     const existing = memoryUsers.get(email);
@@ -591,7 +569,7 @@ export async function ensureSupabaseAuthUser(input: { authUserId: string; email:
   const row: PlatformUserRow = {
     id: input.authUserId,
     workspace_id: workspaceId,
-    name: isBuiltInOwner(email) ? BUILTIN_OWNER_NAME : input.name?.trim() || email.split("@")[0] || "Usuário NODERE",
+    name: input.name?.trim() || email.split("@")[0] || "Usuário NODERE",
     email,
     role: "owner",
     active: true,
@@ -642,18 +620,3 @@ export async function ensureSupabaseAuthUser(input: { authUserId: string; email:
   return toPublic(row);
 }
 
-async function promoteBuiltInOwner(row: PlatformUserRow): Promise<PlatformUserRow> {
-  const fixed = {
-    ...row,
-    name: BUILTIN_OWNER_NAME,
-    role: "owner" as SessionRole,
-    active: true,
-    status: "active",
-    visibility_level: "full",
-    updated_at: new Date().toISOString()
-  };
-  // The built-in owner is elevated in the signed session. Avoid writing optional
-  // profile columns here because production installations may not have them yet.
-  memoryUsers.set(fixed.email, fixed);
-  return fixed;
-}

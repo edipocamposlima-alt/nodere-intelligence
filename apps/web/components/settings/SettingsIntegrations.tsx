@@ -7,7 +7,6 @@ const API_URL = getApiBaseUrl();
 
 const INTEGRATIONS = [
   { key: "google_places_key", label: "Google Places API Key", hint: "AIza...", testEndpoint: "/settings/test/google" },
-  { key: "apollo_key", label: "Apollo.io API Key", hint: "Encontre em app.apollo.io > Settings > API", testEndpoint: "/settings/test/apollo" },
   { key: "smtp_host", label: "SMTP Host", hint: "smtp.seudominio.com" },
   { key: "smtp_port", label: "SMTP Porta", hint: "587" },
   { key: "smtp_user", label: "SMTP Usuário", hint: "email@dominio.com" },
