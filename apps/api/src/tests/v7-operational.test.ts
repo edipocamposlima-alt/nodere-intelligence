@@ -110,4 +110,11 @@ test("limpeza administrativa usa somente IDs do test data registry", () => {
   assert.doesNotMatch(handler, /source\.is\.null|source\.in/);
 });
 
+test("criação manual devolve o registro realmente persistido quando há duplicidade", () => {
+  const source = read("apps/api/src/routes/companies.ts");
+  assert.match(source, /const \[savedCompany\] = await saveCompanies\(\[company\], workspaceId\)/);
+  assert.match(source, /status\(201\)\.json\(savedCompany\)/);
+  assert.doesNotMatch(source, /status\(201\)\.json\(company\)/);
+});
+
 function escapeRegex(value: string) { return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }

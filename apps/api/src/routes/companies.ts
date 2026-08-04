@@ -312,10 +312,10 @@ router.post("/", async (req, res, next) => {
       serviceInterest: body.serviceInterest || "",
       temperature: body.temperature || "Morno"
     } as any;
-    await saveCompanies([company], workspaceId);
+    const [savedCompany] = await saveCompanies([company], workspaceId);
     await markOnboardingStep(workspaceId, "crm").catch(() => undefined);
-    logRequestMetric(req, "company_saved", company.id, { source: "manual", status: company.status });
-    return res.status(201).json(company);
+    logRequestMetric(req, "company_saved", savedCompany.id, { source: "manual", status: savedCompany.status });
+    return res.status(201).json(savedCompany);
   } catch (err) { return next(err); }
 });
 
