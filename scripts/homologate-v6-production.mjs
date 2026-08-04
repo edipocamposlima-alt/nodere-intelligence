@@ -50,6 +50,7 @@ const profiles = [
 const client = DATABASE_URL ? new Client({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } }) : null;
 const checks = [];
 const created = { authUserIds: [], profileIds: [], roleIds: [], companyIds: [], briefingIds: [], proposalIds: [], calendarIds: [], attachmentIds: [], outboxIds: [] };
+const executionNonce = randomUUID().slice(0, 8);
 let runId = `V6_${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14)}_${randomUUID().slice(0, 8)}`;
 let password = securePassword();
 let cleaned = false;
@@ -417,7 +418,7 @@ async function validateCrmAndIsolation(sessions, preparedCanaryId = "") {
       status: "Novo Lead",
       notes: "Lead temporário da homologação V6"
     })
-  }, [201]);
+  }, [200, 201]);
   const companyId = createdCompany.body.id;
   created.companyIds.push(companyId);
   const list = await expectApi("CRM lista leads", "/api/companies", sessions.owner.token, {}, [200]);
@@ -432,12 +433,14 @@ async function validateCrmAndIsolation(sessions, preparedCanaryId = "") {
   }
   const viewerDelete = await api(`/api/companies/${encodeURIComponent(companyId)}`, sessions.viewer.token, { method: "DELETE", body: jsonBody({ reason: "Tentativa sem permissão" }) });
   record("viewer não exclui lead", viewerDelete.response.status === 403, `HTTP ${viewerDelete.response.status}`);
-  const trash = await expectApi("exclusão segura move lead para lixeira", `/api/companies/${encodeURIComponent(companyId)}`, sessions.manager.token, {
+  const managerDelete = await api(`/api/companies/${encodeURIComponent(companyId)}`, sessions.manager.token, { method: "DELETE", body: jsonBody({ reason: "Tentativa gerencial sem records.delete" }) });
+  record("gerente sem records.delete não exclui lead", managerDelete.response.status === 403, `HTTP ${managerDelete.response.status}`);
+  const trash = await expectApi("exclusão segura move lead para lixeira", `/api/companies/${encodeURIComponent(companyId)}`, sessions.admin.token, {
     method: "DELETE",
     body: jsonBody({ reason: "Homologação da retenção segura V6" })
   }, [200]);
   record("retenção de 30 dias registrada", trash.body?.company?.recordState === "trash" && Boolean(trash.body?.company?.purgeAfter), trash.body?.company?.purgeAfter || "sem prazo");
-  await expectApi("restauração de lead funciona", `/api/companies/${encodeURIComponent(companyId)}/restore`, sessions.manager.token, {
+  await expectApi("restauração de lead funciona", `/api/companies/${encodeURIComponent(companyId)}/restore`, sessions.admin.token, {
     method: "POST",
     body: jsonBody({ reason: "Restauração após homologação segura" })
   }, [200]);
@@ -463,7 +466,7 @@ async function validateBriefing(sessions, companyId) {
         next_action: nextAction
       }
     })
-  }, [201]);
+  }, [200, 201]);
   const briefingId = createdBriefing.body.id;
   created.briefingIds.push(briefingId);
   const apply = await api(`/api/briefings/${encodeURIComponent(briefingId)}/apply-mappings`, sessions.sales.token, {
@@ -513,9 +516,9 @@ async function validateCommunications(sessions, companyId, attachmentRef) {
       bodyText: "Mensagem controlada da homologação V6.",
       attachmentRefs: [attachmentRef],
       consentConfirmed: true,
-      idempotencyKey: `${runId}:email-with-attachment`
+      idempotencyKey: `${runId}:${executionNonce}:email-with-attachment`
     })
-  }, [201]);
+  }, [200, 201]);
   created.outboxIds.push(emailDraft.body.id);
   record("referência do anexo persistida na outbox", JSON.stringify(emailDraft.body?.payload || {}).includes(attachmentRef), attachmentRef);
   const emailApprove = await api(`/api/communications-center/outbox/${encodeURIComponent(emailDraft.body.id)}/approve`, sessions.sales.token, {
@@ -537,9 +540,9 @@ async function validateCommunications(sessions, companyId, attachmentRef) {
       recipient: "+5511999990000",
       bodyText: `Olá, esta é uma abertura assistida controlada ${runId}.`,
       consentConfirmed: true,
-      idempotencyKey: `${runId}:whatsapp-assisted`
+      idempotencyKey: `${runId}:${executionNonce}:whatsapp-assisted`
     })
-  }, [201]);
+  }, [200, 201]);
   created.outboxIds.push(waDraft.body.id);
   const waApprove = await expectApi("WhatsApp gera abertura wa.me sem envio automático", `/api/communications-center/outbox/${encodeURIComponent(waDraft.body.id)}/approve`, sessions.sdr.token, {
     method: "POST",

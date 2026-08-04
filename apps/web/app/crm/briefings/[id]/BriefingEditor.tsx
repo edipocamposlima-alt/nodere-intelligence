@@ -214,10 +214,10 @@ export function BriefingEditor({ initialBriefing }: { initialBriefing: Commercia
       <header className="rounded-2xl border border-[var(--border-soft)] bg-[var(--bg-card)] p-5 md:p-7">
         <Link href="/crm/briefings" className="inline-flex items-center gap-2 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--brand-primary)]"><ArrowLeft className="h-4 w-4" /> Voltar aos briefings</Link>
         <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--brand-primary)]">{briefing.code} · versão {briefing.current_version}</p>
-            <h1 className="mt-2 font-heading text-2xl font-black text-[var(--text-primary)] md:text-3xl">{companyName}</h1>
-            <p className="mt-2 text-sm text-[var(--text-secondary)]">{briefing.title}</p>
+          <div className="min-w-0 flex-1">
+            <p className="break-words text-xs font-black uppercase tracking-[0.18em] text-[var(--brand-primary)]">{briefing.code} · versão {briefing.current_version}</p>
+            <h1 className="mt-2 break-words font-heading text-2xl font-black text-[var(--text-primary)] md:text-3xl">{companyName}</h1>
+            <p className="mt-2 break-words text-sm text-[var(--text-secondary)]">{briefing.title}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => save(answers)} disabled={saveState === "saving"} className="briefing-action briefing-action--primary"><Save className="h-4 w-4" /> {saveState === "saving" ? "Salvando..." : saveState === "saved" ? "Salvo" : "Salvar rascunho"}</button>

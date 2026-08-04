@@ -229,16 +229,16 @@ export function ManualClient({ sections }: { sections: string[][] }) {
                 <article id={slugify(title)} key={title} className="scroll-mt-28 rounded-lg border border-line bg-panel/90 p-5 print:mb-4 print:border-slate-200 print:bg-white">
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success print:text-blue-700" />
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold text-white print:text-slate-950">{title}</h3>
+                        <h3 className="break-words font-semibold text-white print:text-slate-950">{title}</h3>
                         {moduleHref && (
                           <Link href={moduleHref} className="rounded-full border border-electric/35 bg-electric/10 px-2.5 py-1 text-xs font-semibold text-cyan hover:border-electric/70 hover:text-white print:hidden">
                             Abrir módulo
                           </Link>
                         )}
                       </div>
-                      <p className="mt-2 text-sm leading-6 text-slate-400 print:text-slate-700">{body}</p>
+                      <p className="mt-2 break-words text-sm leading-6 text-slate-400 print:text-slate-700">{body}</p>
                     </div>
                   </div>
                 </article>
