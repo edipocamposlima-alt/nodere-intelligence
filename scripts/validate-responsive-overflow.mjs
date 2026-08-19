@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NODERE_RESPONSIVE_BASE_URL || "https://nodere.com.br";
+const BASE_URL = process.env.NODERE_RESPONSIVE_BASE_URL || "https://nodere-app.edipolima.chatgpt.site";
 const DEBUG_URL = process.env.CHROME_DEBUG_URL || "http://127.0.0.1:9222";
 const TOLERANCE = Number(process.env.NODERE_OVERFLOW_TOLERANCE || 2);
 const ALLOW_LOGIN = process.env.NODERE_ALLOW_LOGIN === "1";

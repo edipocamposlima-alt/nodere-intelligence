@@ -13,9 +13,15 @@ services:
       - key: NODE_ENV
         value: production
       - key: WEB_ORIGIN
-        value: https://nodere.com.br
+        value: https://nodere-app.edipolima.chatgpt.site
+      - key: FRONTEND_URL
+        value: https://nodere-app.edipolima.chatgpt.site
+      - key: PUBLIC_APP_URL
+        value: https://nodere-app.edipolima.chatgpt.site
+      - key: APP_URL
+        value: https://nodere-app.edipolima.chatgpt.site
       - key: CORS_ORIGINS
-        value: https://edipocamposlima-alt.github.io,https://nodere.com.br,https://www.nodere.com.br
+        value: https://nodere-app.edipolima.chatgpt.site,https://edipocamposlima-alt.github.io
       - key: GOOGLE_PLACES_API_KEY
         sync: false
       - key: GOOGLE_API_KEY
@@ -80,7 +86,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: WEB_ORIGIN
-        value: https://nodere.com.br
+        value: https://nodere-app.edipolima.chatgpt.site
       - key: USE_MOCK_DATA
         value: false
       - key: API_KEY
@@ -146,6 +152,6 @@ services:
       - key: STRIPE_PRICE_AGENCY
         sync: false
       - key: STRIPE_SUCCESS_URL
-        value: https://nodere.com.br/billing?success=1
+        value: https://nodere-app.edipolima.chatgpt.site/billing?success=1
       - key: STRIPE_CANCEL_URL
-        value: https://nodere.com.br/billing?cancel=1
+        value: https://nodere-app.edipolima.chatgpt.site/billing?cancel=1
