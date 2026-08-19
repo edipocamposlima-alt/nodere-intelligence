@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { BarChart3, ClipboardCheck, Download, Filter, Gauge, MapPin, PieChart as PieIcon, RefreshCw, TrendingUp } from "lucide-react";
 import {
   downloadReportCsv,
@@ -78,6 +77,84 @@ function SelectFilter({
 
 function EmptyChart({ label }: { label: string }) {
   return <div className="flex h-64 items-center justify-center text-sm font-semibold text-[var(--text-secondary)]">{label}</div>;
+}
+
+function TimelineChart({ data }: { data: Array<{ date: string; count: number }> }) {
+  const width = 640;
+  const height = 220;
+  const insetX = 28;
+  const insetY = 22;
+  const max = Math.max(...data.map((item) => item.count), 1);
+  const points = data.map((item, index) => {
+    const x = insetX + (index * (width - insetX * 2)) / Math.max(data.length - 1, 1);
+    const y = height - insetY - (item.count / max) * (height - insetY * 2);
+    return { ...item, x, y };
+  });
+
+  return (
+    <div className="flex h-full flex-col" role="img" aria-label="Grafico de leads criados por periodo">
+      <svg viewBox={`0 0 ${width} ${height}`} className="min-h-0 w-full flex-1" preserveAspectRatio="none">
+        {[0, 1, 2, 3, 4].map((line) => {
+          const y = insetY + (line * (height - insetY * 2)) / 4;
+          return <line key={line} x1={insetX} x2={width - insetX} y1={y} y2={y} stroke="var(--line)" strokeDasharray="4 5" />;
+        })}
+        <polyline fill="none" stroke="#03624C" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round" points={points.map(({ x, y }) => `${x},${y}`).join(" ")} />
+        {points.map((point) => (
+          <circle key={`${point.date}-${point.x}`} cx={point.x} cy={point.y} r="5" fill="#00DF82" stroke="#03624C" strokeWidth="2">
+            <title>{`${point.date}: ${point.count}`}</title>
+          </circle>
+        ))}
+      </svg>
+      <div className="flex justify-between gap-2 overflow-hidden px-2 text-[10px] font-semibold text-[var(--text-secondary)]">
+        {points.filter((_, index) => index === 0 || index === points.length - 1 || (points.length > 4 && index === Math.floor(points.length / 2))).map((point) => (
+          <span key={point.date} className="truncate">{point.date}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OriginChart({ data }: { data: Array<{ source: string; count: number }> }) {
+  const total = Math.max(data.reduce((sum, item) => sum + item.count, 0), 1);
+  let cursor = 0;
+  const gradient = data.map((item, index) => {
+    const start = cursor;
+    cursor += (item.count / total) * 100;
+    return `${COLORS[index % COLORS.length]} ${start}% ${cursor}%`;
+  }).join(", ");
+
+  return (
+    <div className="grid h-full grid-cols-[minmax(110px,0.8fr)_minmax(0,1.2fr)] items-center gap-5" role="img" aria-label="Distribuicao da origem dos leads">
+      <div className="mx-auto aspect-square w-full max-w-[180px] rounded-full p-[24%]" style={{ background: `conic-gradient(${gradient})` }}>
+        <div className="flex h-full w-full items-center justify-center rounded-full bg-panel text-center text-sm font-black text-[var(--text-primary)]">{metric(total)}<br />leads</div>
+      </div>
+      <div className="space-y-2 overflow-auto pr-1">
+        {data.slice(0, 8).map((item, index) => (
+          <div key={item.source} className="flex items-center justify-between gap-2 text-xs">
+            <span className="min-w-0 truncate font-semibold text-[var(--text-secondary)]"><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />{item.source}</span>
+            <strong className="text-[var(--text-primary)]">{item.count}</strong>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FunnelChart({ data }: { data: Array<{ name: string; count: number }> }) {
+  const max = Math.max(...data.map((item) => item.count), 1);
+  return (
+    <div className="flex h-full flex-col justify-center gap-3 overflow-auto" role="img" aria-label="Grafico do funil e status">
+      {data.map((item, index) => (
+        <div key={item.name} className="grid grid-cols-[minmax(90px,0.35fr)_minmax(0,1fr)_auto] items-center gap-3 text-xs">
+          <span className="truncate font-bold text-[var(--text-secondary)]">{item.name}</span>
+          <div className="h-5 overflow-hidden rounded-full bg-input">
+            <div className="h-full min-w-1 rounded-full" style={{ width: `${(item.count / max) * 100}%`, backgroundColor: COLORS[index % COLORS.length] }} />
+          </div>
+          <strong className="min-w-8 text-right text-[var(--text-primary)]">{item.count}</strong>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function ReportsClient(_legacy: { pipeline: PipelineReport | null; forecast: ForecastReport | null; trends: MonthlyTrend[] }) {
@@ -276,15 +353,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
           </div>
           {report?.timeline?.length ? (
             <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={report.timeline}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
-                  <XAxis dataKey="date" stroke="var(--text-secondary)" fontSize={11} />
-                  <YAxis allowDecimals={false} stroke="var(--text-secondary)" fontSize={11} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="count" stroke="#03624C" strokeWidth={3} dot={{ r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
+              <TimelineChart data={report.timeline} />
             </div>
           ) : <EmptyChart label={loading ? "Carregando..." : "Sem dados para os filtros atuais"} />}
         </div>
@@ -296,14 +365,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
           </div>
           {report?.origins?.length ? (
             <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={report.origins} dataKey="count" nameKey="source" innerRadius={55} outerRadius={95} paddingAngle={2}>
-                    {report.origins.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              <OriginChart data={report.origins} />
             </div>
           ) : <EmptyChart label={loading ? "Carregando..." : "Sem origem no recorte"} />}
         </div>
@@ -317,17 +379,7 @@ export function ReportsClient(_legacy: { pipeline: PipelineReport | null; foreca
           </div>
           {report?.funnel?.length ? (
             <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={report.funnel}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
-                  <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={10} interval={0} angle={-15} textAnchor="end" height={70} />
-                  <YAxis allowDecimals={false} stroke="var(--text-secondary)" fontSize={11} />
-                  <Tooltip />
-                  <Bar dataKey="count" radius={[8, 8, 0, 0]}>
-                    {report.funnel.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <FunnelChart data={report.funnel} />
             </div>
           ) : <EmptyChart label={loading ? "Carregando..." : "Sem funil no recorte"} />}
         </div>
