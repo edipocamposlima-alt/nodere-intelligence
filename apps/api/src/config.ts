@@ -26,12 +26,30 @@ function csvEnv(name: string) {
     .filter(Boolean);
 }
 
+const canonicalProductionAppUrl = "https://nodere-app.edipolima.chatgpt.site";
+const retiredWebOrigins = new Set(["https://nodere.com.br", "https://www.nodere.com.br"]);
+
+function activeAppUrl(value: string | undefined, fallback = "http://localhost:3000") {
+  const normalized = String(value || "").trim().replace(/\/+$/, "");
+  if (retiredWebOrigins.has(normalized)) return canonicalProductionAppUrl;
+  return normalized || fallback;
+}
+
+const configuredWebOrigin = activeAppUrl(process.env.WEB_ORIGIN);
+const configuredFrontendUrl = activeAppUrl(process.env.FRONTEND_URL, configuredWebOrigin);
+const configuredPublicAppUrl = activeAppUrl(
+  process.env.PUBLIC_APP_URL ?? process.env.APP_URL,
+  configuredFrontendUrl
+);
+
 export const config = {
   port: Number(process.env.PORT ?? process.env.API_PORT ?? 4000),
-  webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:3000",
-  frontendUrl: process.env.FRONTEND_URL ?? process.env.WEB_ORIGIN ?? "http://localhost:3000",
-  publicAppUrl: process.env.PUBLIC_APP_URL ?? process.env.APP_URL ?? process.env.FRONTEND_URL ?? process.env.WEB_ORIGIN ?? "http://localhost:3000",
-  corsOrigins: csvEnv("CORS_ORIGINS"),
+  webOrigin: configuredWebOrigin,
+  frontendUrl: configuredFrontendUrl,
+  publicAppUrl: configuredPublicAppUrl,
+  corsOrigins: csvEnv("CORS_ORIGINS")
+    .map((origin) => activeAppUrl(origin, ""))
+    .filter(Boolean),
   apiKey: process.env.API_KEY,
   admin: {
     email: process.env.ADMIN_EMAIL ?? "edipo.lima@nodere.com.br",

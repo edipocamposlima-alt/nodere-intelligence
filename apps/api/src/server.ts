@@ -77,6 +77,7 @@ function deploymentMetadata() {
 }
 
 const allowedOrigins = new Set([
+  "https://nodere-app.edipolima.chatgpt.site",
   config.webOrigin,
   config.frontendUrl,
   config.publicAppUrl,
