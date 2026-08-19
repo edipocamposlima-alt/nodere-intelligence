@@ -4,6 +4,7 @@ import SitePageShell from "@/components/site/SitePageShell";
 import DynamicCmsPage from "@/components/site/DynamicCmsPage";
 import { Logo } from "@/components/brand/Logo";
 import { getPublicPage } from "@/lib/publicContent";
+import { getPublicAppUrl } from "@/lib/publicAppUrl";
 
 const problems = [
   "Prospecção manual consome horas sem resultado",
@@ -130,7 +131,7 @@ const fallbackMetadata: Metadata = {
   openGraph: {
     title: "NODERE",
     description: "Plataforma de inteligência comercial para agências e times de marketing.",
-    url: "https://nodere.com.br",
+    url: getPublicAppUrl(),
     siteName: "NODERE",
     locale: "pt_BR",
     type: "website"

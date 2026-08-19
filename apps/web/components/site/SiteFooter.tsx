@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getDirectApiBaseUrl } from "@/lib/apiBase";
 import type { CmsNavigation } from "@/lib/publicContent";
 
 const columns = [
@@ -13,10 +12,12 @@ const columns = [
 
 export default function SiteFooter() {
   const [navigation, setNavigation] = useState<CmsNavigation[]>([]);
+  const [publicHost, setPublicHost] = useState("NODERE");
 
   useEffect(() => {
+    setPublicHost(window.location.host);
     const controller = new AbortController();
-    fetch(`${getDirectApiBaseUrl()}/content/navigation?location=footer`, { signal: controller.signal })
+    fetch("/api/public/content/navigation?location=footer", { signal: controller.signal })
       .then((response) => response.ok ? response.json() : { items: [] })
       .then((payload: { items?: CmsNavigation[] }) => setNavigation(payload.items || []))
       .catch(() => setNavigation([]));
@@ -49,7 +50,7 @@ export default function SiteFooter() {
         </div>
         <div className="site-footer__bottom">
           <span>© 2026 NODERE. Todos os direitos reservados.</span>
-          <span>Plataforma comercial · nodere.com.br</span>
+          <span>Plataforma comercial · {publicHost}</span>
         </div>
       </div>
     </footer>

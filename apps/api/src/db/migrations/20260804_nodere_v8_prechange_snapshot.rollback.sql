@@ -1,0 +1,3 @@
+-- Deliberately manual: dropping the V8 backup is destructive and must never be
+-- part of an automatic application rollback.
+-- drop schema nodere_v8_backup cascade;

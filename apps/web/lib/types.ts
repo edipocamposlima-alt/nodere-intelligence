@@ -39,6 +39,8 @@ export interface Company {
   mapsUrl?: string;
   placeId?: string;
   googlePlaceId?: string;
+  crmSaved?: boolean;
+  isCrmLead?: boolean;
   latitude?: number;
   longitude?: number;
   distanceKm?: number;

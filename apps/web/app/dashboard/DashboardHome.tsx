@@ -197,7 +197,7 @@ function KpiCard({ label, value, hint, icon: Icon, tone, iconTone }: { label: st
           <p className="text-sm text-[var(--text-secondary)]">{label}</p>
           <p className="mt-2 text-3xl font-black text-[var(--text-primary)]">{value}</p>
         </div>
-        <span className={`nodere-icon-tone flex h-10 w-10 items-center justify-center rounded-lg border ${style.border}`} data-icon-tone={iconTone || style.iconTone}>
+        <span className={`nodere-icon-tone nodere-metric-glyph flex h-10 w-10 items-center justify-center rounded-lg border ${style.border}`} data-icon-tone={iconTone || style.iconTone}>
           <Icon className="h-5 w-5" />
         </span>
       </div>
@@ -212,7 +212,7 @@ function CompactMetric({ label, value, icon: Icon, tone, iconTone, href }: { lab
     <Link href={href} className="rounded-2xl border border-line bg-panel/90 p-4 shadow-card transition hover:border-cyan/50">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-[var(--text-secondary)]">{label}</p>
-        <span className="nodere-icon-tone flex h-9 w-9 items-center justify-center rounded-lg" data-icon-tone={iconTone || style.iconTone}>
+        <span className="nodere-icon-tone nodere-metric-glyph flex h-9 w-9 items-center justify-center rounded-lg" data-icon-tone={iconTone || style.iconTone}>
           <Icon className="h-4 w-4" />
         </span>
       </div>

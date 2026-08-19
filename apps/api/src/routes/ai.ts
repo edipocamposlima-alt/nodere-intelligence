@@ -10,7 +10,7 @@ import { buildCommercialInsight, buildCommercialInsightPrompt, parseCommercialIn
 import type { Company } from "../types.js";
 import { startAiChat, type NodereAiMessage } from "../services/aiGateway.js";
 import { listAvailableAgents, listAvailableModels, refreshAiModelAvailability } from "../services/aiRegistry.js";
-import { getAiConversation, listAiConversations } from "../services/aiRepository.js";
+import { getAiConversation, listAiConversations, setAiConversationStatus } from "../services/aiRepository.js";
 import { getCreditWallet } from "../services/creditLedger.js";
 import { getAccountEntitlement, isInternalOwnerEntitlement } from "../services/entitlements.js";
 
@@ -118,7 +118,8 @@ router.get("/wallet", requireWorkspaceRole("owner", "admin", "operator", "viewer
 router.get("/conversations", requireWorkspaceRole("owner", "admin", "operator", "viewer"), async (req, res, next) => {
   try {
     const limit = Number(req.query.limit || 30);
-    res.json(await listAiConversations(getRequestWorkspaceId(req), Number.isFinite(limit) ? limit : 30));
+    const status = z.enum(["active", "archived"]).catch("active").parse(req.query.status);
+    res.json(await listAiConversations(getRequestWorkspaceId(req), Number.isFinite(limit) ? limit : 30, status));
   } catch (error) {
     next(error);
   }
@@ -128,6 +129,16 @@ router.get("/conversations/:id", requireWorkspaceRole("owner", "admin", "operato
   try {
     const id = z.string().uuid().parse(req.params.id);
     res.json(await getAiConversation(getRequestWorkspaceId(req), id));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/conversations/:id/status", requireWorkspaceMutation("owner", "admin", "operator"), async (req, res, next) => {
+  try {
+    const id = z.string().uuid().parse(req.params.id);
+    const body = z.object({ status: z.enum(["active", "archived"]) }).parse(req.body ?? {});
+    res.json(await setAiConversationStatus(getRequestWorkspaceId(req), id, body.status));
   } catch (error) {
     next(error);
   }
@@ -155,7 +166,8 @@ router.post("/chat", requireWorkspaceRole("owner", "admin", "operator", "viewer"
     chat.result.pipeUIMessageStreamToResponse<NodereAiMessage>(res, {
       originalMessages: chat.originalMessages,
       messageMetadata: () => chat.metadata,
-      onFinish: chat.onUiFinish
+      onFinish: chat.onUiFinish,
+      onError: chat.onStreamError
     });
   } catch (error) {
     if (res.headersSent) {

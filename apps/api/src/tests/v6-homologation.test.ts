@@ -63,8 +63,10 @@ test("envio SMTP resolve e entrega anexos, falhando de forma fechada", () => {
 
 test("login faz fallback seguro para contas da plataforma", () => {
   const login = source("apps/web/app/login/LoginClient.tsx");
+  const authProxy = source("apps/web/app/api/auth/backend/[...path]/route.ts");
   assert.match(login, /supabaseFailure/);
-  assert.match(login, /\/admin\/login/);
+  assert.match(login, /\/api\/auth\/backend\/login/);
+  assert.match(authProxy, /login:\s*"admin\/login"/);
   assert.match(login, /persistSession\(payload, email\)/);
 });
 

@@ -30,6 +30,7 @@ export const config = {
   port: Number(process.env.PORT ?? process.env.API_PORT ?? 4000),
   webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:3000",
   frontendUrl: process.env.FRONTEND_URL ?? process.env.WEB_ORIGIN ?? "http://localhost:3000",
+  publicAppUrl: process.env.PUBLIC_APP_URL ?? process.env.APP_URL ?? process.env.FRONTEND_URL ?? process.env.WEB_ORIGIN ?? "http://localhost:3000",
   corsOrigins: csvEnv("CORS_ORIGINS"),
   apiKey: process.env.API_KEY,
   admin: {

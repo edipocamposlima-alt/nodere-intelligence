@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { SOLUTIONS } from "./solutions";
 import { Logo } from "@/components/brand/Logo";
-import { getDirectApiBaseUrl } from "@/lib/apiBase";
 import type { CmsNavigation } from "@/lib/publicContent";
 
 export default function SiteHeader() {
@@ -23,7 +22,7 @@ export default function SiteHeader() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${getDirectApiBaseUrl()}/content/navigation?location=header`, { signal: controller.signal })
+    fetch("/api/public/content/navigation?location=header", { signal: controller.signal })
       .then((response) => response.ok ? response.json() : { items: [] })
       .then((payload: { items?: CmsNavigation[] }) => setNavigation(payload.items || []))
       .catch(() => setNavigation([]));

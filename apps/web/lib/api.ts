@@ -628,6 +628,44 @@ export function updateCompany(id: string, updates: Partial<Company>) {
   return api<Company>(companyPath(id), { method: "PATCH", body: JSON.stringify(updates) });
 }
 
+export type CompanyFile = {
+  id: string;
+  companyId: string;
+  filename: string;
+  fileType?: string;
+  fileSize?: number;
+  sha256?: string;
+  uploadedBy?: string;
+  createdAt: string;
+  deletedAt?: string;
+  deletedBy?: string;
+};
+
+export function getCompanyFiles(id: string, status: "active" | "archived" = "active") {
+  return api<CompanyFile[]>(companyPath(id, `/files?status=${status}`), undefined, []);
+}
+
+export async function uploadCompanyFile(id: string, file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  const response = await fetch(`${API_URL}${companyPath(id, "/files")}`, { method: "POST", body: form, cache: "no-store" });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new ApiRequestError(payload.message || payload.error || `API retornou HTTP ${response.status}`, response.status);
+  return payload as CompanyFile;
+}
+
+export function trashCompanyFile(companyId: string, fileId: string) {
+  return api<{ ok: boolean }>(companyPath(companyId, `/files/${encodeURIComponent(fileId)}`), { method: "DELETE" });
+}
+
+export function restoreCompanyFile(companyId: string, fileId: string) {
+  return api<CompanyFile>(companyPath(companyId, `/files/${encodeURIComponent(fileId)}/restore`), { method: "POST" });
+}
+
+export function companyFileDownloadUrl(companyId: string, fileId: string) {
+  return `${API_URL}${companyPath(companyId, `/files/${encodeURIComponent(fileId)}/download`)}`;
+}
+
 export type CompanyLifecycleRecord = Pick<Company, "id" | "name" | "category" | "city" | "state" | "status"> & {
   record_state: "active" | "archived" | "trash";
   archived_at?: string | null;

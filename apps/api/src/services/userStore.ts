@@ -345,6 +345,7 @@ export async function listWorkspaceUsers(workspaceId: string) {
 
 export async function createWorkspaceUser(workspaceId: string, input: { name: string; email: string; password: string; role: SessionRole; customRoleId?: string | null; status?: string; visibilityLevel?: string; modulePermissions?: Record<string, unknown> }) {
   await ensureDefaultAdminUser();
+  if (normalizeRole(input.role) === "owner") await assertOwnerRoleAvailable(workspaceId);
   if (hasSupabase() && !userSchemaAvailable && process.env.NODE_ENV === "production") {
     const error = new Error("Schema principal de usuários não aplicado no Supabase.") as Error & { status?: number; code?: string };
     error.status = 503;
@@ -410,6 +411,7 @@ export async function inviteWorkspaceUser(workspaceId: string, input: { name: st
   }
 
   const sb = getSupabase()!;
+  if (normalizeRole(input.role) === "owner") await assertOwnerRoleAvailable(workspaceId);
   const email = normalizeEmail(input.email);
   const { data: existingProfiles, error: existingError } = await sb
     .from("nodere_platform_users")
@@ -477,6 +479,21 @@ export async function updateWorkspaceUser(workspaceId: string, userId: string, i
 
   if (hasSupabase() && userSchemaAvailable) {
     const sb = getSupabase()!;
+    const [currentResult, workspaceResult] = await Promise.all([
+      sb.from("nodere_platform_users").select("id,email,role,active,status,visibility_level").eq("workspace_id", workspaceId).eq("id", userId).maybeSingle(),
+      sb.from("nodere_workspaces").select("owner_email").eq("id", workspaceId).maybeSingle()
+    ]);
+    if (currentResult.error) throw currentResult.error;
+    if (workspaceResult.error) throw workspaceResult.error;
+    const current = currentResult.data as Pick<PlatformUserRow, "id" | "email" | "role" | "active" | "status" | "visibility_level"> | null;
+    if (!current) return null;
+    const ownerEmail = String(workspaceResult.data?.owner_email || "");
+    if (isProtectedOwnerMutation(current, ownerEmail, input)) {
+      throw serviceError("OWNER_ACCOUNT_PROTECTED", "A conta proprietária canônica não pode ser desativada, restringida ou rebaixada.", 409);
+    }
+    if (input.role !== undefined && normalizeRole(input.role) === "owner" && normalizeRole(current.role) !== "owner") {
+      await assertOwnerRoleAvailable(workspaceId, userId);
+    }
     const { data, error } = await sb
       .from("nodere_platform_users")
       .update(fields)
@@ -490,8 +507,50 @@ export async function updateWorkspaceUser(workspaceId: string, userId: string, i
 
   const row = [...memoryUsers.values()].find((u) => u.workspace_id === workspaceId && u.id === userId);
   if (!row) return null;
+  if (isProtectedOwnerMutation(row, row.email, input)) {
+    throw serviceError("OWNER_ACCOUNT_PROTECTED", "A conta proprietária canônica não pode ser desativada, restringida ou rebaixada.", 409);
+  }
   Object.assign(row, fields);
   return toPublic(row);
+}
+
+export function isProtectedOwnerMutation(
+  current: Pick<PlatformUserRow, "email" | "role">,
+  workspaceOwnerEmail: string,
+  input: { role?: SessionRole; active?: boolean; status?: string; visibilityLevel?: string }
+) {
+  const canonicalOwner = normalizeRole(current.role) === "owner"
+    || normalizeEmail(current.email) === normalizeEmail(workspaceOwnerEmail || "__missing_owner__");
+  if (!canonicalOwner) return false;
+  if (input.active === false) return true;
+  if (input.role !== undefined && normalizeRole(input.role) !== "owner") return true;
+  if (input.status !== undefined && ["inactive", "restricted"].includes(input.status.toLowerCase())) return true;
+  if (input.visibilityLevel !== undefined && input.visibilityLevel !== "full") return true;
+  return false;
+}
+
+async function assertOwnerRoleAvailable(workspaceId: string, excludedUserId?: string) {
+  if (hasSupabase() && userSchemaAvailable) {
+    let query = getSupabase()!.from("nodere_platform_users")
+      .select("id", { count: "exact", head: true })
+      .eq("workspace_id", workspaceId)
+      .eq("role", "owner")
+      .eq("active", true);
+    if (excludedUserId) query = query.neq("id", excludedUserId);
+    const { count, error } = await query;
+    if (error) throw error;
+    if ((count || 0) > 0) throw serviceError("OWNER_ROLE_UNIQUE", "Este workspace já possui uma conta proprietária ativa.", 409);
+    return;
+  }
+  const alreadyExists = [...memoryUsers.values()].some((user) => user.workspace_id === workspaceId && user.active && normalizeRole(user.role) === "owner" && user.id !== excludedUserId);
+  if (alreadyExists) throw serviceError("OWNER_ROLE_UNIQUE", "Este workspace já possui uma conta proprietária ativa.", 409);
+}
+
+function serviceError(code: string, message: string, status: number) {
+  const error = new Error(message) as Error & { code?: string; status?: number };
+  error.code = code;
+  error.status = status;
+  return error;
 }
 function normalizeRole(role?: SessionRole | string): SessionRole {
   const normalized = String(role || "").trim().toLowerCase();

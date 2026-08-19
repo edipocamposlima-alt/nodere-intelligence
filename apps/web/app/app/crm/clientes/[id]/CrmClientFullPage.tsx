@@ -3,9 +3,9 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Bot, BriefcaseBusiness, CalendarDays, CheckCircle2, ClipboardList, Copy, Download, FileText, FolderOpen, Globe2, Linkedin, Mail, MapPin, MessageCircle, PackageCheck, Pencil, Phone, Plus, Save, Send, Sparkles, Trash2, Users, XCircle } from "lucide-react";
+import { ArchiveRestore, ArrowLeft, Bot, BriefcaseBusiness, CalendarDays, CheckCircle2, ClipboardList, Copy, Download, FileText, FolderOpen, Globe2, Linkedin, Mail, MapPin, MessageCircle, PackageCheck, Pencil, Phone, Plus, Save, Send, Sparkles, Trash2, Upload, Users, XCircle } from "lucide-react";
 import type { Company } from "@/lib/types";
-import { CalendarEvent, CatalogItem, InboxMessage, NodereProposal, ProposalItemPayload, addLeadDeal, createProposal, deleteProposal, downloadContractPdf, downloadProposalPdf, getCalendarEvents, getCatalogItems, getInboxMessagesByCompany, getLeadActivities, getLeadContacts, getLeadDeals, getProposals, updateLeadDeal } from "@/lib/api";
+import { CalendarEvent, CatalogItem, CompanyFile, InboxMessage, NodereProposal, ProposalItemPayload, addLeadDeal, companyFileDownloadUrl, createProposal, deleteProposal, downloadContractPdf, downloadProposalPdf, getCalendarEvents, getCatalogItems, getCompanyFiles, getInboxMessagesByCompany, getLeadActivities, getLeadContacts, getLeadDeals, getProposals, restoreCompanyFile, trashCompanyFile, updateLeadDeal, uploadCompanyFile } from "@/lib/api";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
 import { CompanyBriefingsSection } from "@/components/crm/CompanyBriefingsSection";
 import { RecordActionsMenu } from "@/components/records/RecordActionsMenu";
@@ -36,6 +36,7 @@ type Loaded = {
   inbox?: InboxMessage[];
   whatsapp?: InboxMessage[];
   agenda?: CalendarEvent[];
+  files?: CompanyFile[];
 };
 
 type ProductNegotiationDraft = {
@@ -237,6 +238,7 @@ export function CrmClientFullPage({ company }: { company: Company }) {
   const [loadingTab, setLoadingTab] = useState("");
   const [message, setMessage] = useState("");
   const canEdit = ["owner", "admin", "operator"].includes(role);
+  const canDeleteRecords = ["owner", "admin"].includes(role);
 
   useEffect(() => {
     fetch("/api/auth/me", { cache: "no-store" })
@@ -307,6 +309,10 @@ export function CrmClientFullPage({ company }: { company: Company }) {
           const agenda = (await getCalendarEvents()).filter((item) => item.company_id === company.id);
           if (!cancelled) setLoaded((current) => ({ ...current, agenda }));
         }
+        if (activeTab === "files" && !loaded.files) {
+          const files = await getCompanyFiles(company.id);
+          if (!cancelled) setLoaded((current) => ({ ...current, files }));
+        }
       } catch (error) {
         if (!cancelled) setMessage(error instanceof Error ? error.message : "Não foi possível carregar esta seção.");
       } finally {
@@ -315,7 +321,7 @@ export function CrmClientFullPage({ company }: { company: Company }) {
     }
     load();
     return () => { cancelled = true; };
-  }, [activeTab, company.id, loaded.activities, loaded.agenda, loaded.contacts, loaded.deals, loaded.inbox, loaded.overview, loaded.proposals, loaded.whatsapp]);
+  }, [activeTab, company.id, loaded.activities, loaded.agenda, loaded.contacts, loaded.deals, loaded.files, loaded.inbox, loaded.overview, loaded.proposals, loaded.whatsapp]);
 
   const summary = useMemo(() => {
     const deals = loaded.deals || [];
@@ -406,7 +412,7 @@ export function CrmClientFullPage({ company }: { company: Company }) {
           {activeTab === "agenda" && <ListSection title="Agenda" empty="Nenhuma tarefa ou evento vinculado." items={loaded.agenda as unknown as Array<Record<string, unknown>> | undefined} fields={["title", "status", "start_at", "end_at", "responsible"]} />}
           {activeTab === "ai" && <AiSection company={company} />}
           {activeTab === "research" && <ResearchSection company={company} />}
-          {activeTab === "files" && <ListSection title="Arquivos/Anexos" empty="Nenhum anexo encontrado no histórico carregado." items={[]} fields={[]} />}
+          {activeTab === "files" && <FilesSection companyId={company.id} items={loaded.files} canEdit={canEdit} canDelete={canDeleteRecords} onChange={(files) => setLoaded((current) => ({ ...current, files }))} />}
         </section>
 
         <aside className="rounded-xl border border-line bg-panel p-4 2xl:sticky 2xl:top-24 2xl:h-[calc(100dvh-7rem)] 2xl:overflow-y-auto">
@@ -1321,6 +1327,94 @@ function ProposalsSection({ company, products, items, role, onChange }: { compan
       </div>
     </div>
   );
+}
+
+function FilesSection({ companyId, items, canEdit, canDelete, onChange }: { companyId: string; items?: CompanyFile[]; canEdit: boolean; canDelete: boolean; onChange: (items: CompanyFile[]) => void }) {
+  const [files, setFiles] = useState<CompanyFile[]>(items || []);
+  const [view, setView] = useState<"active" | "archived">("active");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => { if (view === "active") setFiles(items || []); }, [items, view]);
+
+  async function load(nextView: "active" | "archived") {
+    setView(nextView);
+    setBusy(true);
+    try {
+      const rows = await getCompanyFiles(companyId, nextView);
+      setFiles(rows);
+      if (nextView === "active") onChange(rows);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível carregar os arquivos.");
+    } finally { setBusy(false); }
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const file = new FormData(form).get("file");
+    if (!(file instanceof File) || !file.size) return setMessage("Selecione um arquivo válido.");
+    setBusy(true);
+    try {
+      const created = await uploadCompanyFile(companyId, file);
+      const next = [created, ...files];
+      setFiles(next);
+      onChange(next);
+      form.reset();
+      setMessage("Arquivo anexado com checksum SHA-256 e vínculo à Ficha 360.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível anexar o arquivo.");
+    } finally { setBusy(false); }
+  }
+
+  async function archive(item: CompanyFile) {
+    if (!window.confirm(`Mover “${item.filename}” para a lixeira? O arquivo poderá ser restaurado.`)) return;
+    setBusy(true);
+    try {
+      await trashCompanyFile(companyId, item.id);
+      const next = files.filter((file) => file.id !== item.id);
+      setFiles(next);
+      onChange(next);
+      setMessage("Arquivo movido para a lixeira sem exclusão física.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível arquivar o arquivo.");
+    } finally { setBusy(false); }
+  }
+
+  async function restore(item: CompanyFile) {
+    setBusy(true);
+    try {
+      await restoreCompanyFile(companyId, item.id);
+      setFiles((current) => current.filter((file) => file.id !== item.id));
+      setMessage("Arquivo restaurado para a Ficha 360.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível restaurar o arquivo.");
+    } finally { setBusy(false); }
+  }
+
+  return <div className="space-y-4">
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div><h2 className="text-xl font-black">Arquivos e anexos</h2><p className="mt-1 text-sm text-[var(--text-secondary)]">Documentos protegidos, vinculados ao cliente e verificados por checksum.</p></div>
+      {canDelete && <div className="flex rounded-lg border border-line p-1 text-xs font-bold"><button type="button" onClick={() => void load("active")} className={`rounded-md px-3 py-2 ${view === "active" ? "bg-electric text-white" : "text-[var(--text-secondary)]"}`}>Ativos</button><button type="button" onClick={() => void load("archived")} className={`rounded-md px-3 py-2 ${view === "archived" ? "bg-electric text-white" : "text-[var(--text-secondary)]"}`}>Lixeira</button></div>}
+    </div>
+    {canEdit && view === "active" && <form onSubmit={submit} className="grid gap-3 rounded-xl border border-line bg-ink/40 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+      <label className="grid gap-2 text-sm font-bold">Novo arquivo <input name="file" type="file" required accept=".pdf,.docx,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.webp" className="rounded-lg border border-line bg-panel p-2 text-sm" /></label>
+      <button type="submit" disabled={busy} className="briefing-action briefing-action--primary"><Upload className="h-4 w-4" /> Anexar</button>
+      <p className="text-xs text-[var(--text-muted)] sm:col-span-2">Até 12 MB. PDF, DOCX, XLSX, CSV, TXT, JPG, PNG ou WEBP.</p>
+    </form>}
+    {message && <p className="rounded-lg border border-line bg-ink/40 p-3 text-sm text-[var(--text-secondary)]">{message}</p>}
+    <div className="grid gap-3">
+      {files.map((item) => <article key={item.id} className="flex flex-col gap-3 rounded-xl border border-line bg-ink/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0"><p className="truncate font-bold" title={item.filename}>{item.filename}</p><p className="mt-1 text-xs text-[var(--text-secondary)]">{item.fileType || "arquivo"} · {Number(item.fileSize || 0).toLocaleString("pt-BR")} bytes · {dateLabel(item.createdAt)}</p>{item.sha256 && <p className="mt-1 font-mono text-[10px] text-[var(--text-muted)]" title={item.sha256}>SHA-256 {item.sha256.slice(0, 16)}…</p>}</div>
+        <div className="flex flex-wrap gap-2">
+          {view === "active" && <a href={companyFileDownloadUrl(companyId, item.id)} target="_blank" rel="noreferrer" className="briefing-action"><Download className="h-4 w-4" /> Baixar</a>}
+          {view === "active" && canDelete && <button type="button" disabled={busy} onClick={() => void archive(item)} className="briefing-action"><Trash2 className="h-4 w-4" /> Lixeira</button>}
+          {view === "archived" && canDelete && <button type="button" disabled={busy} onClick={() => void restore(item)} className="briefing-action"><ArchiveRestore className="h-4 w-4" /> Restaurar</button>}
+        </div>
+      </article>)}
+      {!busy && files.length === 0 && <p className="rounded-xl border border-dashed border-line p-6 text-center text-sm text-[var(--text-secondary)]">{view === "archived" ? "A lixeira de arquivos está vazia." : "Nenhum arquivo anexado a esta empresa."}</p>}
+    </div>
+  </div>;
 }
 
 function AiSection({ company }: { company: Company }) {

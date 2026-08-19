@@ -10,6 +10,7 @@ import {
   downloadProposalPdf,
   getCatalogItems,
   getCompanies,
+  getProposalTemplates,
   getProposals,
   NodereProposal,
   ProposalItemPayload
@@ -25,6 +26,14 @@ type SelectedItemState = {
   discount_reason: string;
   customer_item_note: string;
   internal_item_note: string;
+};
+
+type ProposalTemplate = {
+  id: string;
+  name: string;
+  service_type: string;
+  content: string;
+  variables?: string[];
 };
 
 function money(value: number) {
@@ -65,9 +74,38 @@ function defaultSelection(): SelectedItemState {
   };
 }
 
+function plainText(value: string) {
+  return value
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .trim();
+}
+
+function templateDraft(template: ProposalTemplate, company?: Company) {
+  const variables: Record<string, string> = {
+    company: company?.name || "empresa selecionada",
+    city: company?.city || "cidade não informada",
+    segment: company?.category || "segmento não informado",
+    score: String(company?.nodereScore ?? company?.score ?? "não calculado"),
+    phone: company?.phone || "não informado",
+    website: company?.website || "não informado",
+    google_rating: String(company?.rating ?? "não informada")
+  };
+  return Object.entries(variables).reduce(
+    (content, [key, value]) => content.replace(new RegExp(`{{\\s*${key}\\s*}}`, "gi"), value),
+    template.content
+  );
+}
+
 export default function AppProposalsPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
+  const [templates, setTemplates] = useState<ProposalTemplate[]>([]);
   const [selectedItems, setSelectedItems] = useState<Record<string, SelectedItemState>>({});
   const [proposals, setProposals] = useState<NodereProposal[]>([]);
   const [message, setMessage] = useState("Carregando propostas...");
@@ -79,6 +117,9 @@ export default function AppProposalsPage() {
   const [customerNotes, setCustomerNotes] = useState("");
   const [internalNotes, setInternalNotes] = useState("");
   const [validUntil, setValidUntil] = useState("");
+  const [templateId, setTemplateId] = useState("");
+  const [documentGroupId, setDocumentGroupId] = useState("");
+  const [changeReason, setChangeReason] = useState("");
 
   const selectedCompany = companies.find((item) => item.id === leadId);
   const activeCatalogItems = useMemo(() => catalogItems.filter((item) => item.status === "active"), [catalogItems]);
@@ -101,22 +142,26 @@ export default function AppProposalsPage() {
         acc.subtotal += gross;
         acc.discount += Math.min(discount, gross);
         acc.total += Math.max(0, gross - Math.min(discount, gross));
+        acc.cost += Number(row.catalog.cost || 0) * Number(row.selection.quantity || 0);
         return acc;
       },
-      { subtotal: 0, discount: 0, total: 0 }
+      { subtotal: 0, discount: 0, total: 0, cost: 0 }
     );
   }, [selectedRows]);
+
+  const grossMargin = totals.total > 0 ? ((totals.total - totals.cost) / totals.total) * 100 : 0;
 
   async function loadData() {
     setLoading(true);
     try {
-      const [companyRows, proposalRows, catalogRows] = await Promise.all([getCompanies(), getProposals(), getCatalogItems()]);
+      const [companyRows, proposalRows, catalogRows, templateRows] = await Promise.all([getCompanies(), getProposals(), getCatalogItems(), getProposalTemplates()]);
       const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
       const requestedLeadId = params.get("lead_id") || "";
       const requestedType = params.get("type");
       setCompanies(companyRows);
       setProposals(proposalRows);
       setCatalogItems(catalogRows);
+      setTemplates(templateRows);
       setLeadId((current) => current || (requestedLeadId && companyRows.some((company) => company.id === requestedLeadId) ? requestedLeadId : companyRows[0]?.id || ""));
       if (requestedType === "contract" || requestedType === "proposal") setDocumentType(requestedType);
       setMessage(proposalRows.length ? "Propostas carregadas." : "Nenhuma proposta persistente criada ainda.");
@@ -152,7 +197,10 @@ export default function AppProposalsPage() {
 
   function validateSelection() {
     if (!leadId) return "Selecione um lead/empresa antes de salvar a proposta.";
+    if (title.trim().length < 2) return "Informe um título válido para o documento.";
     if (!selectedRows.length) return "Selecione pelo menos um produto/serviço ativo do catálogo.";
+    if (validUntil && validUntil < new Date().toISOString().slice(0, 10)) return "A validade não pode estar no passado.";
+    if (documentGroupId && !changeReason.trim()) return "Informe o motivo da nova versão para preservar a rastreabilidade.";
     for (const row of selectedRows) {
       const appliedPrice = Number(row.selection.applied_price || catalogPrice(row.catalog));
       const gross = appliedPrice * Number(row.selection.quantity || 0);
@@ -166,6 +214,8 @@ export default function AppProposalsPage() {
           ? Number(row.selection.discount_amount || 0)
           : 0;
       if (discount > gross) return `Desconto maior que o total do item ${row.catalog.name}.`;
+      const maxDiscount = Number(row.catalog.max_discount_pct ?? 100);
+      if (gross > 0 && (discount / gross) * 100 > maxDiscount) return `Desconto de ${row.catalog.name} excede o limite de ${maxDiscount.toLocaleString("pt-BR")}% definido no catálogo.`;
       if (discount > 0 && !row.selection.discount_reason.trim()) return `Informe o motivo do desconto para ${row.catalog.name}.`;
     }
     return "";
@@ -201,7 +251,9 @@ export default function AppProposalsPage() {
         customer_notes: customerNotes.trim() || null,
         internal_notes: internalNotes.trim() || null,
         items: buildPayloadItems(),
-        valid_until: validUntil || null
+        valid_until: validUntil || null,
+        document_group_id: documentGroupId || null,
+        change_reason: changeReason.trim() || null
       });
       if (documentType === "contract") {
         await downloadContractPdf(created.id, `contrato-${slug(created.title || created.id)}.pdf`);
@@ -212,12 +264,50 @@ export default function AppProposalsPage() {
       setSelectedItems({});
       setCustomerNotes("");
       setInternalNotes("");
+      setDocumentGroupId("");
+      setChangeReason("");
       setMessage(`${documentType === "contract" ? "Contrato" : "Proposta"} salvo(a) para ${selectedCompany?.name || "lead selecionado"} com snapshot comercial e PDF gerado.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Erro ao salvar proposta.");
     } finally {
       setLoading(false);
     }
+  }
+
+  function applyTemplate() {
+    const template = templates.find((item) => item.id === templateId);
+    if (!template) {
+      setMessage("Selecione um modelo de escopo para aplicar ao rascunho.");
+      return;
+    }
+    setCustomerNotes(templateDraft(template, selectedCompany));
+    setServiceType(template.service_type || serviceType);
+    setMessage("Modelo aplicado somente ao rascunho. Nenhuma proposta, contrato, PDF ou mudança de etapa foi criada.");
+  }
+
+  function startNewVersion(proposal: NodereProposal) {
+    const metadata = proposal.metadata || {};
+    setLeadId(proposal.lead_id);
+    setTitle(proposal.title);
+    setServiceType(proposal.service_type || "");
+    setCustomerNotes(String(metadata.customer_notes || proposal.content || ""));
+    setInternalNotes(String(metadata.internal_notes || ""));
+    setValidUntil(proposal.valid_until ? proposal.valid_until.slice(0, 10) : "");
+    setDocumentType(metadata.document_type === "contract" ? "contract" : "proposal");
+    setDocumentGroupId(String(metadata.document_group_id || ""));
+    setChangeReason("");
+    setSelectedItems(Object.fromEntries((proposal.items || []).map((item) => [item.catalog_item_id, {
+      quantity: Number(item.quantity || 1),
+      applied_price: Number(item.snapshot_unit_price ?? item.unit_price_override ?? 0),
+      discount_type: item.discount_type || "none",
+      discount_percent: Number(item.discount_percent || 0),
+      discount_amount: Number(item.discount_amount || 0),
+      discount_reason: item.discount_reason || "",
+      customer_item_note: item.customer_item_note || "",
+      internal_item_note: item.internal_item_note || ""
+    }])));
+    setMessage(`Preparando versão ${Number(proposal.version || 1) + 1}. Informe o motivo da alteração antes de gerar.`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function handlePdf(proposal: NodereProposal) {
@@ -256,39 +346,59 @@ export default function AppProposalsPage() {
       <div className="settings-content proposals-grid">
         <section className="proposal-editor">
           <h2><FileText size={18} /> Composição comercial</h2>
-          <label>
-            Tipo de documento
-            <select value={documentType} onChange={(event) => setDocumentType(event.target.value as "proposal" | "contract")}>
-              <option value="proposal">Proposta</option>
-              <option value="contract">Contrato</option>
-            </select>
-          </label>
-          <label>
-            Lead/empresa
-            <select value={leadId} onChange={(event) => setLeadId(event.target.value)}>
-              {companies.map((company) => (
-                <option key={company.id} value={company.id}>{company.name} - {company.city || "sem cidade"}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Título
-            <input value={title} onChange={(event) => setTitle(event.target.value)} />
-          </label>
-          <label>
-            Tipo de serviço
-            <input value={serviceType} onChange={(event) => setServiceType(event.target.value)} />
-          </label>
-          <label>
-            Observações comerciais para o cliente
-            <RichTextEditor value={customerNotes} onChange={setCustomerNotes} minHeight={170} placeholder="Texto opcional que aparecerá no PDF. Produtos, descrições, condições, forma de pagamento e prazos vêm do catálogo." />
-          </label>
-          <label>
-            Observações internas da negociação
-            <RichTextEditor value={internalNotes} onChange={setInternalNotes} minHeight={170} placeholder="Histórico interno. Não aparece no PDF do cliente." />
-          </label>
+          {documentGroupId && (
+            <div className="proposal-version-banner">
+              Nova versão rastreável do documento selecionado. O snapshot anterior será preservado.
+            </div>
+          )}
 
-          <div className="proposal-items">
+          <div className="proposal-flow-section">
+            <div className="proposal-step-heading"><span>1</span><div><strong>Cliente e oportunidade</strong><small>Obrigatório e vinculado à Ficha 360.</small></div></div>
+            <label>
+              Lead/empresa
+              <select value={leadId} onChange={(event) => setLeadId(event.target.value)}>
+                <option value="">Selecione uma empresa</option>
+                {companies.map((company) => (
+                  <option key={company.id} value={company.id}>{company.name} - {company.city || "sem cidade"}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="proposal-flow-section">
+            <div className="proposal-step-heading"><span>2</span><div><strong>Documento e escopo</strong><small>O modelo preenche somente o rascunho e nunca cria uma proposta.</small></div></div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label>
+                Tipo de documento
+                <select value={documentType} onChange={(event) => setDocumentType(event.target.value as "proposal" | "contract")}>
+                  <option value="proposal">Proposta</option>
+                  <option value="contract">Contrato</option>
+                </select>
+              </label>
+              <label>
+                Tipo de serviço
+                <input value={serviceType} onChange={(event) => setServiceType(event.target.value)} />
+              </label>
+            </div>
+            <label>
+              Título
+              <input value={title} onChange={(event) => setTitle(event.target.value)} />
+            </label>
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+              <label>
+                Modelo de escopo opcional
+                <select value={templateId} onChange={(event) => setTemplateId(event.target.value)}>
+                  <option value="">Sem modelo</option>
+                  {templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}
+                </select>
+              </label>
+              <button type="button" className="btn-ghost" onClick={applyTemplate} disabled={!templateId}>Aplicar ao rascunho</button>
+            </div>
+          </div>
+
+          <div className="proposal-flow-section">
+            <div className="proposal-step-heading"><span>3</span><div><strong>Produtos, preços e descontos</strong><small>Itens ativos do catálogo oficial, com custo e limite de desconto validados.</small></div></div>
+            <div className="proposal-items">
             <div className="proposal-items-title">
               <strong>Produtos/serviços ativos</strong>
               <span className="text-xs text-[var(--text-secondary)]">{selectedRows.length} selecionado(s)</span>
@@ -371,17 +481,58 @@ export default function AppProposalsPage() {
                 </div>
               );
             })}
+            </div>
           </div>
 
-          <div className="proposal-total-box">
+          <div className="proposal-flow-section">
+            <div className="proposal-step-heading"><span>4</span><div><strong>Escopo e observações</strong><small>O conteúdo do cliente e o histórico interno permanecem separados.</small></div></div>
             <label>
-              Validade
-              <input type="date" value={validUntil} onChange={(event) => setValidUntil(event.target.value)} />
+              Escopo e observações para o cliente
+              <RichTextEditor value={customerNotes} onChange={setCustomerNotes} minHeight={170} placeholder="Texto opcional que aparecerá no PDF. Produtos, descrições, condições, forma de pagamento e prazos vêm do catálogo." />
             </label>
-            <div>
-              <span>Subtotal {money(totals.subtotal)}</span>
-              <span>Desconto {money(totals.discount)}</span>
-              <strong>Total {money(totals.total)}</strong>
+            <label>
+              Observações internas da negociação
+              <RichTextEditor value={internalNotes} onChange={setInternalNotes} minHeight={150} placeholder="Histórico interno. Não aparece no PDF do cliente." />
+            </label>
+          </div>
+
+          <div className="proposal-flow-section">
+            <div className="proposal-step-heading"><span>5</span><div><strong>Condições comerciais e validade</strong><small>Totais calculados pelo snapshot; impostos não configurados são sinalizados.</small></div></div>
+            <div className="proposal-total-box">
+              <label>
+                Validade
+                <input type="date" min={new Date().toISOString().slice(0, 10)} value={validUntil} onChange={(event) => setValidUntil(event.target.value)} />
+              </label>
+              <div>
+                <span>Subtotal {money(totals.subtotal)}</span>
+                <span>Desconto {money(totals.discount)}</span>
+                <span>Custo cadastrado {money(totals.cost)}</span>
+                <span>Margem bruta estimada {grossMargin.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%</span>
+                <span>Impostos: não configurados no catálogo</span>
+                <strong>Total {money(totals.total)}</strong>
+              </div>
+            </div>
+            {documentGroupId && (
+              <label>
+                Motivo obrigatório da nova versão
+                <input value={changeReason} onChange={(event) => setChangeReason(event.target.value)} placeholder="Ex.: ajuste de escopo solicitado pelo cliente" />
+              </label>
+            )}
+          </div>
+
+          <div className="proposal-flow-section proposal-preview">
+            <div className="proposal-step-heading"><span>6</span><div><strong>Preview antes de gerar</strong><small>Confirme cliente, escopo, itens e valor. Nada é salvo até a ação final.</small></div></div>
+            <div className="proposal-preview-document">
+              <span className="eyebrow">{documentType === "contract" ? "Contrato comercial" : "Proposta comercial"}</span>
+              <h3>{title || "Documento sem título"}</h3>
+              <p><strong>Cliente:</strong> {selectedCompany?.name || "Selecione uma empresa"}</p>
+              <p><strong>Serviço:</strong> {serviceType || "Não informado"}</p>
+              <div className="proposal-preview-items">
+                {selectedRows.map(({ catalog, selection }) => <p key={catalog.id}>{catalog.name} × {selection.quantity} — {money((selection.applied_price || catalogPrice(catalog)) * selection.quantity)}</p>)}
+                {!selectedRows.length && <p>Nenhum produto/serviço selecionado.</p>}
+              </div>
+              {plainText(customerNotes) && <p className="proposal-preview-notes">{plainText(customerNotes)}</p>}
+              <strong className="proposal-preview-total">Total {money(totals.total)}</strong>
             </div>
           </div>
 
@@ -391,12 +542,15 @@ export default function AppProposalsPage() {
         </section>
 
         <section className="proposal-list">
-          <h2>Histórico</h2>
+          <h2>Histórico e versões</h2>
           {proposals.map((proposal) => (
             <article key={proposal.id} className="proposal-card">
               <div>
                 <strong>{proposal.title}</strong>
-                <span>{proposal.status} · {money(proposal.total)}</span>
+                <span>
+                  {proposal.metadata?.document_type === "contract" ? "Contrato" : "Proposta"}
+                  {` · versão ${proposal.version || 1} · ${proposal.status} · ${money(proposal.total)}`}
+                </span>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button className="btn-ghost" type="button" onClick={() => handlePdf(proposal)}>
@@ -404,6 +558,9 @@ export default function AppProposalsPage() {
                 </button>
                 <button className="btn-ghost" type="button" onClick={() => handleContractPdf(proposal)}>
                   <Download size={15} /> Contrato PDF
+                </button>
+                <button className="btn-ghost" type="button" onClick={() => startNewVersion(proposal)}>
+                  Nova versão
                 </button>
               </div>
             </article>

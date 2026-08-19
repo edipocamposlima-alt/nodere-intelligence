@@ -19,6 +19,7 @@
     "test:v5": "tsx --test src/tests/v5-commercial.test.ts",
     "test:v6": "tsx --test src/tests/v6-homologation.test.ts",
     "test:v7": "tsx --test src/tests/v7-operational.test.ts",
+    "test:v8": "tsx --test src/tests/v8-reconciliation.test.ts src/tests/v8-ai-provider-errors.test.ts src/tests/v8-owner-protection.test.ts src/tests/v8-chat-proposals.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "npm run typecheck"
   },

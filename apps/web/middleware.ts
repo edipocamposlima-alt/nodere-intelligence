@@ -14,6 +14,7 @@ const PUBLIC_PATHS = [
   "/api/admin",
   "/api/content",
   "/api/auth",
+  "/api/public",
   "/api/backend",
   "/api/webhooks",
   "/_next",

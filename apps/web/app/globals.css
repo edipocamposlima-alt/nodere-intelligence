@@ -1119,8 +1119,9 @@ body {
 
 .site-auth__card {
   box-sizing: border-box;
-  width: min(100%, 420px);
-  max-width: 100%;
+  width: 100%;
+  min-width: 0;
+  max-width: 420px;
   border: 1px solid var(--site-border);
   border-radius: 16px;
   background: var(--site-card);
@@ -1211,6 +1212,8 @@ body {
 }
 
 .site-auth input {
+  box-sizing: border-box;
+  min-width: 0;
   width: 100%;
   border: 1px solid var(--site-border);
   border-radius: 8px;
@@ -2214,6 +2217,10 @@ textarea {
 
 .site-auth__footer {
   margin-top: 1.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
   text-align: center;
   color: #4a6a8a;
   font-size: 0.75rem;
@@ -7546,6 +7553,295 @@ body {
 :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.h-10.w-10, .h-11.w-11, .h-12.w-12) > svg {
   width: var(--nodere-icon-md) !important;
   height: var(--nodere-icon-md) !important;
+}
+
+/* NODERE V8 — aliases legados, contraste de propostas/configurações e
+   iconografia funcional com menos ornamento e melhor leitura responsiva. */
+:root {
+  --brand: var(--brand-primary);
+  --panel: var(--bg-card);
+  --text: var(--text-primary);
+  --muted: var(--text-muted);
+  --input-bg: var(--bg-input);
+}
+
+.settings-page {
+  width: min(100%, var(--nodere-content-max, 1680px));
+  margin-inline: auto;
+  padding: clamp(1rem, 2vw, 2rem);
+  color: var(--text-primary);
+}
+
+.settings-page h1,
+.settings-section h2,
+.proposal-editor h2,
+.proposal-list h2 {
+  color: var(--text-primary);
+}
+
+.settings-content,
+.settings-section,
+.proposal-editor,
+.proposal-list {
+  background: var(--bg-card);
+  border-color: var(--border-soft);
+  color: var(--text-primary);
+}
+
+.settings-content.proposals-grid {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.proposal-editor,
+.proposal-list {
+  --proposal-surface: var(--bg-card);
+  --proposal-surface-elevated: var(--bg-modal);
+  --proposal-surface-muted: var(--bg-hover);
+  --proposal-text-primary: var(--text-primary);
+  --proposal-text-secondary: var(--text-secondary);
+  --proposal-border: var(--border-soft);
+  --proposal-input-bg: var(--bg-input);
+  --proposal-editor-bg: var(--bg-card);
+  --proposal-action-primary: var(--brand-primary);
+  min-width: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg, 16px);
+  padding: clamp(1rem, 2vw, 1.5rem);
+  box-shadow: var(--shadow-card);
+}
+
+.proposal-editor label,
+.proposals-header p,
+.proposal-card span,
+.muted {
+  color: var(--text-secondary);
+}
+
+.proposal-editor input,
+.proposal-editor select,
+.proposal-editor textarea,
+.form-grid input,
+.form-grid select,
+.integration-row input {
+  background: var(--bg-input);
+  border-color: var(--border-soft);
+  color: var(--text-primary);
+}
+
+.proposal-items,
+.proposal-card {
+  background: color-mix(in srgb, var(--bg-card) 94%, var(--bg-hover));
+  border-color: var(--border-soft);
+}
+
+.proposal-item-row {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  padding-block: 0.35rem;
+}
+
+.proposal-item-row + .proposal-item-row {
+  border-top: 1px solid var(--border-soft);
+  padding-top: 0.85rem;
+}
+
+.proposal-item-row small {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.proposal-flow-section {
+  display: grid;
+  gap: 0.9rem;
+  min-width: 0;
+  border: 1px solid var(--proposal-border);
+  border-radius: 0.875rem;
+  background: var(--proposal-surface-elevated);
+  padding: clamp(0.9rem, 1.8vw, 1.25rem);
+}
+
+.proposal-step-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.proposal-step-heading > span {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: 0 0 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--proposal-action-primary) 42%, var(--proposal-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--proposal-action-primary) 12%, var(--proposal-surface));
+  color: var(--proposal-text-primary);
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.proposal-step-heading div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.proposal-step-heading strong {
+  color: var(--proposal-text-primary);
+  font-size: 0.925rem;
+}
+
+.proposal-step-heading small,
+.proposal-preview-document p {
+  color: var(--proposal-text-secondary);
+}
+
+.proposal-version-banner {
+  border: 1px solid color-mix(in srgb, var(--nodere-gold) 48%, var(--proposal-border));
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--nodere-gold) 10%, var(--proposal-surface));
+  color: var(--proposal-text-primary);
+  padding: 0.75rem 0.9rem;
+  font-size: 0.825rem;
+  font-weight: 700;
+}
+
+.proposal-preview-document {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid var(--proposal-border);
+  border-radius: 0.75rem;
+  background: var(--proposal-surface);
+  color: var(--proposal-text-primary);
+  padding: clamp(1rem, 2vw, 1.5rem);
+}
+
+.proposal-preview-document h3,
+.proposal-preview-document p {
+  margin: 0;
+}
+
+.proposal-preview-items {
+  display: grid;
+  gap: 0.35rem;
+  border-block: 1px solid var(--proposal-border);
+  padding-block: 0.75rem;
+}
+
+.proposal-preview-notes {
+  max-height: 10rem;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+.proposal-preview-total {
+  justify-self: end;
+  color: var(--proposal-text-primary);
+  font-size: 1.1rem;
+}
+
+.proposal-list {
+  max-height: min(78vh, 920px);
+  overflow: auto;
+}
+
+.btn-primary {
+  border: 1px solid var(--nodere-forest, var(--brand-primary));
+  background: linear-gradient(135deg, var(--nodere-forest, var(--brand-primary)), var(--nodere-green, var(--brand-primary-hover)));
+  color: #fff;
+}
+
+.btn-ghost {
+  border-color: var(--border-soft);
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.btn-primary:disabled,
+.btn-ghost:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.nodere-sidebar .nodere-nav-glyph {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  opacity: 0.82;
+}
+
+.nodere-sidebar a:hover .nodere-nav-glyph,
+.nodere-sidebar a[aria-current="page"] .nodere-nav-glyph {
+  background: color-mix(in srgb, var(--nodere-current-icon) 13%, transparent) !important;
+  border-color: color-mix(in srgb, var(--nodere-current-icon) 28%, transparent) !important;
+  opacity: 1;
+}
+
+.nodere-sidebar a[aria-current="page"] .nav-icon {
+  stroke-width: 2.6;
+}
+
+.nodere-metric-glyph {
+  box-shadow: none !important;
+}
+
+.nodere-ai-hero {
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--brand-primary) 26%, transparent), transparent 42%),
+    linear-gradient(135deg, color-mix(in srgb, var(--bg-card) 88%, var(--brand-primary)), var(--bg-card) 58%);
+  color: var(--text-primary);
+}
+
+.nodere-ai-chat-surface {
+  background: color-mix(in srgb, var(--bg-card) 92%, transparent);
+  color: var(--text-primary);
+}
+
+:root[data-theme="light"] .nodere-ai-hero,
+.light .nodere-ai-hero {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(0, 223, 130, 0.18), transparent 44%),
+    linear-gradient(135deg, #f7fcf9, #ffffff 60%);
+}
+
+:root[data-theme="light"] .settings-content,
+:root[data-theme="light"] .settings-section,
+:root[data-theme="light"] .proposal-editor,
+:root[data-theme="light"] .proposal-list,
+.light .settings-content,
+.light .settings-section,
+.light .proposal-editor,
+.light .proposal-list {
+  background: #fff !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="light"] .settings-content.proposals-grid,
+.light .settings-content.proposals-grid {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme="light"] .btn-primary,
+.light .btn-primary {
+  color: #fff !important;
+}
+
+@media (max-width: 640px) {
+  .settings-page {
+    padding: 1rem;
+  }
+
+  .proposal-editor,
+  .proposal-list {
+    padding: 1rem;
+  }
 }
 
 :where(.nodere-app-shell, .nodere-settings-page, .nodere-manual-page) :where(.h-14.w-14, .h-16.w-16) > svg {

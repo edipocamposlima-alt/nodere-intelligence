@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { rejectCrossOriginMutation } from "@/lib/requestSecurity";
 
 const COOKIE_NAMES = ["nodere_session", "nodere-session"];
 
@@ -8,6 +9,8 @@ type RouteContext = {
 };
 
 async function proxyAdmin(request: NextRequest, context: RouteContext) {
+  const rejected = rejectCrossOriginMutation(request);
+  if (rejected) return rejected;
   const { path = [] } = await context.params;
   const tokenFromCookie = COOKIE_NAMES.map((name) => request.cookies.get(name)?.value).find(Boolean);
   const token = tokenFromCookie;

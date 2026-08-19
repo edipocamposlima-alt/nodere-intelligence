@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Bot, Building2, CalendarDays, CircleHelp, ClipboardList, CreditCard, KanbanSquare, LineChart, MessagesSquare, PackageOpen, Plug, Search, Settings, ShieldCheck, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BookOpenCheck, Boxes, Building2, Cable, CalendarDays, ChartNoAxesCombined, ClipboardPenLine, FileSignature, Gauge, MessageCircleMore, PanelLeftClose, PanelLeftOpen, Search, ShieldCheck, SlidersHorizontal, Sparkles, UsersRound, WalletCards, Waypoints } from "lucide-react";
 import { useCredits } from "@/context/CreditsProvider";
 import { canUseModule, useAuth } from "@/context/AuthProvider";
 import { Logo } from "@/components/brand/Logo";
@@ -11,38 +12,39 @@ const groups = [
   {
     label: "Operação",
     items: [
-      { href: "/ai", label: "NODERE AI", icon: Bot, tone: "green", module: "dashboard" },
-      { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: BarChart3, tone: "neutral", module: "dashboard" },
+      { href: "/ai", label: "NODERE AI", icon: Sparkles, tone: "green", module: "dashboard" },
+      { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: Gauge, tone: "neutral", module: "dashboard" },
       { href: "/searches", appHref: "/app/discovery", label: "Prospecção e pesquisa", icon: Search, tone: "cyan", module: "buscas" },
-      { href: "/crm", label: "Funil comercial", icon: KanbanSquare, tone: "green", module: "crm" },
+      { href: "/crm", label: "Funil comercial", icon: Waypoints, tone: "green", module: "crm" },
       { href: "/companies", label: "Empresas e clientes", icon: Building2, tone: "blue", module: "crm" },
-      { href: "/crm/communications", label: "Comunicações", icon: MessagesSquare, tone: "cyan", module: "crm" },
+      { href: "/crm/communications", label: "Comunicações", icon: MessageCircleMore, tone: "cyan", module: "crm" },
       { href: "/calendario", label: "Agenda", icon: CalendarDays, tone: "blue", module: "agenda" }
     ]
   },
   {
     label: "Comercial",
     items: [
-      { href: "/crm/briefings", label: "Briefings", icon: ClipboardList, tone: "gold", module: "crm" },
-      { href: "/app/proposals", label: "Propostas e contratos", icon: PackageOpen, tone: "purple", module: "crm" },
-      { href: "/catalog", label: "Produtos e serviços", icon: PackageOpen, tone: "orange", module: "crm" },
-      { href: "/reports", label: "Relatórios", icon: LineChart, tone: "blue", module: "relatorios" }
+      { href: "/crm/briefings", label: "Briefings", icon: ClipboardPenLine, tone: "gold", module: "crm" },
+      { href: "/app/proposals", label: "Propostas e contratos", icon: FileSignature, tone: "purple", module: "crm" },
+      { href: "/catalog", label: "Produtos e serviços", icon: Boxes, tone: "orange", module: "crm" },
+      { href: "/reports", label: "Relatórios", icon: ChartNoAxesCombined, tone: "blue", module: "relatorios" }
     ]
   },
   {
     label: "Administração",
     items: [
-      { href: "/operators", label: "Usuários e permissões", icon: Users, tone: "green", adminOnly: true, module: "admin" },
-      { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: Settings, tone: "neutral", module: "admin" },
-      { href: "/integrations", label: "Integrações", icon: Plug, tone: "cyan", adminOnly: true, module: "integracoes" },
+      { href: "/operators", label: "Usuários e permissões", icon: UsersRound, tone: "green", adminOnly: true, module: "admin" },
+      { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: SlidersHorizontal, tone: "neutral", module: "admin" },
+      { href: "/integrations", label: "Integrações", icon: Cable, tone: "cyan", adminOnly: true, module: "integracoes" },
       { href: "/admin", label: "Administração técnica", icon: ShieldCheck, tone: "red", adminOnly: true, module: "admin" },
-      { href: "/billing", label: "Plano e faturamento", icon: CreditCard, tone: "gold", module: "admin" },
-      { href: "/manual", label: "Manual NODERE", icon: CircleHelp, tone: "blue", module: "dashboard" }
+      { href: "/billing", label: "Plano e faturamento", icon: WalletCards, tone: "gold", module: "admin" },
+      { href: "/manual", label: "Manual NODERE", icon: BookOpenCheck, tone: "blue", module: "dashboard" }
     ]
   }
 ];
 
 export function Sidebar() {
+  const [mode, setMode] = useState<"expanded" | "compact" | "closed">("expanded");
   const { credits, daysLeft, trialExpired } = useCredits();
   const { user } = useAuth();
   const pathname = usePathname() || "/";
@@ -55,16 +57,47 @@ export function Sidebar() {
   const isInternalOwner = credits?.account_type === "OWNER_INTERNAL";
   const progress = total > 0 ? Math.min(100, (remaining / total) * 100) : 0;
 
-  return (
-    <aside className="nodere-sidebar hidden h-[100dvh] w-64 shrink-0 overflow-hidden border-r border-[var(--border-soft)] bg-[var(--bg-sidebar)] p-4 text-[var(--text-secondary)] xl:w-72 xl:p-5 lg:flex lg:flex-col">
-      <Link href={dashboardHref} className="flex items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--bg-card)] px-4 py-5 transition hover:border-[var(--brand-primary)]">
-        <Logo variant="full" height={38} />
-      </Link>
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("nodere:sidebar:mode");
+      if (stored === "expanded" || stored === "compact" || stored === "closed") setMode(stored);
+      else if (localStorage.getItem("nodere:sidebar:collapsed") === "true") setMode("compact");
+    } catch { /* storage unavailable */ }
+  }, []);
 
-      <nav className="nodere-tools-scroll mt-5 min-h-0 flex-1 space-y-4 overflow-y-auto pr-1 xl:mt-8 xl:space-y-5">
+  function advanceMode() {
+    setMode((current) => {
+      const next = current === "expanded" ? "compact" : current === "compact" ? "closed" : "expanded";
+      try { localStorage.setItem("nodere:sidebar:mode", next); } catch { /* storage unavailable */ }
+      return next;
+    });
+  }
+
+  if (mode === "closed") {
+    return (
+      <button type="button" onClick={advanceMode} className="fixed left-3 top-20 z-40 hidden rounded-xl border border-[var(--border-brand)] bg-[var(--bg-sidebar)] p-2.5 text-[var(--brand-primary)] shadow-xl transition hover:border-[var(--brand-primary)] hover:bg-[var(--bg-hover)] lg:inline-flex" aria-label="Abrir menu lateral" title="Abrir menu lateral">
+        <PanelLeftOpen />
+      </button>
+    );
+  }
+
+  const compact = mode === "compact";
+
+  return (
+    <aside data-collapsed={compact ? "true" : "false"} className={`nodere-sidebar hidden h-[100dvh] shrink-0 overflow-hidden border-r border-[var(--border-soft)] bg-[var(--bg-sidebar)] text-[var(--text-secondary)] transition-[width,padding] duration-200 lg:flex lg:flex-col ${compact ? "w-[5.25rem] p-3" : "w-64 p-4 xl:w-72 xl:p-5"}`}>
+      <div className={`flex items-center ${compact ? "flex-col gap-2" : "gap-2"}`}>
+        <Link href={dashboardHref} title={compact ? "NODERE" : undefined} className="flex min-h-14 min-w-0 flex-1 items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--bg-card)] px-3 py-3 transition hover:border-[var(--brand-primary)]">
+          <Logo variant={compact ? "icon" : "full"} height={compact ? 34 : 38} />
+        </Link>
+        <button type="button" onClick={advanceMode} className="nodere-sidebar-toggle rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] p-2 text-[var(--text-secondary)] transition hover:border-[var(--brand-primary)] hover:text-[var(--text-primary)]" aria-label={compact ? "Fechar menu lateral" : "Compactar menu lateral"} title={compact ? "Fechar menu" : "Compactar menu"}>
+          <PanelLeftClose />
+        </button>
+      </div>
+
+      <nav aria-label="Navegação principal" className={`nodere-tools-scroll mt-5 min-h-0 flex-1 overflow-y-auto ${compact ? "space-y-3" : "space-y-4 pr-1 xl:mt-8 xl:space-y-5"}`}>
         {groups.map((group) => (
           <section key={group.label} className="space-y-1">
-            <p className="px-3 pb-1 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{group.label}</p>
+            <p className={compact ? "sr-only" : "px-3 pb-1 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]"}>{group.label}</p>
             {group.items.filter((item) => (!item.adminOnly || isAdmin) && canUseModule(user, item.module) && !(isInternalOwner && item.href === "/billing")).map((item) => {
               const href = isApp && item.appHref ? item.appHref : item.href;
               const active = pathname === href || pathname.startsWith(`${href}/`);
@@ -72,12 +105,14 @@ export function Sidebar() {
                 <Link
                   key={`${group.label}-${item.label}-${href}`}
                   href={href}
-                  className={`group flex min-w-0 items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm transition hover:border-[var(--brand-primary)] hover:bg-[var(--nav-active-bg)] hover:text-[var(--text-primary)] ${active ? "border-[var(--brand-primary)] bg-[var(--nav-active-bg)] text-[var(--text-primary)]" : "border-transparent text-[var(--text-secondary)]"}`}
+                  aria-current={active ? "page" : undefined}
+                  title={compact ? item.label : undefined}
+                  className={`group flex min-w-0 items-center rounded-lg border-l-2 py-2.5 text-sm transition hover:border-[var(--brand-primary)] hover:bg-[var(--nav-active-bg)] hover:text-[var(--text-primary)] ${compact ? "justify-center px-2" : "gap-3 px-3"} ${active ? "border-[var(--brand-primary)] bg-[var(--nav-active-bg)] text-[var(--text-primary)]" : "border-transparent text-[var(--text-secondary)]"}`}
                 >
-                  <span className="nodere-nav-icon-tone flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition group-hover:scale-[1.02]" data-icon-tone={item.tone}>
+                  <span className="nodere-nav-icon-tone nodere-nav-glyph flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition" data-icon-tone={item.tone}>
                     <item.icon className="nav-icon" />
                   </span>
-                  <span className="min-w-0 truncate">{item.label}</span>
+                  <span className={compact ? "sr-only" : "min-w-0 truncate"}>{item.label}</span>
                 </Link>
               );
             })}
@@ -85,7 +120,7 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {credits && (
+      {credits && !compact && (
         <div className="mt-4 shrink-0 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] p-4">
           {isInternalOwner ? (
             <div className="text-xs">
@@ -110,11 +145,11 @@ export function Sidebar() {
         </div>
       )}
 
-      <div className="mt-4 shrink-0 rounded-lg border border-[var(--border-brand)] bg-[var(--nav-active-bg)] p-4">
+      {!compact && <div className="mt-4 shrink-0 rounded-lg border border-[var(--border-brand)] bg-[var(--nav-active-bg)] p-4">
         <ShieldCheck className="h-5 w-5 text-[var(--brand-glow)]" />
         <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">Ambiente seguro</p>
         <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">Dados isolados por workspace, APIs via backend e operação comercial protegida.</p>
-      </div>
+      </div>}
     </aside>
   );
 }

@@ -3,30 +3,30 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArchiveRestore, BarChart3, Bot, Building2, CalendarDays, CircleHelp, ClipboardList, Download, KanbanSquare, LineChart, LogOut, Menu, MessagesSquare, PackageOpen, Plug, Search, Settings, ShieldCheck, Users, X } from "lucide-react";
+import { ArchiveRestore, BookOpenCheck, Boxes, Building2, Cable, CalendarDays, ChartNoAxesCombined, ClipboardPenLine, Download, FileSignature, Gauge, LogOut, Menu, MessageCircleMore, Search, ShieldCheck, SlidersHorizontal, Sparkles, UsersRound, Waypoints, X } from "lucide-react";
 import { canUseModule, useAuth } from "@/context/AuthProvider";
 
 const primaryItems = [
-  { href: "/ai", label: "NODERE AI", icon: Bot, tone: "green", module: "dashboard" },
-  { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: BarChart3, tone: "neutral", module: "dashboard" },
+  { href: "/ai", label: "NODERE AI", icon: Sparkles, tone: "green", module: "dashboard" },
+  { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: Gauge, tone: "neutral", module: "dashboard" },
   { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search, tone: "cyan", module: "buscas" },
-  { href: "/crm", label: "CRM", icon: KanbanSquare, tone: "green", module: "crm" }
+  { href: "/crm", label: "CRM", icon: Waypoints, tone: "green", module: "crm" }
 ];
 
 const drawerItems = [
   { href: "/companies", label: "Clientes salvos", icon: Building2, tone: "blue", module: "crm" },
-  { href: "/crm/briefings", label: "Briefings Comerciais", icon: ClipboardList, tone: "gold", module: "crm" },
-  { href: "/crm/communications", label: "Comunicações", icon: MessagesSquare, tone: "cyan", module: "crm" },
+  { href: "/crm/briefings", label: "Briefings Comerciais", icon: ClipboardPenLine, tone: "gold", module: "crm" },
+  { href: "/crm/communications", label: "Comunicações", icon: MessageCircleMore, tone: "cyan", module: "crm" },
   { href: "/crm/lifecycle", label: "Arquivo e Lixeira", icon: ArchiveRestore, tone: "neutral", module: "crm" },
   { href: "/calendario", label: "Atividades e Agenda", icon: CalendarDays, tone: "blue", module: "agenda" },
-  { href: "/app/proposals", label: "Propostas e Contratos", icon: PackageOpen, tone: "purple", module: "crm" },
-  { href: "/catalog", label: "Produtos / Serviços", icon: PackageOpen, tone: "orange", module: "crm" },
-  { href: "/reports", label: "Relatórios", icon: LineChart, tone: "blue", module: "relatorios" },
-  { href: "/operators", label: "Operadores", icon: Users, tone: "green", adminOnly: true, module: "admin" },
-  { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: Settings, tone: "neutral", module: "admin" },
-  { href: "/integrations", label: "Integrações", icon: Plug, tone: "cyan", adminOnly: true, module: "integracoes" },
+  { href: "/app/proposals", label: "Propostas e Contratos", icon: FileSignature, tone: "purple", module: "crm" },
+  { href: "/catalog", label: "Produtos / Serviços", icon: Boxes, tone: "orange", module: "crm" },
+  { href: "/reports", label: "Relatórios", icon: ChartNoAxesCombined, tone: "blue", module: "relatorios" },
+  { href: "/operators", label: "Operadores", icon: UsersRound, tone: "green", adminOnly: true, module: "admin" },
+  { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: SlidersHorizontal, tone: "neutral", module: "admin" },
+  { href: "/integrations", label: "Integrações", icon: Cable, tone: "cyan", adminOnly: true, module: "integracoes" },
   { href: "/admin", label: "Administrador / CMS", icon: ShieldCheck, tone: "red", adminOnly: true, module: "admin" },
-  { href: "/manual", label: "Manual NODERE", icon: CircleHelp, tone: "blue", module: "dashboard" }
+  { href: "/manual", label: "Manual NODERE", icon: BookOpenCheck, tone: "blue", module: "dashboard" }
 ];
 
 export function MobileNav() {
@@ -71,7 +71,7 @@ export function MobileNav() {
           className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold text-slate-200"
           aria-label="Abrir menu"
         >
-          <span className="nodere-nav-icon-tone flex h-8 w-8 items-center justify-center rounded-lg" data-icon-tone="green">
+          <span className="nodere-nav-icon-tone nodere-nav-glyph flex h-8 w-8 items-center justify-center rounded-md" data-icon-tone="green">
             <Menu className="h-4 w-4" />
           </span>
           Menu
@@ -99,7 +99,7 @@ export function MobileNav() {
                 onClick={() => void installApp()}
                 className="flex min-h-14 items-center gap-3 rounded-xl border border-electric/35 bg-electric/10 px-3 py-2 text-sm font-semibold text-slate-100"
               >
-                <span className="nodere-nav-icon-tone flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" data-icon-tone="green">
+                <span className="nodere-nav-icon-tone nodere-nav-glyph flex h-9 w-9 shrink-0 items-center justify-center rounded-md" data-icon-tone="green">
                   <Download className="nodere-icon" />
                 </span>
                 Instalar app
@@ -111,7 +111,7 @@ export function MobileNav() {
                   onClick={() => setOpen(false)}
                   className="flex min-h-14 items-center gap-3 rounded-xl border border-line bg-panel/80 px-3 py-2 text-sm font-semibold text-slate-200"
                 >
-                  <span className="nodere-nav-icon-tone flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" data-icon-tone={item.tone}>
+                  <span className="nodere-nav-icon-tone nodere-nav-glyph flex h-9 w-9 shrink-0 items-center justify-center rounded-md" data-icon-tone={item.tone}>
                     <item.icon className="nodere-icon" />
                   </span>
                   {item.label}
@@ -125,7 +125,7 @@ export function MobileNav() {
                 }}
                 className="flex min-h-14 items-center gap-3 rounded-xl border border-danger/35 bg-danger/10 px-3 py-2 text-sm font-semibold text-rose-100"
               >
-                <span className="nodere-nav-icon-tone flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" data-icon-tone="red">
+                <span className="nodere-nav-icon-tone nodere-nav-glyph flex h-9 w-9 shrink-0 items-center justify-center rounded-md" data-icon-tone="red">
                   <LogOut className="nodere-icon" />
                 </span>
                 Sair
@@ -147,7 +147,7 @@ function MobileLink({ item, isApp, activePathname, onClick }: { item: (typeof pr
       onClick={onClick}
       className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold transition ${active ? "bg-white/10 text-white" : "text-slate-300"}`}
     >
-      <span className="nodere-nav-icon-tone flex h-8 w-8 items-center justify-center rounded-lg" data-icon-tone={item.tone}>
+      <span className="nodere-nav-icon-tone nodere-nav-glyph flex h-8 w-8 items-center justify-center rounded-md" data-icon-tone={item.tone}>
         <item.icon className="nodere-icon" />
       </span>
       {item.label}

@@ -9,7 +9,7 @@ import {
   lastAssistantMessageIsCompleteWithApprovalResponses,
   type UIMessage
 } from "ai";
-import { Bot, Check, ChevronRight, Coins, History, Maximize2, PanelLeftClose, PanelRightClose, Plus, ShieldCheck, Sparkles, X } from "lucide-react";
+import { ArchiveRestore, Bot, Check, ChevronRight, Coins, History, Maximize2, PanelLeftClose, PanelRightClose, Plus, ShieldCheck, Sparkles, Trash2, X } from "lucide-react";
 import {
   Conversation,
   ConversationContent,
@@ -70,6 +70,7 @@ type ConversationItem = {
   title: string;
   agent_id: string;
   model_id: string;
+  status: "active" | "archived";
   updated_at: string;
 };
 type Wallet = {
@@ -94,9 +95,10 @@ export default function NodereAiPage() {
   const [routingMode, setRoutingMode] = useState<"automatic" | "manual">("automatic");
   const [loadingShell, setLoadingShell] = useState(true);
   const [shellError, setShellError] = useState("");
-  const [historyOpen, setHistoryOpen] = useState(true);
-  const [detailsOpen, setDetailsOpen] = useState(true);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
+  const [historyView, setHistoryView] = useState<"active" | "archived">("active");
 
   const transport = useMemo(() => new DefaultChatTransport<NodereMessage>({
     api: "/api/backend/ai/chat",
@@ -118,7 +120,7 @@ export default function NodereAiPage() {
   const refreshOperationalData = useCallback(async () => {
     const [registryResponse, conversationsResponse, walletResponse] = await Promise.all([
       fetch("/api/backend/ai/registry", { cache: "no-store" }),
-      fetch("/api/backend/ai/conversations?limit=30", { cache: "no-store" }),
+      fetch(`/api/backend/ai/conversations?limit=30&status=${historyView}`, { cache: "no-store" }),
       fetch("/api/backend/ai/wallet", { cache: "no-store" })
     ]);
     if (!registryResponse.ok || !conversationsResponse.ok || !walletResponse.ok) {
@@ -139,7 +141,7 @@ export default function NodereAiPage() {
     setModelId((current) => registry.models?.some((model: ModelOption) => model.id === current)
       ? current
       : (registry.models?.[0]?.id || current));
-  }, []);
+  }, [historyView]);
 
   const {
     messages,
@@ -175,6 +177,17 @@ export default function NodereAiPage() {
       cancelled = true;
     };
   }, [refreshOperationalData]);
+
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1280px)");
+    const syncPanels = () => {
+      setHistoryOpen(desktop.matches);
+      setDetailsOpen(desktop.matches);
+    };
+    syncPanels();
+    desktop.addEventListener("change", syncPanels);
+    return () => desktop.removeEventListener("change", syncPanels);
+  }, []);
 
   const selectedAgent = agents.find((agent) => agent.id === agentId);
   const allowedModels = models.filter((model) => !selectedAgent || selectedAgent.allowedModelIds.includes(model.id));
@@ -212,9 +225,74 @@ export default function NodereAiPage() {
     setMessages([]);
   }
 
+  function toggleHistory() {
+    setFocusMode(false);
+    setHistoryOpen((value) => !value);
+    if (window.innerWidth < 1280) setDetailsOpen(false);
+  }
+
+  function toggleDetails() {
+    setFocusMode(false);
+    setDetailsOpen((value) => !value);
+    if (window.innerWidth < 1280) setHistoryOpen(false);
+  }
+
+  async function moveConversation(item: ConversationItem, nextStatus: "active" | "archived") {
+    if (busy) return;
+    const response = await fetch(`/api/backend/ai/conversations/${encodeURIComponent(item.id)}/status`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ status: nextStatus })
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      setShellError(payload.message || "Não foi possível atualizar a conversa.");
+      return;
+    }
+    if (conversationId === item.id) newConversation();
+    await refreshOperationalData();
+  }
+
+  const historyPanel = (
+    <>
+      <button type="button" onClick={newConversation} disabled={busy} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 text-sm font-black text-white transition hover:bg-emerald-500 disabled:opacity-50">
+        <Plus className="h-4 w-4" /> Nova conversa
+      </button>
+      <div className="mt-4 flex items-center justify-between gap-2 px-1">
+        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400">
+          <History className="h-4 w-4" /> Histórico
+        </div>
+        <div className="flex rounded-lg border border-line p-0.5 text-[10px] font-bold">
+          <button type="button" onClick={() => setHistoryView("active")} className={`rounded-md px-2 py-1.5 ${historyView === "active" ? "bg-emerald-400/15 text-emerald-200" : "text-slate-400"}`}>Ativas</button>
+          <button type="button" onClick={() => setHistoryView("archived")} className={`rounded-md px-2 py-1.5 ${historyView === "archived" ? "bg-emerald-400/15 text-emerald-200" : "text-slate-400"}`}>Lixeira</button>
+        </div>
+      </div>
+      <div className="nodere-tools-scroll mt-2 min-h-0 flex-1 space-y-1 overflow-y-auto">
+        {conversations.map((item) => (
+          <div key={item.id} className={`group flex items-center gap-1 rounded-lg pr-1 transition ${conversationId === item.id ? "bg-emerald-400/15" : "hover:bg-white/5"}`}>
+            <button type="button" disabled={item.status === "archived"} onClick={() => void openConversation(item)} className={`min-w-0 flex-1 px-3 py-2.5 text-left text-sm ${conversationId === item.id ? "text-white" : "text-slate-300"}`}>
+              <span className="block truncate font-semibold">{item.title}</span>
+              <span className="mt-1 block text-[10px] text-slate-500">{new Date(item.updated_at).toLocaleString("pt-BR")}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => void moveConversation(item, item.status === "archived" ? "active" : "archived")}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-transparent text-slate-400 hover:border-line hover:text-emerald-200"
+              aria-label={item.status === "archived" ? `Restaurar conversa ${item.title}` : `Mover conversa ${item.title} para a lixeira`}
+              title={item.status === "archived" ? "Restaurar" : "Mover para lixeira"}
+            >
+              {item.status === "archived" ? <ArchiveRestore className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
+            </button>
+          </div>
+        ))}
+        {!loadingShell && conversations.length === 0 && <p className="px-3 py-6 text-center text-xs text-slate-500">{historyView === "archived" ? "A lixeira está vazia." : "Nenhuma conversa salva."}</p>}
+      </div>
+    </>
+  );
+
   return (
     <div className="mx-auto flex min-h-[calc(100dvh-150px)] w-full max-w-[1800px] flex-col gap-4 px-3 py-4 md:px-6">
-      <header className="rounded-2xl border border-emerald-400/20 bg-[linear-gradient(135deg,rgba(3,98,76,.25),rgba(8,16,24,.96)_45%)] p-4 shadow-card md:p-5">
+      <header className="nodere-ai-hero rounded-2xl border border-emerald-400/20 p-4 shadow-card md:p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex items-start gap-3">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-emerald-300/30 bg-emerald-400/10 text-emerald-300">
@@ -244,30 +322,37 @@ export default function NodereAiPage() {
         </section>
       )}
 
-      <div className={`grid min-h-[680px] flex-1 gap-4 ${focusMode || (!historyOpen && !detailsOpen) ? "xl:grid-cols-[minmax(0,1fr)]" : historyOpen && detailsOpen ? "xl:grid-cols-[250px_minmax(0,1fr)_280px]" : historyOpen ? "xl:grid-cols-[250px_minmax(0,1fr)]" : "xl:grid-cols-[minmax(0,1fr)_280px]"}`}>
-        {!focusMode && historyOpen && <aside className="hidden min-h-0 flex-col rounded-2xl border border-line bg-panel/75 p-3 xl:flex">
-          <button type="button" onClick={newConversation} disabled={busy} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 text-sm font-black text-white transition hover:bg-emerald-500 disabled:opacity-50">
-            <Plus className="h-4 w-4" /> Nova conversa
-          </button>
-          <div className="mt-4 flex items-center gap-2 px-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400">
-            <History className="h-4 w-4" /> Histórico
-          </div>
-          <div className="nodere-tools-scroll mt-2 min-h-0 flex-1 space-y-1 overflow-y-auto">
-            {conversations.map((item) => (
-              <button key={item.id} type="button" onClick={() => void openConversation(item)} className={`w-full rounded-lg px-3 py-2.5 text-left text-sm transition ${conversationId === item.id ? "bg-emerald-400/15 text-white" : "text-slate-300 hover:bg-white/5"}`}>
-                <span className="block truncate font-semibold">{item.title}</span>
-                <span className="mt-1 block text-[10px] text-slate-500">{new Date(item.updated_at).toLocaleString("pt-BR")}</span>
-              </button>
-            ))}
-            {!loadingShell && conversations.length === 0 && <p className="px-3 py-6 text-center text-xs text-slate-500">Nenhuma conversa salva.</p>}
-          </div>
-        </aside>}
+      {!focusMode && historyOpen && (
+        <div className="fixed inset-0 z-[70] xl:hidden" role="dialog" aria-modal="true" aria-label="Histórico de conversas">
+          <button type="button" className="absolute inset-0 bg-black/55" onClick={() => setHistoryOpen(false)} aria-label="Fechar histórico" />
+          <aside className="absolute inset-y-0 left-0 flex w-[min(88vw,360px)] flex-col border-r border-line bg-panel p-3 shadow-2xl">
+            <div className="mb-2 flex justify-end"><button type="button" className="grid h-10 w-10 place-items-center rounded-lg border border-line" onClick={() => setHistoryOpen(false)} aria-label="Fechar histórico"><X className="h-4 w-4" /></button></div>
+            {historyPanel}
+          </aside>
+        </div>
+      )}
 
-        <main className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-line bg-[rgba(8,16,24,.82)] shadow-card">
+      {!focusMode && detailsOpen && (
+        <div className="fixed inset-0 z-[70] xl:hidden" role="dialog" aria-modal="true" aria-label="Detalhes da NODERE AI">
+          <button type="button" className="absolute inset-0 bg-black/55" onClick={() => setDetailsOpen(false)} aria-label="Fechar detalhes" />
+          <aside className="absolute inset-x-0 bottom-0 max-h-[78dvh] overflow-y-auto rounded-t-2xl border-t border-line bg-panel p-4 shadow-2xl">
+            <div className="flex items-center justify-between gap-3"><h2 className="font-black">Detalhes da operação</h2><button type="button" className="grid h-10 w-10 place-items-center rounded-lg border border-line" onClick={() => setDetailsOpen(false)} aria-label="Fechar detalhes"><X className="h-4 w-4" /></button></div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <section className="rounded-xl border border-line bg-ink/40 p-4"><p className="text-xs font-black uppercase text-emerald-300">Agente</p><p className="mt-2 font-bold">{selectedAgent?.label || "Carregando…"}</p><p className="mt-1 text-sm text-slate-400">{selectedAgent?.description}</p></section>
+              <section className="rounded-xl border border-line bg-ink/40 p-4"><p className="text-xs font-black uppercase text-cyan-300">Modelo</p><p className="mt-2 font-bold">{routingMode === "automatic" ? "Seleção automática" : selectedModel?.label || "Carregando…"}</p><p className="mt-1 text-sm text-slate-400">{wallet?.accountType === "OWNER_INTERNAL" ? "Uso técnico medido; limites do provedor continuam válidos." : `${wallet?.available || 0} créditos disponíveis.`}</p></section>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      <div className={`grid min-h-[680px] flex-1 gap-4 ${focusMode || (!historyOpen && !detailsOpen) ? "xl:grid-cols-[minmax(0,1fr)]" : historyOpen && detailsOpen ? "xl:grid-cols-[250px_minmax(0,1fr)_280px]" : historyOpen ? "xl:grid-cols-[250px_minmax(0,1fr)]" : "xl:grid-cols-[minmax(0,1fr)_280px]"}`}>
+        {!focusMode && historyOpen && <aside className="hidden min-h-0 flex-col rounded-2xl border border-line bg-panel/75 p-3 xl:flex">{historyPanel}</aside>}
+
+        <main className="nodere-ai-chat-surface flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-line shadow-card">
           <div className="flex flex-wrap items-center gap-2 border-b border-line px-3 py-3 md:px-4">
             <div className="flex items-center gap-1">
-              <button type="button" onClick={() => { setFocusMode(false); setHistoryOpen((value) => !value); }} className="grid h-10 w-10 place-items-center rounded-lg border border-line bg-panel text-slate-300 hover:border-emerald-400" aria-label={historyOpen ? "Recolher histórico" : "Mostrar histórico"} title={historyOpen ? "Recolher histórico" : "Mostrar histórico"}><PanelLeftClose className="h-4 w-4" /></button>
-              <button type="button" onClick={() => { setFocusMode(false); setDetailsOpen((value) => !value); }} className="grid h-10 w-10 place-items-center rounded-lg border border-line bg-panel text-slate-300 hover:border-cyan-400" aria-label={detailsOpen ? "Recolher detalhes" : "Mostrar detalhes"} title={detailsOpen ? "Recolher detalhes" : "Mostrar detalhes"}><PanelRightClose className="h-4 w-4" /></button>
+              <button type="button" onClick={toggleHistory} className="grid h-10 w-10 place-items-center rounded-lg border border-line bg-panel text-slate-300 hover:border-emerald-400" aria-label={historyOpen ? "Recolher histórico" : "Mostrar histórico"} title={historyOpen ? "Recolher histórico" : "Mostrar histórico"}><PanelLeftClose className="h-4 w-4" /></button>
+              <button type="button" onClick={toggleDetails} className="grid h-10 w-10 place-items-center rounded-lg border border-line bg-panel text-slate-300 hover:border-cyan-400" aria-label={detailsOpen ? "Recolher detalhes" : "Mostrar detalhes"} title={detailsOpen ? "Recolher detalhes" : "Mostrar detalhes"}><PanelRightClose className="h-4 w-4" /></button>
               <button type="button" onClick={() => setFocusMode((value) => !value)} className={`grid h-10 w-10 place-items-center rounded-lg border bg-panel ${focusMode ? "border-emerald-400 text-emerald-300" : "border-line text-slate-300"}`} aria-label="Alternar modo foco" title="Modo foco"><Maximize2 className="h-4 w-4" /></button>
             </div>
             <label className="min-w-0 flex-1 md:max-w-xs">

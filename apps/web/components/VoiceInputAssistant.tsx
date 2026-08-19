@@ -131,7 +131,7 @@ export function VoiceInputAssistant() {
             <p className="text-xs font-black uppercase tracking-[0.16em] text-[var(--brand-primary)]">Ditado PT-BR</p>
             <h2 id="voice-review-title" className="mt-2 font-heading text-lg font-black text-[var(--text-primary)]">Revise antes de aplicar</h2>
             <p className="mt-2 text-sm text-[var(--text-secondary)]">Edite a transcrição se necessário. Nada será salvo sem sua confirmação.</p>
-            <textarea autoFocus value={transcript} onChange={(event) => setTranscript(event.target.value)} rows={6} className="mt-4 w-full rounded-xl border border-[var(--border-soft)] bg-[var(--bg-input)] p-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
+            <textarea data-voice-disabled="true" autoFocus value={transcript} onChange={(event) => setTranscript(event.target.value)} rows={6} className="mt-4 w-full rounded-xl border border-[var(--border-soft)] bg-[var(--bg-input)] p-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
             <div className="mt-4 flex flex-wrap gap-2">
               <button type="button" onClick={() => apply("replace")} disabled={!transcript.trim()} className="briefing-action briefing-action--primary">Substituir campo</button>
               <button type="button" onClick={() => apply("append")} disabled={!transcript.trim()} className="briefing-action">Adicionar ao final</button>

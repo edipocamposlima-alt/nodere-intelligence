@@ -26,6 +26,7 @@ import {
 } from "./creditLedger.js";
 import { buildAiTools } from "./aiTools.js";
 import { getAccountEntitlement } from "./entitlements.js";
+import { asAiProviderServiceError, classifyAiProviderError } from "./aiProviderErrors.js";
 
 type SessionIdentity = { userId?: string; authUserId?: string | null; email?: string; role?: string };
 
@@ -194,7 +195,8 @@ export async function startAiChat(input: {
       }
     },
     onError: async ({ error }) => {
-      await settleFailure("AI_STREAM_FAILED", error);
+      const classified = classifyAiProviderError(error);
+      await settleFailure(classified.code, new Error(classified.message));
     },
     onAbort: async () => {
       await settleFailure("AI_STREAM_ABORTED", new Error("Execução interrompida pelo cliente."), "cancelled");
@@ -217,6 +219,7 @@ export async function startAiChat(input: {
     result,
     metadata,
     originalMessages: validatedMessages as NodereAiMessage[],
+    onStreamError: (error: unknown) => classifyAiProviderError(error).message,
     onUiFinish: async ({ responseMessage, isAborted }: { responseMessage: NodereAiMessage; isAborted: boolean }) => {
       if (isAborted) return;
       await persistAssistantMessage({
@@ -262,9 +265,11 @@ export async function generateMeteredAiText(input: {
     reservedCredit: reservation
   });
   let providerCompleted = false;
+  let reservationCompleted = false;
 
   try {
     await reserveAiCredits(input.workspaceId, executionId, reservation, entitlement);
+    reservationCompleted = true;
     await updateAiExecution(executionId, input.workspaceId, { status: "streaming", metadata: { action: input.action, compatibility_endpoint: true } });
     const result = await generateText({
       model: languageModel,
@@ -303,15 +308,18 @@ export async function generateMeteredAiText(input: {
   } catch (error) {
     // A resposta concluida pelo provedor ja gerou custo. Se a captura falhar,
     // mantemos a reserva retida para reconciliacao em vez de devolver saldo.
-    if (!providerCompleted) {
-      await releaseAiCredits(input.workspaceId, executionId, "compatibility_endpoint_failed", entitlement).catch(() => undefined);
+    const providerError = reservationCompleted && !providerCompleted
+      ? asAiProviderServiceError(error)
+      : null;
+    if (reservationCompleted && !providerCompleted) {
+      await releaseAiCredits(input.workspaceId, executionId, providerError?.code || "compatibility_endpoint_failed", entitlement).catch(() => undefined);
     }
     await updateAiExecution(executionId, input.workspaceId, {
       status: "failed",
       error_code: providerCompleted
         ? "LEDGER_CAPTURE_FAILED"
-        : String((error as { code?: string })?.code || "AI_GENERATION_FAILED"),
-      error_message: safeErrorMessage(error),
+        : providerError?.code || String((error as { code?: string })?.code || "AI_GENERATION_FAILED"),
+      error_message: providerError?.message || safeErrorMessage(error),
       metadata: {
         action: input.action,
         compatibility_endpoint: true,
@@ -319,7 +327,7 @@ export async function generateMeteredAiText(input: {
       },
       finished_at: new Date().toISOString()
     }).catch(() => undefined);
-    throw error;
+    throw providerError || error;
   }
 }
 

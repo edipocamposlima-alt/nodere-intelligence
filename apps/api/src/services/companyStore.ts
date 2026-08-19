@@ -280,7 +280,7 @@ function stripUnavailableCompanyColumns(row: Record<string, unknown>) {
   }
 }
 
-function fromRow(row: Record<string, unknown>): Company {
+export function mapPersistedCompanyRow(row: Record<string, unknown>): Company {
   const signals = (row.digital_signals as Record<string, unknown>) ?? {};
   return {
     id: row.id as string,
@@ -342,7 +342,12 @@ function fromRow(row: Record<string, unknown>): Company {
     notes: [],
     createdAt: (row.created_at as string) ?? new Date().toISOString(),
     updatedAt: (row.updated_at as string) ?? new Date().toISOString(),
-    ...signals
+    ...signals,
+    // A row returned by nodere_companies is already persisted in the CRM.
+    // Older rows predate these flags; interpreting absence as "not saved"
+    // hid valid companies and made the UI disagree with the database.
+    crmSaved: true,
+    isCrmLead: true
   };
 }
 
@@ -363,7 +368,7 @@ async function dbList(workspaceId = "default"): Promise<Company[]> {
   }
   if (error) throw error;
   return (data ?? []).map((row: Record<string, unknown>) => {
-    const c = fromRow(row);
+    const c = mapPersistedCompanyRow(row);
     c.notes = mapPublicNotes((row.nodere_company_notes as Record<string, unknown>[] | undefined) ?? []);
     return c;
   });
@@ -399,7 +404,7 @@ async function dbGet(id: string, workspaceId = "default"): Promise<Company | und
     }
     return undefined;
   }
-  const c = fromRow(data);
+  const c = mapPersistedCompanyRow(data);
   c.notes = mapPublicNotes((data.nodere_company_notes as Record<string, unknown>[]) ?? []);
   return c;
 }
@@ -427,7 +432,7 @@ async function dbGetByExternalId(externalId: string, workspaceId = "default"): P
       throw error;
     }
     if (data) {
-      const c = fromRow(data);
+      const c = mapPersistedCompanyRow(data);
       c.notes = mapPublicNotes((data.nodere_company_notes as Record<string, unknown>[]) ?? []);
       return c;
     }

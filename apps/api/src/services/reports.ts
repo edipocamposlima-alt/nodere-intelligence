@@ -19,6 +19,11 @@ const STAGE_META: Record<string, { probability: number; avgValue: number }> = {
 
 const STAGE_ORDER = Object.keys(STAGE_META);
 
+export function normalizedScore(company: Company) {
+  const value = Number(company.nodereScore ?? company.score ?? 0);
+  return Math.min(100, Math.max(0, Number.isFinite(value) ? value : 0));
+}
+
 export async function getPipelineReport(workspaceId = "default"): Promise<PipelineReport> {
   const companies = await listCompaniesAsync(workspaceId);
   const grouped = groupBy(companies, (company) => company.status || "Novo Lead");
@@ -36,7 +41,7 @@ export async function getPipelineReport(workspaceId = "default"): Promise<Pipeli
   stages.sort((a, b) => stageIndex(a.status) - stageIndex(b.status));
   const totalPipelineValueBRL = stages.reduce((sum, stage) => sum + stage.estimatedValueBRL, 0);
   const avgScore = companies.length
-    ? Math.round(companies.reduce((sum, company) => sum + (company.score || 0), 0) / companies.length)
+    ? Math.round(companies.reduce((sum, company) => sum + normalizedScore(company), 0) / companies.length)
     : 0;
 
   return {
@@ -133,7 +138,7 @@ export async function getPerformanceReport(workspaceId = "default") {
   const companies = await listCompaniesAsync(workspaceId);
   const total = Math.max(companies.length, 1);
   return {
-    avg_score: companies.length ? Math.round(companies.reduce((sum, company) => sum + (company.score || 0), 0) / companies.length) : 0,
+    avg_score: companies.length ? Math.round(companies.reduce((sum, company) => sum + normalizedScore(company), 0) / companies.length) : 0,
     pct_with_site: Math.round((companies.filter((company) => Boolean(company.website)).length / total) * 100),
     pct_with_google_ads: Math.round((companies.filter((company) => Boolean(company.hasGoogleAds)).length / total) * 100),
     pct_without_whatsapp: Math.round((companies.filter((company) => !company.whatsapp).length / total) * 100)
@@ -163,7 +168,7 @@ export async function getSummaryReport(workspaceId = "default", period = "30d") 
   return {
     total_companies: companies.length,
     total_leads_in_crm: companies.length,
-    avg_score: companies.length ? Math.round(companies.reduce((sum, company) => sum + (company.score || 0), 0) / companies.length) : 0,
+    avg_score: companies.length ? Math.round(companies.reduce((sum, company) => sum + normalizedScore(company), 0) / companies.length) : 0,
     conversion_rate: decided ? Math.round((closed / decided) * 10000) / 100 : 0,
     credits_used: 0,
     new_this_period: periodCompanies.length,
@@ -197,7 +202,7 @@ export async function getSegmentsReport(workspaceId = "default", period = "30d")
       .map(([segment, items]) => ({
         segment,
         count: items.length,
-        avg_score: items.length ? Math.round(items.reduce((sum, company) => sum + (company.score || 0), 0) / items.length) : 0
+        avg_score: items.length ? Math.round(items.reduce((sum, company) => sum + normalizedScore(company), 0) / items.length) : 0
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 15)
@@ -385,7 +390,7 @@ export async function getConsolidatedReport(workspaceId = "default", input: Repo
       deals_lost: lost.length,
       activities_done: metrics.activitiesDone,
       total_companies: companies.length,
-      avg_score: companies.length ? Math.round(companies.reduce((sum, company) => sum + (company.score || 0), 0) / companies.length) : 0,
+      avg_score: companies.length ? Math.round(companies.reduce((sum, company) => sum + normalizedScore(company), 0) / companies.length) : 0,
       pipeline_value: open.reduce((sum, company) => sum + getEstimatedValue(company), 0)
     },
     funnel: stageEntries.map(([name, items]) => {
@@ -405,7 +410,7 @@ export async function getConsolidatedReport(workspaceId = "default", input: Repo
       .map(([segment, items]) => ({
         segment,
         count: items.length,
-        avg_score: items.length ? Math.round(items.reduce((sum, company) => sum + (company.score || 0), 0) / items.length) : 0
+        avg_score: items.length ? Math.round(items.reduce((sum, company) => sum + normalizedScore(company), 0) / items.length) : 0
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 20),

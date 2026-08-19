@@ -34,6 +34,10 @@ function companyEmail(company: Company) {
   return valueOrNotLocated(company.emailPrincipal || company.email || (company as any).email_principal);
 }
 
+function mapsAvailability(company: Company) {
+  return company.mapsUrl ? "Google Maps localizado" : "Google Maps não localizado";
+}
+
 function companySummary(company: Company) {
   const existing = valueOrNotLocated(company.businessSummary || company.resumoSobreEmpresa || (company as any).resumo_sobre_empresa || (company as any).resumo);
   if (existing !== "Não localizado") return existing;
@@ -59,7 +63,7 @@ function exportRow(company: Company) {
     avaliacao: valueOrNotLocated(company.rating),
     avaliacoes: valueOrNotLocated(company.reviewCount),
     score: valueOrNotLocated(company.nodereScore ?? company.score),
-    maps: valueOrNotLocated(company.mapsUrl),
+    maps: mapsAvailability(company),
     resumo_sobre_a_empresa: companySummary(company)
   };
 }
@@ -231,7 +235,7 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
         `Telefone: ${valueOrNotLocated(company.phone)} | E-mail: ${companyEmail(company)}`,
         `Site: ${valueOrNotLocated(company.website)}`,
         `Avaliacao: ${valueOrNotLocated(company.rating)} | Avaliacoes: ${valueOrNotLocated(company.reviewCount)} | Score: ${valueOrNotLocated(company.nodereScore ?? company.score)}`,
-        `Maps: ${valueOrNotLocated(company.mapsUrl)}`,
+        `Maps: ${mapsAvailability(company)}`,
         `Resumo: ${companySummary(company)}`,
         ""
       ])
@@ -637,7 +641,20 @@ export function CompanyTable({ companies, initialQuery = "", embedded = false }:
                       <p className="mt-1 break-words">Telefone: {valueOrNotLocated(company.phone)}</p>
                       <p className="break-words" title={companyEmail(company)}>E-mail: {companyEmail(company)}</p>
                       <p className="break-words" title={valueOrNotLocated(company.website)}>Site: {valueOrNotLocated(company.website)}</p>
-                      <p className="break-words" title={valueOrNotLocated(company.mapsUrl)}>Maps: {valueOrNotLocated(company.mapsUrl)}</p>
+                      {company.mapsUrl ? (
+                        <a
+                          href={company.mapsUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 font-semibold text-cyan transition-colors hover:border-cyan/60 hover:bg-cyan/10"
+                          aria-label={`Abrir ${company.name} no Google Maps em nova guia`}
+                        >
+                          Abrir no Google Maps
+                          <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                        </a>
+                      ) : (
+                        <p className="mt-1 text-[var(--text-secondary)]">Google Maps não localizado</p>
+                      )}
                     </section>
 
                     <section className="rounded-lg border border-line bg-ink/60 p-3">

@@ -1,6 +1,8 @@
 import { config } from "../config.js";
 import type { Company } from "../types.js";
 import { searchGooglePlaces } from "./google.js";
+import { lookup } from "node:dns/promises";
+import { isIP } from "node:net";
 
 export type ResearchSource = {
   title: string;
@@ -162,11 +164,54 @@ function publicCompanySnapshot(company: Company) {
 }
 
 async function inspectWebsite(url: string) {
-  const response = await fetch(url, { headers: { "User-Agent": "NODERE-Public-Research/1.0" }, redirect: "follow", signal: AbortSignal.timeout(10_000) });
+  const response = await fetchPublicDocument(url);
   const html = response.ok ? (await response.text()).slice(0, 400_000) : "";
   const title = decodeHtml(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "").trim();
   const description = decodeHtml(html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i)?.[1] || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i)?.[1] || "").trim();
   return { reachable: response.ok, title: title.slice(0, 180), description: description.slice(0, 800) };
+}
+
+async function fetchPublicDocument(input: string) {
+  let current = input;
+  for (let redirects = 0; redirects <= 5; redirects += 1) {
+    await assertPublicTarget(current);
+    const response = await fetch(current, {
+      headers: { "User-Agent": "NODERE-Public-Research/1.0", Accept: "text/html,application/xhtml+xml" },
+      redirect: "manual",
+      signal: AbortSignal.timeout(10_000)
+    });
+    if (![301, 302, 303, 307, 308].includes(response.status)) {
+      const contentLength = Number(response.headers.get("content-length") || 0);
+      if (contentLength > 2_000_000) throw new Error("Fonte pública excede o limite seguro de leitura.");
+      return response;
+    }
+    const location = response.headers.get("location");
+    if (!location) throw new Error("Redirecionamento público sem destino válido.");
+    current = new URL(location, current).toString();
+  }
+  throw new Error("Fonte pública excedeu o limite de redirecionamentos.");
+}
+
+async function assertPublicTarget(value: string) {
+  const normalized = normalizePublicUrl(value);
+  if (!normalized) throw new Error("URL pública inválida ou não permitida.");
+  const url = new URL(normalized);
+  const addresses = await lookup(url.hostname, { all: true, verbatim: true });
+  if (!addresses.length || addresses.some((entry) => isPrivateAddress(entry.address))) throw new Error("Destino privado bloqueado na pesquisa pública.");
+}
+
+function isPrivateAddress(address: string): boolean {
+  const clean = address.toLowerCase().split("%")[0];
+  if (isIP(clean) === 4) {
+    const [a, b] = clean.split(".").map(Number);
+    return a === 0 || a === 10 || a === 127 || a >= 224 || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+  }
+  if (isIP(clean) === 6) {
+    if (clean === "::" || clean === "::1" || clean.startsWith("fc") || clean.startsWith("fd") || /^fe[89ab]/.test(clean)) return true;
+    const mapped = clean.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/)?.[1];
+    return mapped ? isPrivateAddress(mapped) : false;
+  }
+  return true;
 }
 
 async function fetchJson(url: string) {
@@ -178,7 +223,11 @@ async function fetchJson(url: string) {
 function normalizePublicUrl(value: unknown) {
   try {
     const url = new URL(String(value || "").trim());
-    if (!['http:', 'https:'].includes(url.protocol) || ['localhost', '127.0.0.1', '::1'].includes(url.hostname)) return "";
+    const hostname = url.hostname.toLowerCase();
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return "";
+    if (url.port && !["80", "443"].includes(url.port)) return "";
+    if (['localhost', '127.0.0.1', '::1', 'metadata.google.internal', '169.254.169.254'].includes(hostname) || hostname.endsWith(".local") || hostname.endsWith(".internal")) return "";
+    if (isIP(hostname) && isPrivateAddress(hostname)) return "";
     url.hash = "";
     return url.toString();
   } catch { return ""; }

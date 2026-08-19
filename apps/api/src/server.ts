@@ -79,9 +79,8 @@ function deploymentMetadata() {
 const allowedOrigins = new Set([
   config.webOrigin,
   config.frontendUrl,
+  config.publicAppUrl,
   ...config.corsOrigins,
-  "https://nodere.com.br",
-  "https://www.nodere.com.br",
   "http://localhost:3000",
   "http://localhost:4000",
 ]);

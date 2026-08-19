@@ -41,7 +41,7 @@ import { enrichCnpj } from "../services/cnpjEnrichment.js";
 import { getSupabase } from "../db/supabase.js";
 import { markOnboardingStep } from "../services/onboardingStore.js";
 import { logRequestMetric } from "../services/metricsStore.js";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { parse as parseCsvSync } from "csv-parse/sync";
 import ExcelJS from "exceljs";
 import nodemailer from "nodemailer";
@@ -52,6 +52,13 @@ const router = Router();
 router.use(requireWorkspaceMutation("owner", "admin", "operator"));
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 12 * 1024 * 1024 } });
 const embeddedLogoDataUri = loadNodereLogoDataUri();
+const publicAppHost = (() => {
+  try {
+    return new URL(config.publicAppUrl).host;
+  } catch {
+    return "NODERE";
+  }
+})();
 
 const companyUpdateSchema = z.object({
   name: z.string().min(2).optional(),
@@ -479,12 +486,14 @@ router.get("/:id/files", async (req, res, next) => {
     const companyId = String(req.params.id);
     const company = await getCompanyAsync(companyId, workspaceId);
     if (!company) return res.status(404).json({ message: "Empresa não encontrada." });
-    const { data, error } = await requireSupabase()
+    const status = z.enum(["active", "archived"]).catch("active").parse(req.query.status);
+    let query = requireSupabase()
       .from("company_files")
       .select("*")
       .eq("workspace_id", workspaceId)
-      .eq("company_id", String(req.params.id))
-      .order("created_at", { ascending: false });
+      .eq("company_id", String(req.params.id));
+    query = status === "archived" ? query.not("deleted_at", "is", null) : query.is("deleted_at", null);
+    const { data, error } = await query.order("created_at", { ascending: false });
     if (error) throw error;
     return res.json((data ?? []).map(mapCompanyFileRow));
   } catch (error) {
@@ -501,6 +510,17 @@ router.post("/:id/files", upload.single("file"), async (req, res, next) => {
     if (!company) return res.status(404).json({ message: "Empresa não encontrada." });
     const file = req.file;
     if (!file) return res.status(400).json({ message: "Envie um arquivo no campo file." });
+    const allowedTypes = new Set([
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/csv",
+      "text/plain",
+      "image/jpeg",
+      "image/png",
+      "image/webp"
+    ]);
+    if (!allowedTypes.has(file.mimetype)) return res.status(415).json({ message: "Formato não permitido. Envie PDF, DOCX, XLSX, CSV, TXT, JPG, PNG ou WEBP." });
 
     const sb = requireSupabase();
     const storagePath = `${workspaceId}/${company.id}/${randomUUID()}-${safeStorageFileName(file.originalname || "arquivo")}`;
@@ -516,9 +536,10 @@ router.post("/:id/files", upload.single("file"), async (req, res, next) => {
       company_id: company.id,
       filename: file.originalname || "arquivo",
       storage_path: storagePath,
-      file_url: getPublicStorageUrl("client-files", storagePath),
+      file_url: null,
       file_type: file.mimetype || "application/octet-stream",
       file_size: file.size,
+      sha256: createHash("sha256").update(file.buffer).digest("hex"),
       uploaded_by: getSessionUserId(req) || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -530,7 +551,46 @@ router.post("/:id/files", upload.single("file"), async (req, res, next) => {
   } catch (error) { return next(error); }
 });
 
-router.delete("/:id/files/:fileId", async (req, res, next) => {
+router.post("/:id/files/:fileId/restore", requireWorkspaceMutation("owner", "admin"), async (req, res, next) => {
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    const { data, error } = await requireSupabase()
+      .from("company_files")
+      .update({ deleted_at: null, deleted_by: null, updated_at: new Date().toISOString() })
+      .eq("workspace_id", workspaceId)
+      .eq("company_id", String(req.params.id))
+      .eq("id", req.params.fileId)
+      .not("deleted_at", "is", null)
+      .select("*")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return res.status(404).json({ message: "Arquivo arquivado não encontrado." });
+    await addNote(String(req.params.id), `Arquivo restaurado: ${data.filename}`, workspaceId).catch(() => undefined);
+    return res.json(mapCompanyFileRow(data));
+  } catch (error) { return next(error); }
+});
+
+router.get("/:id/files/:fileId/download", async (req, res, next) => {
+  try {
+    const workspaceId = getRequestWorkspaceId(req);
+    const sb = requireSupabase();
+    const { data, error } = await sb
+      .from("company_files")
+      .select("storage_path")
+      .eq("workspace_id", workspaceId)
+      .eq("company_id", String(req.params.id))
+      .eq("id", req.params.fileId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return res.status(404).json({ message: "Arquivo não encontrado." });
+    const signed = await sb.storage.from("client-files").createSignedUrl(String(data.storage_path), 60);
+    if (signed.error || !signed.data?.signedUrl) return res.status(503).json({ message: "Não foi possível preparar o download seguro." });
+    return res.redirect(302, signed.data.signedUrl);
+  } catch (error) { return next(error); }
+});
+
+router.delete("/:id/files/:fileId", requireRecordPermission("records.delete"), async (req, res, next) => {
   try {
     const workspaceId = getRequestWorkspaceId(req);
     const sb = requireSupabase();
@@ -540,18 +600,23 @@ router.delete("/:id/files/:fileId", async (req, res, next) => {
       .eq("workspace_id", workspaceId)
       .eq("company_id", String(req.params.id))
       .eq("id", req.params.fileId)
+      .is("deleted_at", null)
       .maybeSingle();
     if (error) throw error;
     if (!data) return res.status(404).json({ message: "Arquivo não encontrado." });
-    await sb.storage.from("client-files").remove([String(data.storage_path)]);
     const { error: deleteError } = await sb
       .from("company_files")
-      .delete()
+      .update({
+        deleted_at: new Date().toISOString(),
+        deleted_by: getSessionUserId(req) || null,
+        updated_at: new Date().toISOString()
+      })
       .eq("workspace_id", workspaceId)
       .eq("company_id", String(req.params.id))
-      .eq("id", req.params.fileId);
+      .eq("id", req.params.fileId)
+      .is("deleted_at", null);
     if (deleteError) throw deleteError;
-    await addNote(String(req.params.id), `Arquivo removido: ${data.filename}`, workspaceId).catch(() => undefined);
+    await addNote(String(req.params.id), `Arquivo movido para a lixeira: ${data.filename}`, workspaceId).catch(() => undefined);
     return res.json({ ok: true });
   } catch (error) { return next(error); }
 });
@@ -1404,7 +1469,7 @@ router.get("/:id/export-pdf", async (req, res, next) => {
   ${diagHtml}
 
   <footer class="print-footer">
-    <span>Gerado pelo NODERE · nodere.com.br</span>
+    <span>Gerado pelo NODERE · ${escapeHtml(publicAppHost)}</span>
     <span>Página <span class="page-number"></span> de <span class="page-total"></span></span>
   </footer>
 </body>
@@ -1621,7 +1686,7 @@ export async function renderCompanyExportPdf(input: {
     doc.moveTo(page.left, 760).lineTo(page.right, 760).strokeColor(palette.border).lineWidth(0.8).stroke();
     const originalBottomMargin = doc.page.margins.bottom;
     doc.page.margins.bottom = 0;
-    doc.fillColor(palette.muted).fontSize(8).text("Gerado pelo NODERE · nodere.com.br", page.left, 770, { width: 240, lineBreak: false });
+    doc.fillColor(palette.muted).fontSize(8).text(`Gerado pelo NODERE · ${publicAppHost}`, page.left, 770, { width: 240, lineBreak: false });
     doc.fillColor(palette.muted).fontSize(8).text(`Página ${index - range.start + 1} de ${range.count}`, page.right - 120, 770, { width: 120, align: "right", lineBreak: false });
     doc.page.margins.bottom = originalBottomMargin;
   }
@@ -2046,12 +2111,14 @@ function mapCompanyFileRow(row: Record<string, unknown>) {
     companyId: row.company_id as string,
     filename: row.filename as string,
     storagePath: row.storage_path as string,
-    fileUrl: row.file_url as string,
     fileType: row.file_type as string | undefined,
     fileSize: row.file_size as number | undefined,
+    sha256: row.sha256 as string | undefined,
     uploadedBy: row.uploaded_by as string | undefined,
     createdAt: row.created_at as string,
-    updatedAt: row.updated_at as string | undefined
+    updatedAt: row.updated_at as string | undefined,
+    deletedAt: row.deleted_at as string | undefined,
+    deletedBy: row.deleted_by as string | undefined
   };
 }
 function requireSupabase() {

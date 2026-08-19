@@ -34,6 +34,8 @@ export interface Company {
   mapsUrl?: string;
   placeId?: string;
   googlePlaceId?: string;
+  crmSaved?: boolean;
+  isCrmLead?: boolean;
   cnpj?: string;
   legalName?: string;
   email?: string;

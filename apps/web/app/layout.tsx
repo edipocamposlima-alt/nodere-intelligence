@@ -5,6 +5,7 @@ import "./globals.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { AppShell } from "@/components/AppShell";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { getPublicAppUrl } from "@/lib/publicAppUrl";
 
 const headingFont = localFont({
   src: [
@@ -29,8 +30,10 @@ const bodyFont = localFont({
   fallback: ["Arial", "sans-serif"]
 });
 
+const publicAppUrl = getPublicAppUrl();
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://nodere.com.br"),
+  metadataBase: new URL(publicAppUrl),
   title: {
     default: "NODERE",
     template: "%s | NODERE"
@@ -53,7 +56,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "NODERE",
     description: "A plataforma que conecta inteligência comercial, prospecção e vendas em um único fluxo.",
-    url: "https://nodere.com.br",
+    url: publicAppUrl,
     siteName: "NODERE",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "NODERE" }],
     locale: "pt_BR",

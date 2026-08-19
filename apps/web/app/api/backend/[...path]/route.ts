@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDirectApiBaseUrl } from "@/lib/apiBase";
+import { rejectCrossOriginMutation } from "@/lib/requestSecurity";
 
 const COOKIE_NAMES = ["nodere_session", "nodere-session"];
 type RouteContext = { params: Promise<{ path?: string[] }> };
 
 async function proxyBackend(request: NextRequest, context: RouteContext) {
+  const rejected = rejectCrossOriginMutation(request);
+  if (rejected) return rejected;
   const { path = [] } = await context.params;
   const token = COOKIE_NAMES.map((name) => request.cookies.get(name)?.value).find(Boolean);
   if (!token) {

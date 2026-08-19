@@ -116,16 +116,31 @@ export async function persistAssistantMessage(input: {
   await sb.from("nodere_ai_conversations").update({ updated_at: new Date().toISOString() }).eq("id", input.conversationId).eq("workspace_id", input.workspaceId);
 }
 
-export async function listAiConversations(workspaceId: string, limit = 30) {
+export async function listAiConversations(workspaceId: string, limit = 30, status: "active" | "archived" = "active") {
   const sb = requireAiDatabase();
   const { data, error } = await sb
     .from("nodere_ai_conversations")
     .select("id,title,agent_id,model_id,status,created_at,updated_at")
     .eq("workspace_id", workspaceId)
+    .eq("status", status)
     .order("updated_at", { ascending: false })
     .limit(Math.min(Math.max(limit, 1), 100));
   if (error) throw error;
   return data ?? [];
+}
+
+export async function setAiConversationStatus(workspaceId: string, conversationId: string, status: "active" | "archived") {
+  const sb = requireAiDatabase();
+  const { data, error } = await sb
+    .from("nodere_ai_conversations")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", conversationId)
+    .eq("workspace_id", workspaceId)
+    .select("id,title,agent_id,model_id,status,created_at,updated_at")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw serviceError("AI_CONVERSATION_NOT_FOUND", "Conversa não encontrada neste workspace.", 404);
+  return data;
 }
 
 export async function getAiConversation(workspaceId: string, conversationId: string) {
