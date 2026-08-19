@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Activity, CheckCircle2, Copy, KeyRound, LogOut, ShieldCheck, SlidersHorizontal, Trash2, UserCog, UserPlus, UsersRound } from "lucide-react";

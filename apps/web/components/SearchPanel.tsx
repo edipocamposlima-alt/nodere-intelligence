@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { AlertTriangle, Building2, CheckCircle2, ChevronDown, ChevronUp, Filter, Globe2, LocateFixed, MapPin, Navigation, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { ApiRequestError, geocodeAddress, getSavedCompanyIds, getWorkspaceSegments, saveWorkspaceSegment, searchCompanies, searchCompanyByCnpj } from "@/lib/api";
 import { Company } from "@/lib/types";

@@ -1,7 +1,7 @@
 import { AlertTriangle, CheckCircle2, TrendingUp, Zap } from "lucide-react";
 import { getCompanies } from "@/lib/api";
 import { getServerSessionToken } from "@/lib/serverSession";
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 
 export const dynamic = "force-dynamic";
 

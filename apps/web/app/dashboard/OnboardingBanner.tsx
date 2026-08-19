@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { CheckCircle2, Circle, X } from "lucide-react";
 import { OnboardingStatus } from "@/lib/api";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Clock3, ExternalLink, FileUp, History, Mail, MessageCircle, Paperclip, RefreshCw, Save, Send, ShieldCheck } from "lucide-react";
 import type { Company } from "@/lib/types";

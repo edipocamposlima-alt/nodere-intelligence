@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { CheckCircle2 } from "lucide-react";
 
 export default function CtaSection() {

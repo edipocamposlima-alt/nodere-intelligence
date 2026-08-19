@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { useEffect, useState } from "react";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { SOLUTIONS } from "./solutions";

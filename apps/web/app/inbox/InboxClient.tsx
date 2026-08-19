@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { AlertTriangle, Check, Flag, MessageCircle, Plus, RefreshCw, Search } from "lucide-react";
 import { InboxAttachment, InboxMessage, WhatsappTemplate, createInboxMessage, getCompanies, getInboxMessages, getWhatsappTemplates, updateInboxMessage } from "@/lib/api";
 import { Company } from "@/lib/types";

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { Logo } from "@/components/brand/Logo";
 

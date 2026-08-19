@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 

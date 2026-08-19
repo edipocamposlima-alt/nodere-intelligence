@@ -1,47 +1,13 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BookOpenCheck, Boxes, Building2, Cable, CalendarDays, ChartNoAxesCombined, ClipboardPenLine, FileSignature, Gauge, MessageCircleMore, PanelLeftClose, PanelLeftOpen, Search, ShieldCheck, SlidersHorizontal, Sparkles, UsersRound, WalletCards, Waypoints } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, ShieldCheck } from "lucide-react";
 import { useCredits } from "@/context/CreditsProvider";
 import { canUseModule, useAuth } from "@/context/AuthProvider";
 import { Logo } from "@/components/brand/Logo";
-
-const groups = [
-  {
-    label: "Operação",
-    items: [
-      { href: "/ai", label: "NODERE AI", icon: Sparkles, tone: "green", module: "dashboard" },
-      { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: Gauge, tone: "neutral", module: "dashboard" },
-      { href: "/searches", appHref: "/app/discovery", label: "Prospecção e pesquisa", icon: Search, tone: "cyan", module: "buscas" },
-      { href: "/crm", label: "Funil comercial", icon: Waypoints, tone: "green", module: "crm" },
-      { href: "/companies", label: "Empresas e clientes", icon: Building2, tone: "blue", module: "crm" },
-      { href: "/crm/communications", label: "Comunicações", icon: MessageCircleMore, tone: "cyan", module: "crm" },
-      { href: "/calendario", label: "Agenda", icon: CalendarDays, tone: "blue", module: "agenda" }
-    ]
-  },
-  {
-    label: "Comercial",
-    items: [
-      { href: "/crm/briefings", label: "Briefings", icon: ClipboardPenLine, tone: "gold", module: "crm" },
-      { href: "/app/proposals", label: "Propostas e contratos", icon: FileSignature, tone: "purple", module: "crm" },
-      { href: "/catalog", label: "Produtos e serviços", icon: Boxes, tone: "orange", module: "crm" },
-      { href: "/reports", label: "Relatórios", icon: ChartNoAxesCombined, tone: "blue", module: "relatorios" }
-    ]
-  },
-  {
-    label: "Administração",
-    items: [
-      { href: "/operators", label: "Usuários e permissões", icon: UsersRound, tone: "green", adminOnly: true, module: "admin" },
-      { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: SlidersHorizontal, tone: "neutral", module: "admin" },
-      { href: "/integrations", label: "Integrações", icon: Cable, tone: "cyan", adminOnly: true, module: "integracoes" },
-      { href: "/admin", label: "Administração técnica", icon: ShieldCheck, tone: "red", adminOnly: true, module: "admin" },
-      { href: "/billing", label: "Plano e faturamento", icon: WalletCards, tone: "gold", module: "admin" },
-      { href: "/manual", label: "Manual NODERE", icon: BookOpenCheck, tone: "blue", module: "dashboard" }
-    ]
-  }
-];
+import { PLATFORM_NAVIGATION, resolvePlatformHref } from "@/lib/platformNavigation";
 
 export function Sidebar() {
   const [mode, setMode] = useState<"expanded" | "compact" | "closed">("expanded");
@@ -95,11 +61,11 @@ export function Sidebar() {
       </div>
 
       <nav aria-label="Navegação principal" className={`nodere-tools-scroll mt-5 min-h-0 flex-1 overflow-y-auto ${compact ? "space-y-3" : "space-y-4 pr-1 xl:mt-8 xl:space-y-5"}`}>
-        {groups.map((group) => (
+        {PLATFORM_NAVIGATION.map((group) => (
           <section key={group.label} className="space-y-1">
             <p className={compact ? "sr-only" : "px-3 pb-1 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]"}>{group.label}</p>
-            {group.items.filter((item) => (!item.adminOnly || isAdmin) && canUseModule(user, item.module) && !(isInternalOwner && item.href === "/billing")).map((item) => {
-              const href = isApp && item.appHref ? item.appHref : item.href;
+            {group.items.filter((item) => (!item.adminOnly || isAdmin) && canUseModule(user, item.module)).map((item) => {
+              const href = resolvePlatformHref(item, pathname);
               const active = pathname === href || pathname.startsWith(`${href}/`);
               return (
                 <Link

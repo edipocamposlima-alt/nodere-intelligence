@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { AlertTriangle, ArrowUpRight, BarChart3, Building2, CheckCircle2, CircleDollarSign, Flame, Globe2, KanbanSquare, MessageCircle, MousePointerClick, RadioTower, Search, Sparkles, Star, Target, TrendingUp, Users } from "lucide-react";
 import type { Company } from "@/lib/types";
 import { getCompanies, getDashboard, getOnboardingStatus, getReportProposals, getReportSummary } from "@/lib/api";

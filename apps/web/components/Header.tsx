@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { usePathname, useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { Bell, CreditCard, Download, Search, X } from "lucide-react";

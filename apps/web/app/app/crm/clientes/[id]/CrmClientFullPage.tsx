@@ -1,7 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArchiveRestore, ArrowLeft, Bot, BriefcaseBusiness, CalendarDays, CheckCircle2, ClipboardList, Copy, Download, FileText, FolderOpen, Globe2, Linkedin, Mail, MapPin, MessageCircle, PackageCheck, Pencil, Phone, Plus, Save, Send, Sparkles, Trash2, Upload, Users, XCircle } from "lucide-react";
 import type { Company } from "@/lib/types";

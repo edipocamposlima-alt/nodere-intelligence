@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { updatePasswordWithRecoveryToken } from "@/lib/supabaseAuthRest";
 import { Logo } from "@/components/brand/Logo";

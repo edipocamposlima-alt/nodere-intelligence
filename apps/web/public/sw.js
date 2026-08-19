@@ -1,4 +1,4 @@
-const CACHE_NAME = "nodere-public-shell-v5";
+const CACHE_NAME = "nodere-public-shell-v6";
 const SHELL_ASSETS = [
   "/offline.html",
   "/login?source=pwa",

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import SitePageShell from "@/components/site/SitePageShell";
 import DynamicCmsPage from "@/components/site/DynamicCmsPage";
 import { Logo } from "@/components/brand/Logo";

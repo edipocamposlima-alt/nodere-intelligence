@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { useRouter } from "next/navigation";
 import { Download, LayoutGrid, ListFilter, Plus, Search, SlidersHorizontal } from "lucide-react";
 import type { Company } from "@/lib/types";

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { usePathname } from "next/navigation";
 import { BarChart3, Bot, Building2, CalendarDays, FileText, Home, KanbanSquare, Lock, MessagesSquare, PackageOpen, Search, Settings } from "lucide-react";
 import { useWorkspace } from "@/contexts/WorkspaceContext";

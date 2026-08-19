@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { useEffect, useState } from "react";
 
 const TICKER = ["Agências digitais", "Consultorias B2B", "Times de SDR", "Gestores de tráfego", "Prestadores locais", "Franquias"];

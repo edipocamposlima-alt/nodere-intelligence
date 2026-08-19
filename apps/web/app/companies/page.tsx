@@ -2,7 +2,7 @@ import { CompanyTable } from "@/components/CompanyTable";
 import { getCompanies } from "@/lib/api";
 import { getServerSessionToken } from "@/lib/serverSession";
 import { ManualCompanyForm } from "./ManualCompanyForm";
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 
 export const dynamic = "force-dynamic";
 

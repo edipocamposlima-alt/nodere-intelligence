@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, Download, Expand, LayoutDashboard, Search, Shrink } from "lucide-react";

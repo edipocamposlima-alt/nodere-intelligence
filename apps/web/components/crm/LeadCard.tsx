@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { MoreHorizontal, MessageCircle } from "lucide-react";
 import type { Company } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";

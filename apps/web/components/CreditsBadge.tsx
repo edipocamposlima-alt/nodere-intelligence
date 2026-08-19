@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { CreditCard } from "lucide-react";
 import { useCredits } from "@/context/CreditsProvider";
 

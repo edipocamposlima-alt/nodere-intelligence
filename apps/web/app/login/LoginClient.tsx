@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";

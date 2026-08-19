@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Archive, ArrowLeft, CheckCircle2, Download, FilePlus2, History, Mail, Paperclip, RefreshCw, Save, Sparkles, Trash2, Upload } from "lucide-react";
 import { fetchAuthenticatedFile, getCommercialBriefingDependencies, trashCommercialBriefing, type BriefingFieldDefinition, type CommercialBriefingDetail } from "@/lib/api";

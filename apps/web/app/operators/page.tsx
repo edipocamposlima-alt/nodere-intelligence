@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import type { ReactNode } from "react";
 import { Activity, ArrowRight, Medal, TrendingUp, UserRoundCheck } from "lucide-react";
 import { getReportOperators } from "@/lib/api";

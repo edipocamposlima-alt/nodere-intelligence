@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { useChat } from "@ai-sdk/react";
 import {
   DefaultChatTransport,

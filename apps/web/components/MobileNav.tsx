@@ -1,32 +1,17 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/NativeLink";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArchiveRestore, BookOpenCheck, Boxes, Building2, Cable, CalendarDays, ChartNoAxesCombined, ClipboardPenLine, Download, FileSignature, Gauge, LogOut, Menu, MessageCircleMore, Search, ShieldCheck, SlidersHorizontal, Sparkles, UsersRound, Waypoints, X } from "lucide-react";
+import { ArchiveRestore, Download, LogOut, Menu, X } from "lucide-react";
 import { canUseModule, useAuth } from "@/context/AuthProvider";
+import { PLATFORM_NAVIGATION_ITEMS, resolvePlatformHref, type PlatformNavigationItem } from "@/lib/platformNavigation";
 
-const primaryItems = [
-  { href: "/ai", label: "NODERE AI", icon: Sparkles, tone: "green", module: "dashboard" },
-  { href: "/dashboard", appHref: "/app/dashboard", label: "Dashboard", icon: Gauge, tone: "neutral", module: "dashboard" },
-  { href: "/searches", appHref: "/app/discovery", label: "Prospecção", icon: Search, tone: "cyan", module: "buscas" },
-  { href: "/crm", label: "CRM", icon: Waypoints, tone: "green", module: "crm" }
-];
-
+const lifecycleItem: PlatformNavigationItem = { href: "/crm/lifecycle", label: "Arquivo e Lixeira", icon: ArchiveRestore, tone: "neutral", module: "crm" };
+const primaryItems = PLATFORM_NAVIGATION_ITEMS.filter((item) => item.primaryMobile);
 const drawerItems = [
-  { href: "/companies", label: "Clientes salvos", icon: Building2, tone: "blue", module: "crm" },
-  { href: "/crm/briefings", label: "Briefings Comerciais", icon: ClipboardPenLine, tone: "gold", module: "crm" },
-  { href: "/crm/communications", label: "Comunicações", icon: MessageCircleMore, tone: "cyan", module: "crm" },
-  { href: "/crm/lifecycle", label: "Arquivo e Lixeira", icon: ArchiveRestore, tone: "neutral", module: "crm" },
-  { href: "/calendario", label: "Atividades e Agenda", icon: CalendarDays, tone: "blue", module: "agenda" },
-  { href: "/app/proposals", label: "Propostas e Contratos", icon: FileSignature, tone: "purple", module: "crm" },
-  { href: "/catalog", label: "Produtos / Serviços", icon: Boxes, tone: "orange", module: "crm" },
-  { href: "/reports", label: "Relatórios", icon: ChartNoAxesCombined, tone: "blue", module: "relatorios" },
-  { href: "/operators", label: "Operadores", icon: UsersRound, tone: "green", adminOnly: true, module: "admin" },
-  { href: "/settings", appHref: "/app/settings", label: "Configurações", icon: SlidersHorizontal, tone: "neutral", module: "admin" },
-  { href: "/integrations", label: "Integrações", icon: Cable, tone: "cyan", adminOnly: true, module: "integracoes" },
-  { href: "/admin", label: "Administrador / CMS", icon: ShieldCheck, tone: "red", adminOnly: true, module: "admin" },
-  { href: "/manual", label: "Manual NODERE", icon: BookOpenCheck, tone: "blue", module: "dashboard" }
+  ...PLATFORM_NAVIGATION_ITEMS.filter((item) => !item.primaryMobile),
+  lifecycleItem
 ];
 
 export function MobileNav() {
@@ -107,14 +92,14 @@ export function MobileNav() {
               {drawerItems.filter((item) => (!item.adminOnly || isAdmin) && canUseModule(user, item.module)).map((item) => (
                 <Link
                   key={`${item.label}-${isApp && item.appHref ? item.appHref : item.href}`}
-                  href={isApp && item.appHref ? item.appHref : item.href}
+                  href={resolvePlatformHref(item, pathname)}
                   onClick={() => setOpen(false)}
                   className="flex min-h-14 items-center gap-3 rounded-xl border border-line bg-panel/80 px-3 py-2 text-sm font-semibold text-slate-200"
                 >
                   <span className="nodere-nav-icon-tone nodere-nav-glyph flex h-9 w-9 shrink-0 items-center justify-center rounded-md" data-icon-tone={item.tone}>
                     <item.icon className="nodere-icon" />
                   </span>
-                  {item.label}
+                  {item.mobileLabel || item.label}
                 </Link>
               ))}
               <button
@@ -138,8 +123,8 @@ export function MobileNav() {
   );
 }
 
-function MobileLink({ item, isApp, activePathname, onClick }: { item: (typeof primaryItems)[number]; isApp: boolean; activePathname: string; onClick: () => void }) {
-  const href = isApp && item.appHref ? item.appHref : item.href;
+function MobileLink({ item, isApp: _isApp, activePathname, onClick }: { item: PlatformNavigationItem; isApp: boolean; activePathname: string; onClick: () => void }) {
+  const href = resolvePlatformHref(item, activePathname);
   const active = activePathname === href || activePathname.startsWith(`${href}/`);
   return (
     <Link
@@ -150,7 +135,7 @@ function MobileLink({ item, isApp, activePathname, onClick }: { item: (typeof pr
       <span className="nodere-nav-icon-tone nodere-nav-glyph flex h-8 w-8 items-center justify-center rounded-md" data-icon-tone={item.tone}>
         <item.icon className="nodere-icon" />
       </span>
-      {item.label}
+      {item.mobileLabel || item.label}
     </Link>
   );
 }
